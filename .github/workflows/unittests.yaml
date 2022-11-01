@@ -37,7 +37,7 @@ jobs:
     - name: Build
       run: |
         env | sort
-        make all ENVS=linux-amd64
+        make build-cli ENVS=linux-amd64
 
     - name: Verify
       run: |

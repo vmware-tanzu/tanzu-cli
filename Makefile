@@ -198,11 +198,6 @@ ensure-pinniped-repo: ## Clone Pinniped
 prep-build-cli: ensure-pinniped-repo  ## Prepare for building the CLI
 	$(GO) mod download
 	$(GO) mod tidy
-	EMBED_PROVIDERS_TAG=embedproviders
-ifeq "${BUILD_TAGS}" "${EMBED_PROVIDERS_TAG}"
-	make -C providers -f Makefile generate-provider-bundle-zip
-	cp -f ${PROVIDER_BUNDLE_ZIP} $(TKG_PROVIDER_BUNDLE_ZIP)
-endif
 
 .PHONY: configure-buildtags-%
 configure-buildtags-%: ## Configure build tags
@@ -232,6 +227,8 @@ BUILDER := $(ROOT_DIR)/bin/builder
 BUILDER_SRC := $(shell find cmd/cli/plugin-admin/builder -type f -print)
 $(BUILDER): $(BUILDER_SRC)
 	cd cmd/cli/plugin-admin/builder && $(GO) build -o $(BUILDER) .
+
+PLUGINS := core
 
 .PHONY: prepare-builder
 prepare-builder: $(BUILDER) ## Build Tanzu CLI Plugin Admin builder
@@ -297,7 +294,7 @@ build-cli-%: prepare-builder prep-build-cli
 	fi
 
 	./hack/embed-pinniped-binary.sh go ${OS} ${ARCH} ${PINNIPED_VERSIONS}
-	$(BUILDER) cli compile --version $(BUILD_VERSION) --ldflags "$(LD_FLAGS) -X 'github.com/vmware-tanzu/tanzu-framework/cli/core/pkg/config.DefaultStandaloneDiscoveryType=${DISCOVERY_TYPE}'" --tags "${BUILD_TAGS}" --path "cmd/cli/plugin" --artifacts artifacts/${OS}/${ARCH}/cli --target  ${OS}_${ARCH}
+	#$(BUILDER) cli compile --version $(BUILD_VERSION) --ldflags "$(LD_FLAGS) -X 'github.com/vmware-tanzu/tanzu-framework/cli/core/pkg/config.DefaultStandaloneDiscoveryType=${DISCOVERY_TYPE}'" --tags "${BUILD_TAGS}" --path "cmd/cli/plugin" --artifacts artifacts/${OS}/${ARCH}/cli --target  ${OS}_${ARCH}
 	$(MAKE) build-tanzu-core-cli-$(DISCOVERY_TYPE)-$(OS)-$(ARCH) -C cli/core
 
 ## --------------------------------------
@@ -320,6 +317,10 @@ build-cli-local: prepare-builder configure-buildtags-embedproviders build-cli-lo
 	$(MAKE) publish-admin-plugins-local
 .PHONY: build-install-cli-local
 build-install-cli-local: clean-catalog-cache clean-cli-plugins build-cli-local install-cli-plugins install-cli ## Local build and install the CLI plugins with local standalone discovery
+
+.PHONY: build-cli-only-local
+build-cli-only-local: prepare-builder configure-buildtags-embedproviders build-cli-local-${GOHOSTOS}-${GOHOSTARCH} publish-plugins-local ## Build Tanzu CLI with local standalone discovery.
+
 
 ## --------------------------------------
 ##@ Build and publish CLI plugin discovery resource files and binaries
@@ -486,21 +487,22 @@ test: generate manifests build-cli-mocks ## Run tests
 	## Skip running TKG integration tests
 	$(MAKE) ytt -C $(TOOLS_DIR)
 
-	echo "Verifying cluster-api packages and providers are in sync..."
-	make -C hack/providers-sync-tools validate
-	echo "... cluster-api packages are in sync"
+	#echo "Verifying cluster-api packages and providers are in sync..."
+	#make -C hack/providers-sync-tools validate
+	#echo "... cluster-api packages are in sync"
 
 	## Test the YTT cluster templates
-	echo "Changing into the provider test directory to verify ytt cluster templates..."
-	cd ./providers/tests/unit && PATH=$(abspath hack/tools/bin):"$(PATH)" $(GO) test -coverprofile coverage1.txt -v -timeout 120s ./
-	echo "... ytt cluster template verification complete!"
+	#echo "Changing into the provider test directory to verify ytt cluster templates..."
+	#cd ./providers/tests/unit && PATH=$(abspath hack/tools/bin):"$(PATH)" $(GO) test -coverprofile coverage1.txt -v -timeout 120s ./
+	#echo "... ytt cluster template verification complete!"
 
-	echo "Verifying package tests..."
-	find ./packages/ -name "test" -type d | \
-		xargs -n1  -I {} bash -c 'cd {} && PATH=$(abspath hack/tools/bin):"$(PATH)" $(GO) test -coverprofile coverage2.txt -v -timeout 120s ./...' \;
-	echo "... package tests complete!"
+	#echo "Verifying package tests..."
+	#find ./packages/ -name "test" -type d | \
+	#	xargs -n1  -I {} bash -c 'cd {} && PATH=$(abspath hack/tools/bin):"$(PATH)" $(GO) test -coverprofile coverage2.txt -v -timeout 120s ./...' \;
+	#echo "... package tests complete!"
 
-	PATH=$(abspath hack/tools/bin):"$(PATH)" $(GO) test -coverprofile coverage3.txt -v `go list ./... | grep -Ev '(github.com/vmware-tanzu/tanzu-framework/tkg/test|github.com/vmware-tanzu/tanzu-framework/cmd/cli/plugin/package/test)'`
+	#PATH=$(abspath hack/tools/bin):"$(PATH)" $(GO) test -coverprofile coverage3.txt -v `go list ./... | grep -Ev '(github.com/vmware-tanzu/tanzu-framework/tkg/test|github.com/vmware-tanzu/tanzu-framework/cmd/cli/plugin/package/test)'`
+	PATH=$(abspath hack/tools/bin):"$(PATH)" $(GO) test -coverprofile coverage3.txt -v `go list ./... | grep -Ev '(github.com/vmware-tanzu/tanzu-framework/tkg/test|github.com/vmware-tanzu/tanzu-framework/cmd/cli/plugin/package/test) | grep cli'`
 
 	$(MAKE) kubebuilder -C $(TOOLS_DIR)
 	KUBEBUILDER_ASSETS=$(ROOT_DIR)/$(KUBEBUILDER)/bin $(MAKE) test -C addons
@@ -516,23 +518,23 @@ test: generate manifests build-cli-mocks ## Run tests
 	# Test core cli
 	$(MAKE) test -C cli/core
 
-	# Test tkg module
-	$(MAKE) test -C tkg
+	## Test tkg module
+	#$(MAKE) test -C tkg
 
-	# Test feature gates
-	$(MAKE) test -C featuregates
+	## Test feature gates
+	#$(MAKE) test -C featuregates
 
-	# Test capabilities
-	$(MAKE) test -C capabilities
+	## Test capabilities
+	#$(MAKE) test -C capabilities
 
-	# Test other modules.
-	# TODO: This should be a call to a "test" target in that module's Makefile
-	cd apis/config && $(GO) test ./... -coverprofile cover.out
-	cd apis/run && $(GO) test ./... -coverprofile cover.out
-	cd packageclients && $(GO) test ./... -coverprofile cover.out
-	cd apis/addonconfigs && $(GO) test ./... -coverprofile cover.out
-	cd apis/cli && $(GO) test ./... -coverprofile cover.out
-	cd apis/core && $(GO) test ./... -coverprofile cover.out
+	## Test other modules.
+	## TODO: This should be a call to a "test" target in that module's Makefile
+	#cd apis/config && $(GO) test ./... -coverprofile cover.out
+	#cd apis/run && $(GO) test ./... -coverprofile cover.out
+	#cd packageclients && $(GO) test ./... -coverprofile cover.out
+	#cd apis/addonconfigs && $(GO) test ./... -coverprofile cover.out
+	#cd apis/cli && $(GO) test ./... -coverprofile cover.out
+	#cd apis/core && $(GO) test ./... -coverprofile cover.out
 
 	# Test admin plugins
 	cd cmd/cli/plugin-admin/builder && $(GO) test ./... -coverprofile cover.out
@@ -548,11 +550,11 @@ test: generate manifests build-cli-mocks ## Run tests
 	# Test package plugin but skip package/test which are e2e tests run separately in CI
 	cd cmd/cli/plugin/package && $(GO) test -coverprofile cover.out -v `go list ./... | grep -v github.com/vmware-tanzu/tanzu-framework/cmd/cli/plugin/package/test`
 
-	# Cluster plugin tests
-	$(MAKE) test -C cmd/cli/plugin/cluster
+	## Cluster plugin tests
+	#$(MAKE) test -C cmd/cli/plugin/cluster
 
-	# Cluster plugin tests
-	$(MAKE) test -C cmd/cli/plugin/managementcluster
+	## Cluster plugin tests
+	#$(MAKE) test -C cmd/cli/plugin/managementcluster
 
         # isolated-cluster plugin tests
 	$(MAKE) test -C cmd/cli/plugin/isolated-cluster
