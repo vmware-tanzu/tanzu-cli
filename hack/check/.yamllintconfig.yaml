@@ -1,0 +1,15 @@
+---
+extends: relaxed
+
+# uncomment the below line and add if any file/patterns to be ignored
+#ignore:
+
+rules:
+  line-length: disable
+  trailing-spaces: enable
+  new-line-at-end-of-file: enable
+  indentation: disable
+  key-duplicates: disable
+  empty-lines: disable
+  colons: disable
+  commas: disable
