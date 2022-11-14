@@ -47,6 +47,9 @@ BUILD_VERSION ?= $$(git describe --tags --abbrev=0 2>$(NUL))
 ifeq ($(strip $(BUILD_VERSION)),)
 BUILD_VERSION = dev
 endif
+LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Date=$(BUILD_DATE)'
+LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.SHA=$(BUILD_SHA)'
+LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Version=$(BUILD_VERSION)'
 
 ## --------------------------------------
 ## Help
