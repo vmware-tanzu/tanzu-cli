@@ -13,18 +13,19 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
-func init() {
-	versionCmd.SetUsageFunc(cli.SubCmdUsageFunc)
-}
+func newVersionCmd() *cobra.Command {
+	var versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Version information",
+		Annotations: map[string]string{
+			"group": string(plugin.SystemCmdGroup),
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("version: %s\nbuildDate: %s\nsha: %s\n", buildinfo.Version, buildinfo.Date, buildinfo.SHA)
+			return nil
+		},
+	}
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Version information",
-	Annotations: map[string]string{
-		"group": string(plugin.SystemCmdGroup),
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Printf("version: %s\nbuildDate: %s\nsha: %s\n", buildinfo.Version, buildinfo.Date, buildinfo.SHA)
-		return nil
-	},
+	versionCmd.SetUsageFunc(cli.SubCmdUsageFunc)
+	return versionCmd
 }

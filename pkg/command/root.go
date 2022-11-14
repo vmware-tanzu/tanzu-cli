@@ -22,7 +22,7 @@ func NewRootCmd() (*cobra.Command, error) {
 	uFunc := cli.NewMainUsage().UsageFunc()
 	rootCmd.SetUsageFunc(uFunc)
 	rootCmd.AddCommand(
-		versionCmd,
+		newVersionCmd(),
 	)
 
 	return rootCmd, nil

@@ -50,7 +50,7 @@ func TestVersion(t *testing.T) {
 		buildinfo.SHA = ""
 	}()
 
-	err = versionCmd.Execute()
+	err = newVersionCmd().Execute()
 	assert.Nil(err)
 	w.Close()
 
