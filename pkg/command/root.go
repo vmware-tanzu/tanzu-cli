@@ -7,11 +7,12 @@ package command
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
 // NewRootCmd creates a root command.
-func NewRootCmd() (*cobra.Command, error) {
+func NewRootCmd(ps catalog.PluginSupplier) (*cobra.Command, error) {
 	var rootCmd = &cobra.Command{
 		Use: "tanzu",
 		// Don't have Cobra print the error message, the CLI will
@@ -25,12 +26,21 @@ func NewRootCmd() (*cobra.Command, error) {
 		newVersionCmd(),
 	)
 
+	if ps != nil {
+		plugins, err := ps.GetInstalledPlugins()
+		if err != nil {
+			return nil, err
+		}
+		for _, plugin := range plugins {
+			rootCmd.AddCommand(cli.GetPluginCmd(plugin))
+		}
+	}
 	return rootCmd, nil
 }
 
 // Execute executes the CLI.
 func Execute() error {
-	root, err := NewRootCmd()
+	root, err := NewRootCmd(nil)
 	if err != nil {
 		return err
 	}
