@@ -4,6 +4,7 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,6 +29,7 @@ info() {
   "version": "v0.1.0",
   "buildSHA": "01234567",
   "group": "%s",
+  "aliases": %s,
   "completionType": %d
 }
 EOF
@@ -69,26 +71,14 @@ func TestExecute(t *testing.T) {
 }
 
 type TestPluginSupplier struct {
-	pluginInfo *cli.PluginInfo
+	pluginInfos []*cli.PluginInfo
 }
 
 func (s *TestPluginSupplier) GetInstalledPlugins() ([]*cli.PluginInfo, error) {
-	plugins := make([]*cli.PluginInfo, 0)
-	pi := s.pluginInfo
-	if pi == nil {
-		pi = &cli.PluginInfo{
-			Name:             "fakefoo",
-			Description:      "Fake foo",
-			Group:            plugin.SystemCmdGroup,
-			Aliases:          []string{"ff"},
-			InstallationPath: "/non_existent_path",
-		}
-	}
-	plugins = append(plugins, pi)
-	return plugins, nil
+	return s.pluginInfos, nil
 }
 
-func TestRootCmdWithPlugins(t *testing.T) {
+func TestRootCmdWithNoAdditionalPlugins(t *testing.T) {
 	assert := assert.New(t)
 	rootCmd, err := NewRootCmd(&TestPluginSupplier{})
 	assert.Nil(err)
@@ -100,7 +90,7 @@ func TestSubcommandNonexistent(t *testing.T) {
 	assert := assert.New(t)
 	rootCmd, err := NewRootCmd(&TestPluginSupplier{})
 	assert.Nil(err)
-	rootCmd.SetArgs([]string{"fakefoo", "say", "hello"})
+	rootCmd.SetArgs([]string{"nonexistent", "say", "hello"})
 	err = rootCmd.Execute()
 	assert.NotNil(err)
 }
@@ -112,6 +102,7 @@ func TestSubcommands(t *testing.T) {
 		version           string
 		cmdGroup          plugin.CmdGroup
 		postInstallResult uint8
+		aliases           []string
 		args              []string
 		expected          string
 		expectedFailure   bool
@@ -134,6 +125,7 @@ func TestSubcommands(t *testing.T) {
   "version": "v0.1.0",
   "buildSHA": "01234567",
   "group": "System",
+  "aliases": [],
   "completionType": 0
 }`,
 			args: []string{"dummy", "info"},
@@ -210,7 +202,7 @@ func TestSubcommands(t *testing.T) {
 			os.Stdout = w
 			os.Stderr = w
 
-			err = setupFakePlugin(dir, spec.plugin, spec.version, spec.cmdGroup, completionType, spec.postInstallResult)
+			err = setupFakePlugin(dir, spec.plugin, spec.version, spec.cmdGroup, completionType, spec.postInstallResult, spec.aliases)
 			assert.Nil(err)
 
 			pi := &cli.PluginInfo{
@@ -221,7 +213,7 @@ func TestSubcommands(t *testing.T) {
 				InstallationPath: filepath.Join(dir, spec.plugin),
 			}
 
-			rootCmd, err := NewRootCmd(&TestPluginSupplier{pluginInfo: pi})
+			rootCmd, err := NewRootCmd(&TestPluginSupplier{pluginInfos: []*cli.PluginInfo{pi}})
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 
@@ -238,7 +230,7 @@ func TestSubcommands(t *testing.T) {
 	}
 }
 
-func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGroup, completionType uint8, postInstallResult uint8) error {
+func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGroup, completionType uint8, postInstallResult uint8, aliases []string) error {
 	filePath := filepath.Join(dir, pluginName)
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
@@ -247,7 +239,15 @@ func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGro
 	}
 	defer f.Close()
 
-	fmt.Fprintf(f, fakePluginScriptFmtString, pluginName, pluginName, commandGroup, completionType, postInstallResult, pluginName, pluginName)
+	var aliasesString string
+	if len(aliases) > 0 {
+		b, _ := json.Marshal(aliases)
+		aliasesString = string(b)
+	} else {
+		aliasesString = "[]"
+	}
+
+	fmt.Fprintf(f, fakePluginScriptFmtString, pluginName, pluginName, commandGroup, aliasesString, completionType, postInstallResult, pluginName, pluginName)
 
 	return nil
 }
