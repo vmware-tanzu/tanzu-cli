@@ -15,8 +15,14 @@ type PluginInfo struct {
 	// Description is the plugin's description.
 	Description string `json:"description" yaml:"description"`
 
+	// Version of the plugin. Must be a valid semantic version https://semver.org/
+	Version string `json:"version" yaml:"version"`
+
 	// Command group for the plugin.
 	Group plugin.CmdGroup `json:"group" yaml:"group"`
+
+	// Hidden tells whether the plugin should be hidden from the help command.
+	Hidden bool `json:"hidden,omitempty" yaml:"hidden,omitempty"`
 
 	// Aliases are other text strings used to call this command
 	Aliases []string `json:"aliases,omitempty" yaml:"aliases,omitempty"`

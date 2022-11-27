@@ -24,6 +24,7 @@ func NewRootCmd(ps catalog.PluginSupplier) (*cobra.Command, error) {
 	rootCmd.SetUsageFunc(uFunc)
 	rootCmd.AddCommand(
 		newVersionCmd(),
+		newPluginCmd(ps),
 	)
 
 	if ps != nil {
@@ -40,7 +41,7 @@ func NewRootCmd(ps catalog.PluginSupplier) (*cobra.Command, error) {
 
 // Execute executes the CLI.
 func Execute() error {
-	root, err := NewRootCmd(nil)
+	root, err := NewRootCmd(&FlatDirPluginSupplier{})
 	if err != nil {
 		return err
 	}

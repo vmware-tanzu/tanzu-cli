@@ -3,8 +3,10 @@ module github.com/vmware-tanzu/tanzu-cli
 go 1.19
 
 require (
+	github.com/adrg/xdg v0.4.0
 	github.com/aunum/log v0.0.0-20200821225356-38d2e2c8b489
 	github.com/logrusorgru/aurora v2.0.3+incompatible
+	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20221121010307-3b0720a3a999
@@ -26,7 +28,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
