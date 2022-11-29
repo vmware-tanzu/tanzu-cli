@@ -21,7 +21,7 @@ func TestFlatDirPluginSupplier(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	var completionType, postInstallResult uint8
-	err = setupFakePlugin(dir, "flatfoo", "v0.1.0", plugin.SystemCmdGroup, completionType, postInstallResult, []string{"ff", "ffoo"})
+	err = setupFakePlugin(dir, "flatfoo", "v0.1.0", plugin.SystemCmdGroup, completionType, postInstallResult, false, []string{"ff", "ffoo"})
 	assert.Nil(err)
 
 	supplier := FlatDirPluginSupplier{pluginDir: dir}
@@ -33,6 +33,7 @@ func TestFlatDirPluginSupplier(t *testing.T) {
 		Name:             "flatfoo",
 		Description:      "flatfoo functionality",
 		Group:            plugin.SystemCmdGroup,
+		Hidden:           false,
 		Aliases:          []string{"ff", "ffoo"},
 		Version:          "v0.1.0",
 		InstallationPath: filepath.Join(dir, "flatfoo"),

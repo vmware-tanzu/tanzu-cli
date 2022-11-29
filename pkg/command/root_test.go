@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,6 +30,7 @@ info() {
   "version": "v0.1.0",
   "buildSHA": "01234567",
   "group": "%s",
+  "hidden": %s,
   "aliases": %s,
   "completionType": %d
 }
@@ -102,9 +104,11 @@ func TestSubcommands(t *testing.T) {
 		version           string
 		cmdGroup          plugin.CmdGroup
 		postInstallResult uint8
+		hidden            bool
 		aliases           []string
 		args              []string
 		expected          string
+		unexpected        string
 		expectedFailure   bool
 	}{
 		{
@@ -125,6 +129,7 @@ func TestSubcommands(t *testing.T) {
   "version": "v0.1.0",
   "buildSHA": "01234567",
   "group": "System",
+  "hidden": false,
   "aliases": [],
   "completionType": 0
 }`,
@@ -175,6 +180,16 @@ func TestSubcommands(t *testing.T) {
 			expected:        "lots of things !!",
 			expectedFailure: false,
 		},
+		{
+			test:            "hidden plugin not visible in root command",
+			plugin:          "dummy",
+			version:         "v0.1.0",
+			cmdGroup:        plugin.SystemCmdGroup,
+			hidden:          true,
+			args:            []string{},
+			expectedFailure: false,
+			unexpected:      "dummy",
+		},
 	}
 
 	for _, spec := range tests {
@@ -202,7 +217,7 @@ func TestSubcommands(t *testing.T) {
 			os.Stdout = w
 			os.Stderr = w
 
-			err = setupFakePlugin(dir, spec.plugin, spec.version, spec.cmdGroup, completionType, spec.postInstallResult, spec.aliases)
+			err = setupFakePlugin(dir, spec.plugin, spec.version, spec.cmdGroup, completionType, spec.postInstallResult, spec.hidden, spec.aliases)
 			assert.Nil(err)
 
 			pi := &cli.PluginInfo{
@@ -210,6 +225,7 @@ func TestSubcommands(t *testing.T) {
 				Description:      spec.plugin,
 				Group:            spec.cmdGroup,
 				Aliases:          []string{},
+				Hidden:           spec.hidden,
 				InstallationPath: filepath.Join(dir, spec.plugin),
 			}
 
@@ -226,11 +242,14 @@ func TestSubcommands(t *testing.T) {
 			if spec.expected != "" {
 				assert.Contains(string(got), spec.expected)
 			}
+			if spec.unexpected != "" {
+				assert.NotContains(string(got), spec.unexpected)
+			}
 		})
 	}
 }
 
-func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGroup, completionType uint8, postInstallResult uint8, aliases []string) error {
+func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGroup, completionType uint8, postInstallResult uint8, hidden bool, aliases []string) error {
 	filePath := filepath.Join(dir, pluginName)
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
@@ -247,7 +266,7 @@ func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGro
 		aliasesString = "[]"
 	}
 
-	fmt.Fprintf(f, fakePluginScriptFmtString, pluginName, pluginName, commandGroup, aliasesString, completionType, postInstallResult, pluginName, pluginName)
+	fmt.Fprintf(f, fakePluginScriptFmtString, pluginName, pluginName, commandGroup, strconv.FormatBool(hidden), aliasesString, completionType, postInstallResult, pluginName, pluginName)
 
 	return nil
 }
