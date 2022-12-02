@@ -28,7 +28,6 @@ _Provide information about how someone can find your project, get set up, build 
 
 _List any tests that the contributor should run / or testing processes to follow before submitting. Describe any automated and manual checks performed by reviewers._
 
-
 ## Contribution Flow
 
 This is a rough outline of what a contributor's workflow looks like:
@@ -41,7 +40,6 @@ This is a rough outline of what a contributor's workflow looks like:
 * Create a pull request containing that commit
 
 We follow the GitHub workflow and you can find more details on the [GitHub flow documentation](https://docs.github.com/en/get-started/quickstart/github-flow).
-
 
 ### Pull Request Checklist
 
@@ -57,10 +55,7 @@ For specifics on what to include in your report, please follow the guidelines in
 
 _TO BE EDITED: Add additional information if needed._
 
-
 ## Ask for Help
-
-_TO BE EDITED: Provide information about the channels you use to communicate (i.e. Slack, IRC, Discord, etc)_
 
 The best way to reach us with a question when contributing is to ask on:
 
@@ -68,8 +63,4 @@ The best way to reach us with a question when contributing is to ask on:
 * The developer mailing list
 * Our Slack channel
 
-
 ## Additional Resources
-
-_Optional_
-
