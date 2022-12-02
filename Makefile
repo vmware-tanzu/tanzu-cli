@@ -125,6 +125,10 @@ doc-lint: $(VALE) ## Run linting checks for docs
 	# Additional configuration can be found in the .markdownlintrc file.
 	hack/check/check-mdlint.sh
 
+.PHONY: generate-fakes
+generate-fakes: ## Generate fakes for writing unit tests
+	$(GO) generate ./...
+	$(MAKE) fmt
 
 ## --------------------------------------
 ## Tooling Binaries

@@ -7,6 +7,8 @@ package command
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
@@ -25,6 +27,7 @@ func NewRootCmd(ps catalog.PluginSupplier) (*cobra.Command, error) {
 	rootCmd.AddCommand(
 		newVersionCmd(),
 		newPluginCmd(ps),
+		loginCmd,
 	)
 
 	if ps != nil {
@@ -35,6 +38,16 @@ func NewRootCmd(ps catalog.PluginSupplier) (*cobra.Command, error) {
 		for _, plugin := range plugins {
 			rootCmd.AddCommand(cli.GetPluginCmd(plugin))
 		}
+	}
+
+	// If the context-command feature is enabled add it under root.
+	// TODO(prkalle): Comment the below line after "config" package is moved
+	const FeatureContextCommand = "features.global.context-target"
+	// TODO(prkalle): Uncomment the below line and remove the line after the below line after "config" package is moved
+	// if config.IsFeatureActivated(config.FeatureContextCommand) {
+	if config.IsFeatureActivated(FeatureContextCommand) {
+		rootCmd.AddCommand(contextCmd)
+		// TODO(prkalle): Add the target related commands and changes after "pluginmanager" package is moved.
 	}
 	return rootCmd, nil
 }
