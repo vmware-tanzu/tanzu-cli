@@ -109,8 +109,19 @@ yamllint:
 go-lint: $(GOLANGCI_LINT)  ## Run linting of go source
 	$(GOLANGCI_LINT) run --timeout=10m || exit 1
 
-	# Prevent use of deprecated ioutils module
-	@CHECK=$$(grep -r --include="*.go"  --exclude="zz_generated*" ioutil .); \
+	echo "$${PWD}"; \
+	git log -5 --format=oneline; \
+	grep -r --include="*.go"  --exclude="zz_generated*" ioutil . > /tmp/x; \
+	grep -r --include="*.go"  --exclude="zz_generated*" ioutil $${PWD} >> /tmp/x; \
+	find . -name "*.go" | xargs grep ioutil >> /tmp/y; \
+	echo files matched: ; \
+	cat /tmp/x ; \
+	echo files matched2: ; \
+	grep ioutil $${PWD}/pinniped/internal/execcredcache/cachefile.go >> /tmp/y; \
+	cat /tmp/y ; \
+	# Prevent use of deprecated ioutils module \
+	CHECK=$$(grep -r --include="*.go"  --exclude="zz_generated*" ioutil .); \
+	echo "$${CHECK}"; \
 	if [ -n "$${CHECK}" ]; then \
 		echo "ioutil is deprecated, use io or os replacements"; \
 		echo "https://go.dev/doc/go1.16#ioutil"; \

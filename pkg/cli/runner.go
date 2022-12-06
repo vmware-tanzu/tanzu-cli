@@ -16,7 +16,7 @@ import (
 	"github.com/aunum/log"
 )
 
-// Runner is a plugin runner.
+// Runner is a plugin runner
 type Runner struct {
 	name          string
 	args          []string

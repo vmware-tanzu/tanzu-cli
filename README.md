@@ -11,3 +11,4 @@ plugins integrate with. Said binary serves the role of
 1. providing discovery, installation and lifecycle management of plugins on the CLI host
 1. providing dispatching of CLI command invocation to a specific plugin
 1. authentication with and access to endpoints at which certain CLI commands will target
+1. test ci
