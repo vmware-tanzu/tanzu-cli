@@ -11,9 +11,10 @@ import (
 	"github.com/aunum/log"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
-	grpcoauth "google.golang.org/grpc/credentials/oauth"
+	grpc_oauth "google.golang.org/grpc/credentials/oauth"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/interfaces"
 	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
@@ -24,6 +25,14 @@ const (
 	mdKeyAuthIDToken = "X-User-Id"
 	apiToken         = "api-token"
 )
+
+var (
+	configClientWrapper interfaces.ConfigClientWrapper
+)
+
+func init() {
+	configClientWrapper = interfaces.NewConfigClient()
+}
 
 // WithCredentialDiscovery returns a grpc.CallOption that adds credentials into gRPC calls.
 // The credentials are loaded from the auth context found on the machine.
@@ -40,7 +49,7 @@ func WithCredentialDiscovery() (grpc.CallOption, error) {
 
 // WithStaticCreds will wrap a static access token into a grpc.CallOption
 func WithStaticCreds(accessToken string) grpc.CallOption {
-	return grpc.PerRPCCredentials(&grpcoauth.TokenSource{
+	return grpc.PerRPCCredentials(&grpc_oauth.TokenSource{
 		TokenSource: oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: accessToken},
 		),
@@ -82,12 +91,12 @@ func (c *configSource) Token() (*oauth2.Token, error) {
 	g.GlobalOpts.Auth.IDToken = token.IDToken
 
 	// Acquire tanzu config lock
-	config.AcquireTanzuConfigLock()
-	defer config.ReleaseTanzuConfigLock()
+	configClientWrapper.AcquireTanzuConfigLock()
+	defer configClientWrapper.ReleaseTanzuConfigLock()
 
 	// TODO: Add Read/Write locking mechanism before updating the configuration
 	// Currently we are only acquiring the lock while updating the configuration
-	if err := config.StoreClientConfig(c.ClientConfig); err != nil {
+	if err := configClientWrapper.StoreClientConfig(c.ClientConfig); err != nil {
 		return nil, err
 	}
 

@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,11 +16,13 @@ import (
 	"time"
 
 	"github.com/aunum/log"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
+	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
 	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -32,8 +35,8 @@ import (
 )
 
 var (
-	stderrOnly, forceCSP, staging, onlyCurrent                                  bool
-	ctxName, ctxType, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt string
+	stderrOnly, forceCSP, staging, onlyCurrent                         bool
+	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt string
 )
 
 const (
@@ -41,8 +44,8 @@ const (
 	apiTokenType    = "api-token"
 )
 
-// TODO(prkalle): Remove the below constant after init and config commands are moved
 var (
+	// TODO(prkalle): Remove the below constant after init and config commands are moved
 	unattended bool
 )
 
@@ -67,7 +70,7 @@ func init() {
 
 	initCreateCtxCmd()
 
-	listCtxCmd.Flags().StringVarP(&ctxType, "type", "t", "", "context type (k8s|tmc)")
+	listCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "list only contexts associated with the specified target (kubernetes[k8s]|mission-control[tmc])")
 	listCtxCmd.Flags().BoolVar(&onlyCurrent, "current", false, "list only current active contexts")
 	listCtxCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "output format: table|yaml|json")
 
@@ -118,7 +121,7 @@ func createCtx(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	if ctx.Type == configapi.CtxTypeK8s {
+	if ctx.Target == cliv1alpha1.TargetK8s {
 		err = k8sLogin(ctx)
 	} else {
 		err = globalLogin(ctx)
@@ -133,7 +136,7 @@ func createCtx(_ *cobra.Command, _ []string) (err error) {
 	// nolint
 	/*
 		if config.IsFeatureActivated(cliconfig.FeatureContextAwareCLIForPlugins) {
-			if err = pluginmanager.SyncPlugins(ctx.Name); err != nil {
+			if err = pluginmanager.SyncPlugins(); err != nil {
 				log.Warning("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually")
 			}
 		}*/
@@ -245,8 +248,8 @@ func createContextWithKubeconfig() (context *configapi.Context, err error) {
 	}
 
 	context = &configapi.Context{
-		Name: ctxName,
-		Type: configapi.CtxTypeK8s,
+		Name:   ctxName,
+		Target: cliv1alpha1.TargetK8s,
 		ClusterOpts: &configapi.ClusterServer{
 			Path:                kubeConfig,
 			Context:             kubeContext,
@@ -296,7 +299,7 @@ func createContextWithEndpoint() (context *configapi.Context, err error) {
 	if isGlobalContext(endpoint) {
 		context = &configapi.Context{
 			Name:       ctxName,
-			Type:       configapi.CtxTypeTMC,
+			Target:     cliv1alpha1.TargetTMC,
 			GlobalOpts: &configapi.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 		}
 	} else {
@@ -324,8 +327,8 @@ func createContextWithEndpoint() (context *configapi.Context, err error) {
 		}
 
 		context = &configapi.Context{
-			Name: ctxName,
-			Type: configapi.CtxTypeK8s,
+			Name:   ctxName,
+			Target: cliv1alpha1.TargetK8s,
 			ClusterOpts: &configapi.ClusterServer{
 				Path:                kubeConfig,
 				Context:             kubeContext,
@@ -484,29 +487,16 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	op := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext")
-	for _, ctx := range cfg.KnownContexts {
-		if ctxType != "" && ctx.Type != configapi.ContextType(ctxType) {
-			continue
-		}
-		isMgmtCluster := ctx.IsManagementCluster()
-		isCurrent := ctx.Name == cfg.CurrentContext[ctx.Type]
-		if onlyCurrent && !isCurrent {
-			continue
-		}
-
-		var ep, path, context string
-		switch ctx.Type {
-		case configapi.CtxTypeTMC:
-			ep = ctx.GlobalOpts.Endpoint
-		default:
-			ep = ctx.ClusterOpts.Endpoint
-			path = ctx.ClusterOpts.Path
-			context = ctx.ClusterOpts.Context
-		}
-		op.AddRow(ctx.Name, ctx.Type, isMgmtCluster, isCurrent, ep, path, context)
+	if !cliv1alpha1.IsValidTarget(targetStr) {
+		return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
 	}
-	op.Render()
+
+	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
+		displayContextListOutputSplitViewTarget(cfg, cmd.OutOrStdout())
+	} else {
+		displayContextListOutputListView(cfg, cmd.OutOrStdout())
+	}
+
 	return nil
 }
 
@@ -552,7 +542,7 @@ func promptCtx() (*configapi.Context, error) {
 		if err != nil {
 			return nil, err
 		}
-		if info == "" && ctx.Type == configapi.CtxTypeK8s {
+		if info == "" && ctx.Target == cliv1alpha1.TargetK8s {
 			info = fmt.Sprintf("%s:%s", ctx.ClusterOpts.Path, ctx.ClusterOpts.Context)
 		}
 
@@ -650,4 +640,71 @@ func useCtx(_ *cobra.Command, args []string) error {
 		return err
 	}
 	return nil
+}
+
+func displayContextListOutputListView(cfg *configapi.ClientConfig, writer io.Writer) {
+	target := getTarget()
+
+	op := component.NewOutputWriter(writer, outputFormat, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext")
+	for _, ctx := range cfg.KnownContexts {
+		if target != cliv1alpha1.TargetNone && ctx.Target != target {
+			continue
+		}
+		isMgmtCluster := ctx.IsManagementCluster()
+		isCurrent := ctx.Name == cfg.CurrentContext[ctx.Target]
+		if onlyCurrent && !isCurrent {
+			continue
+		}
+
+		var ep, path, context string
+		switch ctx.Target {
+		case cliv1alpha1.TargetTMC:
+			ep = ctx.GlobalOpts.Endpoint
+		default:
+			ep = ctx.ClusterOpts.Endpoint
+			path = ctx.ClusterOpts.Path
+			context = ctx.ClusterOpts.Context
+		}
+		op.AddRow(ctx.Name, ctx.Target, isMgmtCluster, isCurrent, ep, path, context)
+	}
+	op.Render()
+}
+
+func displayContextListOutputSplitViewTarget(cfg *configapi.ClientConfig, writer io.Writer) {
+	target := getTarget()
+
+	outputWriterK8sTarget := component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Endpoint", "KubeConfigPath", "KubeContext")
+	outputWriterTMCTarget := component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Endpoint")
+	for _, ctx := range cfg.KnownContexts {
+		if target != cliv1alpha1.TargetNone && ctx.Target != target {
+			continue
+		}
+		isCurrent := ctx.Name == cfg.CurrentContext[ctx.Target]
+		if onlyCurrent && !isCurrent {
+			continue
+		}
+
+		var ep, path, context string
+		switch ctx.Target {
+		case cliv1alpha1.TargetTMC:
+			ep = ctx.GlobalOpts.Endpoint
+			outputWriterTMCTarget.AddRow(ctx.Name, isCurrent, ep)
+		default:
+			ep = ctx.ClusterOpts.Endpoint
+			path = ctx.ClusterOpts.Path
+			context = ctx.ClusterOpts.Context
+			outputWriterK8sTarget.AddRow(ctx.Name, isCurrent, ep, path, context)
+		}
+	}
+
+	cyanBold := color.New(color.FgCyan).Add(color.Bold)
+	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
+	if target == cliv1alpha1.TargetNone || target == cliv1alpha1.TargetK8s {
+		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", cliv1alpha1.TargetK8s))
+		outputWriterK8sTarget.Render()
+	}
+	if target == cliv1alpha1.TargetNone || target == cliv1alpha1.TargetTMC {
+		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", cliv1alpha1.TargetTMC))
+		outputWriterTMCTarget.Render()
+	}
 }

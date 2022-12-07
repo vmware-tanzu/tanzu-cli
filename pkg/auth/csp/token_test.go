@@ -1,4 +1,4 @@
-// Copyright 2021 VMware, Inc. All Rights Reserved.
+// Copyright 2022 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package csp
@@ -30,7 +30,7 @@ var JWTHeader = `{"alg":"HS256","typ":"JWT"}`
 
 func TestGetAccessTokenFromAPIToken(t *testing.T) {
 	assert := assert.New(t)
-	fakeHTTPClient := &fakes.FakeHTTPClient{}
+	fakeHTTPClient = &fakes.FakeHTTPClient{}
 	responseBody := io.NopCloser(bytes.NewReader([]byte(`{
 		"id_token": "abc",
 		"token_type": "Test",

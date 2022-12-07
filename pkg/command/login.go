@@ -123,7 +123,7 @@ func login(cmd *cobra.Command, args []string) (err error) {
 	// TODO(prkalle): uncomment the below block after config package and  pluginmanager package is moved
 	// nolint
 	/*	if config.IsFeatureActivated(cliconfig.FeatureContextAwareCLIForPlugins) {
-		if err = pluginmanager.SyncPlugins(serverTarget.Name); err != nil {
+		if err = pluginmanager.SyncPlugins(); err != nil {
 			log.Warning("unable to automatically sync the plugins from target server. Please run 'tanzu plugin sync' command to sync plugins manually")
 		}
 	}*/

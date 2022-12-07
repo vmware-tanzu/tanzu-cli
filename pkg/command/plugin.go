@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
+
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
@@ -19,6 +21,7 @@ import (
 var (
 	local        string
 	outputFormat string
+	targetStr    string
 )
 
 func newPluginCmd(ps catalog.PluginSupplier) *cobra.Command {
@@ -86,4 +89,8 @@ func NewListCmd(ps catalog.PluginSupplier) (*cobra.Command, error) {
 	}
 
 	return listCmd, nil
+}
+
+func getTarget() cliv1alpha1.Target {
+	return cliv1alpha1.StringToTarget(strings.ToLower(targetStr))
 }
