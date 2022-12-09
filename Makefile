@@ -6,6 +6,7 @@ SHELL := /usr/bin/env bash
 
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 ARTIFACTS_DIR ?= $(ROOT_DIR)/artifacts
+ARTIFACTS_ADMIN_DIR ?= $(ROOT_DIR)/artifacts-admin
 
 # Golang specific variables
 GOOS ?= $(shell go env GOOS)
@@ -51,6 +52,15 @@ LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Date=$(BUILD_DAT
 LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.SHA=$(BUILD_SHA)'
 LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Version=$(BUILD_VERSION)'
 
+# On the same build the core CLI and plugins in this repo will be built with
+# the same build info, but said info is plumbed into the plugins differently.
+PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Date=$(BUILD_DATE)'
+PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.SHA=$(BUILD_SHA)'
+PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Version=$(BUILD_VERSION)'
+
+# Add supported OS-ARCHITECTURE combinations here
+ENVS ?= linux-amd64 windows-amd64 darwin-amd64
+
 ## --------------------------------------
 ## Help
 ## --------------------------------------
@@ -63,7 +73,35 @@ help: ## Display this help (default)
 ## --------------------------------------
 
 .PHONY: all
-all: gomod build test lint ## Run all major targets (lint, test, build)
+all: gomod build-all test lint ## Run all major targets (lint, test, build)
+
+## --------------------------------------
+## Admin Plugins
+## --------------------------------------
+
+BUILDER := $(ROOT_DIR)/bin/builder
+BUILDER_SRC := $(shell find cmd/plugin/builder -type f -print)
+$(BUILDER): $(BUILDER_SRC)
+	cd cmd/plugin/builder && $(GO) build -o $(BUILDER) .
+
+.PHONY: prepare-builder
+prepare-builder: $(BUILDER) ## Build Tanzu CLI builder plugin
+
+.PHONY: build-plugin-admin-%
+build-plugin-admin-%: prepare-builder
+	$(eval ARCH = $(word 3,$(subst -, ,$*)))
+	$(eval OS = $(word 2,$(subst -, ,$*)))
+	$(eval DISCOVERY_TYPE = $(word 1,$(subst -, ,$*)))
+
+	@if [ "$(filter $(OS)-$(ARCH),$(ENVS))" = "" ]; then\
+		printf "\n\n======================================\n";\
+		printf "! $(OS)-$(ARCH) is not an officially supported platform!\n";\
+		printf "======================================\n\n";\
+	fi
+
+	@echo build plugin with version: $(BUILD_VERSION)
+	$(BUILDER) cli compile --version $(BUILD_VERSION) --ldflags "$(PLUGIN_LD_FLAGS)" --path ./cmd/plugin --artifacts "$(ARTIFACTS_ADMIN_DIR)/$(OS)/$(ARCH)/cli" --target ${OS}_${ARCH}
+
 
 ## --------------------------------------
 ## Testing
@@ -85,14 +123,23 @@ lint: tools go-lint doc-lint misspell yamllint ## Run linting and misspell check
 gomod: ## Update go module dependencies
 	go mod tidy
 
+.PHONY: build-all
+build-all: build-unused-${GOHOSTOS}-${GOHOSTARCH} build-plugin-admin-unused-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI and plugins for the local platform
+
 .PHONY: build
-build: build-unused-${GOHOSTOS}-${GOHOSTARCH} ##Build the Tanzu Core CLI for the local platform
+build: build-unused-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI for the local platform
 
 .PHONY: build-%
 build-%: ##Build the Tanzu Core CLI for a platform
 	$(eval ARCH = $(word 3,$(subst -, ,$*)))
 	$(eval OS = $(word 2,$(subst -, ,$*)))
 	$(eval DISCOVERY_TYPE = $(word 1,$(subst -, ,$*)))
+
+	@if [ "$(filter $(OS)-$(ARCH),$(ENVS))" = "" ]; then\
+		printf "\n\n======================================\n";\
+		printf "! $(OS)-$(ARCH) is not an officially supported platform!\n";\
+		printf "======================================\n\n";\
+	fi
 
 	@if [ "$(OS)" = "windows" ]; then \
 		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build --ldflags "$(LD_FLAGS)"  -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\

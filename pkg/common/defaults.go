@@ -24,4 +24,7 @@ var (
 	// DefaultLocalPluginDistroDir is the default Local plugin distribution root directory
 	// This directory will be used for local discovery and local distribute of plugins
 	DefaultLocalPluginDistroDir = filepath.Join(xdg.Home, ".config", "_tanzu-plugins")
+
+	// DefaultArtifactsDir is the root artifacts directory
+	DefaultArtifactsDir = "artifacts"
 )

@@ -10,6 +10,7 @@ require (
 	github.com/aunum/log v0.0.0-20200821225356-38d2e2c8b489
 	github.com/cppforlife/go-cli-ui v0.0.0-20200716203538-1e47f820817f
 	github.com/fatih/color v1.13.0
+	github.com/gobwas/glob v0.2.3
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/gnostic v0.5.7-v3refs
 	github.com/google/go-containerregistry v0.7.0
@@ -20,9 +21,12 @@ require (
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.1
+	github.com/otiai10/copy v1.0.2
 	github.com/pkg/errors v0.9.1
+	github.com/spf13/afero v1.8.2
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
+	github.com/tj/assert v0.0.3
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-framework/apis/cli v0.0.0-20221205143842-a334b86a2650
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20221202212418-359f504ed815

@@ -12,3 +12,9 @@ const (
 	DiscoveryTypeKubernetes = "kubernetes"
 	DiscoveryTypeREST       = "rest"
 )
+
+// DistributionType constants
+const (
+	DistributionTypeOCI   = "oci"
+	DistributionTypeLocal = "local"
+)
