@@ -7,9 +7,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
-// Distro is the Schema for the catalogs API
-// type Distro []string
-
 // PluginAssociation is a set of plugin names and their associated installation paths.
 type PluginAssociation map[string]string
 

@@ -7,3 +7,7 @@ package constants
 const (
 	ProxyCACert = "PROXY_CA_CERT"
 )
+
+const (
+	AllowedRegistries = "ALLOWED_REGISTRY"
+)

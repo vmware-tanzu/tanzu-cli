@@ -4,6 +4,15 @@
 // Package common defines generic constants and structs
 package common
 
+// Plugin status and scope constants
+const (
+	PluginStatusInstalled       = "installed"
+	PluginStatusNotInstalled    = "not installed"
+	PluginStatusUpdateAvailable = "update available"
+	PluginScopeStandalone       = "Standalone"
+	PluginScopeContext          = "Context"
+)
+
 // DiscoveryType constants
 const (
 	DiscoveryTypeOCI        = "oci"
@@ -18,3 +27,6 @@ const (
 	DistributionTypeOCI   = "oci"
 	DistributionTypeLocal = "local"
 )
+
+// CoreName is the name of the core binary.
+const CoreName = "core"
