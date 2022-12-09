@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -15,9 +14,9 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
-
 	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
+	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
+	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 )
 
 var (
@@ -50,13 +49,11 @@ var _ = Describe("Unit tests for grpc", func() {
 				IDToken:     idToken,
 			}
 			confSource = initializeConfigSource(gsa)
-			configFile, err := os.CreateTemp("", "test-config")
-			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG", configFile.Name())
-		})
-		AfterEach(func() {
-			os.Unsetenv("TANZU_CONFIG")
 
+			cc := &fakes.FakeConfigClientWrapper{}
+			configClientWrapper = cc
+			cc.StoreClientConfigReturns(nil)
+			cc.AcquireTanzuConfigLock()
 		})
 		It("should return current token", func() {
 			token, err := confSource.Token()
@@ -77,9 +74,6 @@ var _ = Describe("Unit tests for grpc", func() {
 				IDToken:     idToken,
 			}
 			confSource = initializeConfigSource(gsa)
-			configFile, err := os.CreateTemp("", "test-config")
-			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG", configFile.Name())
 			fakeHTTPClient = &fakes.FakeHTTPClient{}
 			httpRestClient = fakeHTTPClient
 			// successful case
@@ -88,24 +82,24 @@ var _ = Describe("Unit tests for grpc", func() {
 				"token_type": "Test",
 				"expires_in": 86400,
 				"scope": "Test",
-				"access_token": "LetMeIn",
-				"refresh_token": "LetMeInAgain"}`)))
+				"access_token": "LetMeInGrpc1",
+				"refresh_token": "LetMeInAgainGrpc1"}`)))
 
 			fakeHTTPClient.DoReturns(&http.Response{
 				StatusCode: 200,
 				Body:       responseBody,
 			}, nil)
 
-		})
-		AfterEach(func() {
-			os.Unsetenv("TANZU_CONFIG")
-
+			cc := &fakes.FakeConfigClientWrapper{}
+			configClientWrapper = cc
+			cc.StoreClientConfigReturns(nil)
+			cc.AcquireTanzuConfigLock()
 		})
 		It("should return token from server", func() {
 			token, err := confSource.Token()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(token.AccessToken).To(Equal("LetMeIn"))
-			Expect(token.RefreshToken).To(Equal("LetMeInAgain"))
+			Expect(token.AccessToken).To(Equal("LetMeInGrpc1"))
+			Expect(token.RefreshToken).To(Equal("LetMeInAgainGrpc1"))
 		})
 	})
 })
@@ -132,17 +126,17 @@ func initializeConfigSource(gsa configapi.GlobalServerAuth) configSource {
 		CurrentServer: globalServer.Name,
 		KnownContexts: []*configapi.Context{
 			{
-				Name: globalServer.Name,
-				Type: configapi.CtxTypeTMC,
+				Name:   globalServer.Name,
+				Target: cliv1alpha1.TargetTMC,
 			},
 			{
-				Name: managementServer.Name,
-				Type: configapi.CtxTypeK8s,
+				Name:   managementServer.Name,
+				Target: cliv1alpha1.TargetK8s,
 			},
 		},
-		CurrentContext: map[configapi.ContextType]string{
-			configapi.CtxTypeTMC: globalServer.Name,
-			configapi.CtxTypeK8s: managementServer.Name,
+		CurrentContext: map[cliv1alpha1.Target]string{
+			cliv1alpha1.TargetTMC: globalServer.Name,
+			cliv1alpha1.TargetK8s: managementServer.Name,
 		},
 	}
 	return configSource{

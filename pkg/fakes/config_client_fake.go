@@ -5,9 +5,14 @@ import (
 	"sync"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/interfaces"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 )
 
-type FakeConfigClient struct {
+type FakeConfigClientWrapper struct {
+	AcquireTanzuConfigLockStub        func()
+	acquireTanzuConfigLockMutex       sync.RWMutex
+	acquireTanzuConfigLockArgsForCall []struct {
+	}
 	GetEnvConfigurationsStub        func() map[string]string
 	getEnvConfigurationsMutex       sync.RWMutex
 	getEnvConfigurationsArgsForCall []struct {
@@ -18,11 +23,50 @@ type FakeConfigClient struct {
 	getEnvConfigurationsReturnsOnCall map[int]struct {
 		result1 map[string]string
 	}
+	ReleaseTanzuConfigLockStub        func()
+	releaseTanzuConfigLockMutex       sync.RWMutex
+	releaseTanzuConfigLockArgsForCall []struct {
+	}
+	StoreClientConfigStub        func(*v1alpha1.ClientConfig) error
+	storeClientConfigMutex       sync.RWMutex
+	storeClientConfigArgsForCall []struct {
+		arg1 *v1alpha1.ClientConfig
+	}
+	storeClientConfigReturns struct {
+		result1 error
+	}
+	storeClientConfigReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeConfigClient) GetEnvConfigurations() map[string]string {
+func (fake *FakeConfigClientWrapper) AcquireTanzuConfigLock() {
+	fake.acquireTanzuConfigLockMutex.Lock()
+	fake.acquireTanzuConfigLockArgsForCall = append(fake.acquireTanzuConfigLockArgsForCall, struct {
+	}{})
+	stub := fake.AcquireTanzuConfigLockStub
+	fake.recordInvocation("AcquireTanzuConfigLock", []interface{}{})
+	fake.acquireTanzuConfigLockMutex.Unlock()
+	if stub != nil {
+		fake.AcquireTanzuConfigLockStub()
+	}
+}
+
+func (fake *FakeConfigClientWrapper) AcquireTanzuConfigLockCallCount() int {
+	fake.acquireTanzuConfigLockMutex.RLock()
+	defer fake.acquireTanzuConfigLockMutex.RUnlock()
+	return len(fake.acquireTanzuConfigLockArgsForCall)
+}
+
+func (fake *FakeConfigClientWrapper) AcquireTanzuConfigLockCalls(stub func()) {
+	fake.acquireTanzuConfigLockMutex.Lock()
+	defer fake.acquireTanzuConfigLockMutex.Unlock()
+	fake.AcquireTanzuConfigLockStub = stub
+}
+
+func (fake *FakeConfigClientWrapper) GetEnvConfigurations() map[string]string {
 	fake.getEnvConfigurationsMutex.Lock()
 	ret, specificReturn := fake.getEnvConfigurationsReturnsOnCall[len(fake.getEnvConfigurationsArgsForCall)]
 	fake.getEnvConfigurationsArgsForCall = append(fake.getEnvConfigurationsArgsForCall, struct {
@@ -40,19 +84,19 @@ func (fake *FakeConfigClient) GetEnvConfigurations() map[string]string {
 	return fakeReturns.result1
 }
 
-func (fake *FakeConfigClient) GetEnvConfigurationsCallCount() int {
+func (fake *FakeConfigClientWrapper) GetEnvConfigurationsCallCount() int {
 	fake.getEnvConfigurationsMutex.RLock()
 	defer fake.getEnvConfigurationsMutex.RUnlock()
 	return len(fake.getEnvConfigurationsArgsForCall)
 }
 
-func (fake *FakeConfigClient) GetEnvConfigurationsCalls(stub func() map[string]string) {
+func (fake *FakeConfigClientWrapper) GetEnvConfigurationsCalls(stub func() map[string]string) {
 	fake.getEnvConfigurationsMutex.Lock()
 	defer fake.getEnvConfigurationsMutex.Unlock()
 	fake.GetEnvConfigurationsStub = stub
 }
 
-func (fake *FakeConfigClient) GetEnvConfigurationsReturns(result1 map[string]string) {
+func (fake *FakeConfigClientWrapper) GetEnvConfigurationsReturns(result1 map[string]string) {
 	fake.getEnvConfigurationsMutex.Lock()
 	defer fake.getEnvConfigurationsMutex.Unlock()
 	fake.GetEnvConfigurationsStub = nil
@@ -61,7 +105,7 @@ func (fake *FakeConfigClient) GetEnvConfigurationsReturns(result1 map[string]str
 	}{result1}
 }
 
-func (fake *FakeConfigClient) GetEnvConfigurationsReturnsOnCall(i int, result1 map[string]string) {
+func (fake *FakeConfigClientWrapper) GetEnvConfigurationsReturnsOnCall(i int, result1 map[string]string) {
 	fake.getEnvConfigurationsMutex.Lock()
 	defer fake.getEnvConfigurationsMutex.Unlock()
 	fake.GetEnvConfigurationsStub = nil
@@ -75,11 +119,102 @@ func (fake *FakeConfigClient) GetEnvConfigurationsReturnsOnCall(i int, result1 m
 	}{result1}
 }
 
-func (fake *FakeConfigClient) Invocations() map[string][][]interface{} {
+func (fake *FakeConfigClientWrapper) ReleaseTanzuConfigLock() {
+	fake.releaseTanzuConfigLockMutex.Lock()
+	fake.releaseTanzuConfigLockArgsForCall = append(fake.releaseTanzuConfigLockArgsForCall, struct {
+	}{})
+	stub := fake.ReleaseTanzuConfigLockStub
+	fake.recordInvocation("ReleaseTanzuConfigLock", []interface{}{})
+	fake.releaseTanzuConfigLockMutex.Unlock()
+	if stub != nil {
+		fake.ReleaseTanzuConfigLockStub()
+	}
+}
+
+func (fake *FakeConfigClientWrapper) ReleaseTanzuConfigLockCallCount() int {
+	fake.releaseTanzuConfigLockMutex.RLock()
+	defer fake.releaseTanzuConfigLockMutex.RUnlock()
+	return len(fake.releaseTanzuConfigLockArgsForCall)
+}
+
+func (fake *FakeConfigClientWrapper) ReleaseTanzuConfigLockCalls(stub func()) {
+	fake.releaseTanzuConfigLockMutex.Lock()
+	defer fake.releaseTanzuConfigLockMutex.Unlock()
+	fake.ReleaseTanzuConfigLockStub = stub
+}
+
+func (fake *FakeConfigClientWrapper) StoreClientConfig(arg1 *v1alpha1.ClientConfig) error {
+	fake.storeClientConfigMutex.Lock()
+	ret, specificReturn := fake.storeClientConfigReturnsOnCall[len(fake.storeClientConfigArgsForCall)]
+	fake.storeClientConfigArgsForCall = append(fake.storeClientConfigArgsForCall, struct {
+		arg1 *v1alpha1.ClientConfig
+	}{arg1})
+	stub := fake.StoreClientConfigStub
+	fakeReturns := fake.storeClientConfigReturns
+	fake.recordInvocation("StoreClientConfig", []interface{}{arg1})
+	fake.storeClientConfigMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *FakeConfigClientWrapper) StoreClientConfigCallCount() int {
+	fake.storeClientConfigMutex.RLock()
+	defer fake.storeClientConfigMutex.RUnlock()
+	return len(fake.storeClientConfigArgsForCall)
+}
+
+func (fake *FakeConfigClientWrapper) StoreClientConfigCalls(stub func(*v1alpha1.ClientConfig) error) {
+	fake.storeClientConfigMutex.Lock()
+	defer fake.storeClientConfigMutex.Unlock()
+	fake.StoreClientConfigStub = stub
+}
+
+func (fake *FakeConfigClientWrapper) StoreClientConfigArgsForCall(i int) *v1alpha1.ClientConfig {
+	fake.storeClientConfigMutex.RLock()
+	defer fake.storeClientConfigMutex.RUnlock()
+	argsForCall := fake.storeClientConfigArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeConfigClientWrapper) StoreClientConfigReturns(result1 error) {
+	fake.storeClientConfigMutex.Lock()
+	defer fake.storeClientConfigMutex.Unlock()
+	fake.StoreClientConfigStub = nil
+	fake.storeClientConfigReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeConfigClientWrapper) StoreClientConfigReturnsOnCall(i int, result1 error) {
+	fake.storeClientConfigMutex.Lock()
+	defer fake.storeClientConfigMutex.Unlock()
+	fake.StoreClientConfigStub = nil
+	if fake.storeClientConfigReturnsOnCall == nil {
+		fake.storeClientConfigReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.storeClientConfigReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeConfigClientWrapper) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.acquireTanzuConfigLockMutex.RLock()
+	defer fake.acquireTanzuConfigLockMutex.RUnlock()
 	fake.getEnvConfigurationsMutex.RLock()
 	defer fake.getEnvConfigurationsMutex.RUnlock()
+	fake.releaseTanzuConfigLockMutex.RLock()
+	defer fake.releaseTanzuConfigLockMutex.RUnlock()
+	fake.storeClientConfigMutex.RLock()
+	defer fake.storeClientConfigMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
@@ -87,7 +222,7 @@ func (fake *FakeConfigClient) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *FakeConfigClient) recordInvocation(key string, args []interface{}) {
+func (fake *FakeConfigClientWrapper) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -99,4 +234,4 @@ func (fake *FakeConfigClient) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ interfaces.ConfigClient = new(FakeConfigClient)
+var _ interfaces.ConfigClientWrapper = new(FakeConfigClientWrapper)

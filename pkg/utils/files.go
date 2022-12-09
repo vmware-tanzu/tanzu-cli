@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 )
 
 // SaveFile saves the file to the provided path
@@ -21,7 +23,7 @@ func SaveFile(filePath string, data []byte) error {
 		}
 	}
 
-	err := os.WriteFile(filePath, data, 0644)
+	err := os.WriteFile(filePath, data, constants.ConfigFilePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "unable to save file '%s'", filePath)
 	}
