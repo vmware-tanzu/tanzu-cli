@@ -6,9 +6,10 @@ package config
 import (
 	"github.com/aunum/log"
 
+	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 )
 
 func populateDefaultStandaloneDiscovery(c *configapi.ClientConfig) bool {

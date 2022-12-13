@@ -32,6 +32,7 @@ import (
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
 	wcpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 )
 
 var (
@@ -42,11 +43,6 @@ var (
 const (
 	knownGlobalHost = "cloud.vmware.com"
 	apiTokenType    = "api-token"
-)
-
-var (
-	// TODO(prkalle): Remove the below constant after init and config commands are moved
-	unattended bool
 )
 
 var contextCmd = &cobra.Command{
@@ -131,15 +127,10 @@ func createCtx(_ *cobra.Command, _ []string) (err error) {
 		return err
 	}
 
-	// Sync all required plugins if the "features.global.context-aware-cli-for-plugins" feature is enabled
-	// TODO(prkalle): uncomment the below block after config package and  pluginmanager package is moved
-	// nolint
-	/*
-		if config.IsFeatureActivated(cliconfig.FeatureContextAwareCLIForPlugins) {
-			if err = pluginmanager.SyncPlugins(); err != nil {
-				log.Warning("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually")
-			}
-		}*/
+	// Sync all required plugins
+	if err = pluginmanager.SyncPlugins(); err != nil {
+		log.Warning("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually")
+	}
 
 	return nil
 }

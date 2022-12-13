@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
-
 	"github.com/stretchr/testify/assert"
+
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
 func Test_defaultDiscoverySourceBasedOnServer(t *testing.T) {

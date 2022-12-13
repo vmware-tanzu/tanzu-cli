@@ -10,21 +10,18 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
-
 	"github.com/aunum/log"
-
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
-
-	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
-
 	"github.com/stretchr/testify/assert"
 
+	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
+	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
 )
 
 var expectedDiscoveredContextPlugins = []discovery.Discovered{
@@ -180,12 +177,12 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	}
 
 	for i := 0; i < len(expectedInstalledServerPlugins); i++ {
-		pd := findPluginDescriptors(installedServerPlugins, expectedInstalledServerPlugins[i].Name, expectedInstalledServerPlugins[i].Target)
+		pd := findPluginInfo(installedServerPlugins, expectedInstalledServerPlugins[i].Name, expectedInstalledServerPlugins[i].Target)
 		assertions.NotNil(pd)
 		assertions.Equal(expectedInstalledServerPlugins[i].Version, pd.Version)
 	}
 	for i := 0; i < len(expectedInstalledStandalonePlugins); i++ {
-		pd := findPluginDescriptors(installedStandalonePlugins, expectedInstalledStandalonePlugins[i].Name, expectedInstalledStandalonePlugins[i].Target)
+		pd := findPluginInfo(installedStandalonePlugins, expectedInstalledStandalonePlugins[i].Name, expectedInstalledStandalonePlugins[i].Target)
 		assertions.NotNil(pd)
 		assertions.Equal(expectedInstalledStandalonePlugins[i].Version, pd.Version)
 	}
