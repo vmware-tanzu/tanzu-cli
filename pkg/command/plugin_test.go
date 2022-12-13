@@ -13,9 +13,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
+
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
 func TestPluginList(t *testing.T) {

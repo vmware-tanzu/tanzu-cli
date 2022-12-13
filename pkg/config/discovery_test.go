@@ -9,8 +9,9 @@ import (
 
 	"github.com/tj/assert"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 )
 
 func TestConfigPopulateDefaultStandaloneDiscovery(t *testing.T) {

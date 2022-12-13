@@ -22,16 +22,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
+	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
+	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+
 	"github.com/vmware-tanzu/tanzu-cli/pkg/artifact"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
-	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
 const (
@@ -227,17 +228,17 @@ func AvailablePluginsFromLocalSource(localPath string) ([]discovery.Discovered, 
 }
 
 func availablePlugins(discoveredServerPlugins, discoveredStandalonePlugins []discovery.Discovered) ([]discovery.Discovered, error) {
-	installedServerPluginDesc, installedStandalonePluginDesc, err := InstalledPlugins()
+	installedServerPlugins, installedStandalonePlugins, err := InstalledPlugins()
 	if err != nil {
 		return nil, err
 	}
 
 	availablePlugins := availablePluginsFromStandaloneAndServerPlugins(discoveredServerPlugins, discoveredStandalonePlugins)
 
-	setAvailablePluginsStatus(availablePlugins, installedServerPluginDesc)
-	setAvailablePluginsStatus(availablePlugins, installedStandalonePluginDesc)
+	setAvailablePluginsStatus(availablePlugins, installedServerPlugins)
+	setAvailablePluginsStatus(availablePlugins, installedStandalonePlugins)
 
-	installedButNotDiscoveredPlugins := getInstalledButNotDiscoveredStandalonePlugins(availablePlugins, installedStandalonePluginDesc)
+	installedButNotDiscoveredPlugins := getInstalledButNotDiscoveredStandalonePlugins(availablePlugins, installedStandalonePlugins)
 	availablePlugins = append(availablePlugins, installedButNotDiscoveredPlugins...)
 
 	availablePlugins = combineDuplicatePlugins(availablePlugins)
@@ -439,7 +440,7 @@ func InstalledServerPlugins() ([]cli.PluginInfo, error) {
 }
 
 // DescribePlugin describes a plugin.
-func DescribePlugin(pluginName string, target cliv1alpha1.Target) (desc *cli.PluginInfo, err error) {
+func DescribePlugin(pluginName string, target cliv1alpha1.Target) (info *cli.PluginInfo, err error) {
 	serverPlugins, standalonePlugins, err := InstalledPlugins()
 	if err != nil {
 		return nil, err

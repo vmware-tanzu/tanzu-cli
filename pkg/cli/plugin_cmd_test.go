@@ -31,7 +31,7 @@ func TestGetPluginCmd(t *testing.T) {
 		Aliases:          []string{"ff"},
 		InstallationPath: path,
 	}
-	cmd := GetPluginCmd(pi)
+	cmd := GetCmdForPlugin(pi)
 
 	err = cmd.Execute()
 	assert.Equal(cmd.Name(), pi.Name)

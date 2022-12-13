@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetPluginCmd returns a cobra command for the plugin.
-func GetPluginCmd(p *PluginInfo) *cobra.Command {
+// GetCmdForPlugin returns a cobra command for the plugin.
+func GetCmdForPlugin(p *PluginInfo) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   p.Name,
 		Short: p.Description,

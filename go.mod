@@ -19,6 +19,7 @@ require (
 	github.com/imdario/mergo v0.3.12
 	github.com/k14s/imgpkg v0.17.0
 	github.com/k14s/kbld v0.32.0
+	github.com/lithammer/dedent v1.1.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.1

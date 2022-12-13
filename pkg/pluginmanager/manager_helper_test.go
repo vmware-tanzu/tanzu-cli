@@ -8,13 +8,12 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
-
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
-
 	"github.com/aunum/log"
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/assert"
+
+	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
@@ -31,7 +30,7 @@ func findDiscoveredPlugin(discovered []discovery.Discovered, pluginName string, 
 	return nil
 }
 
-func findPluginDescriptors(pd []cli.PluginInfo, pluginName string, target cliv1alpha1.Target) *cli.PluginInfo {
+func findPluginInfo(pd []cli.PluginInfo, pluginName string, target cliv1alpha1.Target) *cli.PluginInfo {
 	for i := range pd {
 		if pluginName == pd[i].Name && target == pd[i].Target {
 			return &pd[i]
