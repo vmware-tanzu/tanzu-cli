@@ -21,6 +21,11 @@ func Test_ContextCatalog_With_Empty_Context(t *testing.T) {
 	defer os.RemoveAll(dir)
 	common.DefaultCacheDir = dir
 
+	pluginRootDir, err := os.MkdirTemp("", "test-catalog-plugins")
+	assert.Nil(err)
+	common.DefaultPluginRoot = pluginRootDir
+	defer os.RemoveAll(pluginRootDir)
+
 	// Create catalog without context
 	cc, err := NewContextCatalog("")
 	assert.Nil(err)
@@ -85,8 +90,6 @@ func Test_ContextCatalog_With_Empty_Context(t *testing.T) {
 
 	pds = cc2.List()
 	assert.Equal(len(pds), 1)
-
-	os.RemoveAll(common.DefaultPluginRoot)
 }
 
 func Test_ContextCatalog_With_Context(t *testing.T) {
@@ -96,6 +99,11 @@ func Test_ContextCatalog_With_Context(t *testing.T) {
 	assert.Nil(err)
 	defer os.RemoveAll(dir)
 	common.DefaultCacheDir = dir
+
+	pluginRootDir, err := os.MkdirTemp("", "test-catalog-with-context-plugins")
+	assert.Nil(err)
+	common.DefaultPluginRoot = pluginRootDir
+	defer os.RemoveAll(pluginRootDir)
 
 	cc, err := NewContextCatalog("server")
 	assert.Nil(err)
@@ -169,6 +177,4 @@ func Test_ContextCatalog_With_Context(t *testing.T) {
 
 	pd, exists = cc3.Get("fakeplugin1")
 	assert.False(exists)
-
-	os.RemoveAll(common.DefaultPluginRoot)
 }
