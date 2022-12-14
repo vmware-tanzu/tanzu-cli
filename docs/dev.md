@@ -26,4 +26,24 @@ now, so as not to conflict with their nonprefixed counterparts
 
 ## Source Code Structure
 
+cmd/plugin/ : code location for various plugins
+
+`make build-all` will build the CLI and any plugins in this directory
+unlike `make build` which only builds the CLI
+
+cmd/plugin/builder : code location for builder plugin
+
+Note on `builder init`:
+The generated project's Makefile expects the TZBIN to be set to the name
+of the CLI binary located in the user's path. Its default value is
+currently set to 'tz'. This convention will allow the CLI under
+development to coexist with the released tanzu CLI typically name 'tanzu'.
+We should continue to adopt said convention until the CLI under
+development is released as a backward-compatible replacement of the
+existing CLI.
+
 ### Tests
+
+```sh
+make test
+```
