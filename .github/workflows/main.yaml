@@ -46,3 +46,7 @@ jobs:
     - name: Test
       run: |
         make all
+
+    - name: Run make verify
+      run: |
+        make verify

@@ -18,6 +18,7 @@
 *.bak
 bin
 artifacts
+artifacts-admin
 # Test binary, built with `go test -c`
 *.test
 

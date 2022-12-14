@@ -177,6 +177,9 @@ generate-fakes: ## Generate fakes for writing unit tests
 	$(GO) generate ./...
 	$(MAKE) fmt
 
+.PHONY: verify
+verify: gomod fmt ## Run all verification scripts
+	./hack/check/check-dirty.sh
 ## --------------------------------------
 ## Tooling Binaries
 ## --------------------------------------
