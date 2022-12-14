@@ -19,7 +19,7 @@ type PluginCatalog interface {
 	// Upsert inserts/updates the given plugin.
 	Upsert(plugin cli.PluginInfo)
 
-	// Get looks up the descriptor of a plugin given its name.
+	// Get looks up the info of a plugin given its name.
 	Get(pluginName string) (cli.PluginInfo, bool)
 
 	// List returns the list of active plugins.
