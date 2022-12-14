@@ -5,17 +5,16 @@ import (
 
 	"github.com/aunum/log"
 
-	cliapi "github.com/vmware-tanzu/tanzu-framework/cli/runtime/apis/cli/v1alpha1"
-	"github.com/vmware-tanzu/tanzu-framework/cli/runtime/buildinfo"
-	"github.com/vmware-tanzu/tanzu-framework/cli/runtime/plugin"
+    "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
+    "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo"
 )
 
-var descriptor = cliapi.PluginDescriptor{
+var descriptor = plugin.PluginDescriptor{
 	Name:        "{{ .PluginName | ToLower }}",
 	Description: "{{ .Description | ToLower }}",
 	Version:     buildinfo.Version,
 	BuildSHA:    buildinfo.SHA,
-	Group:       cliapi.ManageCmdGroup, // set group
+	Group:       plugin.ManageCmdGroup, // set group
 }
 
 func main() {
