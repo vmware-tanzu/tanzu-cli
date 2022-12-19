@@ -61,6 +61,9 @@ PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/build
 # Add supported OS-ARCHITECTURE combinations here
 ENVS ?= linux-amd64 windows-amd64 darwin-amd64
 
+CLI_TARGETS := $(addprefix build-cli-unused-,${ENVS})
+PLUGIN_TARGETS := $(addprefix build-plugin-admin-unused-,${ENVS})
+
 ## --------------------------------------
 ## Help
 ## --------------------------------------
@@ -76,7 +79,40 @@ help: ## Display this help (default)
 all: gomod build-all test lint ## Run all major targets (lint, test, build)
 
 ## --------------------------------------
-## Admin Plugins
+## Build
+## --------------------------------------
+
+.PHONY: cross-build
+cross-build: ${CLI_TARGETS} ${PLUGIN_TARGETS} ## Build the Tanzu Core CLI and plugins for all supported platforms
+
+.PHONY: build-all
+build-all: build-cli-unused-${GOHOSTOS}-${GOHOSTARCH} build-plugin-admin-unused-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI and plugins for the local platform
+
+.PHONY: build
+build: build-cli-unused-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI for the local platform
+
+build-cli-%: ##Build the Tanzu Core CLI for a platform
+	$(eval ARCH = $(word 3,$(subst -, ,$*)))
+	$(eval OS = $(word 2,$(subst -, ,$*)))
+	$(eval DISCOVERY_TYPE = $(word 1,$(subst -, ,$*)))
+
+	@echo build $(OS)-$(ARCH) CLI with version: $(BUILD_VERSION)
+
+	@if [ "$(filter $(OS)-$(ARCH),$(ENVS))" = "" ]; then\
+		printf "\n\n======================================\n";\
+		printf "! $(OS)-$(ARCH) is not an officially supported platform!\n";\
+		printf "======================================\n\n";\
+	fi
+
+	@if [ "$(OS)" = "windows" ]; then \
+		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build --ldflags "$(LD_FLAGS)"  -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
+	else \
+		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build --ldflags "$(LD_FLAGS)"  -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
+	fi
+
+
+## --------------------------------------
+## Plugins-specific
 ## --------------------------------------
 
 BUILDER := $(ROOT_DIR)/bin/builder
@@ -87,7 +123,6 @@ $(BUILDER): $(BUILDER_SRC)
 .PHONY: prepare-builder
 prepare-builder: $(BUILDER) ## Build Tanzu CLI builder plugin
 
-.PHONY: build-plugin-admin-%
 build-plugin-admin-%: prepare-builder
 	$(eval ARCH = $(word 3,$(subst -, ,$*)))
 	$(eval OS = $(word 2,$(subst -, ,$*)))
@@ -99,7 +134,7 @@ build-plugin-admin-%: prepare-builder
 		printf "======================================\n\n";\
 	fi
 
-	@echo build plugin with version: $(BUILD_VERSION)
+	@echo build $(OS)-$(ARCH) plugin with version: $(BUILD_VERSION)
 	$(BUILDER) cli compile --version $(BUILD_VERSION) --ldflags "$(PLUGIN_LD_FLAGS)" --path ./cmd/plugin --artifacts "$(ARTIFACTS_ADMIN_DIR)/$(OS)/$(ARCH)/cli" --target ${OS}_${ARCH}
 
 
@@ -122,30 +157,6 @@ lint: tools go-lint doc-lint misspell yamllint ## Run linting and misspell check
 .PHONY: gomod
 gomod: ## Update go module dependencies
 	go mod tidy
-
-.PHONY: build-all
-build-all: build-unused-${GOHOSTOS}-${GOHOSTARCH} build-plugin-admin-unused-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI and plugins for the local platform
-
-.PHONY: build
-build: build-unused-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI for the local platform
-
-.PHONY: build-%
-build-%: ##Build the Tanzu Core CLI for a platform
-	$(eval ARCH = $(word 3,$(subst -, ,$*)))
-	$(eval OS = $(word 2,$(subst -, ,$*)))
-	$(eval DISCOVERY_TYPE = $(word 1,$(subst -, ,$*)))
-
-	@if [ "$(filter $(OS)-$(ARCH),$(ENVS))" = "" ]; then\
-		printf "\n\n======================================\n";\
-		printf "! $(OS)-$(ARCH) is not an officially supported platform!\n";\
-		printf "======================================\n\n";\
-	fi
-
-	@if [ "$(OS)" = "windows" ]; then \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build --ldflags "$(LD_FLAGS)"  -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
-	else \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build --ldflags "$(LD_FLAGS)"  -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
-	fi
 
 misspell: $(MISSPELL)
 	hack/check/misspell.sh
@@ -180,6 +191,7 @@ generate-fakes: ## Generate fakes for writing unit tests
 .PHONY: verify
 verify: gomod fmt ## Run all verification scripts
 	./hack/check/check-dirty.sh
+
 ## --------------------------------------
 ## Tooling Binaries
 ## --------------------------------------
