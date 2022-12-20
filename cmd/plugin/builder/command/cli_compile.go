@@ -7,6 +7,7 @@ package command
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -145,7 +146,7 @@ func setGlobals(compileArgs *PluginCompileArgs) {
 	targetArch = compileArgs.TargetArch
 }
 
-func Compile(compileArgs *PluginCompileArgs) error {
+func Compile(compileArgs *PluginCompileArgs) error { //nolint:funlen
 	// Set our global values based on the passed args
 	setGlobals(compileArgs)
 
@@ -168,8 +169,7 @@ func Compile(compileArgs *PluginCompileArgs) error {
 		return err
 	}
 
-	// Limit the number of concurrent operations we perform so we don't
-	// overwhelm the system.
+	// Limit the number of concurrent operations we perform so we don't overwhelm the system.
 	maxConcurrent := getMaxParallelism()
 	guard := make(chan struct{}, maxConcurrent)
 
@@ -208,9 +208,16 @@ func Compile(compileArgs *PluginCompileArgs) error {
 
 	log.BreakHard()
 	hasFailed := false
+
+	var exerr *exec.ExitError
 	for err := range fatalErrors {
 		hasFailed = true
-		log.Errorf("%s - building plugin %q failed - %v", err.ID, err.Path, err.Err)
+
+		if errors.As(err.Err, &exerr) {
+			log.Errorf("%s - building plugin %q failed - %v:\n%s", err.ID, err.Path, err.Err, exerr.Stderr)
+		} else {
+			log.Errorf("%s - building plugin %q failed - %v", err.ID, err.Path, err.Err)
+		}
 	}
 
 	if hasFailed {
@@ -247,7 +254,7 @@ func buildPlugin(path string, arch cli.Arch, id string) (plugin, error) {
 		modPath = path
 		cmd.Dir = modPath
 		cmd.Args = append(cmd.Args, "./.")
-		log.Infof("%s - running godep path %q", path)
+		log.Infof("%s - running godep path %q", id, path)
 		err := runDownloadGoDep(path, id)
 		if err != nil {
 			log.Errorf("%s - cannot download go dependencies in path: %s - error: %v", id, path, err)
