@@ -109,3 +109,18 @@ func getHelpArguments() []string {
 	// Then add the -h flag for whatever we found
 	return append(helpArgs, "-h")
 }
+
+// GetTestCmdForPlugin returns a cobra command for the test plugin.
+func GetTestCmdForPlugin(p *PluginInfo) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   p.Name,
+		Short: p.Description,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			runner := NewRunner(p.Name, p.InstallationPath, args)
+			ctx := context.Background()
+			return runner.RunTest(ctx)
+		},
+		DisableFlagParsing: true,
+	}
+	return cmd
+}
