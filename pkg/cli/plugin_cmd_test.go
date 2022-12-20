@@ -14,7 +14,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
-func TestGetPluginCmd(t *testing.T) {
+func TestGetCmdForPlugin(t *testing.T) {
 	assert := assert.New(t)
 
 	dir, err := os.MkdirTemp("", "tanzu-cli-getcmd")
@@ -40,8 +40,36 @@ func TestGetPluginCmd(t *testing.T) {
 	assert.Nil(err)
 }
 
+func TestGetTestCmdForPlugin(t *testing.T) {
+	assert := assert.New(t)
+
+	dir, err := os.MkdirTemp("", "tanzu-cli-gettestcmd")
+	assert.Nil(err)
+	defer os.RemoveAll(dir)
+
+	_, err = setupFakePlugin(dir, "test-fakefoo")
+	assert.Nil(err)
+
+	path, err := setupFakePlugin(dir, "fakefoo")
+	assert.Nil(err)
+
+	pi := &PluginInfo{
+		Name:             "fakefoo",
+		Description:      "Fake foo",
+		Group:            plugin.SystemCmdGroup,
+		Aliases:          []string{"ff"},
+		InstallationPath: path,
+	}
+	cmd := GetTestCmdForPlugin(pi)
+
+	err = cmd.Execute()
+	assert.Equal(cmd.Name(), pi.Name)
+	assert.Equal(cmd.Short, pi.Description)
+	assert.Nil(err)
+}
+
 func setupFakePlugin(dir string, pluginName string) (string, error) {
-	filePath := filepath.Join(dir, "fakefoo")
+	filePath := filepath.Join(dir, pluginName)
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
 	if err != nil {
