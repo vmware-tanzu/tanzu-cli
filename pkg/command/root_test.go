@@ -15,6 +15,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
@@ -83,7 +84,7 @@ func (s *TestPluginSupplier) GetInstalledPlugins() ([]*cli.PluginInfo, error) {
 
 func TestRootCmdWithNoAdditionalPlugins(t *testing.T) {
 	assert := assert.New(t)
-	rootCmd, err := NewRootCmd(&TestPluginSupplier{})
+	rootCmd, err := NewRootCmd()
 	assert.Nil(err)
 	err = rootCmd.Execute()
 	assert.Nil(err)
@@ -91,7 +92,7 @@ func TestRootCmdWithNoAdditionalPlugins(t *testing.T) {
 
 func TestSubcommandNonexistent(t *testing.T) {
 	assert := assert.New(t)
-	rootCmd, err := NewRootCmd(&TestPluginSupplier{})
+	rootCmd, err := NewRootCmd()
 	assert.Nil(err)
 	rootCmd.SetArgs([]string{"nonexistent", "say", "hello"})
 	err = rootCmd.Execute()
@@ -197,6 +198,7 @@ func TestSubcommands(t *testing.T) {
 		dir, err := os.MkdirTemp("", "tanzu-cli-root-cmd")
 		assert.Nil(t, err)
 		defer os.RemoveAll(dir)
+		os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
 		var completionType uint8
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
@@ -229,8 +231,12 @@ func TestSubcommands(t *testing.T) {
 				Hidden:           spec.hidden,
 				InstallationPath: filepath.Join(dir, spec.plugin),
 			}
+			cc, err := catalog.NewContextCatalog("")
+			assert.Nil(err)
+			err = cc.Upsert(pi)
+			assert.Nil(err)
 
-			rootCmd, err := NewRootCmd(&TestPluginSupplier{pluginInfos: []*cli.PluginInfo{pi}})
+			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 
@@ -247,6 +253,7 @@ func TestSubcommands(t *testing.T) {
 				assert.NotContains(string(got), spec.unexpected)
 			}
 		})
+		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
 	}
 }
 

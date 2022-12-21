@@ -16,9 +16,6 @@ const (
 	DefaultArtifactsDirectory = "artifacts"
 	// AllPlugins is the keyword for all plugins.
 	AllPlugins = "all"
-	// TODO(prkalle): Remove the below constant after evaluating the repository.go file
-	// DefaultManifestQueryTimeout is max time to wait for querying for a plugin manifest
-	DefaultManifestQueryTimeout = 5 * time.Second
 )
 
 // Manifest is stored in the repository which gives an inventory of the artifacts.

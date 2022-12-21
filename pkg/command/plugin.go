@@ -5,24 +5,26 @@ package command
 
 import (
 	"fmt"
+	"io"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/aunum/log"
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
 	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/command"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 )
 
@@ -34,7 +36,7 @@ var (
 	targetStr    string
 )
 
-func newPluginCmd(ps catalog.PluginSupplier) *cobra.Command {
+func newPluginCmd() *cobra.Command {
 	var pluginCmd = &cobra.Command{
 		Use:   "plugin",
 		Short: "Manage CLI plugins",
@@ -45,7 +47,7 @@ func newPluginCmd(ps catalog.PluginSupplier) *cobra.Command {
 
 	pluginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 
-	listPluginCmd := newListPluginCmd(ps)
+	listPluginCmd := newListPluginCmd()
 	installPluginCmd := newInstallPluginCmd()
 	upgradePluginCmd := newUpgradePluginCmd()
 	describePluginCmd := newDescribePluginCmd()
@@ -67,12 +69,7 @@ func newPluginCmd(ps catalog.PluginSupplier) *cobra.Command {
 		describePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", "target of the plugin (kubernetes[k8s]/mission-control[tmc])")
 	}
 
-	// TODO(prkalle): Should be removed if we evaluate and decide to remove the repo command as it is obsolete not being used
-	command.DeprecateCommand(repoCmd, "")
-
 	pluginCmd.AddCommand(
-		// TODO(prkalle): Evaluate and remove repoCmd command since it is absolete after plugin discovery changes are added
-		repoCmd,
 		listPluginCmd,
 		installPluginCmd,
 		upgradePluginCmd,
@@ -85,52 +82,35 @@ func newPluginCmd(ps catalog.PluginSupplier) *cobra.Command {
 	return pluginCmd
 }
 
-func newListPluginCmd(ps catalog.PluginSupplier) *cobra.Command {
+func newListPluginCmd() *cobra.Command {
 	var listCmd = &cobra.Command{
 		Use:   "list",
 		Short: "List available plugins",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Not handling plugin discovery yet, so only showing installed plugins
+			var err error
+			var availablePlugins []discovery.Discovered
+			if local != "" {
+				// get absolute local path
+				local, err = filepath.Abs(local)
+				if err != nil {
+					return err
+				}
+				availablePlugins, err = pluginmanager.AvailablePluginsFromLocalSource(local)
+			} else {
+				availablePlugins, err = pluginmanager.AvailablePlugins()
+			}
 
-			descriptors, err := ps.GetInstalledPlugins()
 			if err != nil {
 				return err
 			}
+			sort.Sort(discovery.DiscoveredSorter(availablePlugins))
 
-			data := [][]string{}
-			for _, desc := range descriptors {
-				var exists bool
-				for _, d := range data {
-					if desc.Name == d[0] {
-						exists = true
-						break
-					}
-				}
-				if !exists {
-					data = append(data, []string{desc.Name, desc.Description, desc.Version, "installed"})
-				}
+			if config.IsFeatureActivated(cliconfig.FeatureContextCommand) && (outputFormat == "" || outputFormat == string(component.TableOutputType)) {
+				displayPluginListOutputSplitViewContext(availablePlugins, cmd.OutOrStdout())
+			} else {
+				displayPluginListOutputListView(availablePlugins, cmd.OutOrStdout())
 			}
 
-			// sort plugins based on their names
-			sort.SliceStable(data, func(i, j int) bool {
-				return strings.ToLower(data[i][0]) < strings.ToLower(data[j][0])
-			})
-
-			// TODO(prkalle): uncomment/update the below rendering code once the pluginSupplier is integrated for all the commands.
-			//		if config.IsFeatureActivated(cliconfig.FeatureContextCommand) && (outputFormat == "" || outputFormat == string(component.TableOutputType)) {
-			//			displayPluginListOutputSplitViewContext(availablePlugins, cmd.OutOrStdout())
-			//		} else {
-			//			displayPluginListOutputListView(availablePlugins, cmd.OutOrStdout())
-			//		}
-			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "Name", "Description", "Version", "Status")
-			for _, row := range data {
-				vals := make([]interface{}, len(row))
-				for i, val := range row {
-					vals[i] = val
-				}
-				output.AddRow(vals...)
-			}
-			output.Render()
 			return nil
 		},
 	}
@@ -325,6 +305,85 @@ func newSyncPluginCmd() *cobra.Command {
 		},
 	}
 	return syncCmd
+}
+
+// getInstalledElseAvailablePluginVersion return installed plugin version if plugin is installed
+// if not installed it returns available recommended plugin version
+func getInstalledElseAvailablePluginVersion(p *discovery.Discovered) string {
+	installedOrAvailableVersion := p.InstalledVersion
+	if installedOrAvailableVersion == "" {
+		installedOrAvailableVersion = p.RecommendedVersion
+	}
+	return installedOrAvailableVersion
+}
+
+func displayPluginListOutputListView(availablePlugins []discovery.Discovered, writer io.Writer) {
+	var data [][]string
+	var output component.OutputWriter
+
+	for index := range availablePlugins {
+		data = append(data, []string{availablePlugins[index].Name, availablePlugins[index].Description, availablePlugins[index].Scope,
+			availablePlugins[index].Source, getInstalledElseAvailablePluginVersion(&availablePlugins[index]), availablePlugins[index].Status})
+	}
+	output = component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Scope", "Discovery", "Version", "Status")
+
+	for _, row := range data {
+		vals := make([]interface{}, len(row))
+		for i, val := range row {
+			vals[i] = val
+		}
+		output.AddRow(vals...)
+	}
+	output.Render()
+}
+
+func displayPluginListOutputSplitViewContext(availablePlugins []discovery.Discovered, writer io.Writer) {
+	var dataStandalone [][]string
+	var outputStandalone component.OutputWriter
+	dataContext := make(map[string][][]string)
+	outputContext := make(map[string]component.OutputWriter)
+
+	outputStandalone = component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Discovery", "Version", "Status")
+
+	for index := range availablePlugins {
+		if availablePlugins[index].Scope == common.PluginScopeStandalone {
+			newRow := []string{availablePlugins[index].Name, availablePlugins[index].Description, string(availablePlugins[index].Target),
+				availablePlugins[index].Source, getInstalledElseAvailablePluginVersion(&availablePlugins[index]), availablePlugins[index].Status}
+			dataStandalone = append(dataStandalone, newRow)
+		} else {
+			newRow := []string{availablePlugins[index].Name, availablePlugins[index].Description, string(availablePlugins[index].Target),
+				getInstalledElseAvailablePluginVersion(&availablePlugins[index]), availablePlugins[index].Status}
+			outputContext[availablePlugins[index].ContextName] = component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status")
+			data := dataContext[availablePlugins[index].ContextName]
+			data = append(data, newRow)
+			dataContext[availablePlugins[index].ContextName] = data
+		}
+	}
+
+	addDataToOutputWriter := func(output component.OutputWriter, data [][]string) {
+		for _, row := range data {
+			vals := make([]interface{}, len(row))
+			for i, val := range row {
+				vals[i] = val
+			}
+			output.AddRow(vals...)
+		}
+	}
+
+	cyanBold := color.New(color.FgCyan).Add(color.Bold)
+	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
+
+	_, _ = cyanBold.Println("Standalone Plugins")
+	addDataToOutputWriter(outputStandalone, dataStandalone)
+	outputStandalone.Render()
+
+	for context, writer := range outputContext {
+		fmt.Println("")
+		_, _ = cyanBold.Println("Plugins from Context: ", cyanBoldItalic.Sprintf(context))
+		data := dataContext[context]
+		addDataToOutputWriter(writer, data)
+		writer.Render()
+	}
 }
 
 func getTarget() cliv1alpha1.Target {
