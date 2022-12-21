@@ -571,7 +571,7 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 	}
 
 	if installTestPlugin {
-		if err := doInstallTestPlugin(p, version); err != nil {
+		if err := doInstallTestPlugin(p, plugin.InstallationPath, version); err != nil {
 			return err
 		}
 	}
@@ -635,14 +635,19 @@ func installAndDescribePlugin(p *discovery.Discovered, version string, binary []
 	return &plugin, nil
 }
 
-func doInstallTestPlugin(p *discovery.Discovered, version string) error {
+func doInstallTestPlugin(p *discovery.Discovered, pluginPath, version string) error {
 	log.Infof("Installing test plugin for '%v:%v'", p.Name, version)
 	binary, err := p.Distribution.FetchTest(version, runtime.GOOS, runtime.GOARCH)
 	if err != nil {
-		return errors.Wrapf(err, "unable to install test plugin for '%v:%v'", p.Name, version)
+		if os.Getenv("TZ_ENFORCE_TEST_PLUGIN") == "1" {
+			return errors.Wrapf(err, "unable to install test plugin for '%v:%v'", p.Name, version)
+		}
+		log.Infof("  ... skipped: %s", err.Error())
+		return nil
 	}
-	testpluginPath := filepath.Join(common.DefaultPluginRoot, p.Name, fmt.Sprintf("test-%s", version))
-	err = os.WriteFile(testpluginPath, binary, 0755)
+	testPluginPath := cli.TestPluginPathFromPluginPath(pluginPath)
+
+	err = os.WriteFile(testPluginPath, binary, 0755)
 	if err != nil {
 		return errors.Wrap(err, "error while saving test plugin binary")
 	}
