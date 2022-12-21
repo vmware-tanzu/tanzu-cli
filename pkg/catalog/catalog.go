@@ -115,6 +115,11 @@ func (c *ContextCatalog) Delete(plugin string) error {
 
 // getCatalogCacheDir returns the local directory in which tanzu state is stored.
 func getCatalogCacheDir() (path string) {
+	// NOTE: TEST_CUSTOM_CATALOG_CACHE_DIR is only for test purpose
+	customCacheDirForTest := os.Getenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
+	if customCacheDirForTest != "" {
+		return customCacheDirForTest
+	}
 	return common.DefaultCacheDir
 }
 
