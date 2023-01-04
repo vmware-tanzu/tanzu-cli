@@ -9,7 +9,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
 var (
@@ -17,11 +16,15 @@ var (
 	description string
 )
 
+// defaultArtifactsDirectory is the root of the default directory where a plugin is built.
+// This can be overridden by the `--artifacts` flag of the `builder cli compile` command.
+const defaultArtifactsDirectory = "artifacts"
+
 var compileArgs = &command.PluginCompileArgs{
 	Match:        "*",
 	TargetArch:   []string{"all"},
 	SourcePath:   "./cmd/plugin",
-	ArtifactsDir: cli.DefaultArtifactsDirectory,
+	ArtifactsDir: defaultArtifactsDirectory,
 }
 
 // NewCLICmd creates the CLI builder commands.

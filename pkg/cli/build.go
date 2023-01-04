@@ -12,8 +12,6 @@ const (
 	ManifestFileName = "manifest.yaml"
 	// PluginDescriptorFileName is the file name for the plugin descriptor.
 	PluginDescriptorFileName = "plugin.yaml"
-	// DefaultArtifactsDirectory is the root artifacts directory
-	DefaultArtifactsDirectory = "artifacts"
 	// AllPlugins is the keyword for all plugins.
 	AllPlugins = "all"
 )
