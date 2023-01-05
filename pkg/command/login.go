@@ -328,20 +328,23 @@ func createServerWithEndpoint() (server *configapi.Server, err error) {
 		isVSphereSupervisor, err := wcpauth.IsVSphereSupervisor(endpoint, getDiscoveryHTTPClient())
 		// Fall back to assuming non vSphere supervisor.
 		if err != nil {
-			log.Fatalf("Error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
+			err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
+			log.Error(err)
 			return nil, err
 		}
 		if isVSphereSupervisor {
 			log.Info("Detected a vSphere Supervisor being used")
 			kubeConfig, kubeContext, err = vSphereSupervisorLogin(endpoint)
 			if err != nil {
-				log.Fatalf("Error logging in to vSphere Supervisor: %v", err)
+				err := fmt.Errorf("error logging in to vSphere Supervisor: %v", err)
+				log.Error(err)
 				return nil, err
 			}
 		} else {
 			kubeConfig, kubeContext, err = tkgauth.KubeconfigWithPinnipedAuthLoginPlugin(endpoint, nil, tkgauth.DiscoveryStrategy{ClusterInfoConfigMap: tkgauth.DefaultClusterInfoConfigMap})
 			if err != nil {
-				log.Fatalf("Error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
+				err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
+				log.Error(err)
 				return nil, err
 			}
 		}
@@ -360,7 +363,7 @@ func createServerWithEndpoint() (server *configapi.Server, err error) {
 
 func globalLoginUsingServer(s *configapi.Server) (err error) {
 	a := configapi.GlobalServerAuth{}
-	apiToken, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
+	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
 
 	issuer := csp.ProdIssuer
 	if staging {
@@ -369,12 +372,12 @@ func globalLoginUsingServer(s *configapi.Server) (err error) {
 	if apiTokenExists {
 		log.Debug("API token env var is set")
 	} else {
-		apiToken, err = promptAPIToken()
+		apiTokenValue, err = promptAPIToken()
 		if err != nil {
 			return err
 		}
 	}
-	token, err := csp.GetAccessTokenFromAPIToken(apiToken, issuer)
+	token, err := csp.GetAccessTokenFromAPIToken(apiTokenValue, issuer)
 	if err != nil {
 		return err
 	}
@@ -389,7 +392,7 @@ func globalLoginUsingServer(s *configapi.Server) (err error) {
 	a.Permissions = claims.Permissions
 	a.AccessToken = token.AccessToken
 	a.IDToken = token.IDToken
-	a.RefreshToken = apiToken
+	a.RefreshToken = apiTokenValue
 	a.Type = "api-token"
 
 	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
@@ -411,7 +414,8 @@ func managementClusterLogin(s *configapi.Server) error {
 	if s.ManagementClusterOpts.Path != "" && s.ManagementClusterOpts.Context != "" {
 		_, err := tkgauth.GetServerKubernetesVersion(s.ManagementClusterOpts.Path, s.ManagementClusterOpts.Context)
 		if err != nil {
-			log.Fatalf("failed to login to the management cluster %s, %v", s.Name, err)
+			err := fmt.Errorf("failed to login to the management cluster %s, %v", s.Name, err)
+			log.Error(err)
 			return err
 		}
 		err = config.PutServer(s, true)

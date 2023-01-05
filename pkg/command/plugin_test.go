@@ -179,7 +179,6 @@ func TestDeletePlugin(t *testing.T) {
 				err = cc.Upsert(pi)
 				assert.Nil(err)
 			}
-
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
