@@ -299,20 +299,23 @@ func createContextWithEndpoint() (context *configapi.Context, err error) {
 		isVSphereSupervisor, err := wcpauth.IsVSphereSupervisor(endpoint, getDiscoveryHTTPClient())
 		// Fall back to assuming non vSphere supervisor.
 		if err != nil {
-			log.Fatalf("Error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
+			err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
+			log.Error(err)
 			return nil, err
 		}
 		if isVSphereSupervisor {
 			log.Info("Detected a vSphere Supervisor being used")
 			kubeConfig, kubeContext, err = vSphereSupervisorLogin(endpoint)
 			if err != nil {
-				log.Fatalf("Error logging in to vSphere Supervisor: %v", err)
+				err := fmt.Errorf("error logging in to vSphere Supervisor: %v", err)
+				log.Error(err)
 				return nil, err
 			}
 		} else {
 			kubeConfig, kubeContext, err = tkgauth.KubeconfigWithPinnipedAuthLoginPlugin(endpoint, nil, tkgauth.DiscoveryStrategy{ClusterInfoConfigMap: tkgauth.DefaultClusterInfoConfigMap})
 			if err != nil {
-				log.Fatalf("Error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
+				err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
+				log.Error(err)
 				return nil, err
 			}
 		}
@@ -413,7 +416,8 @@ func k8sLogin(c *configapi.Context) error {
 	if c.ClusterOpts.Path != "" && c.ClusterOpts.Context != "" {
 		_, err := tkgauth.GetServerKubernetesVersion(c.ClusterOpts.Path, c.ClusterOpts.Context)
 		if err != nil {
-			log.Fatalf("failed to create context %q for a kubernetes cluster, %v", c.Name, err)
+			err := fmt.Errorf("failed to create context %q for a kubernetes cluster, %v", c.Name, err)
+			log.Error(err)
 			return err
 		}
 		err = config.AddContext(c, true)
@@ -460,7 +464,8 @@ func vSphereSupervisorLogin(endpoint string) (mergeFilePath, currentContext stri
 	port := 443
 	kubeCfg, kubeCtx, err := tkgauth.KubeconfigWithPinnipedAuthLoginPlugin(endpoint, nil, tkgauth.DiscoveryStrategy{DiscoveryPort: &port, ClusterInfoConfigMap: wcpauth.SupervisorVIPConfigMapName})
 	if err != nil {
-		log.Fatalf("Error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
+		err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
+		log.Error(err)
 		return "", "", err
 	}
 	return kubeCfg, kubeCtx, err

@@ -1,0 +1,36 @@
+contexts:
+  - name: test-mc
+    target: kubernetes
+    clusterOpts:
+      isManagementCluster: true
+      endpoint: test-endpoint
+      path: test-path
+      context: test-mc-context
+    discoverySources:
+      - gcp:
+          name: test
+          bucket: test-bucket
+          manifestPath: test-manifest-path
+  - name: test-tmc-context
+    target: mission-control
+    globalOpts:
+      endpoint: test-endpoint2
+      auth:
+        IDToken: test-id-token
+        accessToken: test-access-token
+        type: api-token
+        userName: test-user-name
+        refresh_token: test-refresh-token
+  - name: test-use-context
+    target: mission-control
+    globalOpts:
+      endpoint: test-endpoint3
+      auth:
+        IDToken: test-id-token2
+        accessToken: test-access-token2
+        type: api-token2
+        userName: test-user-name2
+        refresh_token: test-refresh-token2
+currentContext:
+  kubernetes: test-mc
+  mission-control: test-tmc-context

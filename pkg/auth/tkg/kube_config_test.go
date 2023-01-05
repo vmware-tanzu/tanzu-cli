@@ -79,7 +79,7 @@ var _ = Describe("Unit tests for tkg auth", func() {
 		})
 		Context("When the configMap 'pinniped-info' is not present in kube-public namespace", func() {
 			BeforeEach(func() {
-				clusterInfo := GetFakeClusterInfo(endpoint, servCert)
+				clusterInfo := helper.GetFakeClusterInfo(endpoint, servCert)
 				tlsserver.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", "/api/v1/namespaces/kube-public/configmaps/cluster-info"),
@@ -101,7 +101,7 @@ var _ = Describe("Unit tests for tkg auth", func() {
 			var kubeConfigPath, kubeContext, kubeconfigMergeFilePath string
 			BeforeEach(func() {
 				var clusterInfo, pinnipedInfo string
-				clusterInfo = GetFakeClusterInfo(endpoint, servCert)
+				clusterInfo = helper.GetFakeClusterInfo(endpoint, servCert)
 				pinnipedInfo = helper.GetFakePinnipedInfo(
 					helper.PinnipedInfo{
 						ClusterName:        clustername,
@@ -144,7 +144,7 @@ var _ = Describe("Unit tests for tkg auth", func() {
 			var kubeConfigPath, kubeContext, kubeconfigMergeFilePath string
 			BeforeEach(func() {
 				var clusterInfo, pinnipedInfo string
-				clusterInfo = GetFakeClusterInfo(endpoint, servCert)
+				clusterInfo = helper.GetFakeClusterInfo(endpoint, servCert)
 				pinnipedInfo = helper.GetFakePinnipedInfo(
 					helper.PinnipedInfo{
 						ClusterName:              clustername,
@@ -189,7 +189,7 @@ var _ = Describe("Unit tests for tkg auth", func() {
 			BeforeEach(func() {
 				var clusterInfo, pinnipedInfo string
 				conciergeIsClusterScoped = false
-				clusterInfo = GetFakeClusterInfo(endpoint, servCert)
+				clusterInfo = helper.GetFakeClusterInfo(endpoint, servCert)
 				pinnipedInfo = helper.GetFakePinnipedInfo(
 					helper.PinnipedInfo{
 						ClusterName:              clustername,
@@ -263,25 +263,6 @@ var _ = Describe("Unit tests for tkg auth - GetServerKubernetesVersion", func() 
 		})
 	})
 })
-
-func GetFakeClusterInfo(server string, cert *x509.Certificate) string {
-	clusterInfoJSON := `
-	{
-		"kind": "ConfigMap",
-		"apiVersion": "v1",
-    	"data": {
-        "kubeconfig": "apiVersion: v1\nclusters:\n- cluster:\n    certificate-authority-data: %s\n    server: %s\n  name: \"\"\ncontexts: null\ncurrent-context: \"\"\nkind: Config\npreferences: {}\nusers: null\n"
-    	},
-		"metadata": {
-		  "name": "cluster-info",
-		  "namespace": "kube-public"
-		}
-	}`
-	certBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw})
-	clusterInfoJSON = fmt.Sprintf(clusterInfoJSON, base64.StdEncoding.EncodeToString(certBytes), server)
-
-	return clusterInfoJSON
-}
 
 func getExpectedExecConfig(endpoint string, issuer string, issuerCA string, conciergeIsClusterScoped bool, servCert *x509.Certificate) *clientcmdapi.ExecConfig {
 	certBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: servCert.Raw})
