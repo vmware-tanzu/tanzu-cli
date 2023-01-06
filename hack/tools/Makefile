@@ -24,6 +24,7 @@ VALE_VERSION=2.20.1
 GOLANGCI_LINT_VERSION=1.46.0
 MISSPELL_VERSION=0.3.4
 CONTROLLER_TOOLS_VERSION=0.9.2
+IMGPKG_VERSION=v0.35.0
 
 # Host information.
 HOST_OS=$(shell go env GOOS)
@@ -35,6 +36,7 @@ VALE               := $(BIN_DIR)/vale
 GOLANGCI_LINT      := $(BIN_DIR)/golangci-lint
 MISSPELL           := $(BIN_DIR)/misspell
 CONTROLLER_GEN     := $(BIN_DIR)/controller-gen
+IMGPKG			   := $(BIN_DIR)/imgpkg
 ## --------------------------------------
 ## Help
 ## --------------------------------------
@@ -76,6 +78,13 @@ misspell: $(MISSPELL) ## Install misspell
 $(MISSPELL):
 	mkdir -p $(BIN_DIR)
 	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install  github.com/client9/misspell/cmd/misspell@v$(MISSPELL_VERSION)
+
+imgpkg: $(IMGPKG) ## Install imgpkg 
+$(IMGPKG):
+	mkdir -p $(BIN_DIR)
+	curl -LO https://github.com/vmware-tanzu/carvel-imgpkg/releases/download/$(IMGPKG_VERSION)/imgpkg-$(HOST_OS)-$(HOST_ARCH)
+	mv imgpkg-$(HOST_OS)-$(HOST_ARCH) $(@)
+	chmod a+x $(@)
 
 ## --------------------------------------
 ## Cleanup

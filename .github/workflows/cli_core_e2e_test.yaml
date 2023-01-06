@@ -1,0 +1,46 @@
+name: Tanzu CLI Core Tests
+
+on:
+  pull_request:
+    branches: [main, release-*]
+    paths:
+      - "*"
+
+jobs:
+  build:
+    name: Tanzu CLI Core E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+        id: go
+
+      - name: go cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Setup dependencies
+        run: make tools
+
+      - name: Build CLI Core
+        run: |
+          make build
+
+      - name: Start local OCI registry
+        run: |
+          make local-registry
+
+      - name: Tests
+        run: |
+          make e2e-cli-core
