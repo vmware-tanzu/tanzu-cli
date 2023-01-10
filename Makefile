@@ -8,6 +8,11 @@ ROOT_DIR := $(shell git rev-parse --show-toplevel)
 ARTIFACTS_DIR ?= $(ROOT_DIR)/artifacts
 ARTIFACTS_ADMIN_DIR ?= $(ROOT_DIR)/artifacts-admin
 
+XDG_CONFIG_HOME := ${HOME}/.config
+export XDG_CONFIG_HOME
+# Local path to publish the tanzu CLI plugins
+TANZU_PLUGIN_PUBLISH_PATH ?= $(XDG_CONFIG_HOME)/_tanzu-plugins
+
 # Golang specific variables
 GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
@@ -61,8 +66,9 @@ PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/build
 # Add supported OS-ARCHITECTURE combinations here
 ENVS ?= linux-amd64 windows-amd64 darwin-amd64
 
-CLI_TARGETS := $(addprefix build-cli-unused-,${ENVS})
-PLUGIN_TARGETS := $(addprefix build-plugin-admin-unused-,${ENVS})
+CLI_TARGETS := $(addprefix build-cli-,${ENVS})
+PLUGIN_TARGETS := $(addprefix build-plugin-admin-,${ENVS})
+ADMIN_PLUGINS ?= builder test
 
 ## --------------------------------------
 ## Help
@@ -83,18 +89,20 @@ all: gomod build-all test lint ## Run all major targets (lint, test, build)
 ## --------------------------------------
 
 .PHONY: cross-build
-cross-build: ${CLI_TARGETS} ${PLUGIN_TARGETS} ## Build the Tanzu Core CLI and plugins for all supported platforms
+cross-build: ${CLI_TARGETS} ${PLUGIN_TARGETS} publish-admin-plugins-all-local## Build the Tanzu Core CLI and plugins for all supported platforms and also publish admin plugins locally
 
 .PHONY: build-all
-build-all: build-cli-unused-${GOHOSTOS}-${GOHOSTARCH} build-plugin-admin-unused-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI and plugins for the local platform
+build-all: build-cli-${GOHOSTOS}-${GOHOSTARCH} build-publish-admin-plugins-local ## Build the Tanzu Core CLI, admin plugins and publish admin plugins locally for the local platform
 
 .PHONY: build
-build: build-cli-unused-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI for the local platform
+build: build-cli-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI for the local platform
+
+.PHONY: build-publish-admin-plugins-local
+build-publish-admin-plugins-local: build-plugin-admin-${GOHOSTOS}-${GOHOSTARCH}  publish-admin-plugins-local
 
 build-cli-%: ##Build the Tanzu Core CLI for a platform
-	$(eval ARCH = $(word 3,$(subst -, ,$*)))
-	$(eval OS = $(word 2,$(subst -, ,$*)))
-	$(eval DISCOVERY_TYPE = $(word 1,$(subst -, ,$*)))
+	$(eval ARCH = $(word 2,$(subst -, ,$*)))
+	$(eval OS = $(word 1,$(subst -, ,$*)))
 
 	@echo build $(OS)-$(ARCH) CLI with version: $(BUILD_VERSION)
 
@@ -124,9 +132,8 @@ $(BUILDER): $(BUILDER_SRC)
 prepare-builder: $(BUILDER) ## Build Tanzu CLI builder plugin
 
 build-plugin-admin-%: prepare-builder
-	$(eval ARCH = $(word 3,$(subst -, ,$*)))
-	$(eval OS = $(word 2,$(subst -, ,$*)))
-	$(eval DISCOVERY_TYPE = $(word 1,$(subst -, ,$*)))
+	$(eval ARCH = $(word 2,$(subst -, ,$*)))
+	$(eval OS = $(word 1,$(subst -, ,$*)))
 
 	@if [ "$(filter $(OS)-$(ARCH),$(ENVS))" = "" ]; then\
 		printf "\n\n======================================\n";\
@@ -137,6 +144,14 @@ build-plugin-admin-%: prepare-builder
 	@echo build $(OS)-$(ARCH) plugin with version: $(BUILD_VERSION)
 	$(BUILDER) cli compile --version $(BUILD_VERSION) --ldflags "$(PLUGIN_LD_FLAGS)" --path ./cmd/plugin --artifacts "$(ARTIFACTS_ADMIN_DIR)/$(OS)/$(ARCH)/cli" --target ${OS}_${ARCH}
 
+
+.PHONY: publish-admin-plugins-all-local
+publish-admin-plugins-all-local: prepare-builder ## Publish CLI admin plugins locally for all supported os-arch
+	$(BUILDER) publish --type local --plugins "$(ADMIN_PLUGINS)" --version $(BUILD_VERSION) --os-arch "${ENVS}" --local-output-discovery-dir "$(TANZU_PLUGIN_PUBLISH_PATH)/discovery/admin" --local-output-distribution-dir "$(TANZU_PLUGIN_PUBLISH_PATH)/distribution" --input-artifact-dir $(ARTIFACTS_ADMIN_DIR)
+
+.PHONY: publish-admin-plugins-local
+publish-admin-plugins-local: prepare-builder ## Publish CLI admin plugins locally for current host os-arch only
+	$(BUILDER) publish --type local --plugins "$(ADMIN_PLUGINS)" --version $(BUILD_VERSION) --os-arch "${GOHOSTOS}-${GOHOSTARCH}" --local-output-discovery-dir "$(TANZU_PLUGIN_PUBLISH_PATH)/discovery/admin" --local-output-distribution-dir "$(TANZU_PLUGIN_PUBLISH_PATH)/distribution" --input-artifact-dir $(ARTIFACTS_ADMIN_DIR)
 
 ## --------------------------------------
 ## Testing
