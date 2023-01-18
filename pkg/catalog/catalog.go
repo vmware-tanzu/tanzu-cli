@@ -139,7 +139,7 @@ func newSharedCatalog() (*Catalog, error) {
 	return c, nil
 }
 
-// getCatalogCache retrieves the catalog from from the local directory.
+// getCatalogCache retrieves the catalog from the local directory.
 func getCatalogCache() (catalog *Catalog, err error) {
 	b, err := os.ReadFile(getCatalogCachePath())
 	if err != nil {
@@ -235,7 +235,7 @@ func UpdateCatalogCache() error {
 	return saveCatalogCache(c)
 }
 
-// PluginNameTarget contructs a string to uniquely refer to a plugin associated
+// PluginNameTarget constructs a string to uniquely refer to a plugin associated
 // with a specific target when target is provided.
 func PluginNameTarget(pluginName string, target cliv1alpha1.Target) string {
 	if target == "" {

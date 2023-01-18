@@ -18,7 +18,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
 // NewRootCmd creates a root command.
@@ -61,16 +61,11 @@ func NewRootCmd() (*cobra.Command, error) {
 			return nil, err
 		}
 	}
-	// TODO: refactor/update the below logic to use the PluginSupplier component to provide
-	//       installed plugins by leveraging the catalog
-	serverPlugins, standalonePlugins, err := pluginmanager.InstalledPlugins()
+
+	plugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return nil, err
 	}
-
-	plugins := serverPlugins
-	plugins = append(plugins, standalonePlugins...)
-
 	if err = config.CopyLegacyConfigDir(); err != nil {
 		return nil, fmt.Errorf("failed to copy legacy configuration directory to new location: %w", err)
 	}
@@ -126,12 +121,10 @@ var tmcCmd = &cobra.Command{
 }
 
 func addPluginsToTarget(mapTargetToCmd map[cliv1alpha1.Target]*cobra.Command) error {
-	installedPlugins, standalonePlugins, err := pluginmanager.InstalledPlugins()
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return fmt.Errorf("unable to find installed plugins: %w", err)
 	}
-
-	installedPlugins = append(installedPlugins, standalonePlugins...)
 
 	for i := range installedPlugins {
 		if cmd, exists := mapTargetToCmd[installedPlugins[i].Target]; exists {

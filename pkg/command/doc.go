@@ -16,7 +16,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	coreTemplates "github.com/vmware-tanzu/tanzu-cli/pkg/command/templates"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
 // DefaultDocsDir is the base docs directory
@@ -48,17 +48,11 @@ var genAllDocsCmd = &cobra.Command{
 			return fmt.Errorf("error generate core tanzu cmd markdown %q", err)
 		}
 
-		var plugins []*cli.PluginInfo
 		var err error
 
-		serverPlugins, standalonePlugins, err := pluginmanager.InstalledPlugins()
+		plugins, err := pluginsupplier.GetInstalledPlugins()
 		if err != nil {
 			return fmt.Errorf("error while getting installed plugins Info: %q", err)
-		}
-
-		combinedPlugins := append(serverPlugins, standalonePlugins...)
-		for i := range combinedPlugins {
-			plugins = append(plugins, &combinedPlugins[i])
 		}
 
 		if err := genREADME(plugins); err != nil {
@@ -86,7 +80,7 @@ func genCoreCMD(cmd *cobra.Command) error {
 	return nil
 }
 
-func genREADME(plugins []*cli.PluginInfo) error {
+func genREADME(plugins []cli.PluginInfo) error {
 	readmeFilename := fmt.Sprintf("%s/%s", docsDir, "README.md")
 	readme, err := os.OpenFile(readmeFilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
@@ -102,10 +96,10 @@ func genREADME(plugins []*cli.PluginInfo) error {
 	return nil
 }
 
-func genMarkdownTreePlugins(plugins []*cli.PluginInfo) error {
+func genMarkdownTreePlugins(plugins []cli.PluginInfo) error {
 	args := []string{"generate-docs", "--docs-dir", docsDir}
-	for _, p := range plugins {
-		runner := cli.NewRunner(p.Name, p.InstallationPath, args)
+	for idx := range plugins {
+		runner := cli.NewRunner(plugins[idx].Name, plugins[idx].InstallationPath, args)
 		ctx := context.Background()
 		if err := runner.Run(ctx); err != nil {
 			return err

@@ -34,6 +34,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
 const (
@@ -229,16 +230,18 @@ func AvailablePluginsFromLocalSource(localPath string) ([]discovery.Discovered, 
 }
 
 func availablePlugins(discoveredServerPlugins, discoveredStandalonePlugins []discovery.Discovered) ([]discovery.Discovered, error) {
-	installedServerPlugins, installedStandalonePlugins, err := InstalledPlugins()
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return nil, err
 	}
 
 	availablePlugins := availablePluginsFromStandaloneAndServerPlugins(discoveredServerPlugins, discoveredStandalonePlugins)
+	setAvailablePluginsStatus(availablePlugins, installedPlugins)
 
-	setAvailablePluginsStatus(availablePlugins, installedServerPlugins)
-	setAvailablePluginsStatus(availablePlugins, installedStandalonePlugins)
-
+	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
+	if err != nil {
+		return nil, err
+	}
 	installedButNotDiscoveredPlugins := getInstalledButNotDiscoveredStandalonePlugins(availablePlugins, installedStandalonePlugins)
 	availablePlugins = append(availablePlugins, installedButNotDiscoveredPlugins...)
 
@@ -396,60 +399,14 @@ func pluginIndexForName(availablePlugins []discovery.Discovered, p *discovery.Di
 	return -1 // haven't found a match
 }
 
-// InstalledPlugins returns the list of installed context-scoped and standalone plugins.
-func InstalledPlugins() (serverPlugins, standalonePlugins []cli.PluginInfo, err error) {
-	serverPlugins, err = InstalledServerPlugins()
-	if err != nil {
-		return nil, nil, err
-	}
-	standalonePlugins, err = InstalledStandalonePlugins()
-	if err != nil {
-		return nil, nil, err
-	}
-	return
-}
-
-// InstalledStandalonePlugins returns the installed standalone plugins.
-func InstalledStandalonePlugins() ([]cli.PluginInfo, error) {
-	standAloneCatalog, err := catalog.NewContextCatalog("")
-	if err != nil {
-		return nil, err
-	}
-	standalonePlugins := standAloneCatalog.List()
-	return standalonePlugins, nil
-}
-
-// InstalledServerPlugins returns the installed server plugins.
-func InstalledServerPlugins() ([]cli.PluginInfo, error) {
-	serverNames, err := configlib.GetAllCurrentContextsList()
-	if err != nil {
-		return nil, err
-	}
-
-	var serverPlugins []cli.PluginInfo
-	for _, serverName := range serverNames {
-		if serverName != "" {
-			serverCatalog, err := catalog.NewContextCatalog(serverName)
-			if err != nil {
-				return nil, err
-			}
-			serverPlugins = append(serverPlugins, serverCatalog.List()...)
-		}
-	}
-
-	return serverPlugins, nil
-}
-
 // DescribePlugin describes a plugin.
 func DescribePlugin(pluginName string, target cliv1alpha1.Target) (info *cli.PluginInfo, err error) {
-	serverPlugins, standalonePlugins, err := InstalledPlugins()
+	plugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return nil, err
 	}
 	var matchedPlugins []cli.PluginInfo
 
-	plugins := serverPlugins
-	plugins = append(plugins, standalonePlugins...)
 	for i := range plugins {
 		if plugins[i].Name == pluginName {
 			matchedPlugins = append(matchedPlugins, plugins[i])

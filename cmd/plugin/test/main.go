@@ -14,6 +14,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
 var descriptor = plugin.PluginDescriptor{
@@ -42,7 +43,7 @@ func main() {
 		pluginsCmd,
 	)
 
-	_, installedPlugins, err := pluginmanager.InstalledPlugins()
+	installedPlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
 	if err != nil {
 		log.Fatal(err)
 	}
