@@ -1,7 +1,7 @@
 // Copyright 2022 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package config
+package constants
 
 // This block is for global feature constants, to allow them to be used more broadly
 const (

@@ -7,6 +7,7 @@ package config
 import (
 	"github.com/aunum/log"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
@@ -23,7 +24,7 @@ func init() {
 	//      Users have to add the discovery sources by using `tanzu plugin source add` command
 	// TODO: update/delete the below line after CLI make changes related to centralized repository
 	// addedDefaultDiscovery := populateDefaultStandaloneDiscovery(c)
-	addedFeatureFlags := AddDefaultFeatureFlagsIfMissing(c, DefaultCliFeatureFlags)
+	addedFeatureFlags := AddDefaultFeatureFlagsIfMissing(c, constants.DefaultCliFeatureFlags)
 	addedEdition := addDefaultEditionIfMissing(c)
 	addedBomRepo := AddBomRepoIfMissing(c)
 	addedCompatabilityFile := AddCompatibilityFileIfMissing(c)
