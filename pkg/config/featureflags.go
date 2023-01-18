@@ -22,6 +22,8 @@ const (
 	FeatureContextAwareCLIForPlugins = "features.global.context-aware-cli-for-plugins"
 	// FeatureContextCommand determines whether to surface the context command. This is disabled by default.
 	FeatureContextCommand = "features.global.context-target-v2"
+	// FeatureCentralRepository determines if the CLI uses the Central Repository of plugins.
+	FeatureCentralRepository = "features.global.central-repository"
 )
 
 // DefaultCliFeatureFlags is used to populate an initially empty config file with default values for feature flags.
@@ -39,6 +41,8 @@ var (
 	DefaultCliFeatureFlags = map[string]bool{
 		FeatureContextAwareCLIForPlugins: contextAwareDiscoveryEnabled(),
 		FeatureContextCommand:            true,
+		// TODO(khouzam) turn this on before the 1.0 release, or remove the flag completely
+		FeatureCentralRepository: false,
 	}
 )
 
