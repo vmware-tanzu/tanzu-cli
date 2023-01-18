@@ -22,6 +22,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
 var expectedDiscoveredContextPlugins = []discovery.Discovered{
@@ -108,11 +109,10 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	err = InstallPlugin("login", "v0.2.0", cliv1alpha1.TargetNone)
 	assertions.Nil(err)
 	// Verify installed plugin
-	installedServerPlugins, installedStandalonePlugins, err := InstalledPlugins()
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
 	assertions.Nil(err)
-	assertions.Equal(0, len(installedServerPlugins))
-	assertions.Equal(1, len(installedStandalonePlugins))
-	assertions.Equal("login", installedStandalonePlugins[0].Name)
+	assertions.Equal(1, len(installedPlugins))
+	assertions.Equal("login", installedPlugins[0].Name)
 
 	// Try installing cluster plugin with no context-type
 	err = InstallPlugin("cluster", "v0.2.0", cliv1alpha1.TargetNone)
@@ -142,9 +142,11 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	assertions.Nil(err)
 
 	// Verify installed plugins
-	installedServerPlugins, installedStandalonePlugins, err = InstalledPlugins()
+	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
 	assertions.Nil(err)
 	assertions.Equal(2, len(installedStandalonePlugins))
+	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
+	assertions.Nil(err)
 	assertions.Equal(2, len(installedServerPlugins))
 
 	expectedInstalledServerPlugins := []cli.PluginInfo{
@@ -465,19 +467,20 @@ func Test_InstallPlugin_InstalledPlugins_From_LocalSource(t *testing.T) {
 	err = InstallPluginsFromLocalSource("login", "v0.2.0", cliv1alpha1.TargetNone, localPluginSourceDir, false)
 	assertions.Nil(err)
 	// Verify installed plugin
-	installedServerPlugins, installedStandalonePlugins, err := InstalledPlugins()
+	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
 	assertions.Nil(err)
-	assertions.Equal(0, len(installedServerPlugins))
 	assertions.Equal(1, len(installedStandalonePlugins))
 	assertions.Equal("login", installedStandalonePlugins[0].Name)
 
 	// Try installing cluster plugin from local source directory
 	err = InstallPluginsFromLocalSource("cluster", "v0.2.0", cliv1alpha1.TargetTMC, localPluginSourceDir, false)
 	assertions.Nil(err)
-	installedServerPlugins, installedStandalonePlugins, err = InstalledPlugins()
+	installedStandalonePlugins, err = pluginsupplier.GetInstalledStandalonePlugins()
+	assertions.Nil(err)
+	assertions.Equal(2, len(installedStandalonePlugins))
+	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
 	assertions.Nil(err)
 	assertions.Equal(0, len(installedServerPlugins))
-	assertions.Equal(2, len(installedStandalonePlugins))
 
 	// Try installing a plugin from incorrect local path
 	err = InstallPluginsFromLocalSource("cluster", "v0.2.0", cliv1alpha1.TargetTMC, "fakepath", false)
@@ -759,11 +762,13 @@ func Test_InstallPluginsFromLocalSourceWithLegacyDirectoryStructure(t *testing.T
 	assertions.Nil(err)
 
 	// Verify installed plugin
-	installedServerPlugins, installedStandalonePlugins, err := InstalledPlugins()
+	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
 	assertions.Nil(err)
-	assertions.Equal(0, len(installedServerPlugins))
 	assertions.Equal(2, len(installedStandalonePlugins))
 	assertions.ElementsMatch([]string{"bar", "foo"}, []string{installedStandalonePlugins[0].Name, installedStandalonePlugins[1].Name})
+	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
+	assertions.Nil(err)
+	assertions.Equal(0, len(installedServerPlugins))
 }
 
 func Test_VerifyRegistry(t *testing.T) {

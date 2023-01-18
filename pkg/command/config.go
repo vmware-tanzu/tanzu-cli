@@ -19,7 +19,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
 // ConfigLiterals used with set/unset commands
@@ -219,7 +219,7 @@ var initConfigCmd = &cobra.Command{
 			cfg.ClientOptions.CLI = &configapi.CLIOptions{}
 		}
 
-		serverPlugins, standalonePlugins, err := pluginmanager.InstalledPlugins()
+		plugins, err := pluginsupplier.GetInstalledPlugins()
 		if err != nil {
 			return err
 		}
@@ -227,7 +227,7 @@ var initConfigCmd = &cobra.Command{
 		// Add the default featureflags for active plugins based on the currentContext
 		// Plugins that are installed but are not active plugin will not be processed here
 		// and defaultFeatureFlags will not be configured for those plugins
-		for _, desc := range append(serverPlugins, standalonePlugins...) {
+		for _, desc := range plugins {
 			config.AddDefaultFeatureFlagsIfMissing(cfg, desc.DefaultFeatureFlags)
 		}
 
