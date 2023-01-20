@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 
 	"github.com/aunum/log"
 	"github.com/pkg/errors"
@@ -18,7 +19,6 @@ import (
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 )
 
@@ -82,7 +82,7 @@ func newListDiscoverySourceCmd() *cobra.Command {
 
 			// If context-target feature is activated, get discovery sources from all active context
 			// else get discovery sources from current server
-			if configlib.IsFeatureActivated(config.FeatureContextCommand) {
+			if configlib.IsFeatureActivated(constants.FeatureContextCommand) {
 				mapContexts, err := configlib.GetAllCurrentContextsMap()
 				if err == nil {
 					for _, context := range mapContexts {

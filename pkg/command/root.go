@@ -17,7 +17,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
-	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 )
 
@@ -47,7 +47,7 @@ func NewRootCmd() (*cobra.Command, error) {
 	)
 
 	// If the context and target feature is enabled, add the corresponding commands under root.
-	if config.IsFeatureActivated(cliconfig.FeatureContextCommand) {
+	if config.IsFeatureActivated(constants.FeatureContextCommand) {
 		rootCmd.AddCommand(
 			contextCmd,
 			k8sCmd,

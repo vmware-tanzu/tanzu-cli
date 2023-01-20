@@ -32,6 +32,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 )
 
@@ -124,7 +125,7 @@ func DiscoverStandalonePlugins() (plugins []discovery.Discovered, err error) {
 func DiscoverServerPlugins() ([]discovery.Discovered, error) {
 	// If the context and target feature is enabled, discover plugins from all currentContexts
 	// Else discover plugin based on current Server
-	if configlib.IsFeatureActivated(config.FeatureContextCommand) {
+	if configlib.IsFeatureActivated(constants.FeatureContextCommand) {
 		return discoverServerPluginsBasedOnAllCurrentContexts()
 	}
 	return discoverServerPluginsBasedOnCurrentServer()

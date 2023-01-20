@@ -23,7 +23,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
-	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 )
@@ -62,7 +62,7 @@ func newPluginCmd() *cobra.Command {
 	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
 	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "delete the plugin without asking for confirmation")
 
-	if config.IsFeatureActivated(cliconfig.FeatureContextCommand) {
+	if config.IsFeatureActivated(constants.FeatureContextCommand) {
 		installPluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", "target of the plugin (kubernetes[k8s]/mission-control[tmc])")
 		upgradePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", "target of the plugin (kubernetes[k8s]/mission-control[tmc])")
 		deletePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", "target of the plugin (kubernetes[k8s]/mission-control[tmc])")
@@ -105,7 +105,7 @@ func newListPluginCmd() *cobra.Command {
 			}
 			sort.Sort(discovery.DiscoveredSorter(availablePlugins))
 
-			if config.IsFeatureActivated(cliconfig.FeatureContextCommand) && (outputFormat == "" || outputFormat == string(component.TableOutputType)) {
+			if config.IsFeatureActivated(constants.FeatureContextCommand) && (outputFormat == "" || outputFormat == string(component.TableOutputType)) {
 				displayPluginListOutputSplitViewContext(availablePlugins, cmd.OutOrStdout())
 			} else {
 				displayPluginListOutputListView(availablePlugins, cmd.OutOrStdout())
