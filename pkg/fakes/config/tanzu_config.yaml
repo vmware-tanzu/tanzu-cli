@@ -17,7 +17,6 @@ clientOptions:
       dual-stack-ipv4-primary: 'false'
       dual-stack-ipv6-primary: 'false'
     global:
-      context-aware-cli-for-plugins: 'true'
       context-target-v2: 'true'
       tkr-version-v1alpha3-beta: 'false'
     management-cluster:

@@ -3,23 +3,8 @@
 
 package config
 
-import (
-	"strings"
-)
-
-var (
-	// IsContextAwareDiscoveryEnabled defines default to use when the user has not configured a value
-	// This variable is configured at the build time of the CLI
-	IsContextAwareDiscoveryEnabled = ""
-)
-
 // This block is for global feature constants, to allow them to be used more broadly
 const (
-	// FeatureContextAwareCLIForPlugins determines whether to use legacy way of discovering plugins or
-	// to use the new context-aware Plugin API based plugin discovery mechanism
-	// Users can should not update this featureflag. This featureflag will be removed in the future version
-	// and the feature will be always enabled
-	FeatureContextAwareCLIForPlugins = "features.global.context-aware-cli-for-plugins"
 	// FeatureContextCommand determines whether to surface the context command. This is disabled by default.
 	FeatureContextCommand = "features.global.context-target-v2"
 	// FeatureCentralRepository determines if the CLI uses the Central Repository of plugins.
@@ -39,15 +24,8 @@ const (
 // no conflict with previous installs (that have a false value for the entry "features.global.foo-bar-beta").
 var (
 	DefaultCliFeatureFlags = map[string]bool{
-		FeatureContextAwareCLIForPlugins: contextAwareDiscoveryEnabled(),
-		FeatureContextCommand:            true,
+		FeatureContextCommand: true,
 		// TODO(khouzam) turn this on before the 1.0 release, or remove the flag completely
 		FeatureCentralRepository: false,
 	}
 )
-
-// contextAwareDiscoveryEnabled returns true if the IsContextAwareDiscoveryEnabled
-// is set to true during build time
-func contextAwareDiscoveryEnabled() bool {
-	return strings.EqualFold(IsContextAwareDiscoveryEnabled, "true")
-}
