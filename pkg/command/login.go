@@ -232,6 +232,7 @@ func createServerWithKubeconfig() (server *configapi.Server, err error) {
 			return
 		}
 	}
+	kubeConfig = strings.TrimSpace(kubeConfig)
 	if kubeConfig == "" {
 		kubeConfig = getDefaultKubeconfigPath()
 	}
@@ -248,6 +249,7 @@ func createServerWithKubeconfig() (server *configapi.Server, err error) {
 			return
 		}
 	}
+	kubeContext = strings.TrimSpace(kubeContext)
 	if name == "" {
 		err = component.Prompt(
 			&component.PromptConfig{
@@ -260,6 +262,7 @@ func createServerWithKubeconfig() (server *configapi.Server, err error) {
 			return
 		}
 	}
+	name = strings.TrimSpace(name)
 	nameExists, err := config.ServerExists(name)
 	if err != nil {
 		return server, err
@@ -296,6 +299,7 @@ func createServerWithEndpoint() (server *configapi.Server, err error) {
 			return
 		}
 	}
+	endpoint = strings.TrimSpace(endpoint)
 	if name == "" {
 		err = component.Prompt(
 			&component.PromptConfig{
@@ -308,6 +312,7 @@ func createServerWithEndpoint() (server *configapi.Server, err error) {
 			return
 		}
 	}
+	name = strings.TrimSpace(name)
 	nameExists, err := config.ServerExists(name)
 	if err != nil {
 		return server, err
