@@ -9,8 +9,7 @@ import (
 	"github.com/pkg/errors"
 	apimachineryjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
-
+	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 )

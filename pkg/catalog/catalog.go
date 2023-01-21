@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
@@ -237,7 +237,7 @@ func UpdateCatalogCache() error {
 
 // PluginNameTarget constructs a string to uniquely refer to a plugin associated
 // with a specific target when target is provided.
-func PluginNameTarget(pluginName string, target cliv1alpha1.Target) string {
+func PluginNameTarget(pluginName string, target configtypes.Target) string {
 	if target == "" {
 		return pluginName
 	}

@@ -22,11 +22,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
+	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/artifact"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
@@ -49,7 +49,7 @@ const (
 var execCommand = exec.Command
 
 type DeletePluginOptions struct {
-	Target      cliv1alpha1.Target
+	Target      configtypes.Target
 	PluginName  string
 	ForceDelete bool
 }
@@ -78,7 +78,7 @@ func ValidatePlugin(p *cli.PluginInfo) (err error) {
 	return
 }
 
-func discoverPlugins(pd []configapi.PluginDiscovery) ([]discovery.Discovered, error) {
+func discoverPlugins(pd []configtypes.PluginDiscovery) ([]discovery.Discovered, error) {
 	allPlugins := make([]discovery.Discovered, 0)
 	for _, d := range pd {
 		discObject, err := discovery.CreateDiscoveryFromV1alpha1(d)
@@ -145,7 +145,7 @@ func discoverServerPluginsBasedOnAllCurrentContexts() ([]discovery.Discovered, e
 	}
 
 	for _, context := range currentContextMap {
-		var discoverySources []configapi.PluginDiscovery
+		var discoverySources []configtypes.PluginDiscovery
 		discoverySources = append(discoverySources, context.DiscoverySources...)
 		discoverySources = append(discoverySources, defaultDiscoverySourceBasedOnContext(context)...)
 		discoveredPlugins, err := discoverPlugins(discoverySources)
@@ -160,10 +160,10 @@ func discoverServerPluginsBasedOnAllCurrentContexts() ([]discovery.Discovered, e
 
 			// Associate Target of the plugin based on the Context Type of the Context
 			switch context.Target {
-			case cliv1alpha1.TargetTMC:
-				discoveredPlugins[i].Target = cliv1alpha1.TargetTMC
-			case cliv1alpha1.TargetK8s:
-				discoveredPlugins[i].Target = cliv1alpha1.TargetK8s
+			case configtypes.TargetTMC:
+				discoveredPlugins[i].Target = configtypes.TargetTMC
+			case configtypes.TargetK8s:
+				discoveredPlugins[i].Target = configtypes.TargetK8s
 			}
 		}
 		plugins = append(plugins, discoveredPlugins...)
@@ -181,7 +181,7 @@ func discoverServerPluginsBasedOnCurrentServer() ([]discovery.Discovered, error)
 		// as there are no server plugins that can be discovered
 		return plugins, nil
 	}
-	var discoverySources []configapi.PluginDiscovery
+	var discoverySources []configtypes.PluginDiscovery
 	discoverySources = append(discoverySources, server.DiscoverySources...)
 	discoverySources = append(discoverySources, defaultDiscoverySourceBasedOnServer(server)...)
 
@@ -276,12 +276,12 @@ func combineDuplicatePlugins(availablePlugins []discovery.Discovered) []discover
 	}
 
 	for i := range availablePlugins {
-		if availablePlugins[i].Target == cliv1alpha1.TargetNone {
+		if availablePlugins[i].Target == configtypes.TargetNone {
 			// As we are considering None targeted and k8s target plugin to be treated as same plugins
 			// in the case of plugin name conflicts, using `k8s` target to determine the plugin already
 			// exists or not.
 			// If plugin already exists in the map then combining the installation status for both the plugins
-			key := fmt.Sprintf("%s_%s", availablePlugins[i].Name, cliv1alpha1.TargetK8s)
+			key := fmt.Sprintf("%s_%s", availablePlugins[i].Name, configtypes.TargetK8s)
 			dp, exists := mapOfSelectedPlugins[key]
 			if !exists {
 				mapOfSelectedPlugins[key] = availablePlugins[i]
@@ -295,7 +295,7 @@ func combineDuplicatePlugins(availablePlugins []discovery.Discovered) []discover
 			dp, exists := mapOfSelectedPlugins[key]
 			if !exists {
 				mapOfSelectedPlugins[key] = availablePlugins[i]
-			} else if availablePlugins[i].Target == cliv1alpha1.TargetK8s || availablePlugins[i].Scope == common.PluginScopeContext {
+			} else if availablePlugins[i].Target == configtypes.TargetK8s || availablePlugins[i].Scope == common.PluginScopeContext {
 				mapOfSelectedPlugins[key] = combinePluginInstallationStatus(availablePlugins[i], dp)
 			}
 		}
@@ -400,7 +400,7 @@ func pluginIndexForName(availablePlugins []discovery.Discovered, p *discovery.Di
 }
 
 // DescribePlugin describes a plugin.
-func DescribePlugin(pluginName string, target cliv1alpha1.Target) (info *cli.PluginInfo, err error) {
+func DescribePlugin(pluginName string, target configtypes.Target) (info *cli.PluginInfo, err error) {
 	plugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return nil, err
@@ -448,7 +448,7 @@ func InitializePlugin(plugin *cli.PluginInfo) error {
 }
 
 // InstallPlugin installs a plugin from the given repository.
-func InstallPlugin(pluginName, version string, target cliv1alpha1.Target) error {
+func InstallPlugin(pluginName, version string, target configtypes.Target) error {
 	availablePlugins, err := AvailablePlugins()
 	if err != nil {
 		return err
@@ -478,12 +478,12 @@ func InstallPlugin(pluginName, version string, target cliv1alpha1.Target) error 
 }
 
 // UpgradePlugin upgrades a plugin from the given repository.
-func UpgradePlugin(pluginName, version string, target cliv1alpha1.Target) error {
+func UpgradePlugin(pluginName, version string, target configtypes.Target) error {
 	return InstallPlugin(pluginName, version, target)
 }
 
 // GetRecommendedVersionOfPlugin returns recommended version of the plugin
-func GetRecommendedVersionOfPlugin(pluginName string, target cliv1alpha1.Target) (string, error) {
+func GetRecommendedVersionOfPlugin(pluginName string, target configtypes.Target) (string, error) {
 	availablePlugins, err := AvailablePlugins()
 	if err != nil {
 		return "", err
@@ -512,7 +512,7 @@ func GetRecommendedVersionOfPlugin(pluginName string, target cliv1alpha1.Target)
 }
 
 func installOrUpgradePlugin(p *discovery.Discovered, version string, installTestPlugin bool) error {
-	if p.Target == cliv1alpha1.TargetNone {
+	if p.Target == configtypes.TargetNone {
 		log.Infof("Installing plugin '%v:%v'", p.Name, version)
 	} else {
 		log.Infof("Installing plugin '%v:%v' with target '%v'", p.Name, version, p.Target)
@@ -715,7 +715,7 @@ func SyncPlugins() error {
 }
 
 // InstallPluginsFromLocalSource installs plugin from local source directory
-func InstallPluginsFromLocalSource(pluginName, version string, target cliv1alpha1.Target, localPath string, installTestPlugin bool) error {
+func InstallPluginsFromLocalSource(pluginName, version string, target configtypes.Target, localPath string, installTestPlugin bool) error {
 	// Set default local plugin distro to local-path as while installing the plugin
 	// from local source we should take t
 	common.DefaultLocalPluginDistroDir = localPath
@@ -787,7 +787,7 @@ func discoverPluginsFromLocalSource(localPath string) ([]discovery.Discovered, e
 	// relative path is provided as part of CLIPlugin definition for local discovery
 	common.DefaultLocalPluginDistroDir = localPath
 
-	var pds []configapi.PluginDiscovery
+	var pds []configtypes.PluginDiscovery
 
 	items, err := os.ReadDir(filepath.Join(localPath, "discovery"))
 	if err != nil {
@@ -795,8 +795,8 @@ func discoverPluginsFromLocalSource(localPath string) ([]discovery.Discovered, e
 	}
 	for _, item := range items {
 		if item.IsDir() {
-			pd := configapi.PluginDiscovery{
-				Local: &configapi.LocalDiscovery{
+			pd := configtypes.PluginDiscovery{
+				Local: &configtypes.LocalDiscovery{
 					Name: "",
 					Path: filepath.Join(localPath, "discovery", item.Name()),
 				},

@@ -16,12 +16,11 @@ import (
 	"github.com/aunum/log"
 	"github.com/golang-jwt/jwt"
 	"github.com/pkg/errors"
-
 	"golang.org/x/oauth2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/interfaces"
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 )
 
 const (
@@ -184,10 +183,10 @@ type Claims struct {
 
 // GetToken fetches a token for the current auth context.
 func GetToken(g *configapi.GlobalServerAuth) (*oauth2.Token, error) {
-	if !IsExpired(g.Expiration.Time) {
+	if !IsExpired(g.Expiration) {
 		tok := &oauth2.Token{
 			AccessToken: g.AccessToken,
-			Expiry:      g.Expiration.Time,
+			Expiry:      g.Expiration,
 		}
 		return tok.WithExtra(map[string]interface{}{
 			"id_token": g.IDToken,
@@ -202,7 +201,7 @@ func GetToken(g *configapi.GlobalServerAuth) (*oauth2.Token, error) {
 
 	g.Type = "api-token"
 	expiration := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
-	g.Expiration = metav1.NewTime(expiration)
+	g.Expiration = expiration
 	g.RefreshToken = token.RefreshToken
 	g.AccessToken = token.AccessToken
 	g.IDToken = token.IDToken

@@ -12,16 +12,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 )
 
 const issuerURL = "https://auth0.com/"
@@ -223,13 +222,13 @@ func TestGetToken_Valid_NotExpired(t *testing.T) {
 	)
 	expireTime := time.Now().Add(time.Minute * 30)
 
-	serverAuth := configapi.GlobalServerAuth{
+	serverAuth := configtypes.GlobalServerAuth{
 		Issuer:       "https://oidc.example.com",
 		UserName:     "jdoe",
 		AccessToken:  accessToken,
 		IDToken:      "xxyyzz",
 		RefreshToken: "sprite",
-		Expiration:   v1.NewTime(expireTime),
+		Expiration:   expireTime,
 		Type:         "client",
 	}
 
@@ -248,13 +247,13 @@ func TestGetToken_Expired(t *testing.T) {
 	)
 	expireTime := time.Now().Add(-time.Minute * 30)
 
-	serverAuth := configapi.GlobalServerAuth{
+	serverAuth := configtypes.GlobalServerAuth{
 		Issuer:       "https://oidc.example.com",
 		UserName:     "jdoe",
 		AccessToken:  accessToken,
 		IDToken:      "xxyyzz",
 		RefreshToken: "sprite",
-		Expiration:   v1.NewTime(expireTime),
+		Expiration:   expireTime,
 		Type:         "client",
 	}
 

@@ -12,9 +12,9 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
@@ -106,7 +106,7 @@ var setConfigCmd = &cobra.Command{
 }
 
 // setConfiguration sets the key-value pair for the given path
-func setConfiguration(cfg *configapi.ClientConfig, pathParam, value string) error {
+func setConfiguration(cfg *configtypes.ClientConfig, pathParam, value string) error {
 	// special cases:
 	// backward compatibility
 	if pathParam == "unstable-versions" || pathParam == "cli.unstable-versions" {
@@ -135,7 +135,7 @@ func setConfiguration(cfg *configapi.ClientConfig, pathParam, value string) erro
 	}
 }
 
-func setFeatures(cfg *configapi.ClientConfig, paramArray []string, value string) error {
+func setFeatures(cfg *configtypes.ClientConfig, paramArray []string, value string) error {
 	if len(paramArray) != 3 {
 		return errors.New("unable to parse config path parameter into three parts [" + strings.Join(paramArray, ".") + "]  (was expecting 'features.<plugin>.<feature>'")
 	}
@@ -143,26 +143,26 @@ func setFeatures(cfg *configapi.ClientConfig, paramArray []string, value string)
 	featureName := paramArray[2]
 
 	if cfg.ClientOptions == nil {
-		cfg.ClientOptions = &configapi.ClientOptions{}
+		cfg.ClientOptions = &configtypes.ClientOptions{}
 	}
 	if cfg.ClientOptions.Features == nil {
-		cfg.ClientOptions.Features = make(map[string]configapi.FeatureMap)
+		cfg.ClientOptions.Features = make(map[string]configtypes.FeatureMap)
 	}
 	if cfg.ClientOptions.Features[pluginName] == nil {
-		cfg.ClientOptions.Features[pluginName] = configapi.FeatureMap{}
+		cfg.ClientOptions.Features[pluginName] = configtypes.FeatureMap{}
 	}
 	cfg.ClientOptions.Features[pluginName][featureName] = value
 	return nil
 }
 
-func setEnvs(cfg *configapi.ClientConfig, paramArray []string, value string) error {
+func setEnvs(cfg *configtypes.ClientConfig, paramArray []string, value string) error {
 	if len(paramArray) != 2 {
 		return errors.New("unable to parse config path parameter into two parts [" + strings.Join(paramArray, ".") + "]  (was expecting 'env.<variable>'")
 	}
 	envVariable := paramArray[1]
 
 	if cfg.ClientOptions == nil {
-		cfg.ClientOptions = &configapi.ClientOptions{}
+		cfg.ClientOptions = &configtypes.ClientOptions{}
 	}
 	if cfg.ClientOptions.Env == nil {
 		cfg.ClientOptions.Env = make(map[string]string)
@@ -172,14 +172,14 @@ func setEnvs(cfg *configapi.ClientConfig, paramArray []string, value string) err
 	return nil
 }
 
-func setUnstableVersions(cfg *configapi.ClientConfig, value string) error {
-	optionKey := configapi.VersionSelectorLevel(value)
+func setUnstableVersions(cfg *configtypes.ClientConfig, value string) error {
+	optionKey := configtypes.VersionSelectorLevel(value)
 
 	switch optionKey {
-	case configapi.AllUnstableVersions,
-		configapi.AlphaUnstableVersions,
-		configapi.ExperimentalUnstableVersions,
-		configapi.NoUnstableVersions:
+	case configtypes.AllUnstableVersions,
+		configtypes.AlphaUnstableVersions,
+		configtypes.ExperimentalUnstableVersions,
+		configtypes.NoUnstableVersions:
 		cfg.SetUnstableVersionSelector(optionKey)
 	default:
 		return fmt.Errorf("unknown unstable-versions setting: %s; should be one of [all, none, alpha, experimental]", optionKey)
@@ -187,14 +187,14 @@ func setUnstableVersions(cfg *configapi.ClientConfig, value string) error {
 	return nil
 }
 
-func setEdition(cfg *configapi.ClientConfig, edition string) error {
-	editionOption := configapi.EditionSelector(edition)
+func setEdition(cfg *configtypes.ClientConfig, edition string) error {
+	editionOption := configtypes.EditionSelector(edition)
 
 	switch editionOption {
-	case configapi.EditionCommunity, configapi.EditionStandard:
+	case configtypes.EditionCommunity, configtypes.EditionStandard:
 		cfg.SetEditionSelector(editionOption)
 	default:
-		return fmt.Errorf("unknown edition: %s; should be one of [%s, %s]", editionOption, configapi.EditionStandard, configapi.EditionCommunity)
+		return fmt.Errorf("unknown edition: %s; should be one of [%s, %s]", editionOption, configtypes.EditionStandard, configtypes.EditionCommunity)
 	}
 	return nil
 }
@@ -213,10 +213,10 @@ var initConfigCmd = &cobra.Command{
 			return err
 		}
 		if cfg.ClientOptions == nil {
-			cfg.ClientOptions = &configapi.ClientOptions{}
+			cfg.ClientOptions = &configtypes.ClientOptions{}
 		}
 		if cfg.ClientOptions.CLI == nil {
-			cfg.ClientOptions.CLI = &configapi.CLIOptions{}
+			cfg.ClientOptions.CLI = &configtypes.CLIOptions{}
 		}
 
 		plugins, err := pluginsupplier.GetInstalledPlugins()

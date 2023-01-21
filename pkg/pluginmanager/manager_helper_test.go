@@ -12,8 +12,8 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/assert"
 
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
@@ -21,7 +21,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 )
 
-func findDiscoveredPlugin(discovered []discovery.Discovered, pluginName string, target cliv1alpha1.Target) *discovery.Discovered {
+func findDiscoveredPlugin(discovered []discovery.Discovered, pluginName string, target configtypes.Target) *discovery.Discovered {
 	for i := range discovered {
 		if pluginName == discovered[i].Name && target == discovered[i].Target {
 			return &discovered[i]
@@ -30,7 +30,7 @@ func findDiscoveredPlugin(discovered []discovery.Discovered, pluginName string, 
 	return nil
 }
 
-func findPluginInfo(pd []cli.PluginInfo, pluginName string, target cliv1alpha1.Target) *cli.PluginInfo {
+func findPluginInfo(pd []cli.PluginInfo, pluginName string, target configtypes.Target) *cli.PluginInfo {
 	for i := range pd {
 		if pluginName == pd[i].Name && target == pd[i].Target {
 			return &pd[i]
@@ -88,7 +88,7 @@ func setupLocalDistoForTesting() func() {
 	}
 }
 
-func mockInstallPlugin(assert *assert.Assertions, name, version string, target cliv1alpha1.Target) {
+func mockInstallPlugin(assert *assert.Assertions, name, version string, target configtypes.Target) {
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 

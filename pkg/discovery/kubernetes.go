@@ -9,8 +9,9 @@ import (
 	"github.com/aunum/log"
 	"github.com/pkg/errors"
 
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
+	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cluster"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
@@ -124,7 +125,7 @@ func DiscoveredFromK8sV1alpha1WithImageRepositoryOverride(p *cliv1alpha1.CLIPlug
 		Description:        p.Spec.Description,
 		RecommendedVersion: p.Spec.RecommendedVersion,
 		Optional:           p.Spec.Optional,
-		Target:             cliv1alpha1.StringToTarget(string(p.Spec.Target)),
+		Target:             configtypes.StringToTarget(string(p.Spec.Target)),
 	}
 	dp.SupportedVersions = make([]string, 0)
 	for v := range p.Spec.Artifacts {

@@ -9,16 +9,16 @@ import (
 
 	"github.com/tj/assert"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 )
 
 func TestConfigPopulateDefaultStandaloneDiscovery(t *testing.T) {
-	cfg := &configapi.ClientConfig{
-		ClientOptions: &configapi.ClientOptions{
-			CLI: &configapi.CLIOptions{
-				DiscoverySources: []configapi.PluginDiscovery{},
+	cfg := &configtypes.ClientConfig{
+		ClientOptions: &configtypes.ClientOptions{
+			CLI: &configtypes.CLIOptions{
+				DiscoverySources: []configtypes.PluginDiscovery{},
 			},
 		},
 	}
@@ -34,12 +34,12 @@ func TestConfigPopulateDefaultStandaloneDiscovery(t *testing.T) {
 }
 
 func TestConfigPopulateDefaultStandaloneDiscoveryWhenDefaultDiscoveryExistsAndIsSame(t *testing.T) {
-	cfg := &configapi.ClientConfig{
-		ClientOptions: &configapi.ClientOptions{
-			CLI: &configapi.CLIOptions{
-				DiscoverySources: []configapi.PluginDiscovery{
-					configapi.PluginDiscovery{
-						OCI: &configapi.OCIDiscovery{
+	cfg := &configtypes.ClientConfig{
+		ClientOptions: &configtypes.ClientOptions{
+			CLI: &configtypes.CLIOptions{
+				DiscoverySources: []configtypes.PluginDiscovery{
+					configtypes.PluginDiscovery{
+						OCI: &configtypes.OCIDiscovery{
 							Name:  DefaultStandaloneDiscoveryName,
 							Image: "fake.image.repo/package/standalone-plugins:v1.0.0",
 						},
@@ -60,18 +60,18 @@ func TestConfigPopulateDefaultStandaloneDiscoveryWhenDefaultDiscoveryExistsAndIs
 }
 
 func TestConfigPopulateDefaultStandaloneDiscoveryWhenDefaultDiscoveryExistsAndIsNotSame(t *testing.T) {
-	cfg := &configapi.ClientConfig{
-		ClientOptions: &configapi.ClientOptions{
-			CLI: &configapi.CLIOptions{
-				DiscoverySources: []configapi.PluginDiscovery{
-					configapi.PluginDiscovery{
-						OCI: &configapi.OCIDiscovery{
+	cfg := &configtypes.ClientConfig{
+		ClientOptions: &configtypes.ClientOptions{
+			CLI: &configtypes.CLIOptions{
+				DiscoverySources: []configtypes.PluginDiscovery{
+					configtypes.PluginDiscovery{
+						OCI: &configtypes.OCIDiscovery{
 							Name:  DefaultStandaloneDiscoveryName,
 							Image: "fake.image/path:v2.0.0",
 						},
 					},
-					configapi.PluginDiscovery{
-						OCI: &configapi.OCIDiscovery{
+					configtypes.PluginDiscovery{
+						OCI: &configtypes.OCIDiscovery{
 							Name:  "additional-discovery",
 							Image: "additional-discovery/path:v1.0.0",
 						},
@@ -94,10 +94,10 @@ func TestConfigPopulateDefaultStandaloneDiscoveryWhenDefaultDiscoveryExistsAndIs
 }
 
 func TestConfigPopulateDefaultStandaloneDiscoveryLocal(t *testing.T) {
-	cfg := &configapi.ClientConfig{
-		ClientOptions: &configapi.ClientOptions{
-			CLI: &configapi.CLIOptions{
-				DiscoverySources: []configapi.PluginDiscovery{},
+	cfg := &configtypes.ClientConfig{
+		ClientOptions: &configtypes.ClientOptions{
+			CLI: &configtypes.CLIOptions{
+				DiscoverySources: []configtypes.PluginDiscovery{},
 			},
 		},
 	}
@@ -114,10 +114,10 @@ func TestConfigPopulateDefaultStandaloneDiscoveryLocal(t *testing.T) {
 }
 
 func TestConfigPopulateDefaultStandaloneDiscoveryEnvVariables(t *testing.T) {
-	cfg := &configapi.ClientConfig{
-		ClientOptions: &configapi.ClientOptions{
-			CLI: &configapi.CLIOptions{
-				DiscoverySources: []configapi.PluginDiscovery{},
+	cfg := &configtypes.ClientConfig{
+		ClientOptions: &configtypes.ClientOptions{
+			CLI: &configtypes.CLIOptions{
+				DiscoverySources: []configtypes.PluginDiscovery{},
 			},
 		},
 	}

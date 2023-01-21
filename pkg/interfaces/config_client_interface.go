@@ -5,14 +5,14 @@
 package interfaces
 
 import (
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 //go:generate counterfeiter -o ../fakes/config_client_fake.go . ConfigClientWrapper
 type ConfigClientWrapper interface {
 	GetEnvConfigurations() map[string]string
-	StoreClientConfig(clientConfig *configapi.ClientConfig) error
+	StoreClientConfig(clientConfig *configtypes.ClientConfig) error
 	AcquireTanzuConfigLock()
 	ReleaseTanzuConfigLock()
 }
@@ -35,6 +35,6 @@ func (cc *configClientWrapperImpl) ReleaseTanzuConfigLock() {
 	config.ReleaseTanzuConfigLock()
 }
 
-func (cc *configClientWrapperImpl) StoreClientConfig(clientConfig *configapi.ClientConfig) error {
+func (cc *configClientWrapperImpl) StoreClientConfig(clientConfig *configtypes.ClientConfig) error {
 	return config.StoreClientConfig(clientConfig)
 }

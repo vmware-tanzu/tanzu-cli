@@ -18,9 +18,8 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 
-	cliapi "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes/helper"
@@ -236,7 +235,7 @@ clusterOpts:
 			err = useCtx(cmd, []string{"test-use-context"})
 			Expect(err).To(BeNil())
 
-			cctx, err := config.GetCurrentContext(cliapi.Target(targetStr))
+			cctx, err := config.GetCurrentContext(configtypes.Target(targetStr))
 			Expect(err).To(BeNil())
 			Expect(cctx.Name).To(ContainSubstring("test-use-context"))
 		})
@@ -257,7 +256,7 @@ var _ = Describe("create new context", func() {
 			tkgConfigFile   *os.File
 			tkgConfigFileNG *os.File
 			err             error
-			ctx             *configapi.Context
+			ctx             *configtypes.Context
 		)
 		BeforeEach(func() {
 			tkgConfigFile, err = os.CreateTemp("", "config")
@@ -320,7 +319,7 @@ var _ = Describe("create new context", func() {
 			tkgConfigFile   *os.File
 			tkgConfigFileNG *os.File
 			err             error
-			ctx             *configapi.Context
+			ctx             *configtypes.Context
 		)
 
 		BeforeEach(func() {
@@ -372,7 +371,7 @@ var _ = Describe("create new context", func() {
 			issuerCA    = "fakeCAData"
 		)
 		var (
-			ctx       *configapi.Context
+			ctx       *configtypes.Context
 			ep        string
 			tlsServer *ghttp.Server
 			servCert  *x509.Certificate

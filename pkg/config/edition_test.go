@@ -8,13 +8,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 func TestConfigFeaturesDefaultEditionAdded(t *testing.T) {
-	cfg := &configapi.ClientConfig{
-		ClientOptions: &configapi.ClientOptions{
-			CLI: &configapi.CLIOptions{
+	cfg := &configtypes.ClientConfig{
+		ClientOptions: &configtypes.ClientOptions{
+			CLI: &configtypes.CLIOptions{
 				Repositories:            DefaultRepositories,
 				UnstableVersionSelector: DefaultVersionSelector,
 			},
@@ -23,14 +23,14 @@ func TestConfigFeaturesDefaultEditionAdded(t *testing.T) {
 
 	added := addDefaultEditionIfMissing(cfg)
 	require.True(t, added, "addDefaultEditionIfMissing should have returned true (having added missing default edition value)")
-	errMsg := "addDefaultEditionIfMissing should have added default edition (" + configapi.EditionStandard + ") instead of " + cfg.ClientOptions.CLI.Edition //nolint:staticcheck
-	require.Equal(t, cfg.ClientOptions.CLI.Edition, configapi.EditionSelector(configapi.EditionStandard), errMsg)                                            //nolint:staticcheck
+	errMsg := "addDefaultEditionIfMissing should have added default edition (" + configtypes.EditionStandard + ") instead of " + cfg.ClientOptions.CLI.Edition //nolint:staticcheck
+	require.Equal(t, cfg.ClientOptions.CLI.Edition, configtypes.EditionSelector(configtypes.EditionStandard), errMsg)                                          //nolint:staticcheck
 }
 
 func TestConfigFeaturesDefaultEditionNotAdded(t *testing.T) {
-	cfg := &configapi.ClientConfig{
-		ClientOptions: &configapi.ClientOptions{
-			CLI: &configapi.CLIOptions{
+	cfg := &configtypes.ClientConfig{
+		ClientOptions: &configtypes.ClientOptions{
+			CLI: &configtypes.CLIOptions{
 				Repositories:            DefaultRepositories,
 				UnstableVersionSelector: DefaultVersionSelector,
 				Edition:                 "tce",
@@ -41,5 +41,5 @@ func TestConfigFeaturesDefaultEditionNotAdded(t *testing.T) {
 	added := addDefaultEditionIfMissing(cfg)
 	require.False(t, added, "addDefaultEditionIfMissing should have returned false (without adding default edition value)")
 	errMsg := "addDefaultEditionIfMissing should have left existing edition value intact instead of replacing with [" + cfg.ClientOptions.CLI.Edition + "]" //nolint:staticcheck
-	require.Equal(t, cfg.ClientOptions.CLI.Edition, configapi.EditionSelector(configapi.EditionCommunity), errMsg)                                          //nolint:staticcheck
+	require.Equal(t, cfg.ClientOptions.CLI.Edition, configtypes.EditionSelector(configtypes.EditionCommunity), errMsg)                                      //nolint:staticcheck
 }

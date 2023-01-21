@@ -29,9 +29,8 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/tj/assert v0.0.3
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
-	github.com/vmware-tanzu/tanzu-framework/apis/cli v0.0.0-20221205143842-a334b86a2650
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20221202212418-359f504ed815
-	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20221207020746-9f818c753271
+	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230125222721-2af61852d9fb
 	go.uber.org/multierr v1.8.0
 	golang.org/x/mod v0.6.0
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1

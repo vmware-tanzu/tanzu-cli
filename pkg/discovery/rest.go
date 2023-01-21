@@ -12,8 +12,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
+	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 )
@@ -44,7 +45,7 @@ type Plugin struct {
 	Optional bool `json:"optional"`
 
 	// Target the target of the plugin
-	Target cliv1alpha1.Target `json:"target"`
+	Target configtypes.Target `json:"target"`
 }
 
 // DescribePluginResponse defines the response from Describe Plugin API.
@@ -173,7 +174,7 @@ func DiscoveredFromREST(p *Plugin) (Discovered, error) {
 		Description:        p.Description,
 		RecommendedVersion: p.RecommendedVersion,
 		Optional:           p.Optional,
-		Target:             cliv1alpha1.StringToTarget(string(p.Target)),
+		Target:             configtypes.StringToTarget(string(p.Target)),
 	}
 	dp.SupportedVersions = make([]string, 0)
 	for v := range p.Artifacts {

@@ -4,8 +4,9 @@
 package discovery
 
 import (
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
 )
 
 // Discovered defines discovered plugin resource
@@ -56,7 +57,7 @@ type Discovered struct {
 	DiscoveryType string
 
 	// Target defines the target to which this plugin is applicable to
-	Target cliv1alpha1.Target
+	Target configtypes.Target
 
 	// Status is the installed/uninstalled status of the plugin.
 	Status string
