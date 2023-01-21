@@ -11,7 +11,7 @@ package discovery
 import (
 	"errors"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // Discovery is the interface to fetch the list of available plugins
@@ -30,7 +30,7 @@ type Discovery interface {
 }
 
 // CreateDiscoveryFromV1alpha1 creates discovery interface from v1alpha1 API
-func CreateDiscoveryFromV1alpha1(pd configapi.PluginDiscovery) (Discovery, error) {
+func CreateDiscoveryFromV1alpha1(pd configtypes.PluginDiscovery) (Discovery, error) {
 	switch {
 	case pd.OCI != nil:
 		return NewOCIDiscovery(pd.OCI.Name, pd.OCI.Image), nil

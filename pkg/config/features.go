@@ -8,8 +8,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // ConfigureDefaultFeatureFlagsIfMissing configures default feature-flags to ClientConfig if missing
@@ -35,7 +35,7 @@ func ConfigureDefaultFeatureFlagsIfMissing(defaultFeatureFlags map[string]bool) 
 	return nil
 }
 
-func populateDefaultCliFeatureValues(c *configapi.ClientConfig, defaultCliFeatureFlags map[string]bool) error {
+func populateDefaultCliFeatureValues(c *configtypes.ClientConfig, defaultCliFeatureFlags map[string]bool) error {
 	for featureName, flagValue := range defaultCliFeatureFlags {
 		plugin, flag, err := c.SplitFeaturePath(featureName)
 		if err != nil {
@@ -46,12 +46,12 @@ func populateDefaultCliFeatureValues(c *configapi.ClientConfig, defaultCliFeatur
 	return nil
 }
 
-func addFeatureFlag(c *configapi.ClientConfig, plugin, flag string, flagValue bool) {
+func addFeatureFlag(c *configtypes.ClientConfig, plugin, flag string, flagValue bool) {
 	if c.ClientOptions == nil {
-		c.ClientOptions = &configapi.ClientOptions{}
+		c.ClientOptions = &configtypes.ClientOptions{}
 	}
 	if c.ClientOptions.Features == nil {
-		c.ClientOptions.Features = make(map[string]configapi.FeatureMap)
+		c.ClientOptions.Features = make(map[string]configtypes.FeatureMap)
 	}
 	if c.ClientOptions.Features[plugin] == nil {
 		c.ClientOptions.Features[plugin] = make(map[string]string)
@@ -61,7 +61,7 @@ func addFeatureFlag(c *configapi.ClientConfig, plugin, flag string, flagValue bo
 
 // AddDefaultFeatureFlagsIfMissing augments the given configuration object with any default feature flags that do not already have a value
 // and returns TRUE if any were added (so the config can be written out to disk, if the caller wants to)
-func AddDefaultFeatureFlagsIfMissing(config *configapi.ClientConfig, defaultFeatureFlags map[string]bool) bool {
+func AddDefaultFeatureFlagsIfMissing(config *configtypes.ClientConfig, defaultFeatureFlags map[string]bool) bool {
 	added := false
 
 	for featurePath, activated := range defaultFeatureFlags {
@@ -76,7 +76,7 @@ func AddDefaultFeatureFlagsIfMissing(config *configapi.ClientConfig, defaultFeat
 }
 
 // containsFeatureFlag returns true if the features section in the configuration object contains any value for the plugin.feature combination
-func containsFeatureFlag(config *configapi.ClientConfig, plugin, feature string) bool {
+func containsFeatureFlag(config *configtypes.ClientConfig, plugin, feature string) bool {
 	return config.ClientOptions != nil && config.ClientOptions.Features != nil && config.ClientOptions.Features[plugin] != nil &&
 		config.ClientOptions.Features[plugin][feature] != ""
 }

@@ -12,11 +12,11 @@ import (
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	grpc_oauth "google.golang.org/grpc/credentials/oauth"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/interfaces"
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
 const (
@@ -57,7 +57,7 @@ func WithStaticCreds(accessToken string) grpc.CallOption {
 }
 
 type configSource struct {
-	*configapi.ClientConfig
+	*configtypes.ClientConfig
 }
 
 // Token fetches the token.
@@ -69,10 +69,10 @@ func (c *configSource) Token() (*oauth2.Token, error) {
 	if !g.IsGlobal() {
 		return nil, fmt.Errorf("trying to fetch token for non global server")
 	}
-	if !IsExpired(g.GlobalOpts.Auth.Expiration.Time) {
+	if !IsExpired(g.GlobalOpts.Auth.Expiration) {
 		tok := &oauth2.Token{
 			AccessToken: g.GlobalOpts.Auth.AccessToken,
-			Expiry:      g.GlobalOpts.Auth.Expiration.Time,
+			Expiry:      g.GlobalOpts.Auth.Expiration,
 		}
 		return tok.WithExtra(map[string]interface{}{
 			ExtraIDToken: g.GlobalOpts.Auth.IDToken,
@@ -85,7 +85,7 @@ func (c *configSource) Token() (*oauth2.Token, error) {
 
 	g.GlobalOpts.Auth.Type = apiToken
 	expiration := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
-	g.GlobalOpts.Auth.Expiration = metav1.NewTime(expiration)
+	g.GlobalOpts.Auth.Expiration = expiration
 	g.GlobalOpts.Auth.RefreshToken = token.RefreshToken
 	g.GlobalOpts.Auth.AccessToken = token.AccessToken
 	g.GlobalOpts.Auth.IDToken = token.IDToken

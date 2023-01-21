@@ -4,8 +4,9 @@ package fakes
 import (
 	"sync"
 
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+
 	"github.com/vmware-tanzu/tanzu-cli/pkg/interfaces"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 )
 
 type FakeConfigClientWrapper struct {
@@ -27,10 +28,10 @@ type FakeConfigClientWrapper struct {
 	releaseTanzuConfigLockMutex       sync.RWMutex
 	releaseTanzuConfigLockArgsForCall []struct {
 	}
-	StoreClientConfigStub        func(*v1alpha1.ClientConfig) error
+	StoreClientConfigStub        func(*configtypes.ClientConfig) error
 	storeClientConfigMutex       sync.RWMutex
 	storeClientConfigArgsForCall []struct {
-		arg1 *v1alpha1.ClientConfig
+		arg1 *configtypes.ClientConfig
 	}
 	storeClientConfigReturns struct {
 		result1 error
@@ -143,11 +144,11 @@ func (fake *FakeConfigClientWrapper) ReleaseTanzuConfigLockCalls(stub func()) {
 	fake.ReleaseTanzuConfigLockStub = stub
 }
 
-func (fake *FakeConfigClientWrapper) StoreClientConfig(arg1 *v1alpha1.ClientConfig) error {
+func (fake *FakeConfigClientWrapper) StoreClientConfig(arg1 *configtypes.ClientConfig) error {
 	fake.storeClientConfigMutex.Lock()
 	ret, specificReturn := fake.storeClientConfigReturnsOnCall[len(fake.storeClientConfigArgsForCall)]
 	fake.storeClientConfigArgsForCall = append(fake.storeClientConfigArgsForCall, struct {
-		arg1 *v1alpha1.ClientConfig
+		arg1 *configtypes.ClientConfig
 	}{arg1})
 	stub := fake.StoreClientConfigStub
 	fakeReturns := fake.storeClientConfigReturns
@@ -168,13 +169,13 @@ func (fake *FakeConfigClientWrapper) StoreClientConfigCallCount() int {
 	return len(fake.storeClientConfigArgsForCall)
 }
 
-func (fake *FakeConfigClientWrapper) StoreClientConfigCalls(stub func(*v1alpha1.ClientConfig) error) {
+func (fake *FakeConfigClientWrapper) StoreClientConfigCalls(stub func(*configtypes.ClientConfig) error) {
 	fake.storeClientConfigMutex.Lock()
 	defer fake.storeClientConfigMutex.Unlock()
 	fake.StoreClientConfigStub = stub
 }
 
-func (fake *FakeConfigClientWrapper) StoreClientConfigArgsForCall(i int) *v1alpha1.ClientConfig {
+func (fake *FakeConfigClientWrapper) StoreClientConfigArgsForCall(i int) *configtypes.ClientConfig {
 	fake.storeClientConfigMutex.RLock()
 	defer fake.storeClientConfigMutex.RUnlock()
 	argsForCall := fake.storeClientConfigArgsForCall[i]

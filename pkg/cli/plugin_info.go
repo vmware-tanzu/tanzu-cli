@@ -4,7 +4,7 @@
 package cli
 
 import (
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
@@ -66,7 +66,7 @@ type PluginInfo struct {
 	DiscoveredRecommendedVersion string `json:"discoveredRecommendedVersion"`
 
 	// Target specifies the target of the plugin
-	Target cliv1alpha1.Target `json:"target"`
+	Target configtypes.Target `json:"target"`
 
 	// PostInstallHook is function to be run post install of a plugin.
 	PostInstallHook plugin.Hook `json:"-" yaml:"-"`

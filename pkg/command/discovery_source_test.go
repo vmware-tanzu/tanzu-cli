@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 func Test_createDiscoverySource(t *testing.T) {
@@ -71,9 +71,9 @@ func Test_createDiscoverySource(t *testing.T) {
 func Test_addDiscoverySource(t *testing.T) {
 	assert := assert.New(t)
 
-	discoverySources := []configapi.PluginDiscovery{
-		configapi.PluginDiscovery{
-			Local: &configapi.LocalDiscovery{
+	discoverySources := []configtypes.PluginDiscovery{
+		configtypes.PluginDiscovery{
+			Local: &configtypes.LocalDiscovery{
 				Name: "source1",
 				Path: "fakepath1",
 			},
@@ -97,9 +97,9 @@ func Test_addDiscoverySource(t *testing.T) {
 func Test_updateDiscoverySources(t *testing.T) {
 	assert := assert.New(t)
 
-	discoverySources := []configapi.PluginDiscovery{
-		configapi.PluginDiscovery{
-			Local: &configapi.LocalDiscovery{
+	discoverySources := []configtypes.PluginDiscovery{
+		configtypes.PluginDiscovery{
+			Local: &configtypes.LocalDiscovery{
 				Name: "source1",
 				Path: "fakepath1",
 			},
@@ -123,15 +123,15 @@ func Test_updateDiscoverySources(t *testing.T) {
 func Test_deleteDiscoverySource(t *testing.T) {
 	assert := assert.New(t)
 
-	discoverySources := []configapi.PluginDiscovery{
-		configapi.PluginDiscovery{
-			Local: &configapi.LocalDiscovery{
+	discoverySources := []configtypes.PluginDiscovery{
+		configtypes.PluginDiscovery{
+			Local: &configtypes.LocalDiscovery{
 				Name: "source1",
 				Path: "fakepath1",
 			},
 		},
-		configapi.PluginDiscovery{
-			OCI: &configapi.OCIDiscovery{
+		configtypes.PluginDiscovery{
+			OCI: &configtypes.OCIDiscovery{
 				Name:  "source2",
 				Image: "test.registry.com/test-image:v1.0.0",
 			},

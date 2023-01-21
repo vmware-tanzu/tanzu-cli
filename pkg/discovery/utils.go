@@ -8,13 +8,13 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 )
 
 // CheckDiscoveryName returns true if discovery name exists else return false
-func CheckDiscoveryName(ds configapi.PluginDiscovery, dn string) bool {
+func CheckDiscoveryName(ds configtypes.PluginDiscovery, dn string) bool {
 	return (ds.GCP != nil && ds.GCP.Name == dn) ||
 		(ds.Kubernetes != nil && ds.Kubernetes.Name == dn) ||
 		(ds.Local != nil && ds.Local.Name == dn) ||
@@ -23,7 +23,7 @@ func CheckDiscoveryName(ds configapi.PluginDiscovery, dn string) bool {
 }
 
 // CompareDiscoverySource returns true if both discovery source are same for the given type
-func CompareDiscoverySource(ds1, ds2 configapi.PluginDiscovery, dsType string) bool {
+func CompareDiscoverySource(ds1, ds2 configtypes.PluginDiscovery, dsType string) bool {
 	switch dsType {
 	case common.DiscoveryTypeLocal:
 		return compareLocalDiscoverySources(ds1, ds2)
@@ -43,33 +43,33 @@ func CompareDiscoverySource(ds1, ds2 configapi.PluginDiscovery, dsType string) b
 	return false
 }
 
-func compareGCPDiscoverySources(ds1, ds2 configapi.PluginDiscovery) bool {
+func compareGCPDiscoverySources(ds1, ds2 configtypes.PluginDiscovery) bool {
 	return ds1.GCP != nil && ds2.GCP != nil &&
 		ds1.GCP.Name == ds2.GCP.Name &&
 		ds1.GCP.Bucket == ds2.GCP.Bucket &&
 		ds1.GCP.ManifestPath == ds2.GCP.ManifestPath
 }
 
-func compareLocalDiscoverySources(ds1, ds2 configapi.PluginDiscovery) bool {
+func compareLocalDiscoverySources(ds1, ds2 configtypes.PluginDiscovery) bool {
 	return ds1.Local != nil && ds2.Local != nil &&
 		ds1.Local.Name == ds2.Local.Name &&
 		ds1.Local.Path == ds2.Local.Path
 }
 
-func compareOCIDiscoverySources(ds1, ds2 configapi.PluginDiscovery) bool {
+func compareOCIDiscoverySources(ds1, ds2 configtypes.PluginDiscovery) bool {
 	return ds1.OCI != nil && ds2.OCI != nil &&
 		ds1.OCI.Name == ds2.OCI.Name &&
 		ds1.OCI.Image == ds2.OCI.Image
 }
 
-func compareK8sDiscoverySources(ds1, ds2 configapi.PluginDiscovery) bool {
+func compareK8sDiscoverySources(ds1, ds2 configtypes.PluginDiscovery) bool {
 	return ds1.Kubernetes != nil && ds2.Kubernetes != nil &&
 		ds1.Kubernetes.Name == ds2.Kubernetes.Name &&
 		ds1.Kubernetes.Path == ds2.Kubernetes.Path &&
 		ds1.Kubernetes.Context == ds2.Kubernetes.Context
 }
 
-func compareRESTDiscoverySources(ds1, ds2 configapi.PluginDiscovery) bool {
+func compareRESTDiscoverySources(ds1, ds2 configtypes.PluginDiscovery) bool {
 	return ds1.REST != nil && ds2.REST != nil &&
 		ds1.REST.Name == ds2.REST.Name &&
 		ds1.REST.BasePath == ds2.REST.BasePath &&

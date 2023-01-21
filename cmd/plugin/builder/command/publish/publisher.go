@@ -10,7 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
+	"github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 )
 
 // Publisher is an interface to publish plugin and CLIPlugin resource files to discovery

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 )
@@ -17,14 +17,14 @@ func Test_CreateDiscoveryFromV1alpha1(t *testing.T) {
 	assert := assert.New(t)
 
 	// When no discovery type is provided, it should throw error
-	pd := configapi.PluginDiscovery{}
+	pd := configtypes.PluginDiscovery{}
 	_, err := CreateDiscoveryFromV1alpha1(pd)
 	assert.NotNil(err)
 	assert.Contains(err.Error(), "unknown plugin discovery source")
 
 	// When OCI discovery is provided
-	pd = configapi.PluginDiscovery{
-		OCI: &configapi.OCIDiscovery{Name: "fake-oci", Image: "fake.repo.com/test:v1.0.0"},
+	pd = configtypes.PluginDiscovery{
+		OCI: &configtypes.OCIDiscovery{Name: "fake-oci", Image: "fake.repo.com/test:v1.0.0"},
 	}
 	discovery, err := CreateDiscoveryFromV1alpha1(pd)
 	assert.Nil(err)
@@ -32,8 +32,8 @@ func Test_CreateDiscoveryFromV1alpha1(t *testing.T) {
 	assert.Equal("fake-oci", discovery.Name())
 
 	// When Local discovery is provided
-	pd = configapi.PluginDiscovery{
-		Local: &configapi.LocalDiscovery{Name: "fake-local", Path: "test/path"},
+	pd = configtypes.PluginDiscovery{
+		Local: &configtypes.LocalDiscovery{Name: "fake-local", Path: "test/path"},
 	}
 	discovery, err = CreateDiscoveryFromV1alpha1(pd)
 	assert.Nil(err)
@@ -41,8 +41,8 @@ func Test_CreateDiscoveryFromV1alpha1(t *testing.T) {
 	assert.Equal("fake-local", discovery.Name())
 
 	// When K8s discovery is provided
-	pd = configapi.PluginDiscovery{
-		Kubernetes: &configapi.KubernetesDiscovery{Name: "fake-k8s"},
+	pd = configtypes.PluginDiscovery{
+		Kubernetes: &configtypes.KubernetesDiscovery{Name: "fake-k8s"},
 	}
 	discovery, err = CreateDiscoveryFromV1alpha1(pd)
 	assert.Nil(err)
@@ -50,8 +50,8 @@ func Test_CreateDiscoveryFromV1alpha1(t *testing.T) {
 	assert.Equal("fake-k8s", discovery.Name())
 
 	// When REST discovery is provided
-	pd = configapi.PluginDiscovery{
-		REST: &configapi.GenericRESTDiscovery{Name: "fake-rest"},
+	pd = configtypes.PluginDiscovery{
+		REST: &configtypes.GenericRESTDiscovery{Name: "fake-rest"},
 	}
 	discovery, err = CreateDiscoveryFromV1alpha1(pd)
 	assert.Nil(err)

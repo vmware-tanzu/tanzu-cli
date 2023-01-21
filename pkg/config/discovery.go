@@ -6,21 +6,21 @@ package config
 import (
 	"github.com/aunum/log"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 )
 
-func populateDefaultStandaloneDiscovery(c *configapi.ClientConfig) bool {
+func populateDefaultStandaloneDiscovery(c *configtypes.ClientConfig) bool {
 	if c.ClientOptions == nil {
-		c.ClientOptions = &configapi.ClientOptions{}
+		c.ClientOptions = &configtypes.ClientOptions{}
 	}
 	if c.ClientOptions.CLI == nil {
-		c.ClientOptions.CLI = &configapi.CLIOptions{}
+		c.ClientOptions.CLI = &configtypes.CLIOptions{}
 	}
 	if c.ClientOptions.CLI.DiscoverySources == nil {
-		c.ClientOptions.CLI.DiscoverySources = make([]configapi.PluginDiscovery, 0)
+		c.ClientOptions.CLI.DiscoverySources = make([]configtypes.PluginDiscovery, 0)
 	}
 
 	defaultDiscovery := getDefaultStandaloneDiscoverySource(GetDefaultStandaloneDiscoveryType())
@@ -28,7 +28,7 @@ func populateDefaultStandaloneDiscovery(c *configapi.ClientConfig) bool {
 		return false
 	}
 
-	matchIdx := findDiscoverySourceIndex(c.ClientOptions.CLI.DiscoverySources, func(pd configapi.PluginDiscovery) bool {
+	matchIdx := findDiscoverySourceIndex(c.ClientOptions.CLI.DiscoverySources, func(pd configtypes.PluginDiscovery) bool {
 		return discovery.CheckDiscoveryName(pd, DefaultStandaloneDiscoveryName) ||
 			discovery.CheckDiscoveryName(pd, DefaultStandaloneDiscoveryNameLocal)
 	})
@@ -42,11 +42,11 @@ func populateDefaultStandaloneDiscovery(c *configapi.ClientConfig) bool {
 	}
 
 	// Prepend default discovery to available discovery sources
-	c.ClientOptions.CLI.DiscoverySources = append([]configapi.PluginDiscovery{*defaultDiscovery}, c.ClientOptions.CLI.DiscoverySources...)
+	c.ClientOptions.CLI.DiscoverySources = append([]configtypes.PluginDiscovery{*defaultDiscovery}, c.ClientOptions.CLI.DiscoverySources...)
 	return true
 }
 
-func findDiscoverySourceIndex(discoverySources []configapi.PluginDiscovery, matcherFunc func(pd configapi.PluginDiscovery) bool) int {
+func findDiscoverySourceIndex(discoverySources []configtypes.PluginDiscovery, matcherFunc func(pd configtypes.PluginDiscovery) bool) int {
 	for i := range discoverySources {
 		if matcherFunc(discoverySources[i]) {
 			return i
@@ -55,7 +55,7 @@ func findDiscoverySourceIndex(discoverySources []configapi.PluginDiscovery, matc
 	return -1 // haven't found a match
 }
 
-func getDefaultStandaloneDiscoverySource(dsType string) *configapi.PluginDiscovery {
+func getDefaultStandaloneDiscoverySource(dsType string) *configtypes.PluginDiscovery {
 	switch dsType {
 	case common.DiscoveryTypeLocal:
 		return getDefaultStandaloneDiscoverySourceLocal()
@@ -66,18 +66,18 @@ func getDefaultStandaloneDiscoverySource(dsType string) *configapi.PluginDiscove
 	return nil
 }
 
-func getDefaultStandaloneDiscoverySourceOCI() *configapi.PluginDiscovery {
-	return &configapi.PluginDiscovery{
-		OCI: &configapi.OCIDiscovery{
+func getDefaultStandaloneDiscoverySourceOCI() *configtypes.PluginDiscovery {
+	return &configtypes.PluginDiscovery{
+		OCI: &configtypes.OCIDiscovery{
 			Name:  DefaultStandaloneDiscoveryName,
 			Image: GetDefaultStandaloneDiscoveryImage(),
 		},
 	}
 }
 
-func getDefaultStandaloneDiscoverySourceLocal() *configapi.PluginDiscovery {
-	return &configapi.PluginDiscovery{
-		Local: &configapi.LocalDiscovery{
+func getDefaultStandaloneDiscoverySourceLocal() *configtypes.PluginDiscovery {
+	return &configtypes.PluginDiscovery{
+		Local: &configtypes.LocalDiscovery{
 			Name: DefaultStandaloneDiscoveryNameLocal,
 			Path: GetDefaultStandaloneDiscoveryLocalPath(),
 		},

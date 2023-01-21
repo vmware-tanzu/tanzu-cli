@@ -11,14 +11,13 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
-
-	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes/helper"
-
 	"github.com/otiai10/copy"
 	"k8s.io/client-go/tools/clientcmd"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+
+	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes/helper"
 )
 
 var _ = Describe("create new server", func() {
@@ -34,7 +33,7 @@ var _ = Describe("create new server", func() {
 			tkgConfigFile   *os.File
 			tkgConfigFileNG *os.File
 			err             error
-			svr             *configapi.Server
+			svr             *configtypes.Server
 		)
 
 		BeforeEach(func() {
@@ -64,7 +63,7 @@ var _ = Describe("create new server", func() {
 				svr, err = createNewServer()
 				Expect(err).To(BeNil())
 				Expect(svr.Name).To(ContainSubstring(name))
-				Expect(svr.Type).To(BeEquivalentTo(configapi.ManagementClusterServerType))
+				Expect(svr.Type).To(BeEquivalentTo(configtypes.ManagementClusterServerType))
 				Expect(svr.ManagementClusterOpts.Context).To(ContainSubstring("test-k8s-context"))
 				Expect(svr.ManagementClusterOpts.Path).To(ContainSubstring(clientcmd.RecommendedHomeFile))
 			})
@@ -77,7 +76,7 @@ var _ = Describe("create new server", func() {
 				svr, err = createNewServer()
 				Expect(err).To(BeNil())
 				Expect(svr.Name).To(ContainSubstring(name))
-				Expect(svr.Type).To(BeEquivalentTo(configapi.ManagementClusterServerType))
+				Expect(svr.Type).To(BeEquivalentTo(configtypes.ManagementClusterServerType))
 				Expect(svr.ManagementClusterOpts.Context).To(ContainSubstring("test-k8s-context"))
 				Expect(svr.ManagementClusterOpts.Path).To(ContainSubstring(kubeConfig))
 			})
@@ -97,7 +96,7 @@ var _ = Describe("create new server", func() {
 				tkgConfigFile   *os.File
 				tkgConfigFileNG *os.File
 				err             error
-				svr             *configapi.Server
+				svr             *configtypes.Server
 			)
 
 			BeforeEach(func() {
@@ -127,7 +126,7 @@ var _ = Describe("create new server", func() {
 					svr, err = createNewServer()
 					Expect(err).To(BeNil())
 					Expect(svr.Name).To(ContainSubstring(name))
-					Expect(svr.Type).To(BeEquivalentTo(configapi.GlobalServerType))
+					Expect(svr.Type).To(BeEquivalentTo(configtypes.GlobalServerType))
 					Expect(svr.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
 				})
 			})
@@ -149,7 +148,7 @@ var _ = Describe("create new server", func() {
 				issuerCA    = "fakeCAData"
 			)
 			var (
-				svr       *configapi.Server
+				svr       *configtypes.Server
 				ep        string
 				tlsServer *ghttp.Server
 				servCert  *x509.Certificate
@@ -220,7 +219,7 @@ var _ = Describe("create new server", func() {
 					os.Setenv("HOME", oldHomeDir)
 					Expect(err).To(BeNil())
 					Expect(svr.Name).To(ContainSubstring(name))
-					Expect(svr.Type).To(BeEquivalentTo(configapi.ManagementClusterServerType))
+					Expect(svr.Type).To(BeEquivalentTo(configtypes.ManagementClusterServerType))
 					Expect(svr.ManagementClusterOpts.Endpoint).To(ContainSubstring(endpoint))
 					Expect(svr.ManagementClusterOpts.Path).To(ContainSubstring(filepath.Join(tmpHomeDir, tkgauth.TanzuLocalKubeDir, tkgauth.TanzuKubeconfigFile)))
 				})

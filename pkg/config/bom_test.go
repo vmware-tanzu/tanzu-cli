@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 func TestCliCorePkgConfigSuite(t *testing.T) {
@@ -18,12 +18,12 @@ func TestCliCorePkgConfigSuite(t *testing.T) {
 }
 
 var (
-	configFile configapi.ClientConfig
+	configFile configtypes.ClientConfig
 )
 var _ = Describe("config bom test cases", func() {
 	Context("when config file is empty", func() {
 		BeforeEach(func() {
-			configFile = configapi.ClientConfig{}
+			configFile = configtypes.ClientConfig{}
 		})
 		It("should initialize ClientOptions", func() {
 			addCompatibilityFile(&configFile, "tkg-compatibility")

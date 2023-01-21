@@ -14,9 +14,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
@@ -104,7 +104,7 @@ func newListDiscoverySourceCmd() *cobra.Command {
 	return listDiscoverySourceCmd
 }
 
-func outputFromDiscoverySources(discoverySources []configapi.PluginDiscovery, scope string, output component.OutputWriter) {
+func outputFromDiscoverySources(discoverySources []configtypes.PluginDiscovery, scope string, output component.OutputWriter) {
 	for _, ds := range discoverySources {
 		dsName, dsType := discoverySourceNameAndType(ds)
 		output.AddRow(dsName, dsType, scope)
@@ -133,10 +133,10 @@ func newAddDiscoverySourceCmd() *cobra.Command {
 				return err
 			}
 			if cfg.ClientOptions == nil {
-				cfg.ClientOptions = &configapi.ClientOptions{}
+				cfg.ClientOptions = &configtypes.ClientOptions{}
 			}
 			if cfg.ClientOptions.CLI == nil {
-				cfg.ClientOptions.CLI = &configapi.CLIOptions{}
+				cfg.ClientOptions.CLI = &configtypes.CLIOptions{}
 			}
 
 			discoverySources, err := addDiscoverySource(cfg.ClientOptions.CLI.DiscoverySources, discoverySourceName, discoverySourceType, uri)
@@ -227,8 +227,8 @@ func newDeleteDiscoverySourceCmd() *cobra.Command {
 	}
 	return deleteDiscoverySourceCmd
 }
-func createDiscoverySource(dsType, dsName, uri string) (configapi.PluginDiscovery, error) {
-	pluginDiscoverySource := configapi.PluginDiscovery{}
+func createDiscoverySource(dsType, dsName, uri string) (configtypes.PluginDiscovery, error) {
+	pluginDiscoverySource := configtypes.PluginDiscovery{}
 	if dsType == "" {
 		return pluginDiscoverySource, errors.New("discovery source type cannot be empty")
 	}
@@ -251,28 +251,28 @@ func createDiscoverySource(dsType, dsName, uri string) (configapi.PluginDiscover
 	return pluginDiscoverySource, nil
 }
 
-func createLocalDiscoverySource(discoveryName, uri string) *configapi.LocalDiscovery {
-	return &configapi.LocalDiscovery{
+func createLocalDiscoverySource(discoveryName, uri string) *configtypes.LocalDiscovery {
+	return &configtypes.LocalDiscovery{
 		Name: discoveryName,
 		Path: uri,
 	}
 }
 
-func createOCIDiscoverySource(discoveryName, uri string) *configapi.OCIDiscovery {
-	return &configapi.OCIDiscovery{
+func createOCIDiscoverySource(discoveryName, uri string) *configtypes.OCIDiscovery {
+	return &configtypes.OCIDiscovery{
 		Name:  discoveryName,
 		Image: uri,
 	}
 }
 
-func createRESTDiscoverySource(discoveryName, uri string) *configapi.GenericRESTDiscovery {
-	return &configapi.GenericRESTDiscovery{
+func createRESTDiscoverySource(discoveryName, uri string) *configtypes.GenericRESTDiscovery {
+	return &configtypes.GenericRESTDiscovery{
 		Name:     discoveryName,
 		Endpoint: uri,
 	}
 }
 
-func discoverySourceNameAndType(ds configapi.PluginDiscovery) (string, string) {
+func discoverySourceNameAndType(ds configtypes.PluginDiscovery) (string, string) {
 	switch {
 	case ds.GCP != nil:
 		return ds.GCP.Name, common.DiscoveryTypeGCP
@@ -289,7 +289,7 @@ func discoverySourceNameAndType(ds configapi.PluginDiscovery) (string, string) {
 	}
 }
 
-func addDiscoverySource(discoverySources []configapi.PluginDiscovery, dsName, dsType, uri string) ([]configapi.PluginDiscovery, error) {
+func addDiscoverySource(discoverySources []configtypes.PluginDiscovery, dsName, dsType, uri string) ([]configtypes.PluginDiscovery, error) {
 	for _, ds := range discoverySources {
 		if discovery.CheckDiscoveryName(ds, dsName) {
 			return nil, fmt.Errorf("discovery name %q already exists", dsName)
@@ -305,8 +305,8 @@ func addDiscoverySource(discoverySources []configapi.PluginDiscovery, dsName, ds
 	return discoverySources, nil
 }
 
-func deleteDiscoverySource(discoverySources []configapi.PluginDiscovery, discoveryName string) ([]configapi.PluginDiscovery, error) {
-	newDiscoverySources := []configapi.PluginDiscovery{}
+func deleteDiscoverySource(discoverySources []configtypes.PluginDiscovery, discoveryName string) ([]configtypes.PluginDiscovery, error) {
+	newDiscoverySources := []configtypes.PluginDiscovery{}
 	found := false
 	for _, ds := range discoverySources {
 		if discovery.CheckDiscoveryName(ds, discoveryName) {
@@ -321,8 +321,8 @@ func deleteDiscoverySource(discoverySources []configapi.PluginDiscovery, discove
 	return newDiscoverySources, nil
 }
 
-func updateDiscoverySources(discoverySources []configapi.PluginDiscovery, dsName, dsType, uri string) ([]configapi.PluginDiscovery, error) {
-	var newDiscoverySources []configapi.PluginDiscovery
+func updateDiscoverySources(discoverySources []configtypes.PluginDiscovery, dsName, dsType, uri string) ([]configtypes.PluginDiscovery, error) {
+	var newDiscoverySources []configtypes.PluginDiscovery
 	var err error
 
 	found := false

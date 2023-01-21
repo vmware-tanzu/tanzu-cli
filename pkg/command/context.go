@@ -19,13 +19,11 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
@@ -117,7 +115,7 @@ func createCtx(_ *cobra.Command, _ []string) (err error) {
 	if err != nil {
 		return err
 	}
-	if ctx.Target == cliv1alpha1.TargetK8s {
+	if ctx.Target == configtypes.TargetK8s {
 		err = k8sLogin(ctx)
 	} else {
 		err = globalLogin(ctx)
@@ -154,7 +152,7 @@ func getPromptOpts() []component.PromptOpt {
 	return promptOpts
 }
 
-func createNewContext() (context *configapi.Context, err error) {
+func createNewContext() (context *configtypes.Context, err error) {
 	// user provided command line options to create a context using kubeconfig[optional] and context
 	if kubeContext != "" {
 		return createContextWithKubeconfig()
@@ -187,7 +185,7 @@ func createNewContext() (context *configapi.Context, err error) {
 	return createContextWithKubeconfig()
 }
 
-func createContextWithKubeconfig() (context *configapi.Context, err error) {
+func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 	promptOpts := getPromptOpts()
 	if kubeConfig == "" && kubeContext == "" {
 		err = component.Prompt(
@@ -241,10 +239,10 @@ func createContextWithKubeconfig() (context *configapi.Context, err error) {
 		return
 	}
 
-	context = &configapi.Context{
+	context = &configtypes.Context{
 		Name:   ctxName,
-		Target: cliv1alpha1.TargetK8s,
-		ClusterOpts: &configapi.ClusterServer{
+		Target: configtypes.TargetK8s,
+		ClusterOpts: &configtypes.ClusterServer{
 			Path:                kubeConfig,
 			Context:             kubeContext,
 			Endpoint:            endpoint,
@@ -254,7 +252,7 @@ func createContextWithKubeconfig() (context *configapi.Context, err error) {
 	return context, err
 }
 
-func createContextWithEndpoint() (context *configapi.Context, err error) {
+func createContextWithEndpoint() (context *configtypes.Context, err error) {
 	promptOpts := getPromptOpts()
 	if endpoint == "" {
 		err = component.Prompt(
@@ -293,10 +291,10 @@ func createContextWithEndpoint() (context *configapi.Context, err error) {
 	}
 
 	if isGlobalContext(endpoint) {
-		context = &configapi.Context{
+		context = &configtypes.Context{
 			Name:       ctxName,
-			Target:     cliv1alpha1.TargetTMC,
-			GlobalOpts: &configapi.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
+			Target:     configtypes.TargetTMC,
+			GlobalOpts: &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 		}
 	} else {
 		// While this would add an extra HTTP round trip, it avoids the need to
@@ -325,10 +323,10 @@ func createContextWithEndpoint() (context *configapi.Context, err error) {
 			}
 		}
 
-		context = &configapi.Context{
+		context = &configtypes.Context{
 			Name:   ctxName,
-			Target: cliv1alpha1.TargetK8s,
-			ClusterOpts: &configapi.ClusterServer{
+			Target: configtypes.TargetK8s,
+			ClusterOpts: &configtypes.ClusterServer{
 				Path:                kubeConfig,
 				Context:             kubeContext,
 				Endpoint:            endpoint,
@@ -339,7 +337,7 @@ func createContextWithEndpoint() (context *configapi.Context, err error) {
 	return context, err
 }
 
-func globalLogin(c *configapi.Context) (err error) {
+func globalLogin(c *configtypes.Context) (err error) {
 	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
 
 	issuer := csp.ProdIssuer
@@ -363,7 +361,7 @@ func globalLogin(c *configapi.Context) (err error) {
 		return err
 	}
 
-	a := configapi.GlobalServerAuth{}
+	a := configtypes.GlobalServerAuth{}
 	a.Issuer = issuer
 	a.UserName = claims.Username
 	a.Permissions = claims.Permissions
@@ -372,7 +370,7 @@ func globalLogin(c *configapi.Context) (err error) {
 	a.RefreshToken = apiTokenValue
 	a.Type = apiTokenType
 	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
-	a.Expiration = metav1.NewTime(expiresAt)
+	a.Expiration = expiresAt
 	c.GlobalOpts.Auth = a
 
 	err = config.AddContext(c, true)
@@ -418,7 +416,7 @@ func promptAPIToken() (apiToken string, err error) {
 	return
 }
 
-func k8sLogin(c *configapi.Context) error {
+func k8sLogin(c *configtypes.Context) error {
 	if c.ClusterOpts.Path != "" && c.ClusterOpts.Context != "" {
 		_, err := tkgauth.GetServerKubernetesVersion(c.ClusterOpts.Path, c.ClusterOpts.Context)
 		if err != nil {
@@ -489,7 +487,7 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if !cliv1alpha1.IsValidTarget(targetStr) {
+	if !configtypes.IsValidTarget(targetStr) {
 		return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
 	}
 
@@ -509,7 +507,7 @@ var getCtxCmd = &cobra.Command{
 }
 
 func getCtx(cmd *cobra.Command, args []string) error {
-	var ctx *configapi.Context
+	var ctx *configtypes.Context
 	var err error
 	if len(args) == 0 {
 		ctx, err = promptCtx()
@@ -528,7 +526,7 @@ func getCtx(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func promptCtx() (*configapi.Context, error) {
+func promptCtx() (*configtypes.Context, error) {
 	cfg, err := config.GetClientConfig()
 	if err != nil {
 		return nil, err
@@ -538,13 +536,13 @@ func promptCtx() (*configapi.Context, error) {
 	}
 
 	promptOpts := getPromptOpts()
-	contexts := make(map[string]*configapi.Context)
+	contexts := make(map[string]*configtypes.Context)
 	for _, ctx := range cfg.KnownContexts {
 		info, err := config.EndpointFromContext(ctx)
 		if err != nil {
 			return nil, err
 		}
-		if info == "" && ctx.Target == cliv1alpha1.TargetK8s {
+		if info == "" && ctx.Target == configtypes.TargetK8s {
 			info = fmt.Sprintf("%s:%s", ctx.ClusterOpts.Path, ctx.ClusterOpts.Context)
 		}
 
@@ -575,7 +573,7 @@ func rpad(s string, padding int) string {
 	return fmt.Sprintf(template, s)
 }
 
-func getKeys(m map[string]*configapi.Context) []string {
+func getKeys(m map[string]*configtypes.Context) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -644,12 +642,12 @@ func useCtx(_ *cobra.Command, args []string) error {
 	return nil
 }
 
-func displayContextListOutputListView(cfg *configapi.ClientConfig, writer io.Writer) {
+func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.Writer) {
 	target := getTarget()
 
 	op := component.NewOutputWriter(writer, outputFormat, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext")
 	for _, ctx := range cfg.KnownContexts {
-		if target != cliv1alpha1.TargetNone && ctx.Target != target {
+		if target != configtypes.TargetNone && ctx.Target != target {
 			continue
 		}
 		isMgmtCluster := ctx.IsManagementCluster()
@@ -660,7 +658,7 @@ func displayContextListOutputListView(cfg *configapi.ClientConfig, writer io.Wri
 
 		var ep, path, context string
 		switch ctx.Target {
-		case cliv1alpha1.TargetTMC:
+		case configtypes.TargetTMC:
 			ep = ctx.GlobalOpts.Endpoint
 		default:
 			ep = ctx.ClusterOpts.Endpoint
@@ -672,13 +670,13 @@ func displayContextListOutputListView(cfg *configapi.ClientConfig, writer io.Wri
 	op.Render()
 }
 
-func displayContextListOutputSplitViewTarget(cfg *configapi.ClientConfig, writer io.Writer) {
+func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writer io.Writer) {
 	target := getTarget()
 
 	outputWriterK8sTarget := component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Endpoint", "KubeConfigPath", "KubeContext")
 	outputWriterTMCTarget := component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Endpoint")
 	for _, ctx := range cfg.KnownContexts {
-		if target != cliv1alpha1.TargetNone && ctx.Target != target {
+		if target != configtypes.TargetNone && ctx.Target != target {
 			continue
 		}
 		isCurrent := ctx.Name == cfg.CurrentContext[ctx.Target]
@@ -688,7 +686,7 @@ func displayContextListOutputSplitViewTarget(cfg *configapi.ClientConfig, writer
 
 		var ep, path, context string
 		switch ctx.Target {
-		case cliv1alpha1.TargetTMC:
+		case configtypes.TargetTMC:
 			ep = ctx.GlobalOpts.Endpoint
 			outputWriterTMCTarget.AddRow(ctx.Name, isCurrent, ep)
 		default:
@@ -701,12 +699,12 @@ func displayContextListOutputSplitViewTarget(cfg *configapi.ClientConfig, writer
 
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
-	if target == cliv1alpha1.TargetNone || target == cliv1alpha1.TargetK8s {
-		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", cliv1alpha1.TargetK8s))
+	if target == configtypes.TargetNone || target == configtypes.TargetK8s {
+		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", configtypes.TargetK8s))
 		outputWriterK8sTarget.Render()
 	}
-	if target == cliv1alpha1.TargetNone || target == cliv1alpha1.TargetTMC {
-		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", cliv1alpha1.TargetTMC))
+	if target == configtypes.TargetNone || target == configtypes.TargetTMC {
+		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", configtypes.TargetTMC))
 		outputWriterTMCTarget.Render()
 	}
 }

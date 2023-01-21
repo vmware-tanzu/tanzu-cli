@@ -13,11 +13,10 @@ import (
 	"github.com/aunum/log"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
@@ -85,7 +84,7 @@ func login(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	newServerSelector := "+ new server"
-	var serverTarget *configapi.Server
+	var serverTarget *configtypes.Server
 	if name != "" {
 		serverTarget, err = createNewServer()
 		if err != nil {
@@ -110,7 +109,7 @@ func login(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 
-	if serverTarget.Type == configapi.GlobalServerType {
+	if serverTarget.Type == configtypes.GlobalServerType {
 		err = globalLoginUsingServer(serverTarget)
 	} else {
 		err = managementClusterLogin(serverTarget)
@@ -128,9 +127,9 @@ func login(cmd *cobra.Command, args []string) (err error) {
 	return nil
 }
 
-func getServerTarget(cfg *configapi.ClientConfig, newServerSelector string) (*configapi.Server, error) {
+func getServerTarget(cfg *configtypes.ClientConfig, newServerSelector string) (*configtypes.Server, error) {
 	promptOpts := getPromptOpts()
-	servers := map[string]*configapi.Server{}
+	servers := map[string]*configtypes.Server{}
 	for _, server := range cfg.KnownServers {
 		ep, err := config.EndpointFromServer(server)
 		if err != nil {
@@ -150,7 +149,7 @@ func getServerTarget(cfg *configapi.ClientConfig, newServerSelector string) (*co
 	}
 	serverKeys := getKeysFromServerMap(servers)
 	serverKeys = append(serverKeys, newServerSelector)
-	servers[newServerSelector] = &configapi.Server{}
+	servers[newServerSelector] = &configtypes.Server{}
 	err := component.Prompt(
 		&component.PromptConfig{
 			Message: "Select a server",
@@ -166,7 +165,7 @@ func getServerTarget(cfg *configapi.ClientConfig, newServerSelector string) (*co
 	return servers[server], nil
 }
 
-func getKeysFromServerMap(m map[string]*configapi.Server) []string {
+func getKeysFromServerMap(m map[string]*configtypes.Server) []string {
 	keys := make([]string, 0, len(m))
 	for key := range m {
 		keys = append(keys, key)
@@ -185,7 +184,7 @@ func isGlobalServer(endpoint string) bool {
 	return false
 }
 
-func createNewServer() (server *configapi.Server, err error) {
+func createNewServer() (server *configtypes.Server, err error) {
 	// user provided command line options to create a server using kubeconfig[optional] and context
 	if kubeContext != "" {
 		return createServerWithKubeconfig()
@@ -218,7 +217,7 @@ func createNewServer() (server *configapi.Server, err error) {
 	return createServerWithKubeconfig()
 }
 
-func createServerWithKubeconfig() (server *configapi.Server, err error) {
+func createServerWithKubeconfig() (server *configtypes.Server, err error) {
 	promptOpts := getPromptOpts()
 	if kubeConfig == "" && kubeContext == "" {
 		err = component.Prompt(
@@ -272,12 +271,12 @@ func createServerWithKubeconfig() (server *configapi.Server, err error) {
 		return
 	}
 
-	endpointType := configapi.ManagementClusterServerType
+	endpointType := configtypes.ManagementClusterServerType
 
-	server = &configapi.Server{
+	server = &configtypes.Server{
 		Name: name,
 		Type: endpointType,
-		ManagementClusterOpts: &configapi.ManagementClusterServer{
+		ManagementClusterOpts: &configtypes.ManagementClusterServer{
 			Path:     kubeConfig,
 			Context:  kubeContext,
 			Endpoint: endpoint},
@@ -285,7 +284,7 @@ func createServerWithKubeconfig() (server *configapi.Server, err error) {
 	return server, err
 }
 
-func createServerWithEndpoint() (server *configapi.Server, err error) {
+func createServerWithEndpoint() (server *configtypes.Server, err error) {
 	promptOpts := getPromptOpts()
 	if endpoint == "" {
 		err = component.Prompt(
@@ -322,10 +321,10 @@ func createServerWithEndpoint() (server *configapi.Server, err error) {
 		return
 	}
 	if isGlobalServer(endpoint) {
-		server = &configapi.Server{
+		server = &configtypes.Server{
 			Name:       name,
-			Type:       configapi.GlobalServerType,
-			GlobalOpts: &configapi.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
+			Type:       configtypes.GlobalServerType,
+			GlobalOpts: &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 		}
 	} else {
 		// While this would add an extra HTTP round trip, it avoids the need to
@@ -354,10 +353,10 @@ func createServerWithEndpoint() (server *configapi.Server, err error) {
 			}
 		}
 
-		server = &configapi.Server{
+		server = &configtypes.Server{
 			Name: name,
-			Type: configapi.ManagementClusterServerType,
-			ManagementClusterOpts: &configapi.ManagementClusterServer{
+			Type: configtypes.ManagementClusterServerType,
+			ManagementClusterOpts: &configtypes.ManagementClusterServer{
 				Path:     kubeConfig,
 				Context:  kubeContext,
 				Endpoint: endpoint},
@@ -366,8 +365,8 @@ func createServerWithEndpoint() (server *configapi.Server, err error) {
 	return server, err
 }
 
-func globalLoginUsingServer(s *configapi.Server) (err error) {
-	a := configapi.GlobalServerAuth{}
+func globalLoginUsingServer(s *configtypes.Server) (err error) {
+	a := configtypes.GlobalServerAuth{}
 	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
 
 	issuer := csp.ProdIssuer
@@ -401,7 +400,7 @@ func globalLoginUsingServer(s *configapi.Server) (err error) {
 	a.Type = "api-token"
 
 	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
-	a.Expiration = metav1.NewTime(expiresAt)
+	a.Expiration = expiresAt
 
 	s.GlobalOpts.Auth = a
 
@@ -415,7 +414,7 @@ func globalLoginUsingServer(s *configapi.Server) (err error) {
 	return nil
 }
 
-func managementClusterLogin(s *configapi.Server) error {
+func managementClusterLogin(s *configtypes.Server) error {
 	if s.ManagementClusterOpts.Path != "" && s.ManagementClusterOpts.Context != "" {
 		_, err := tkgauth.GetServerKubernetesVersion(s.ManagementClusterOpts.Path, s.ManagementClusterOpts.Context)
 		if err != nil {

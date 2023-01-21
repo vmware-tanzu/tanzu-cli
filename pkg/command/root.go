@@ -11,8 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
@@ -53,9 +53,9 @@ func NewRootCmd() (*cobra.Command, error) {
 			k8sCmd,
 			tmcCmd,
 		)
-		mapTargetToCmd := map[cliv1alpha1.Target]*cobra.Command{
-			cliv1alpha1.TargetK8s: k8sCmd,
-			cliv1alpha1.TargetTMC: tmcCmd,
+		mapTargetToCmd := map[configtypes.Target]*cobra.Command{
+			configtypes.TargetK8s: k8sCmd,
+			configtypes.TargetTMC: tmcCmd,
 		}
 		if err := addPluginsToTarget(mapTargetToCmd); err != nil {
 			return nil, err
@@ -120,7 +120,7 @@ var tmcCmd = &cobra.Command{
 	},
 }
 
-func addPluginsToTarget(mapTargetToCmd map[cliv1alpha1.Target]*cobra.Command) error {
+func addPluginsToTarget(mapTargetToCmd map[configtypes.Target]*cobra.Command) error {
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return fmt.Errorf("unable to find installed plugins: %w", err)
@@ -146,7 +146,7 @@ func findSubCommand(rootCmd, subCmd *cobra.Command) *cobra.Command {
 
 func isPluginRootCmdTargeted(pluginInfo *cli.PluginInfo) bool {
 	// Only '<none>' targeted and `k8s` targeted plugins are considered root cmd targeted plugins
-	return pluginInfo != nil && (pluginInfo.Target == cliv1alpha1.TargetNone || pluginInfo.Target == cliv1alpha1.TargetK8s)
+	return pluginInfo != nil && (pluginInfo.Target == configtypes.TargetNone || pluginInfo.Target == configtypes.TargetK8s)
 }
 
 func isStandalonePluginCommand(cmd *cobra.Command) bool {

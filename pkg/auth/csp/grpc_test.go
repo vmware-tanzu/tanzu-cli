@@ -12,11 +12,10 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-framework/apis/cli/v1alpha1"
-	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/apis/config/v1alpha1"
 )
 
 var (
@@ -43,8 +42,8 @@ var _ = Describe("Unit tests for grpc", func() {
 			accessToken = accessTokenDummy
 			idToken = idTokenDummy
 			expiration := time.Now().Local().Add(time.Second * time.Duration(1000))
-			gsa := configapi.GlobalServerAuth{
-				Expiration:  metav1.NewTime(expiration),
+			gsa := configtypes.GlobalServerAuth{
+				Expiration:  expiration,
 				AccessToken: accessToken,
 				IDToken:     idToken,
 			}
@@ -68,8 +67,8 @@ var _ = Describe("Unit tests for grpc", func() {
 			accessToken = accessTokenDummy
 			idToken = idTokenDummy
 			expiration := time.Now().Local().Add(time.Second * time.Duration(-1000))
-			gsa := configapi.GlobalServerAuth{
-				Expiration:  metav1.NewTime(expiration),
+			gsa := configtypes.GlobalServerAuth{
+				Expiration:  expiration,
 				AccessToken: accessToken,
 				IDToken:     idToken,
 			}
@@ -104,39 +103,39 @@ var _ = Describe("Unit tests for grpc", func() {
 	})
 })
 
-func initializeConfigSource(gsa configapi.GlobalServerAuth) configSource {
-	gs := configapi.GlobalServer{
+func initializeConfigSource(gsa configtypes.GlobalServerAuth) configSource {
+	gs := configtypes.GlobalServer{
 		Endpoint: "",
 		Auth:     gsa,
 	}
-	globalServer := configapi.Server{
+	globalServer := configtypes.Server{
 		Name:       "GlobalServer",
-		Type:       configapi.GlobalServerType,
+		Type:       configtypes.GlobalServerType,
 		GlobalOpts: &gs,
 	}
-	managementServer := configapi.Server{
+	managementServer := configtypes.Server{
 		Name: "ManagementServer",
-		Type: configapi.ManagementClusterServerType,
+		Type: configtypes.ManagementClusterServerType,
 	}
-	clientConfigObj := configapi.ClientConfig{
-		KnownServers: []*configapi.Server{
+	clientConfigObj := configtypes.ClientConfig{
+		KnownServers: []*configtypes.Server{
 			&globalServer,
 			&managementServer,
 		},
 		CurrentServer: globalServer.Name,
-		KnownContexts: []*configapi.Context{
+		KnownContexts: []*configtypes.Context{
 			{
 				Name:   globalServer.Name,
-				Target: cliv1alpha1.TargetTMC,
+				Target: configtypes.TargetTMC,
 			},
 			{
 				Name:   managementServer.Name,
-				Target: cliv1alpha1.TargetK8s,
+				Target: configtypes.TargetK8s,
 			},
 		},
-		CurrentContext: map[cliv1alpha1.Target]string{
-			cliv1alpha1.TargetTMC: globalServer.Name,
-			cliv1alpha1.TargetK8s: managementServer.Name,
+		CurrentContext: map[configtypes.Target]string{
+			configtypes.TargetTMC: globalServer.Name,
+			configtypes.TargetK8s: managementServer.Name,
 		},
 	}
 	return configSource{
