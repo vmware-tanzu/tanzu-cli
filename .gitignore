@@ -19,6 +19,7 @@
 bin
 artifacts
 artifacts-admin
+_output/
 # Test binary, built with `go test -c`
 *.test
 
