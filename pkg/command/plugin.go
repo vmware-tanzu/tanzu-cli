@@ -79,6 +79,11 @@ func newPluginCmd() *cobra.Command {
 		syncPluginCmd,
 		discoverySourceCmd,
 	)
+
+	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+		pluginCmd.AddCommand(newSearchPluginCmd())
+	}
+
 	return pluginCmd
 }
 
