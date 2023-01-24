@@ -161,6 +161,19 @@ publish-admin-plugins-local: prepare-builder ## Publish CLI admin plugins locall
 test: fmt ## Run Tests
 	${GO} test ./... -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
 
+.PHONY: start-test-central-repo
+start-test-central-repo: stop-test-central-repo ## Starts up a test central repository locally with docker
+	if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
+		(cd $(ROOT_DIR)/hack/central-repo && tar xzf registry-content.bz2 || true;) \
+	fi
+	docker run --rm -d -p 9876:5000 --name central \
+		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
+		mirror.gcr.io/library/registry:2
+
+.PHONY: stop-test-central-repo
+stop-test-central-repo: ## Stops and removes the local test central repository
+	docker container stop central 2> /dev/null || true
+
 .PHONY: fmt
 fmt: $(GOIMPORTS) ## Run goimports
 	$(GOIMPORTS) -w -local github.com/vmware-tanzu ./
