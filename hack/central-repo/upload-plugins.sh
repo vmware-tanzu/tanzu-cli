@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Copyright 2023 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
 ROOT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 
 usage() {
@@ -98,7 +101,7 @@ addPlugin() {
                 # The plugins are: twotargets1 (for both targets), twotargets2 (for both targets), plugin0, plugin1 
                 if [[ $name == "twotargets"* ]] || [[ $name == "plugin"[01] ]]; then
                     if [ $version = "v8.8.8" ] || [ $version = "v9.9.9" ]; then
-                        ${dry_run} imgpkg push -i $repoBasePath/$image_path:$version -f $tmpPluginPhase2
+                        ${dry_run} imgpkg push -i $repoBasePath/$image_path:$version -f $tmpPluginPhase2 --registry-insecure
                     fi
                 fi
             done
@@ -130,6 +133,6 @@ if [ $fast = "off" ]; then
 fi
 
 # Push content file
-${dry_run} imgpkg push -i $content_image -f $database
+${dry_run} imgpkg push -i $content_image -f $database --registry-insecure
 rm -f $database
 
