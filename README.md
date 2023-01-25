@@ -1,5 +1,8 @@
 # Tanzu Core CLI
 
+:warning: NOTE: This repository is still under early development. We hope to be make releases available for evaluation in early February 2023.
+Please watch this page for further updates.
+
 ## Overview
 
 The Tanzu Core CLI project provides the core functionality of the Tanzu CLI.
