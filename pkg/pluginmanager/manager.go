@@ -447,9 +447,19 @@ func InitializePlugin(plugin *cli.PluginInfo) error {
 	return nil
 }
 
-// InstallPlugin installs a plugin from the given repository.
+// InstallPlugin installs a plugin by name, version and target.
 func InstallPlugin(pluginName, version string, target configtypes.Target) error {
-	availablePlugins, err := AvailablePlugins()
+	var availablePlugins []discovery.Discovered
+	var err error
+	if configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
+		availablePlugins, err = DiscoverStandalonePlugins()
+		if installedPlugins, err := pluginsupplier.GetInstalledPlugins(); err == nil {
+			setAvailablePluginsStatus(availablePlugins, installedPlugins)
+		}
+	} else {
+		availablePlugins, err = AvailablePlugins()
+	}
+
 	if err != nil {
 		return err
 	}
@@ -681,10 +691,30 @@ func DeletePlugin(options DeletePluginOptions) error {
 	return nil
 }
 
-// SyncPlugins automatically downloads all available plugins to users machine
+// SyncPlugins when the "central-repository" feature flag is enabled, will
+// automatically install the plugins required by the current contexts.
+// If that feature flag is disabled, all discovered plugins will be installed.
 func SyncPlugins() error {
 	log.Info("Checking for required plugins...")
-	plugins, err := AvailablePlugins()
+	var plugins []discovery.Discovered
+	var err error
+	if configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
+		// We no longer sync standalone plugins.
+		// With a centralized approach to discovering plugins, synchronizing
+		// standalone plugins would install ALL plugins available for ALL
+		// products.
+		// Instead, we only synchronize any plugins that are specifically specified
+		// by the contexts.
+		//
+		// Note: to install all plugins for a specific product, plugin groups will
+		// need to be used.
+		plugins, err = DiscoverServerPlugins()
+		if installedPlugins, err := pluginsupplier.GetInstalledServerPlugins(); err == nil {
+			setAvailablePluginsStatus(plugins, installedPlugins)
+		}
+	} else {
+		plugins, err = AvailablePlugins()
+	}
 	if err != nil {
 		return err
 	}

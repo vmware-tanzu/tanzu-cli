@@ -6,12 +6,14 @@
 ROOT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 
 usage() {
-    echo "generate_central.sh [-h | -d | --dry-run | --fast] REPO_URI"
+    echo "generate_central.sh [-h | -d | --dry-run]"
     echo
-    echo "Push 99 plugins to a test repository located at REPO_URI (e.g., localhost:9998/central:small"
+    echo "Create two test central repositories:"
+    echo "- localhost:9876/tanzu-cli/plugins/central:small with a small amount of plugins"
+    echo "- localhost:9876/tanzu-cli/plugins/central:large with 100 plugins"
+    echo
     echo "  -h               Print this help"
     echo "  -d, --dry-run    Only print the commands that would be executed"
-    echo "      --fast       Only install 4 plugins"
     exit 0
 }
 
@@ -25,19 +27,14 @@ if [ "$1" = "-d" ] || [ "$1" = "--dry-run" ]; then
     shift
 fi
 
-fast=off
-if [ "$1" = "--fast" ]; then
-    fast=on
-    shift
-fi
-
-if [ $# -eq 0 ] || [[ $1 == "-"* ]]; then
+if [ $# -gt 0 ]; then
     usage
 fi
 
-content_image=$1
-repoBasePath=$(dirname $content_image)
-database=/tmp/central.db
+repoBasePath=host.docker.internal:9876/tanzu-cli/plugins
+smallImage=central:small
+largeImage=central:large
+database=/tmp/plugin_inventory.db
 publisher="vmware/tkg"
 
 # Create db table
@@ -116,9 +113,9 @@ tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster 
             inspection integration management-cluster policy workspace)
 globalPlugins=(isolated-cluster pinniped-auth)
 
-echo "======================================================================="
-echo "Creating test Central Repository: $content_image"
-echo "======================================================================="
+echo "======================================"
+echo "Creating small test Central Repository"
+echo "======================================"
 
 for name in ${globalPlugins[*]}; do
     addPlugin $name global true
@@ -132,29 +129,31 @@ for name in ${tmcPlugins[*]}; do
     addPlugin $name tmc true
 done
 
+# Push small inventory file
+${dry_run} imgpkg push -i $repoBasePath/$smallImage -f $database --registry-insecure
+
+echo "======================================"
+echo "Creating large test Central Repository"
+echo "======================================"
 
 # Push generic plugins to get to 100 total plugins in the DB.
 # Those plugins will not be installable as we won't push their binaries.
-if [ $fast = "off" ]; then
-    pluginCount=$((${#k8sPlugins[@]} + ${#tmcPlugins[@]} + ${#globalPlugins[@]}))
-    numPluginsToCreate=$((100-$pluginCount))
-    
-    for (( idx=1; idx<=$numPluginsToCreate; idx++ )); do
-        target_rand=$(($RANDOM % 3))
-        case $target_rand in
-        0) target=global
-           ;;
-        1) target=k8s
-           ;;
-        2) target=tmc
-           ;;
-        esac
+pluginCount=$((${#k8sPlugins[@]} + ${#tmcPlugins[@]} + ${#globalPlugins[@]}))
+numPluginsToCreate=$((100-$pluginCount))
 
-        addPlugin stub$idx $target false
-    done
-fi
+for (( idx=1; idx<=$numPluginsToCreate; idx++ )); do
+    target_rand=$(($RANDOM % 3))
+    case $target_rand in
+    0) target=global
+       ;;
+    1) target=k8s
+       ;;
+    2) target=tmc
+       ;;
+    esac
+    addPlugin stub$idx $target false
+done
 
-# Push content file
-${dry_run} imgpkg push -i $content_image -f $database --registry-insecure
+# Push large inventory file
+${dry_run} imgpkg push -i $repoBasePath/$largeImage -f $database --registry-insecure
 rm -f $database
-

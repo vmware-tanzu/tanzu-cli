@@ -20,6 +20,7 @@ require (
 	github.com/k14s/kbld v0.32.0
 	github.com/lithammer/dedent v1.1.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
+	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.1
 	github.com/otiai10/copy v1.4.2
@@ -29,11 +30,11 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/tj/assert v0.0.3
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
-	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20221202212418-359f504ed815
+	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230121092944-3710280bf92a
 	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230125222721-2af61852d9fb
 	go.uber.org/multierr v1.8.0
 	golang.org/x/mod v0.6.0
-	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
+	golang.org/x/oauth2 v0.3.0
 	google.golang.org/grpc v1.48.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -63,7 +64,7 @@ require (
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker v20.10.16+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.6.4 // indirect
-	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
+	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
@@ -115,13 +116,13 @@ require (
 	github.com/vmware-tanzu/carvel-vendir v0.26.0 // indirect
 	github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20221207131309-7323ca04b86c // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/net v0.2.0 // indirect
+	golang.org/x/crypto v0.3.0 // indirect
+	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/sys v0.2.0 // indirect
-	golang.org/x/term v0.2.0 // indirect
-	golang.org/x/text v0.4.0 // indirect
-	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
+	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/term v0.3.0 // indirect
+	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220810155839-1856144b1d9c // indirect
@@ -131,10 +132,10 @@ require (
 	k8s.io/apiextensions-apiserver v0.25.0 // indirect
 	k8s.io/component-base v0.25.0 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
+	k8s.io/kube-openapi v0.0.0-20221207184640-f3cff1453715 // indirect
 	k8s.io/kubectl v0.24.0 // indirect
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
-	sigs.k8s.io/cluster-api v1.2.7 // indirect
+	sigs.k8s.io/cluster-api v1.2.8 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect

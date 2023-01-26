@@ -7,7 +7,7 @@ ROOT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 
 # Start a registry
 make -C $ROOT_DIR/../.. start-test-central-repo
-rm -f /tmp/central.db
+rm -f /tmp/plugin_inventory.db
 
 # Build a run a docker image that contains imgpkg and sqlite3
 # to avoid having to install them locally
@@ -32,8 +32,7 @@ docker build -t ${IMAGE} ${ROOT_DIR} -f - <<- EOF
 EOF
 
 # Generate both the small and large test central repositories
-docker run --rm ${IMAGE} ./upload-plugins.sh --fast host.docker.internal:9876/tanzu-cli/plugins/central:small 
-docker run --rm ${IMAGE} ./upload-plugins.sh host.docker.internal:9876/tanzu-cli/plugins/central:large
+docker run --rm ${IMAGE} ./upload-plugins.sh
 
 # Stop the registry
 make -C $ROOT_DIR/../.. stop-test-central-repo

@@ -12,6 +12,8 @@ import (
 	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
 // OCIDiscovery is an artifact discovery endpoint utilizing OCI image
@@ -26,8 +28,15 @@ type OCIDiscovery struct {
 	image string
 }
 
-// NewOCIDiscovery returns a new local repository.
+// NewOCIDiscovery returns a new Discovery using the specified OCI image.
 func NewOCIDiscovery(name, image string) Discovery {
+	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+		return &DBBackedOCIDiscovery{
+			name:  name,
+			image: image,
+		}
+	}
+
 	return &OCIDiscovery{
 		name:  name,
 		image: image,
