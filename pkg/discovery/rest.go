@@ -48,11 +48,6 @@ type Plugin struct {
 	Target configtypes.Target `json:"target"`
 }
 
-// DescribePluginResponse defines the response from Describe Plugin API.
-type DescribePluginResponse struct {
-	Plugin Plugin `json:"plugin"`
-}
-
 // ListPluginsResponse defines the response from List Plugins API.
 type ListPluginsResponse struct {
 	Plugins []Plugin `json:"plugins"`
@@ -130,31 +125,6 @@ func (d *RESTDiscovery) List() ([]Discovered, error) {
 	}
 
 	return plugins, nil
-}
-
-// Describe a plugin.
-func (d *RESTDiscovery) Describe(name string) (p Discovered, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/%s/%s", d.endpoint, d.basePath, name), http.NoBody)
-	if err != nil {
-		return p, err
-	}
-
-	var res DescribePluginResponse
-	if err := d.doRequest(req, &res); err != nil {
-		return p, err
-	}
-
-	// Convert the CLIPlugin resource to Discovered object
-	p, err = DiscoveredFromREST(&res.Plugin)
-	if err != nil {
-		return p, err
-	}
-	p.Source = d.name
-
-	return p, nil
 }
 
 // Name of the repository.
