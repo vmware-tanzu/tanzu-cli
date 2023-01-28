@@ -62,6 +62,7 @@ EOF
 addPlugin() {
     name=$1
     target=$2
+    pushBinary=$3
 
     tmpPluginPhase1="/tmp/fakeplugin1.sh"
     tmpPluginPhase2="/tmp/fakeplugin2.sh"
@@ -97,10 +98,11 @@ addPlugin() {
                     echo $sql_cmd | sqlite3 -batch $database
                 fi
 
-                # For efficiency, only push the plugin binaries of the two latest versions for 4 plugins
-                # The plugins are: twotargets (for both targets), kubeplugin, tmcplugin 
-                if [ $name = "twotargets" ] || [ $name = "kubeplugin" ] || [ $name = "tmcplugin" ]; then
+                # For efficiency, only push the plugin binaries that have requested it, and for
+                # those, still only push versions v8.8.8 and v9.9.9
+                if [ $pushBinary = "true" ]; then
                     if [ $version = "v8.8.8" ] || [ $version = "v9.9.9" ]; then
+                        echo "Pushing binary for $name version $version for target $target, $os-$arch"
                         ${dry_run} imgpkg push -i $repoBasePath/$image_path:$version -f $tmpPluginPhase2 --registry-insecure
                     fi
                 fi
@@ -109,17 +111,35 @@ addPlugin() {
     done
 }
 
-# Push the plugins that have two targets
-addPlugin twotargets tmc
-addPlugin twotargets k8s
+k8sPlugins=(cluster feature management-cluster package secret telemetry kubernetes-release)
+tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster events iam 
+            inspection integration management-cluster policy workspace)
+globalPlugins=(isolated-cluster pinniped-auth)
 
-# Push another two plugins for the small repo
-addPlugin kubeplugin k8s
-addPlugin tmcplugin tmc
+echo "======================================================================="
+echo "Creating test Central Repository: $content_image"
+echo "======================================================================="
 
-# Push 95 more plugins, for a total of 99
+for name in ${globalPlugins[*]}; do
+    addPlugin $name global true
+done
+
+for name in ${k8sPlugins[*]}; do
+    addPlugin $name k8s true
+done
+
+for name in ${tmcPlugins[*]}; do
+    addPlugin $name tmc true
+done
+
+
+# Push generic plugins to get to 100 total plugins in the DB.
+# Those plugins will not be installable as we won't push their binaries.
 if [ $fast = "off" ]; then
-    for idx in {0..94}; do
+    pluginCount=$((${#k8sPlugins[@]} + ${#tmcPlugins[@]} + ${#globalPlugins[@]}))
+    numPluginsToCreate=$((100-$pluginCount))
+    
+    for (( idx=1; idx<=$numPluginsToCreate; idx++ )); do
         target_rand=$(($RANDOM % 3))
         case $target_rand in
         0) target=global
@@ -130,7 +150,7 @@ if [ $fast = "off" ]; then
            ;;
         esac
 
-        addPlugin plugin$idx $target
+        addPlugin stub$idx $target false
     done
 fi
 
