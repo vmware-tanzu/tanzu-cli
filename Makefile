@@ -39,7 +39,8 @@ GOLANGCI_LINT      := $(TOOLS_BIN_DIR)/golangci-lint
 VALE               := $(TOOLS_BIN_DIR)/vale
 MISSPELL           := $(TOOLS_BIN_DIR)/misspell
 CONTROLLER_GEN     := $(TOOLS_BIN_DIR)/controller-gen
-TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN)
+IMGPKG             := $(TOOLS_BIN_DIR)/imgpkg
+TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG)
 
 # Build and version information
 
@@ -47,9 +48,9 @@ NUL = /dev/null
 ifeq ($(GOHOSTOS),windows)
 	NUL = NUL
 endif
-BUILD_SHA ?= $$(git describe --match=$(git rev-parse --short HEAD) --always --dirty)
-BUILD_DATE ?= $$(date -u +"%Y-%m-%d")
-BUILD_VERSION ?= $$(git describe --tags --abbrev=0 2>$(NUL))
+BUILD_SHA ?= $(shell git describe --match=$(git rev-parse --short HEAD) --always --dirty)
+BUILD_DATE ?= $(shell date -u +"%Y-%m-%d")
+BUILD_VERSION ?= $(shell git describe --tags --abbrev=0 2>$(NUL))
 
 ifeq ($(strip $(BUILD_VERSION)),)
 BUILD_VERSION = dev
@@ -93,10 +94,12 @@ all: gomod build-all test lint ## Run all major targets (lint, test, build)
 cross-build: ${CLI_TARGETS} ${PLUGIN_TARGETS} publish-admin-plugins-all-local## Build the Tanzu Core CLI and plugins for all supported platforms and also publish admin plugins locally
 
 .PHONY: build-all
-build-all: build-cli-${GOHOSTOS}-${GOHOSTARCH} build-publish-admin-plugins-local ## Build the Tanzu Core CLI, admin plugins and publish admin plugins locally for the local platform
+build-all: build build-publish-admin-plugins-local ## Build the Tanzu Core CLI, admin plugins and publish admin plugins locally for the local platform
 
 .PHONY: build
 build: build-cli-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI for the local platform
+	mkdir -p bin
+	cp $(ARTIFACTS_DIR)/$(GOHOSTOS)/$(GOHOSTARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(GOHOSTOS)_$(GOHOSTARCH) ./bin/tanzu
 
 .PHONY: build-publish-admin-plugins-local
 build-publish-admin-plugins-local: build-plugin-admin-${GOHOSTOS}-${GOHOSTARCH}  publish-admin-plugins-local
@@ -118,7 +121,6 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 	else \
 		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build --ldflags "$(LD_FLAGS)"  -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
 	fi
-
 
 ## --------------------------------------
 ## Plugins-specific
@@ -202,7 +204,11 @@ choco-package: ## Build a Chocolatey package
 
 .PHONY: test
 test: fmt ## Run Tests
-	${GO} test ./... -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
+	${GO} test `go list ./... | grep -v test/e2e` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
+
+.PHONY: e2e-cli-core
+e2e-cli-core: ## Run CLI Core E2E Tests
+	${GO} test ./test/e2e/... -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
 
 .PHONY: start-test-central-repo
 start-test-central-repo: stop-test-central-repo ## Starts up a test central repository locally with docker
@@ -279,6 +285,18 @@ generate-manifests:  ## Generate API manifests e.g. CRD
 generate: generate-controller-code generate-manifests 	## Generate controller code and manifests e.g. CRD etc.
 
 ## --------------------------------------
+## docker
+## --------------------------------------
+
+.PHONY: local-registry
+local-registry: clean-registry ## Starts up a local docker registry for the e2e tests
+	docker run -d -p 5001:5000 --name registry mirror.gcr.io/library/registry:2
+
+.PHONY: clean-registry
+clean-registry: ## Stops and removes local docker registry
+	docker stop registry && docker rm -v registry || true
+
+## --------------------------------------
 ## Tooling Binaries
 ## --------------------------------------
 
@@ -286,3 +304,4 @@ tools: $(TOOLING_BINARIES) ## Build tooling binaries
 .PHONY: $(TOOLING_BINARIES)
 $(TOOLING_BINARIES):
 	make -C $(TOOLS_DIR) $(@F)
+
