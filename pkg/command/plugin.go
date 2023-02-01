@@ -26,6 +26,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
 var (
@@ -58,6 +59,15 @@ func newPluginCmd() *cobra.Command {
 
 	listPluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
 	listPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local plugin source")
+	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+		// TODO(khouzam): should we completely remove this flag before 1.0, or do we prefer this
+		// more user friendly approach of hiding the flag and then failing in the Run function if it is used?
+		if err := listPluginCmd.Flags().MarkHidden("local"); err != nil {
+			// Will only fail if the flag does not exist, which would indicate a coding error,
+			// so let's panic so we notice immediately.
+			panic(err)
+		}
+	}
 	installPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local discovery/distribution source")
 	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
 	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "delete the plugin without asking for confirmation")
@@ -92,6 +102,23 @@ func newListPluginCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List available plugins",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+				if local != "" {
+					return fmt.Errorf("the '--local' flag does not apply to this command. Please use 'tanzu plugin search --local'")
+				}
+
+				installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+				if err != nil {
+					return err
+				}
+				sort.Sort(cli.PluginInfoSorter(installedPlugins))
+
+				displayInstalledPluginList(installedPlugins, cmd.OutOrStdout())
+
+				return nil
+			}
+
+			// Plugin listing before the Central Repository feature
 			var err error
 			var availablePlugins []discovery.Discovered
 			if local != "" {
@@ -389,6 +416,40 @@ func displayPluginListOutputSplitViewContext(availablePlugins []discovery.Discov
 		addDataToOutputWriter(writer, data)
 		writer.Render()
 	}
+}
+
+func displayInstalledPluginList(installedPlugins []cli.PluginInfo, writer io.Writer) {
+	var outputData [][]string
+
+	outputWriter := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status" /*, "Context"*/)
+
+	for index := range installedPlugins {
+		newRow := []string{
+			installedPlugins[index].Name,
+			installedPlugins[index].Description,
+			string(installedPlugins[index].Target),
+			installedPlugins[index].Version,
+			installedPlugins[index].Status,
+		}
+		// TODO(khouzam): Fix after pre-alpha
+		// if installedPlugins[index].Scope == common.PluginScopeContext {
+		// 	newRow = append(newRow, installedPlugins[index].ContextName)
+		// }
+		outputData = append(outputData, newRow)
+	}
+
+	addDataToOutputWriter := func(output component.OutputWriter, data [][]string) {
+		for _, row := range data {
+			vals := make([]interface{}, len(row))
+			for i, val := range row {
+				vals[i] = val
+			}
+			output.AddRow(vals...)
+		}
+	}
+
+	addDataToOutputWriter(outputWriter, outputData)
+	outputWriter.Render()
 }
 
 func getTarget() configtypes.Target {
