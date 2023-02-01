@@ -24,12 +24,8 @@ EOF
 
 case "$1" in
     info)  $1 "$@";;
-    help|-h) cat << EOF
-Plugin __NAME__ for __TARGET__ does nothing
+    *) cat << EOF
+Stub plugin "__NAME__" for "__TARGET__".
 EOF
        ;;
-    *) cat << EOF
-Plugin __NAME__ for __TARGET__ does nothing
-EOF
-    ;;
 esac
