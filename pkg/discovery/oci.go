@@ -39,23 +39,6 @@ func (od *OCIDiscovery) List() (plugins []Discovered, err error) {
 	return od.Manifest()
 }
 
-// Describe a plugin.
-func (od *OCIDiscovery) Describe(name string) (p Discovered, err error) {
-	plugins, err := od.Manifest()
-	if err != nil {
-		return
-	}
-
-	for i := range plugins {
-		if plugins[i].Name == name {
-			p = plugins[i]
-			return
-		}
-	}
-	err = errors.Errorf("cannot find plugin with name '%v'", name)
-	return
-}
-
 // Name of the repository.
 func (od *OCIDiscovery) Name() string {
 	return od.name

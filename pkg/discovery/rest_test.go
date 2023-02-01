@@ -5,7 +5,6 @@ package discovery
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -114,27 +113,6 @@ func createTestServer() *httptest.Server {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	})
-	m.HandleFunc(fmt.Sprintf("%s/%s", basePath, "{plugin}"), func(w http.ResponseWriter, req *http.Request) {
-		v := mux.Vars(req)
-		name := v["plugin"]
-		var plugin Plugin
-		for _, p := range plugins {
-			if p.Name == name {
-				plugin = p
-				break
-			}
-		}
-		res := DescribePluginResponse{plugin}
-		b, err := json.Marshal(res)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-
-		_, err = w.Write(b)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-	})
 	return httptest.NewServer(m)
 }
 
@@ -154,12 +132,4 @@ func TestRESTDiscovery(t *testing.T) {
 	actList, err := d.List()
 	assert.NoError(t, err)
 	assert.Equal(t, expList, actList)
-
-	plugin, err := d.Describe("foo")
-	assert.NoError(t, err)
-	assert.Equal(t, expList[0], plugin)
-
-	plugin, err = d.Describe("bar")
-	assert.NoError(t, err)
-	assert.Equal(t, expList[1], plugin)
 }

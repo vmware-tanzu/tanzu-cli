@@ -22,9 +22,6 @@ type Discovery interface {
 	// List available plugins.
 	List() ([]Discovered, error)
 
-	// Describe a plugin.
-	Describe(name string) (Discovered, error)
-
 	// Type returns type of discovery.
 	Type() string
 }

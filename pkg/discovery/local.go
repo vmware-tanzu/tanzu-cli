@@ -41,23 +41,6 @@ func (l *LocalDiscovery) List() ([]Discovered, error) {
 	return l.Manifest()
 }
 
-// Describe a plugin.
-func (l *LocalDiscovery) Describe(name string) (p Discovered, err error) {
-	plugins, err := l.Manifest()
-	if err != nil {
-		return
-	}
-
-	for i := range plugins {
-		if plugins[i].Name == name {
-			p = plugins[i]
-			return
-		}
-	}
-	err = errors.Errorf("cannot find plugin with name '%v'", name)
-	return
-}
-
 // Name of the repository.
 func (l *LocalDiscovery) Name() string {
 	return l.name
