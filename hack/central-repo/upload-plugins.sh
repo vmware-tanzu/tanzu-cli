@@ -37,6 +37,14 @@ largeImage=central:large
 database=/tmp/plugin_inventory.db
 publisher="vmware/tkg"
 
+# Push an empty image
+echo "======================================"
+echo "Creating an empty test Central Repository: $repoBasePath/central:empty"
+echo "======================================"
+rm -f $database
+touch $database
+${dry_run} imgpkg push -i $repoBasePath/central:empty -f $database --registry-insecure
+
 # Create db table
 cat << EOF | sqlite3 -batch $database
 CREATE TABLE IF NOT EXISTS "PluginBinaries" (
@@ -55,6 +63,12 @@ CREATE TABLE IF NOT EXISTS "PluginBinaries" (
 		PRIMARY KEY("PluginName", "Target", "Version", "OS", "Architecture")
 	);
 EOF
+
+# Push an image with an empty table
+echo "======================================"
+echo "Creating a test Central Repository with no entries: $repoBasePath/central:emptytable"
+echo "======================================"
+${dry_run} imgpkg push -i $repoBasePath/central:emptytable -f $database --registry-insecure
 
 addPlugin() {
     name=$1
@@ -115,7 +129,7 @@ tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster 
 globalPlugins=(isolated-cluster pinniped-auth)
 
 echo "======================================"
-echo "Creating small test Central Repository"
+echo "Creating small test Central Repository: $repoBasePath/$smallImage"
 echo "======================================"
 
 for name in ${globalPlugins[*]}; do
@@ -134,7 +148,7 @@ done
 ${dry_run} imgpkg push -i $repoBasePath/$smallImage -f $database --registry-insecure
 
 echo "======================================"
-echo "Creating large test Central Repository"
+echo "Creating large test Central Repository: $repoBasePath/$largeImage"
 echo "======================================"
 
 # Push generic plugins to get to 100 total plugins in the DB.

@@ -7,7 +7,6 @@ ROOT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 
 # Start a registry
 make -C $ROOT_DIR/../.. start-test-central-repo
-rm -f /tmp/plugin_inventory.db
 
 # Build a run a docker image that contains imgpkg and sqlite3
 # to avoid having to install them locally
