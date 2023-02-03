@@ -168,9 +168,11 @@ func (b *SQLiteBackend) extractPluginsFromRows(rows *sql.Rows) ([]*Discovered, e
 		artifactList = append(artifactList, artifact)
 	}
 	// Don't forget to store the very last plugin we were building
-	artifacts[currentVersion] = artifactList
-	currentPlugin.Distribution = artifacts
-	allPlugins = appendPlugin(allPlugins, currentPlugin)
+	if currentPlugin != nil {
+		artifacts[currentVersion] = artifactList
+		currentPlugin.Distribution = artifacts
+		allPlugins = appendPlugin(allPlugins, currentPlugin)
+	}
 	return allPlugins, rows.Err()
 }
 
