@@ -79,7 +79,7 @@ type Token struct {
 	// TokenType is the type of token.
 	TokenType string `json:"token_type"`
 
-	// ExpiresIn is experation in seconds.
+	// ExpiresIn is expiration in seconds.
 	ExpiresIn int64 `json:"expires_in"`
 
 	// Scope of the token.
