@@ -5,9 +5,9 @@ package command
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,6 +17,7 @@ import (
 
 	"github.com/aunum/log"
 	"github.com/fatih/color"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"k8s.io/client-go/tools/clientcmd"
@@ -34,13 +35,14 @@ import (
 )
 
 var (
-	stderrOnly, forceCSP, staging, onlyCurrent                         bool
+	stderrOnly, forceCSP, staging, onlyCurrent, selfManaged            bool
 	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt string
 )
 
 const (
 	knownGlobalHost = "cloud.vmware.com"
 	apiTokenType    = "api-token"
+	idTokenType     = "id-token"
 )
 
 var contextCmd = &cobra.Command{
@@ -81,6 +83,9 @@ var createCtxCmd = &cobra.Command{
 	# Create a TKG management cluster context using endpoint
 	tanzu context create --endpoint "https://k8s.example.com" --name mgmt-cluster
 
+	# Create a TMC self-managed context using endpoint
+	tanzu context create --self-managed --endpoint "https://k8s.example.com" --name test-context
+
 	# Create a TKG management cluster context using kubeconfig path and context
 	tanzu context create --kubeconfig path/to/kubeconfig --kubecontext kubecontext --name mgmt-cluster
 
@@ -104,10 +109,13 @@ func initCreateCtxCmd() {
 	createCtxCmd.Flags().BoolVar(&stderrOnly, "stderr-only", false, "send all output to stderr rather than stdout")
 	createCtxCmd.Flags().BoolVar(&forceCSP, "force-csp", false, "force the context to use CSP auth")
 	createCtxCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
+	createCtxCmd.Flags().BoolVarP(&selfManaged, "self-managed", "l", false, "indicate the context is for a self-managed TMC")
 	_ = createCtxCmd.Flags().MarkHidden("api-token")
 	_ = createCtxCmd.Flags().MarkHidden("stderr-only")
 	_ = createCtxCmd.Flags().MarkHidden("force-csp")
 	_ = createCtxCmd.Flags().MarkHidden("staging")
+	createCtxCmd.MarkFlagsMutuallyExclusive("self-managed", "kubecontext")
+	createCtxCmd.MarkFlagsMutuallyExclusive("self-managed", "kubeconfig")
 }
 
 func createCtx(_ *cobra.Command, _ []string) (err error) {
@@ -117,6 +125,8 @@ func createCtx(_ *cobra.Command, _ []string) (err error) {
 	}
 	if ctx.Target == configtypes.TargetK8s {
 		err = k8sLogin(ctx)
+	} else if selfManaged {
+		err = selfManagedTMCLogin(ctx)
 	} else {
 		err = globalLogin(ctx)
 	}
@@ -158,7 +168,7 @@ func createNewContext() (context *configtypes.Context, err error) {
 		return createContextWithKubeconfig()
 	}
 	// user provided command line options to create a context using endpoint
-	if endpoint != "" {
+	if endpoint != "" || selfManaged {
 		return createContextWithEndpoint()
 	}
 	promptOpts := getPromptOpts()
@@ -168,7 +178,7 @@ func createNewContext() (context *configtypes.Context, err error) {
 	err = component.Prompt(
 		&component.PromptConfig{
 			Message: "Select context creation type",
-			Options: []string{"Control plane endpoint", "Local kubeconfig"},
+			Options: []string{"Control plane endpoint", "Local kubeconfig", "Self-managed TMC"},
 			Default: "Control plane endpoint",
 		},
 		&ctxCreationType,
@@ -179,6 +189,10 @@ func createNewContext() (context *configtypes.Context, err error) {
 	}
 
 	if ctxCreationType == "Control plane endpoint" {
+		return createContextWithEndpoint()
+	}
+	if ctxCreationType == "Self-managed TMC" {
+		selfManaged = true
 		return createContextWithEndpoint()
 	}
 
@@ -290,7 +304,7 @@ func createContextWithEndpoint() (context *configtypes.Context, err error) {
 		return
 	}
 
-	if isGlobalContext(endpoint) {
+	if isGlobalContext(endpoint) || selfManaged {
 		context = &configtypes.Context{
 			Name:       ctxName,
 			Target:     configtypes.TargetTMC,
@@ -382,6 +396,74 @@ func globalLogin(c *configtypes.Context) (err error) {
 	fmt.Println()
 	log.Success("successfully created a TMC context")
 	return nil
+}
+
+func selfManagedTMCLogin(c *configtypes.Context) (err error) {
+	issuer, err := getIssuerURLForTMCEndPoint(c.GlobalOpts.Endpoint)
+	if err != nil {
+		return err
+	}
+	refreshToken := ""
+	token, err := csp.GetAccessTokenFromSelfManagedIDP(refreshToken, issuer)
+	if err != nil {
+		return err
+	}
+	if token == nil {
+		return errors.Errorf("token issuer %s returned nil token", issuer)
+	}
+
+	a := configtypes.GlobalServerAuth{}
+	a.Issuer = issuer
+	// TODO: parse claims from ID token to get org-tenant ID info
+	// a.UserName = claims.Username
+	// a.Permissions = claims.Permissions
+	a.AccessToken = token.AccessToken
+	a.IDToken = token.IDToken
+	a.RefreshToken = token.RefreshToken
+	a.Type = idTokenType
+	expiresAt := time.Now().Add(time.Second * time.Duration(token.ExpiresIn))
+	a.Expiration = expiresAt
+	c.GlobalOpts.Auth = a
+
+	err = config.AddContext(c, true)
+	if err != nil {
+		return err
+	}
+
+	// format
+	fmt.Println()
+	log.Success("successfully created a TMC self-managed context")
+	return nil
+}
+
+// Instead of the end user having to know the OIDC token issuer URL
+// we will derive the token issuer URL based on the TMC endpoint for the customer's organization.
+// The issuer URL and the TMC endpoint are both expected to share the same DNS zone and will only
+// differ in-terms of the domain of the URL and the path.
+func getIssuerURLForTMCEndPoint(tmcEP string) (string, error) {
+	tmcEP = strings.TrimSpace(tmcEP)
+	// the empty string is successfully parsed
+	// so add a special check to ensure the tmc endpoint is not an empty string.
+	if tmcEP == "" {
+		return "", errors.Errorf("cannot get issuer URL for empty TMC endpoint")
+	}
+
+	// assume that the host in the tmc endpoint will always look like
+	// tmc.my-domain.com:443 or <TMC SELF MANAGED DNS ZONE>:443
+	tmcEPHost, _, err := net.SplitHostPort(tmcEP)
+	if err != nil {
+		return "", errors.Wrapf(err, "TMC endpoint URL %s should be of the format host:port", tmcEP)
+	}
+	if tmcEPHost == "" {
+		return "", errors.Errorf("TMC endpoint URL %s should be of the format host:port", tmcEP)
+	}
+	u := url.URL{
+		Scheme: "https",
+		Host:   fmt.Sprintf("%s.%s", csp.PinnipedSupervisorDomain, tmcEPHost),
+		Path:   csp.FederationDomainPath,
+	}
+
+	return u.String(), nil
 }
 
 // Interactive way to create a TMC context. User will be prompted for CSP API token.

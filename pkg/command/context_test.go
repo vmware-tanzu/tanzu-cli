@@ -5,6 +5,7 @@ package command
 import (
 	"bytes"
 	"crypto/x509"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -55,7 +56,7 @@ var _ = Describe("Test tanzu context command", func() {
 			Expect(err).To(BeNil())
 			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while coping tanzu config file for testing")
+			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
 
 			cmd.SetOut(&buf)
 		})
@@ -121,7 +122,7 @@ var _ = Describe("Test tanzu context command", func() {
 			Expect(err).To(BeNil())
 			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while coping tanzu config file for testing")
+			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
 
 			cmd.SetOut(&buf)
 		})
@@ -168,7 +169,7 @@ clusterOpts:
 			Expect(err).To(BeNil())
 			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while coping tanzu config file for testing")
+			Expect(err).To(BeNil(), "Error while copying tanzu-ng config file for testing")
 
 			cmd.SetOut(&buf)
 		})
@@ -211,7 +212,7 @@ clusterOpts:
 			Expect(err).To(BeNil())
 			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while coping tanzu config file for testing")
+			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
 
 			cmd.SetOut(&buf)
 		})
@@ -244,7 +245,7 @@ clusterOpts:
 
 var _ = Describe("create new context", func() {
 	const (
-		exisitingContext   = "test-mc"
+		existingContext    = "test-mc"
 		testKubeContext    = "test-k8s-context"
 		testKubeConfigPath = "/fake/path/kubeconfig"
 		testContextName    = "fake-context-name"
@@ -269,7 +270,7 @@ var _ = Describe("create new context", func() {
 			Expect(err).To(BeNil())
 			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while coping tanzu config file for testing")
+			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
 		})
 		AfterEach(func() {
 			os.Unsetenv("TANZU_CONFIG")
@@ -307,7 +308,7 @@ var _ = Describe("create new context", func() {
 			It("should return error", func() {
 				kubeContext = testKubeContext
 				kubeConfig = testKubeConfigPath
-				ctxName = exisitingContext
+				ctxName = existingContext
 				ctx, err = createNewContext()
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring(`context "test-mc" already exists`))
@@ -333,7 +334,7 @@ var _ = Describe("create new context", func() {
 			Expect(err).To(BeNil())
 			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while coping tanzu config file for testing")
+			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
 		})
 		AfterEach(func() {
 			os.Unsetenv("TANZU_CONFIG")
@@ -356,7 +357,7 @@ var _ = Describe("create new context", func() {
 		Context("context name already exists", func() {
 			It("should return error", func() {
 				endpoint = fakeTMCEndpoint
-				ctxName = exisitingContext
+				ctxName = existingContext
 				ctx, err = createNewContext()
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring(`context "test-mc" already exists`))
@@ -449,6 +450,92 @@ var _ = Describe("create new context", func() {
 			})
 		})
 
+		Describe("create context with self-managed tmc endpoint", func() {
+			var (
+				tkgConfigFile   *os.File
+				tkgConfigFileNG *os.File
+				err             error
+				ctx             *configtypes.Context
+			)
+
+			BeforeEach(func() {
+				tkgConfigFile, err = os.CreateTemp("", "config")
+				Expect(err).To(BeNil())
+				err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
+				Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
+				os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+
+				tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
+				Expect(err).To(BeNil())
+				os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+				err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
+				Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
+			})
+			AfterEach(func() {
+				os.Unsetenv("TANZU_CONFIG")
+				os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+				os.RemoveAll(tkgConfigFile.Name())
+				os.RemoveAll(tkgConfigFileNG.Name())
+				resetContextCommandFlags()
+			})
+			Context("with endpoint and context name provided", func() {
+				It("should create context with given endpoint and context name", func() {
+					selfManaged = true
+					endpoint = fakeTMCEndpoint
+					ctxName = testContextName
+					ctx, err = createNewContext()
+					Expect(err).To(BeNil())
+					Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
+					Expect(string(ctx.Target)).To(ContainSubstring("mission-control"))
+					Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
+				})
+			})
+			Context("context name already exists", func() {
+				It("should return error", func() {
+					selfManaged = true
+					endpoint = fakeTMCEndpoint
+					ctxName = existingContext
+					ctx, err = createNewContext()
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(ContainSubstring(`context "test-mc" already exists`))
+				})
+			})
+		})
+
+	})
+	Describe("get Issuer URL from self-managed tmc endpoint", func() {
+		Context("endpoint url invalid format", func() {
+			It("should return error", func() {
+
+				emptyEP := ""
+				_, err := getIssuerURLForTMCEndPoint(emptyEP)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("cannot get issuer URL for empty TMC endpoint"))
+
+				invalidFmtEP := "invalidformat"
+				_, err = getIssuerURLForTMCEndPoint(invalidFmtEP)
+				Expect(err).ToNot(BeNil())
+
+				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("TMC endpoint URL %s should be of the format host:port", invalidFmtEP)))
+
+				onlyPortEP := ":8888"
+				_, err = getIssuerURLForTMCEndPoint(onlyPortEP)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal(fmt.Sprintf("TMC endpoint URL %s should be of the format host:port", onlyPortEP)))
+
+			})
+		})
+		Context("valid endpoint url format", func() {
+			It("should return the issuer URL successfully", func() {
+
+				validEP := "test.endpoint.com:554"
+				wantIssuerURL := "https://pinniped-supervisor.test.endpoint.com/provider/pinniped"
+				issuerURL, err := getIssuerURLForTMCEndPoint(validEP)
+				Expect(err).To(BeNil())
+				Expect(issuerURL).To(Equal(wantIssuerURL))
+
+			})
+		})
 	})
 })
 
@@ -458,4 +545,5 @@ func resetContextCommandFlags() {
 	apiToken = ""
 	kubeConfig = ""
 	kubeContext = ""
+	selfManaged = false
 }
