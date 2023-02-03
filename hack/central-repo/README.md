@@ -13,7 +13,7 @@ Limitations:
 For efficiency in storage and generation, only certain plugins have a binary in the test repos
 and therefore only those can be installed.
 Plugins named `stubXY` cannot be installed.
-Also, only versions `v8.8.8` and `v9.9.9` for the other plugins can be installed.
+Also, only versions `v0.0.1` and `v9.9.9` for the other plugins can be installed.
 
 The steps to follow to use the test central repo are:
 
@@ -32,9 +32,19 @@ tz config set features.global.central-repository true
 tz plugin source add -n default -t oci -u localhost:9876/tanzu-cli/plugins/central:small
 export ALLOWED_REGISTRY=localhost:9876
 
-tz plugin list
+tz plugin search
 tz plugin install cluster --target tmc
 ```
+
+It is possible to test installing plugins that are recommended from a TMC context:
+
+```bash
+tz context create --name tmc-unstable --endpoint unstable.tmc-dev.cloud.vmware.com --staging
+tz plugin sync
+```
+
+The above `tz plugin sync` will install the plugins versions recommended by the TMC context (`v0.0.1`), but will install
+them from the test Central Repository.
 
 To use the large test central repo instead:
 

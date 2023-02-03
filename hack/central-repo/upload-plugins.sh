@@ -69,8 +69,9 @@ addPlugin() {
     sed -e "s/__NAME__/$name/" -e "s/__TARGET__/$target/" $ROOT_DIR/fakeplugin.sh > $tmpPluginPhase1
 
     # Define 10 versions for the plugin
-    for v in {0..9}; do
-        version="v$v.$v.$v"
+    # We include version v0.0.1 to match the real TMC plugin versions
+    versions="v0.0.1 v1.1.1 v2.2.2 v3.3.3 v4.4.4 v5.5.5 v6.6.6 v7.7.7 v8.8.8 v9.9.9"
+    for version in $versions; do
 
         # Put printout to show progress
         echo "Inserting $name version $version for target $target"
@@ -96,9 +97,9 @@ addPlugin() {
                 fi
 
                 # For efficiency, only push the plugin binaries that have requested it, and for
-                # those, still only push versions v8.8.8 and v9.9.9
+                # those, still only push versions v0.0.1 (to match real TMC plugins) and v9.9.9
                 if [ $pushBinary = "true" ]; then
-                    if [ $version = "v8.8.8" ] || [ $version = "v9.9.9" ]; then
+                    if [ $version = "v0.0.1" ] || [ $version = "v9.9.9" ]; then
                         echo "Pushing binary for $name version $version for target $target, $os-$arch"
                         ${dry_run} imgpkg push -i $repoBasePath/$image_path:$version -f $tmpPluginPhase2 --registry-insecure
                     fi
