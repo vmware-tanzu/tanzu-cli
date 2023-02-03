@@ -153,15 +153,23 @@ func getAllFilesContentFromImage(image regv1.Image) (map[string][]byte, error) {
 
 // DownloadBundle downloads OCI bundle similar to `imgpkg pull -b` command
 // It is recommended to use this function when downloading imgpkg bundle because
-// - During the air-gapped script, these plugin discovery packages are copied to a
-//   private registry with the `imgpkg copy` command
-// - Downloading files directly from OCI image similar to `GetFiles` doesn't work
-//   because it doesn't update the `ImageLock` file when we download the package from
-//   different registry. And returns original ImageLock file. and as ImageLock file
-//   is pointing to original registry instead of private registry, image references
-//    does not point to the correct location
-
+//   - During the air-gapped script, these plugin discovery packages are copied to a
+//     private registry with the `imgpkg copy` command
+//   - Downloading files directly from OCI image similar to `GetFiles` doesn't work
+//     because it doesn't update the `ImageLock` file when we download the package from
+//     different registry. And returns original ImageLock file. and as ImageLock file
+//     is pointing to original registry instead of private registry, image references
+//     does not point to the correct location
 func (r *registry) DownloadBundle(imageName, outputDir string) error {
+	return r.downloadBundleOrImage(imageName, outputDir, true)
+}
+
+// DownloadImage downloads an OCI image similarly to the `imgpkg pull -i` command
+func (r *registry) DownloadImage(imageName, outputDir string) error {
+	return r.downloadBundleOrImage(imageName, outputDir, false)
+}
+
+func (r *registry) downloadBundleOrImage(imageName, outputDir string, isBundle bool) error {
 	// Creating a dummy writer to capture the logs
 	// currently this logs are not displayed or used directly
 	var outputBuf, errorBuf bytes.Buffer
@@ -169,8 +177,11 @@ func (r *registry) DownloadBundle(imageName, outputDir string) error {
 
 	pullOptions := cmd.NewPullOptions(writerUI)
 	pullOptions.OutputPath = outputDir
-	pullOptions.BundleFlags = cmd.BundleFlags{Bundle: imageName}
-
+	if isBundle {
+		pullOptions.BundleFlags = cmd.BundleFlags{Bundle: imageName}
+	} else {
+		pullOptions.ImageFlags = cmd.ImageFlags{Image: imageName}
+	}
 	if r.opts != nil {
 		pullOptions.RegistryFlags = cmd.RegistryFlags{
 			CACertPaths: r.opts.CACertPaths,

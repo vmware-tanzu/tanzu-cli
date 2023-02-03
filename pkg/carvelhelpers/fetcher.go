@@ -47,6 +47,22 @@ func DownloadImageBundleAndSaveFilesToTempDir(imageWithTag string) (string, erro
 	return tmpDir, nil
 }
 
+// DownloadImageAndSaveFilesToDir reads a plain OCI image and saves its
+// files to the specified location.
+func DownloadImageAndSaveFilesToDir(imageWithTag, destinationDir string) error {
+	reg, err := newRegistry()
+	if err != nil {
+		return errors.Wrapf(err, "unable to initialize registry")
+	}
+
+	err = reg.DownloadImage(imageWithTag, destinationDir)
+	if err != nil {
+		return errors.Wrap(err, "error downloading image")
+	}
+
+	return nil
+}
+
 // newRegistry returns a new registry object by also
 // taking into account for any custom registry or proxy
 // environment variable provided by the user
