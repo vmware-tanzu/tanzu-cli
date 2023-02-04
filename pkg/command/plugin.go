@@ -60,8 +60,9 @@ func newPluginCmd() *cobra.Command {
 	listPluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
 	listPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local plugin source")
 	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
-		// TODO(khouzam): should we completely remove this flag before 1.0, or do we prefer this
-		// more user friendly approach of hiding the flag and then failing in the Run function if it is used?
+		// The --local flag no longer applies to the "list" command.
+		// Instead of removing it completely, we mark it hidden and print out an error
+		// in the RunE() function if it is used.  This provides better guidance to the user.
 		if err := listPluginCmd.Flags().MarkHidden("local"); err != nil {
 			// Will only fail if the flag does not exist, which would indicate a coding error,
 			// so let's panic so we notice immediately.
@@ -419,36 +420,27 @@ func displayPluginListOutputSplitViewContext(availablePlugins []discovery.Discov
 }
 
 func displayInstalledPluginList(installedPlugins []cli.PluginInfo, writer io.Writer) {
-	var outputData [][]string
-
 	outputWriter := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status" /*, "Context"*/)
 
 	for index := range installedPlugins {
-		newRow := []string{
+		// // TODO(khouzam): Fix after pre-alpha: We need to figure out what would be an appropriate
+		// // format to indicate to the user that a plugin was installed due to a context
+		// // and make sure that information is always available in the data structs we process
+		// context := ""
+		// if installedPlugins[index].Scope == common.PluginScopeContext {
+		//    context = installedPlugins[index].ContextName
+		// }
+
+		outputWriter.AddRow(
 			installedPlugins[index].Name,
 			installedPlugins[index].Description,
 			string(installedPlugins[index].Target),
 			installedPlugins[index].Version,
 			installedPlugins[index].Status,
-		}
-		// TODO(khouzam): Fix after pre-alpha
-		// if installedPlugins[index].Scope == common.PluginScopeContext {
-		// 	newRow = append(newRow, installedPlugins[index].ContextName)
-		// }
-		outputData = append(outputData, newRow)
+			// context,
+		)
 	}
 
-	addDataToOutputWriter := func(output component.OutputWriter, data [][]string) {
-		for _, row := range data {
-			vals := make([]interface{}, len(row))
-			for i, val := range row {
-				vals[i] = val
-			}
-			output.AddRow(vals...)
-		}
-	}
-
-	addDataToOutputWriter(outputWriter, outputData)
 	outputWriter.Render()
 }
 
