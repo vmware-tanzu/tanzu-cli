@@ -162,11 +162,6 @@ func Test_NewOCIDiscovery(t *testing.T) {
 	criteriaName := "test-criteria"
 	discoveryCriteria := PluginDiscoveryCriteria{Name: criteriaName}
 
-	// Turn on central repo feature
-	featureArray = strings.Split(constants.FeatureCentralRepository, ".")
-	err = config.SetFeature(featureArray[1], featureArray[2], "true")
-	assert.Nil(err)
-
 	// Check that the correct discovery type is returned
 	pd := NewOCIDiscovery(discoveryName, discoveryImage, &discoveryCriteria)
 	assert.NotNil(pd)
@@ -180,8 +175,8 @@ func Test_NewOCIDiscovery(t *testing.T) {
 	assert.Equal(discoveryCriteria, *dbDiscovery.criteria)
 
 	// Turn off central repo feature
-	featureArray = strings.Split(constants.FeatureCentralRepository, ".")
-	err = config.SetFeature(featureArray[1], featureArray[2], "false")
+	featureArray = strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
+	err = config.SetFeature(featureArray[1], featureArray[2], "true")
 	assert.Nil(err)
 
 	// Check that the correct discovery type is returned

@@ -60,7 +60,7 @@ func newPluginCmd() *cobra.Command {
 
 	listPluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
 	listPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local plugin source")
-	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		// The --local flag no longer applies to the "list" command.
 		// Instead of removing it completely, we mark it hidden and print out an error
 		// in the RunE() function if it is used.  This provides better guidance to the user.
@@ -93,7 +93,7 @@ func newPluginCmd() *cobra.Command {
 		discoverySourceCmd,
 	)
 
-	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		installPluginCmd.MarkFlagsMutuallyExclusive("group", "local")
 		installPluginCmd.MarkFlagsMutuallyExclusive("group", "version")
 		installPluginCmd.MarkFlagsMutuallyExclusive("group", "target")
@@ -111,7 +111,7 @@ func newListPluginCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List available plugins",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+			if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 				if local != "" {
 					return fmt.Errorf("the '--local' flag does not apply to this command. Please use 'tanzu plugin search --local'")
 				}
@@ -218,7 +218,7 @@ func newInstallPluginCmd() *cobra.Command {
 				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
 			}
 
-			if !config.IsFeatureActivated(constants.FeatureCentralRepository) {
+			if config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 				return legacyPluginInstall(cmd, args)
 			}
 
@@ -353,7 +353,7 @@ func newUpgradePluginCmd() *cobra.Command {
 			}
 
 			var pluginVersion string
-			if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+			if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 				// With the Central Repository feature we can simply request to install
 				// the recommendedVersion.
 				pluginVersion = cli.VersionLatest

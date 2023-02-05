@@ -33,7 +33,7 @@ type OCIDiscovery struct {
 
 // NewOCIDiscovery returns a new Discovery using the specified OCI image.
 func NewOCIDiscovery(name, image string, criteria *PluginDiscoveryCriteria) Discovery {
-	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		// The plugin inventory uses relative image URIs to be future-proof.
 		// Determine the image prefix from the main image.
 		// E.g., if the main image is at project.registry.vmware.com/tanzu-cli/plugins/plugin-inventory:latest
