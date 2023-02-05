@@ -66,7 +66,7 @@ func newSearchPluginCmd() *cobra.Command {
 				}
 			}
 			sort.Sort(discovery.DiscoveredSorter(allPlugins))
-			displayPluginList(allPlugins, cmd.OutOrStdout())
+			displayPluginsFound(allPlugins, cmd.OutOrStdout())
 
 			return nil
 		},
@@ -81,28 +81,34 @@ func newSearchPluginCmd() *cobra.Command {
 	return searchCmd
 }
 
-func displayPluginList(plugins []discovery.Discovered, writer io.Writer) {
-	var outputData [][]string
+func displayPluginsFound(plugins []discovery.Discovered, writer io.Writer) {
 	outputWriter := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status", "Context")
 
 	for i := range plugins {
-		pluginDetails := []string{plugins[i].Name, plugins[i].Description, string(plugins[i].Target), plugins[i].RecommendedVersion, plugins[i].Status}
+		context := ""
 		if plugins[i].Scope == common.PluginScopeContext {
-			pluginDetails = append(pluginDetails, plugins[i].ContextName)
+			context = plugins[i].ContextName
 		}
-		outputData = append(outputData, pluginDetails)
+
+		version := plugins[i].RecommendedVersion
+		status := common.PluginStatusNotInstalled
+		if plugins[i].Status == common.PluginStatusInstalled ||
+			plugins[i].Status == common.PluginStatusUpdateAvailable {
+			version = plugins[i].InstalledVersion
+
+			// TODO(khouzam): For the moment, only show the plugin as installed.
+			// Please see https://github.com/vmware-tanzu/tanzu-cli/issues/65
+			status = common.PluginStatusInstalled
+		}
+
+		outputWriter.AddRow(
+			plugins[i].Name,
+			plugins[i].Description,
+			string(plugins[i].Target),
+			version,
+			status,
+			context)
 	}
 
-	addDataToOutputWriter := func(output component.OutputWriter, data [][]string) {
-		for _, row := range data {
-			vals := make([]interface{}, len(row))
-			for i, val := range row {
-				vals[i] = val
-			}
-			output.AddRow(vals...)
-		}
-	}
-
-	addDataToOutputWriter(outputWriter, outputData)
 	outputWriter.Render()
 }
