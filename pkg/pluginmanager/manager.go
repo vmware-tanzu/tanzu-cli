@@ -599,7 +599,12 @@ func installAndDescribePlugin(p *discovery.Discovered, version string, binary []
 	plugin.Discovery = p.Source
 	plugin.DiscoveredRecommendedVersion = p.RecommendedVersion
 	plugin.Target = p.Target
-
+	plugin.Scope = p.Scope
+	if plugin.Version == p.RecommendedVersion {
+		plugin.Status = common.PluginStatusInstalled
+	} else {
+		plugin.Status = common.PluginStatusUpdateAvailable
+	}
 	return &plugin, nil
 }
 

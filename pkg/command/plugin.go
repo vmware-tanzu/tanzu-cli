@@ -26,6 +26,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
 var (
@@ -58,6 +59,16 @@ func newPluginCmd() *cobra.Command {
 
 	listPluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
 	listPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local plugin source")
+	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+		// The --local flag no longer applies to the "list" command.
+		// Instead of removing it completely, we mark it hidden and print out an error
+		// in the RunE() function if it is used.  This provides better guidance to the user.
+		if err := listPluginCmd.Flags().MarkHidden("local"); err != nil {
+			// Will only fail if the flag does not exist, which would indicate a coding error,
+			// so let's panic so we notice immediately.
+			panic(err)
+		}
+	}
 	installPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local discovery/distribution source")
 	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
 	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "delete the plugin without asking for confirmation")
@@ -92,6 +103,23 @@ func newListPluginCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List available plugins",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+				if local != "" {
+					return fmt.Errorf("the '--local' flag does not apply to this command. Please use 'tanzu plugin search --local'")
+				}
+
+				installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+				if err != nil {
+					return err
+				}
+				sort.Sort(cli.PluginInfoSorter(installedPlugins))
+
+				displayInstalledPluginList(installedPlugins, cmd.OutOrStdout())
+
+				return nil
+			}
+
+			// Plugin listing before the Central Repository feature
 			var err error
 			var availablePlugins []discovery.Discovered
 			if local != "" {
@@ -389,6 +417,31 @@ func displayPluginListOutputSplitViewContext(availablePlugins []discovery.Discov
 		addDataToOutputWriter(writer, data)
 		writer.Render()
 	}
+}
+
+func displayInstalledPluginList(installedPlugins []cli.PluginInfo, writer io.Writer) {
+	outputWriter := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status" /*, "Context"*/)
+
+	for index := range installedPlugins {
+		// // TODO(khouzam): Fix after pre-alpha: We need to figure out what would be an appropriate
+		// // format to indicate to the user that a plugin was installed due to a context
+		// // and make sure that information is always available in the data structs we process
+		// context := ""
+		// if installedPlugins[index].Scope == common.PluginScopeContext {
+		//    context = installedPlugins[index].ContextName
+		// }
+
+		outputWriter.AddRow(
+			installedPlugins[index].Name,
+			installedPlugins[index].Description,
+			string(installedPlugins[index].Target),
+			installedPlugins[index].Version,
+			installedPlugins[index].Status,
+			// context,
+		)
+	}
+
+	outputWriter.Render()
 }
 
 func getTarget() configtypes.Target {

@@ -74,3 +74,15 @@ type PluginInfo struct {
 	// DefaultFeatureFlags is default featureflags to be configured if missing when invoking plugin
 	DefaultFeatureFlags map[string]bool `json:"defaultFeatureFlags"`
 }
+
+// PluginInfoSorter sorts PluginInfo objects.
+type PluginInfoSorter []PluginInfo
+
+func (p PluginInfoSorter) Len() int      { return len(p) }
+func (p PluginInfoSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p PluginInfoSorter) Less(i, j int) bool {
+	if p[i].Target != p[j].Target {
+		return p[i].Target < p[j].Target
+	}
+	return p[i].Name < p[j].Name
+}
