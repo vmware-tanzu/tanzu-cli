@@ -215,7 +215,7 @@ func (po *localOCIPluginOps) createLocalPluginBundle(pluginsMeta *PluginMeta, pl
 		return pluginsMeta.pluginLocalPath, err
 	}
 	defer f.Close()
-	fmt.Fprintf(f, ImagesTemplate)
+	fmt.Fprint(f, ImagesTemplate)
 
 	configDirPath := filepath.Join(pluginsMeta.pluginLocalPath, "config")
 	if err := os.MkdirAll(configDirPath, os.ModePerm); err != nil {
@@ -228,7 +228,7 @@ func (po *localOCIPluginOps) createLocalPluginBundle(pluginsMeta *PluginMeta, pl
 		return pluginsMeta.pluginLocalPath, err
 	}
 	defer gf.Close()
-	fmt.Fprintf(gf, GeneratedValuesTemplate)
+	fmt.Fprint(gf, GeneratedValuesTemplate)
 
 	overlayDirPath := filepath.Join(configDirPath, "overlay")
 	if err := os.MkdirAll(overlayDirPath, os.ModePerm); err != nil {

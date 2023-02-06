@@ -25,6 +25,8 @@ GOLANGCI_LINT_VERSION=1.46.0
 MISSPELL_VERSION=0.3.4
 CONTROLLER_TOOLS_VERSION=0.9.2
 IMGPKG_VERSION=v0.35.0
+KUBECTL_VERSION=v1.26.0
+KIND_VERSION=v0.17.0
 
 # Host information.
 HOST_OS=$(shell go env GOOS)
@@ -36,7 +38,10 @@ VALE               := $(BIN_DIR)/vale
 GOLANGCI_LINT      := $(BIN_DIR)/golangci-lint
 MISSPELL           := $(BIN_DIR)/misspell
 CONTROLLER_GEN     := $(BIN_DIR)/controller-gen
-IMGPKG			   := $(BIN_DIR)/imgpkg
+IMGPKG             := $(BIN_DIR)/imgpkg
+KUBECTL            := $(BIN_DIR)/kubectl
+KIND               := $(BIN_DIR)/kind
+
 ## --------------------------------------
 ## Help
 ## --------------------------------------
@@ -84,6 +89,23 @@ $(IMGPKG):
 	mkdir -p $(BIN_DIR)
 	curl -LO https://github.com/vmware-tanzu/carvel-imgpkg/releases/download/$(IMGPKG_VERSION)/imgpkg-$(HOST_OS)-$(HOST_ARCH)
 	mv imgpkg-$(HOST_OS)-$(HOST_ARCH) $(@)
+	chmod a+x $(@)
+
+kubectl: $(KUBECTL)
+$(KUBECTL):
+	mkdir -p $(BIN_DIR)
+	curl -LO https://dl.k8s.io/release/$(KUBECTL_VERSION)/bin/$(HOST_OS)/$(HOST_ARCH)/kubectl
+	mv kubectl $(@)
+	chmod a+x $(@)
+
+kind: $(KIND)
+$(KIND):
+	mkdir -p $(BIN_DIR)
+	echo $(KIND_VERSION)
+	echo $(HOST_OS)
+	echo $(HOST_ARCH)
+	curl -Lo ./kind https://kind.sigs.k8s.io/dl/$(KIND_VERSION)/kind-$(HOST_OS)-$(HOST_ARCH)
+	mv ./kind $(@)
 	chmod a+x $(@)
 
 ## --------------------------------------

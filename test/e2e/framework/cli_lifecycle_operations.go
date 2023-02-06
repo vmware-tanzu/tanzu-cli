@@ -1,5 +1,6 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
+
 package framework
 
 // CliOps performs basic cli operations
@@ -29,7 +30,7 @@ func (co *cliOps) CliInit() error {
 // Version returns the CLI version info
 func (co *cliOps) CliVersion() (string, error) {
 	stdOut, _, err := co.Exec(TanzuVersion)
-	return string(stdOut.Bytes()), err
+	return stdOut.String(), err
 }
 
 // InstallCLI installs specific CLI version

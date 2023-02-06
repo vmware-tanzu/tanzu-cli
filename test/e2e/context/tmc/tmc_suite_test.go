@@ -1,8 +1,8 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// plugin provides plugin command specific E2E test cases
-package plugin
+// tmc provides context command e2e test cases for tmc target
+package tmc
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestPluginLifecycle(t *testing.T) {
+func TestTmc(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "PluginLifecycle Suite")
+	RunSpecs(t, "Context-TMC Suite")
 }
