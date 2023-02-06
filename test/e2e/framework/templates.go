@@ -1,7 +1,7 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// Package test defines the integration and end-to-end test case for cli core
+// Package framework defines the integration and end-to-end test case for cli core
 package framework
 
 const ScriptBasedPluginTemplate = `#!/bin/bash

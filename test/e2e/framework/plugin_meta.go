@@ -8,7 +8,6 @@ type PluginMeta struct {
 	target        string
 	version       string
 	description   string
-	help          string
 	sha           string
 	group         string
 	arch          string
@@ -69,8 +68,8 @@ func (p *PluginMeta) SetArch(arch string) *PluginMeta {
 	return p
 }
 
-func (p *PluginMeta) SetOS(OSType string) *PluginMeta {
-	p.os = OSType
+func (p *PluginMeta) SetOs(osType string) *PluginMeta {
+	p.os = osType
 	return p
 }
 

@@ -21,7 +21,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		tf = framework.NewFramework()
 		pm := framework.NewPluginMeta()
 		plugins = make([]*framework.PluginMeta, 1)
-		pm.SetName("dummy").SetTarget("k8s").SetVersion("1.0").SetDescription("its dummy plugin").SetSHA("345").SetGroup("admin").SetArch("amd64").SetOS("darwin").SetDiscoveryType("oci").SetHidden(false).SetOptional(false)
+		pm.SetName("dummy").SetTarget("k8s").SetVersion("1.0").SetDescription("its dummy plugin").SetSHA("345").SetGroup("admin").SetArch("amd64").SetOs("darwin").SetDiscoveryType("oci").SetHidden(false).SetOptional(false)
 		plugins[0] = pm
 		GenerateAndPublishScriptBasedPluginsToLocalOCIRepo(tf, plugins[:])
 	})

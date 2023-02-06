@@ -5,8 +5,6 @@
 package plugin
 
 import (
-	"fmt"
-
 	. "github.com/onsi/gomega"
 
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
@@ -81,7 +79,6 @@ func DeleteDiscoverySources(tf *framework.Framework, discoverySources []string) 
 			Name:       dis, //discovery source name
 			SourceType: "oci",
 		}
-		fmt.Println("deleting discovery source:" + dis)
 		_, err := tf.PluginCmd.DeletePluginDiscoverySource(do)
 		Expect(err).To(BeNil(), "should be able to delete plugin discovery source without any error")
 	}
