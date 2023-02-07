@@ -10,7 +10,7 @@ import (
 	"github.com/Masterminds/semver"
 )
 
-// SortVersions sorts the supported version strings in semver 2.0 order.
+// SortVersions sorts the supported version strings in ascending semver 2.0 order.
 func SortVersions(vStrArr []string) error {
 	vArr := make([]*semver.Version, len(vStrArr))
 	for i, vStr := range vStrArr {

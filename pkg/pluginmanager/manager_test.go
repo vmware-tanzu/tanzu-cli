@@ -125,7 +125,7 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	// Try installing cluster plugin through context-type=k8s with incorrect version
 	err = InstallPlugin("cluster", "v1.0.0", configtypes.TargetK8s)
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to fetch the plugin metadata")
+	assertions.Contains(err.Error(), "plugin pre-download verification failed")
 
 	// Try installing cluster plugin through context-type=k8s
 	err = InstallPlugin("cluster", "v1.6.0", configtypes.TargetK8s)

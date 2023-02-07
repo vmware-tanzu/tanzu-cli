@@ -232,21 +232,28 @@ func newInstallPluginCmd() *cobra.Command {
 				return nil
 			}
 
-			// Invoke plugin sync if install all plugins is mentioned
-			if pluginName == cli.AllPlugins {
-				err = pluginmanager.SyncPlugins()
-				if err != nil {
-					return err
-				}
-				log.Successf("successfully installed all plugins")
-				return nil
-			}
-
 			pluginVersion := version
-			if pluginVersion == cli.VersionLatest {
-				pluginVersion, err = pluginmanager.GetRecommendedVersionOfPlugin(pluginName, getTarget())
-				if err != nil {
-					return err
+			if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+				if pluginName == cli.AllPlugins {
+					return fmt.Errorf("the '%s' argument is not longer supported. You must install each plugin individually",
+						cli.AllPlugins)
+				}
+			} else {
+				// Invoke plugin sync if install all plugins is mentioned
+				if pluginName == cli.AllPlugins {
+					err = pluginmanager.SyncPlugins()
+					if err != nil {
+						return err
+					}
+					log.Successf("successfully installed all plugins")
+					return nil
+				}
+
+				if pluginVersion == cli.VersionLatest {
+					pluginVersion, err = pluginmanager.GetRecommendedVersionOfPlugin(pluginName, getTarget())
+					if err != nil {
+						return err
+					}
 				}
 			}
 
@@ -276,16 +283,23 @@ func newUpgradePluginCmd() *cobra.Command {
 				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
 			}
 
-			pluginVersion, err := pluginmanager.GetRecommendedVersionOfPlugin(pluginName, getTarget())
-			if err != nil {
-				return err
+			var pluginVersion string
+			if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+				// With the Central Repository feature we can simply request to install
+				// the recommendedVersion.
+				pluginVersion = cli.VersionLatest
+			} else {
+				pluginVersion, err = pluginmanager.GetRecommendedVersionOfPlugin(pluginName, getTarget())
+				if err != nil {
+					return err
+				}
 			}
 
 			err = pluginmanager.UpgradePlugin(pluginName, pluginVersion, getTarget())
 			if err != nil {
 				return err
 			}
-			log.Successf("successfully upgraded plugin '%s' to version '%s'", pluginName, pluginVersion)
+			log.Successf("successfully upgraded plugin '%s'", pluginName)
 			return nil
 		},
 	}

@@ -79,9 +79,14 @@ func ValidatePlugin(p *cli.PluginInfo) (err error) {
 }
 
 func discoverPlugins(pd []configtypes.PluginDiscovery) ([]discovery.Discovered, error) {
+	return discoverSpecificPlugins(pd, nil)
+}
+
+// discoverSpecificPlugins returns the available plugin matching the criteria, if the criteria is not nil.
+func discoverSpecificPlugins(pd []configtypes.PluginDiscovery, criteria *discovery.PluginDiscoveryCriteria) ([]discovery.Discovered, error) {
 	allPlugins := make([]discovery.Discovered, 0)
 	for _, d := range pd {
-		discObject, err := discovery.CreateDiscoveryFromV1alpha1(d)
+		discObject, err := discovery.CreateDiscoveryFromV1alpha1(d, criteria)
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to create discovery")
 		}
@@ -99,31 +104,12 @@ func discoverPlugins(pd []configtypes.PluginDiscovery) ([]discovery.Discovered, 
 
 // DiscoverStandalonePlugins returns the available standalone plugins
 func DiscoverStandalonePlugins() ([]discovery.Discovered, error) {
-	var discoveries []configtypes.PluginDiscovery
-	var plugins []discovery.Discovered
-	var err error
-	if configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
-		pd, e := getPreReleasePluginDiscovery()
-		if e != nil {
-			return plugins, e
-		}
-		discoveries = append(discoveries, pd)
-	} else {
-		cfg, e := configlib.GetClientConfig()
-
-		if e != nil {
-			err = errors.Wrapf(e, "unable to get client configuration")
-			return plugins, err
-		}
-
-		if cfg == nil || cfg.ClientOptions == nil || cfg.ClientOptions.CLI == nil {
-			plugins = []discovery.Discovered{}
-			return plugins, nil
-		}
-		discoveries = cfg.ClientOptions.CLI.DiscoverySources
+	discoveries, err := getPluginDiscoveries()
+	if err != nil {
+		return nil, err
 	}
 
-	plugins, err = discoverPlugins(discoveries)
+	plugins, err := discoverPlugins(discoveries)
 	if err != nil {
 		return plugins, err
 	}
@@ -484,19 +470,37 @@ func InstallPlugin(pluginName, version string, target configtypes.Target) error 
 	var availablePlugins []discovery.Discovered
 	var err error
 	if configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
-		availablePlugins, err = DiscoverStandalonePlugins()
+		discoveries, err := getPluginDiscoveries()
+		if err != nil || len(discoveries) == 0 {
+			return err
+		}
+		availablePlugins, err = discoverSpecificPlugins(discoveries, &discovery.PluginDiscoveryCriteria{
+			Name:    pluginName,
+			Target:  target,
+			Version: version,
+			OS:      runtime.GOOS,
+			Arch:    runtime.GOARCH,
+		})
 		if err != nil {
 			return err
 		}
-		if installedPlugins, err := pluginsupplier.GetInstalledPlugins(); err == nil {
-			setAvailablePluginsStatus(availablePlugins, installedPlugins)
+
+		if len(availablePlugins) == 0 {
+			return errors.Errorf("unable to find plugin '%v'", pluginName)
+		}
+
+		// Deal with duplicates from different plugin discovery sources
+		availablePlugins = combineDuplicatePlugins(availablePlugins)
+
+		// If the version requested was the RecommendedVersion, we should set it explicitly
+		if version == cli.VersionLatest {
+			version = availablePlugins[0].RecommendedVersion
 		}
 	} else {
 		availablePlugins, err = AvailablePlugins()
-	}
-
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	var matchedPlugins []discovery.Discovered
@@ -584,7 +588,7 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 
 func fetchAndVerifyPlugin(p *discovery.Discovered, version string) ([]byte, error) {
 	// verify plugin before download
-	err := verifyPluginPreDownload(p)
+	err := verifyPluginPreDownload(p, version)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%q plugin pre-download verification failed", p.Name)
 	}
@@ -1015,8 +1019,8 @@ func getPluginInfoResource(pluginFilePath string) (*cli.PluginInfo, error) {
 
 // verifyPluginPreDownload verifies that the plugin distribution repo is trusted
 // and returns error if the verification fails.
-func verifyPluginPreDownload(p *discovery.Discovered) error {
-	artifactInfo, err := p.Distribution.DescribeArtifact(p.RecommendedVersion, runtime.GOOS, runtime.GOARCH)
+func verifyPluginPreDownload(p *discovery.Discovered, version string) error {
+	artifactInfo, err := p.Distribution.DescribeArtifact(version, runtime.GOOS, runtime.GOARCH)
 	if err != nil {
 		return err
 	}
@@ -1090,4 +1094,25 @@ func FindVersion(recommendedPluginVersion, requestedVersion string) string {
 		return recommendedPluginVersion
 	}
 	return requestedVersion
+}
+
+// getPluginDiscoveries returns the plugin discoveries found in the configuration file.
+func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
+	if configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
+		pd, err := getPreReleasePluginDiscovery()
+		if err != nil {
+			return nil, err
+		}
+		return []configtypes.PluginDiscovery{pd}, nil
+	}
+
+	cfg, err := configlib.GetClientConfig()
+	if err != nil {
+		return []configtypes.PluginDiscovery{}, errors.Wrapf(err, "unable to get client configuration")
+	}
+
+	if cfg == nil || cfg.ClientOptions == nil || cfg.ClientOptions.CLI == nil {
+		return []configtypes.PluginDiscovery{}, nil
+	}
+	return cfg.ClientOptions.CLI.DiscoverySources, nil
 }

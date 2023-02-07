@@ -77,6 +77,30 @@ func (b *SQLiteInventory) GetAllPlugins() ([]*PluginInventoryEntry, error) {
 
 // GetPlugins returns the plugin found in the inventory that matches the provided parameters.
 func (b *SQLiteInventory) GetPlugins(filter *PluginInventoryFilter) ([]*PluginInventoryEntry, error) {
+	// TODO(khouzam): Since the Central Repo does not have its RecommendedVersion field set yet,
+	// we first search for it by looking for the latest version amongst all versions.
+	if filter.Version == cli.VersionLatest {
+		if filter.Name == "" {
+			return nil, fmt.Errorf("cannot get the recommended version of a plugin without a plugin name")
+		}
+		// Ask for all versions
+		filter.Version = ""
+		plugins, err := b.getPluginsFromDB(filter)
+		if err != nil {
+			return nil, err
+		}
+		// We could end up with two plugins if we didn't filter on target.
+		// We know this will cause an error as it trickles back up so we just return what
+		// we found without further processing.  This is NOT generic, but a temporary workaround.
+		// Also, if we have no plugins found, we can return immediately.
+		if len(plugins) != 1 {
+			return plugins, nil
+		}
+
+		// We can now use the RecommendedVersion field which was filled when parsing the DB.
+		filter.Version = plugins[0].RecommendedVersion
+	}
+
 	return b.getPluginsFromDB(filter)
 }
 

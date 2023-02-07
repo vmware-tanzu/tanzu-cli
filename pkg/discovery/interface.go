@@ -42,10 +42,11 @@ type PluginDiscoveryCriteria struct {
 }
 
 // CreateDiscoveryFromV1alpha1 creates discovery interface from v1alpha1 API
-func CreateDiscoveryFromV1alpha1(pd configtypes.PluginDiscovery) (Discovery, error) {
+func CreateDiscoveryFromV1alpha1(pd configtypes.PluginDiscovery, criteria *PluginDiscoveryCriteria) (Discovery, error) {
 	switch {
 	case pd.OCI != nil:
-		return NewOCIDiscovery(pd.OCI.Name, pd.OCI.Image, nil), nil
+		// Only the OCI Discovery currently supports a criteria
+		return NewOCIDiscovery(pd.OCI.Name, pd.OCI.Image, criteria), nil
 	case pd.Local != nil:
 		return NewLocalDiscovery(pd.Local.Name, pd.Local.Path), nil
 	case pd.Kubernetes != nil:
