@@ -149,7 +149,7 @@ func getPreReleasePluginDiscovery() (configtypes.PluginDiscovery, error) {
 	}
 	return configtypes.PluginDiscovery{
 		OCI: &configtypes.OCIDiscovery{
-			Name:  "central test",
+			Name:  "central_pre_release",
 			Image: centralRepoTestImage,
 		}}, nil
 }

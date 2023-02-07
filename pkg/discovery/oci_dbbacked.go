@@ -30,6 +30,9 @@ type DBBackedOCIDiscovery struct {
 	// E.g., harbor.my-domain.local/tanzu-cli/plugins/plugins-inventory:latest
 	// This image contains a single SQLite database file.
 	image string
+	// criteria specified different conditions that a plugin must respect to be discovered.
+	// This allows to filter the list of plugins that will be returned.
+	criteria *PluginDiscoveryCriteria
 }
 
 // Name of the discovery.
@@ -54,11 +57,25 @@ func (od *DBBackedOCIDiscovery) List() (plugins []Discovered, err error) {
 	// E.g., if the main image is at project.registry.vmware.com/tanzu-cli/plugins/plugin-inventory:latest
 	// then the image prefix should be project.registry.vmware.com/tanzu-cli/plugins/
 	imagePrefix := path.Dir(od.image)
-	inventory := plugininventory.NewSQLiteInventory(od.Name(), pluginInventoryDir, imagePrefix)
+	inventory := plugininventory.NewSQLiteInventory(pluginInventoryDir, imagePrefix)
 
-	pluginEntries, err := inventory.GetAllPlugins()
-	if err != nil {
-		return nil, err
+	var pluginEntries []*plugininventory.PluginInventoryEntry
+	if od.criteria == nil {
+		pluginEntries, err = inventory.GetAllPlugins()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		pluginEntries, err = inventory.GetPlugins(&plugininventory.PluginInventoryFilter{
+			Name:    od.criteria.Name,
+			Target:  od.criteria.Target,
+			Version: od.criteria.Version,
+			OS:      od.criteria.OS,
+			Arch:    od.criteria.Arch,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var discoveredPlugins []Discovered
@@ -88,7 +105,7 @@ func (od *DBBackedOCIDiscovery) List() (plugins []Discovered, err error) {
 // It returns the path to the exact directory used.
 func (od *DBBackedOCIDiscovery) fetchInventoryImage() (string, error) {
 	// TODO(khouzam): Improve by checking if we really need to download again or if we can use the cache
-	pluginDataDir := filepath.Join(common.DefaultCacheDir, inventoryDirName)
+	pluginDataDir := filepath.Join(common.DefaultCacheDir, inventoryDirName, od.Name())
 	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, pluginDataDir); err != nil {
 		return "", errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
 	}

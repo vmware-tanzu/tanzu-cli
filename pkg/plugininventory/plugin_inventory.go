@@ -12,6 +12,17 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
+// PluginInventory is the interface to interact with a plugin inventory.
+// It can be used to get the plugin information for plugins in the
+// inventory based on different criteria.
+type PluginInventory interface {
+	// GetAllPlugins returns all plugins found in the inventory.
+	GetAllPlugins() ([]*PluginInventoryEntry, error)
+
+	// GetPlugins returns the plugins found in the inventory that match the provided filter.
+	GetPlugins(*PluginInventoryFilter) ([]*PluginInventoryEntry, error)
+}
+
 // PluginInventoryEntry represents the inventory information
 // about a single plugin as found by the inventory backend.
 type PluginInventoryEntry struct {
@@ -38,9 +49,21 @@ type PluginInventoryEntry struct {
 	Artifacts distribution.Artifacts
 }
 
-// PluginInventory is the interface to interact with a plugin inventory.
-// It can be used to get the plugin information for all plugins in the
-// inventory.
-type PluginInventory interface {
-	GetAllPlugins() ([]*PluginInventoryEntry, error)
+// PluginInventoryFilter allows to specify different criteria for
+// looking up plugin entries.
+type PluginInventoryFilter struct {
+	// Name of the plugin to look for
+	Name string
+	// Target to which the plugins apply
+	Target configtypes.Target
+	// Version for the plugins to look for
+	Version string
+	// OS of the plugin binary in `GOOS` format.
+	OS string
+	// Arch of the plugin binary in `GOARCH` format.
+	Arch string
+	// Publisher of the plugins to look for
+	Publisher string
+	// Vendor the plugins to look for
+	Vendor string
 }

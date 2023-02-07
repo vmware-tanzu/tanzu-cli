@@ -26,11 +26,26 @@ type Discovery interface {
 	Type() string
 }
 
+// PluginDiscoveryCriteria provides criteria to look for plugins
+// in a discovery.
+type PluginDiscoveryCriteria struct {
+	// Name is the name of the plugin
+	Name string
+	// Target is the target of the plugin
+	Target configtypes.Target
+	// Version is the version for the plugin
+	Version string
+	// OS of the plugin binary in `GOOS` format.
+	OS string
+	// Arch of the plugin binary in `GOARCH` format.
+	Arch string
+}
+
 // CreateDiscoveryFromV1alpha1 creates discovery interface from v1alpha1 API
 func CreateDiscoveryFromV1alpha1(pd configtypes.PluginDiscovery) (Discovery, error) {
 	switch {
 	case pd.OCI != nil:
-		return NewOCIDiscovery(pd.OCI.Name, pd.OCI.Image), nil
+		return NewOCIDiscovery(pd.OCI.Name, pd.OCI.Image, nil), nil
 	case pd.Local != nil:
 		return NewLocalDiscovery(pd.Local.Name, pd.Local.Path), nil
 	case pd.Kubernetes != nil:

@@ -29,11 +29,12 @@ type OCIDiscovery struct {
 }
 
 // NewOCIDiscovery returns a new Discovery using the specified OCI image.
-func NewOCIDiscovery(name, image string) Discovery {
+func NewOCIDiscovery(name, image string, criteria *PluginDiscoveryCriteria) Discovery {
 	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
 		return &DBBackedOCIDiscovery{
-			name:  name,
-			image: image,
+			name:     name,
+			image:    image,
+			criteria: criteria,
 		}
 	}
 
