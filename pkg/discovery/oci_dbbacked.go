@@ -11,6 +11,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 )
 
 // inventoryDirName is the name of the directory where the file(s) describing
@@ -53,20 +54,33 @@ func (od *DBBackedOCIDiscovery) List() (plugins []Discovered, err error) {
 	// E.g., if the main image is at project.registry.vmware.com/tanzu-cli/plugins/plugin-inventory:latest
 	// then the image prefix should be project.registry.vmware.com/tanzu-cli/plugins/
 	imagePrefix := path.Dir(od.image)
-	backend := NewSQLiteBackend(od.Name(), pluginInventoryDir, imagePrefix)
+	inventory := plugininventory.NewSQLiteInventory(od.Name(), pluginInventoryDir, imagePrefix)
 
-	allPluginPtrs, err := backend.GetAllPlugins()
+	pluginEntries, err := inventory.GetAllPlugins()
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert from plugin pointers to plugins
-	// TODO(khouzam): continue optimizing by converting every call to using pointers
-	var allPlugins []Discovered
-	for _, pluginPtr := range allPluginPtrs {
-		allPlugins = append(allPlugins, *pluginPtr)
+	var discoveredPlugins []Discovered
+	for _, entry := range pluginEntries {
+		plugin := Discovered{
+			Name:               entry.Name,
+			Description:        entry.Description,
+			RecommendedVersion: entry.RecommendedVersion,
+			InstalledVersion:   "", // Not set when discovered, but later.
+			SupportedVersions:  entry.AvailableVersions,
+			Distribution:       entry.Artifacts,
+			Optional:           false,
+			Scope:              common.PluginScopeStandalone,
+			Source:             od.name,
+			ContextName:        "", // Not set when discovered.
+			DiscoveryType:      common.DiscoveryTypeOCI,
+			Target:             entry.Target,
+			Status:             common.PluginStatusNotInstalled, // Not set yet
+		}
+		discoveredPlugins = append(discoveredPlugins, plugin)
 	}
-	return allPlugins, nil
+	return discoveredPlugins, nil
 }
 
 // fetchInventoryImage downloads the OCI image containing the information about the

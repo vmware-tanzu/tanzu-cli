@@ -15,6 +15,7 @@ import (
 	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 // LocalDiscovery is an artifact discovery endpoint utilizing a local host os.
@@ -114,7 +115,7 @@ func DiscoveredFromK8sV1alpha1(p *cliv1alpha1.CLIPlugin) (Discovered, error) {
 	for v := range p.Spec.Artifacts {
 		dp.SupportedVersions = append(dp.SupportedVersions, v)
 	}
-	if err := SortVersions(dp.SupportedVersions); err != nil {
+	if err := utils.SortVersions(dp.SupportedVersions); err != nil {
 		return dp, errors.Wrapf(err, "error parsing supported versions for plugin %s", p.Name)
 	}
 	dp.Distribution = distribution.ArtifactsFromK8sV1alpha1(p.Spec.Artifacts)

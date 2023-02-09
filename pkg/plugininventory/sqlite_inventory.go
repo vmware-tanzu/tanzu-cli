@@ -1,7 +1,7 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package discovery
+package plugininventory
 
 import (
 	"database/sql"
@@ -16,14 +16,13 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
-// SQLiteBackend is a backend using SQLite for managing the data for the
-// inventory of plugins.
-type SQLiteBackend struct {
+// SQLiteInventory is an inventory stored using SQLite
+type SQLiteInventory struct {
 	// discoveryName is the name of the discovery powered by this backend
 	discoveryName string
 	// inventoryFile represents the full path to the SQLite DB file
@@ -56,9 +55,9 @@ type inventoryDBRow struct {
 	uri                string
 }
 
-// NewSQLiteBackend returns a new DiscoveryBackend using the data found at 'inventoryDir'.
-func NewSQLiteBackend(discoveryName, inventoryDir, prefix string) DiscoveryBackend {
-	return &SQLiteBackend{
+// NewSQLiteInventory returns a new PluginInventory connected to the data found at 'inventoryDir'.
+func NewSQLiteInventory(discoveryName, inventoryDir, prefix string) PluginInventory {
+	return &SQLiteInventory{
 		discoveryName: discoveryName,
 		inventoryFile: filepath.Join(inventoryDir, sqliteDBFileName),
 		uriPrefix:     prefix,
@@ -66,12 +65,12 @@ func NewSQLiteBackend(discoveryName, inventoryDir, prefix string) DiscoveryBacke
 }
 
 // GetAllPlugins returns all plugins discovered in this backend.
-func (b *SQLiteBackend) GetAllPlugins() ([]*Discovered, error) {
+func (b *SQLiteInventory) GetAllPlugins() ([]*PluginInventoryEntry, error) {
 	return b.getPluginsFromDB()
 }
 
 // getPluginsFromDB returns all plugins found in the DB 'inventoryFile'
-func (b *SQLiteBackend) getPluginsFromDB() ([]*Discovered, error) {
+func (b *SQLiteInventory) getPluginsFromDB() ([]*PluginInventoryEntry, error) {
 	db, err := sql.Open("sqlite3", b.inventoryFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open the DB for discovery '%s'", b.discoveryName)
@@ -93,11 +92,11 @@ func (b *SQLiteBackend) getPluginsFromDB() ([]*Discovered, error) {
 
 // extractPluginsFromRows loops through all DB rows and builds an array
 // of Discovered plugins based on the data extracted.
-func (b *SQLiteBackend) extractPluginsFromRows(rows *sql.Rows) ([]*Discovered, error) {
+func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInventoryEntry, error) {
 	currentPluginID := ""
 	currentVersion := ""
-	var currentPlugin *Discovered
-	allPlugins := make([]*Discovered, 0)
+	var currentPlugin *PluginInventoryEntry
+	allPlugins := make([]*PluginInventoryEntry, 0)
 	var artifactList distribution.ArtifactList
 	var artifacts distribution.Artifacts
 
@@ -115,24 +114,19 @@ func (b *SQLiteBackend) extractPluginsFromRows(rows *sql.Rows) ([]*Discovered, e
 			if currentPlugin != nil {
 				artifacts[currentVersion] = artifactList
 				artifactList = distribution.ArtifactList{}
-				currentPlugin.Distribution = artifacts
+				currentPlugin.Artifacts = artifacts
 				allPlugins = appendPlugin(allPlugins, currentPlugin)
 			}
 			currentPluginID = pluginIDFromRow
 
-			currentPlugin = &Discovered{
+			currentPlugin = &PluginInventoryEntry{
 				Name:               row.name,
-				Description:        row.description,
-				RecommendedVersion: row.recommendedVersion,
-				InstalledVersion:   "",         // Not set when discovered, but later.
-				SupportedVersions:  []string{}, // Will be filled gradually below.
-				Optional:           false,
-				Scope:              common.PluginScopeStandalone,
-				Source:             b.discoveryName,
-				ContextName:        "", // Not set when discovered by this backend.
-				DiscoveryType:      common.DiscoveryTypeOCI,
 				Target:             target,
-				Status:             common.PluginStatusNotInstalled,
+				Description:        row.description,
+				Publisher:          row.publisher,
+				Vendor:             row.vendor,
+				RecommendedVersion: row.recommendedVersion,
+				AvailableVersions:  []string{}, // Will be filled gradually below.
 			}
 			currentVersion = ""
 			artifacts = distribution.Artifacts{}
@@ -143,7 +137,7 @@ func (b *SQLiteBackend) extractPluginsFromRows(rows *sql.Rows) ([]*Discovered, e
 			// This is a new version of our current plugin.  Add it to the array of versions.
 			// We can do this without verifying if the version is already there because
 			// we have requested the list of plugins from the database ordered by version.
-			currentPlugin.SupportedVersions = append(currentPlugin.SupportedVersions, row.version)
+			currentPlugin.AvailableVersions = append(currentPlugin.AvailableVersions, row.version)
 
 			// Store the list of artifacts for the previous version then start building
 			// the artifact list for the new version.
@@ -170,7 +164,7 @@ func (b *SQLiteBackend) extractPluginsFromRows(rows *sql.Rows) ([]*Discovered, e
 	// Don't forget to store the very last plugin we were building
 	if currentPlugin != nil {
 		artifacts[currentVersion] = artifactList
-		currentPlugin.Distribution = artifacts
+		currentPlugin.Artifacts = artifacts
 		allPlugins = appendPlugin(allPlugins, currentPlugin)
 	}
 	return allPlugins, rows.Err()
@@ -208,15 +202,15 @@ func convertTargetFromDB(target string) configtypes.Target {
 
 // appendPlugin appends a Discovered plugins to the specified array.
 // This function needs to be used to do post-processing on the new plugin before storing it.
-func appendPlugin(allPlugins []*Discovered, plugin *Discovered) []*Discovered {
+func appendPlugin(allPlugins []*PluginInventoryEntry, plugin *PluginInventoryEntry) []*PluginInventoryEntry {
 	// Now that we are done gathering the information for the plugin
 	// we need to compute the recommendedVersion if it wasn't provided
 	// by the database
-	if err := SortVersions(plugin.SupportedVersions); err != nil {
+	if err := utils.SortVersions(plugin.AvailableVersions); err != nil {
 		fmt.Fprintf(os.Stderr, "error parsing supported versions for plugin %s: %v", plugin.Name, err)
 	}
 	if plugin.RecommendedVersion == "" {
-		plugin.RecommendedVersion = plugin.SupportedVersions[len(plugin.SupportedVersions)-1]
+		plugin.RecommendedVersion = plugin.AvailableVersions[len(plugin.AvailableVersions)-1]
 	}
 	allPlugins = append(allPlugins, plugin)
 	return allPlugins

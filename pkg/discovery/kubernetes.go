@@ -15,6 +15,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cluster"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 // KubernetesDiscovery is an artifact discovery utilizing CLIPlugin API in kubernetes cluster
@@ -114,7 +115,7 @@ func DiscoveredFromK8sV1alpha1WithImageRepositoryOverride(p *cliv1alpha1.CLIPlug
 	for v := range p.Spec.Artifacts {
 		dp.SupportedVersions = append(dp.SupportedVersions, v)
 	}
-	if err := SortVersions(dp.SupportedVersions); err != nil {
+	if err := utils.SortVersions(dp.SupportedVersions); err != nil {
 		return dp, errors.Wrapf(err, "error parsing supported versions for plugin %s", p.Name)
 	}
 
