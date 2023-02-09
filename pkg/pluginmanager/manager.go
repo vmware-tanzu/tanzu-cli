@@ -98,28 +98,61 @@ func discoverPlugins(pd []configtypes.PluginDiscovery) ([]discovery.Discovered, 
 }
 
 // DiscoverStandalonePlugins returns the available standalone plugins
-func DiscoverStandalonePlugins() (plugins []discovery.Discovered, err error) {
-	cfg, e := configlib.GetClientConfig()
-	if e != nil {
-		err = errors.Wrapf(e, "unable to get client configuration")
-		return
+func DiscoverStandalonePlugins() ([]discovery.Discovered, error) {
+	var discoveries []configtypes.PluginDiscovery
+	var plugins []discovery.Discovered
+	var err error
+	if configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
+		pd, e := getPreReleasePluginDiscovery()
+		if e != nil {
+			return plugins, e
+		}
+		discoveries = append(discoveries, pd)
+	} else {
+		cfg, e := configlib.GetClientConfig()
+
+		if e != nil {
+			err = errors.Wrapf(e, "unable to get client configuration")
+			return plugins, err
+		}
+
+		if cfg == nil || cfg.ClientOptions == nil || cfg.ClientOptions.CLI == nil {
+			plugins = []discovery.Discovered{}
+			return plugins, nil
+		}
+		discoveries = cfg.ClientOptions.CLI.DiscoverySources
 	}
 
-	if cfg == nil || cfg.ClientOptions == nil || cfg.ClientOptions.CLI == nil {
-		plugins = []discovery.Discovered{}
-		return
-	}
-
-	plugins, err = discoverPlugins(cfg.ClientOptions.CLI.DiscoverySources)
+	plugins, err = discoverPlugins(discoveries)
 	if err != nil {
-		return
+		return plugins, err
 	}
 
 	for i := range plugins {
 		plugins[i].Scope = common.PluginScopeStandalone
 		plugins[i].Status = common.PluginStatusNotInstalled
 	}
-	return
+	return plugins, err
+}
+
+// getPreReleasePluginDiscovery
+// For pre-alpha we use an environment variable to point to the
+// central repo.  This is because the content of
+// cfg.ClientOptions.CLI.DiscoverySources
+// is read by older CLIs so we don't want to modify it.
+// TODO(khouzam): remove before 1.0
+func getPreReleasePluginDiscovery() (configtypes.PluginDiscovery, error) {
+	const tempVarNameForPluginImage = "TANZU_CLI_PRE_RELEASE_REPO_IMAGE"
+	centralRepoTestImage := os.Getenv(tempVarNameForPluginImage)
+	if centralRepoTestImage == "" {
+		// Don't set a default value.  This test repo URI is not meant to be public.
+		return configtypes.PluginDiscovery{}, fmt.Errorf("you must set the environment variable %s to the URI of the image of the plugin repository.  Please see the documentation", tempVarNameForPluginImage)
+	}
+	return configtypes.PluginDiscovery{
+		OCI: &configtypes.OCIDiscovery{
+			Name:  "central test",
+			Image: centralRepoTestImage,
+		}}, nil
 }
 
 // DiscoverServerPlugins returns the available plugins associated all the active contexts
@@ -453,6 +486,9 @@ func InstallPlugin(pluginName, version string, target configtypes.Target) error 
 	var err error
 	if configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
 		availablePlugins, err = DiscoverStandalonePlugins()
+		if err != nil {
+			return err
+		}
 		if installedPlugins, err := pluginsupplier.GetInstalledPlugins(); err == nil {
 			setAvailablePluginsStatus(availablePlugins, installedPlugins)
 		}
