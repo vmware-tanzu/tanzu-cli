@@ -114,6 +114,9 @@ jobs:
         NEW_CONTRIBUTORS=$(sed -n '/## New Contributors/,$p' /tmp/${{ steps.time.outputs.time }}-github-output)
         RELEASE_TOOL_NOTES=$(sed 's/### Uncategorized/### Miscellaneous/g' /tmp/${{ steps.time.outputs.time }}-bin-notes)
         RELEASE_NOTES=$(cat <<-END
+          ## Tanzu CLI Installation Instructions
+
+          If you are installing Tanzu CLI using the artifacts published as part of this release, please follow the [instructions](https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/release/usage.md).
 
           $RELEASE_TOOL_NOTES
 
