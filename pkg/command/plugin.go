@@ -431,12 +431,21 @@ func displayInstalledPluginList(installedPlugins []cli.PluginInfo, writer io.Wri
 		//    context = installedPlugins[index].ContextName
 		// }
 
+		status := common.PluginStatusNotInstalled
+		if installedPlugins[index].Status == common.PluginStatusInstalled ||
+			installedPlugins[index].Status == common.PluginStatusUpdateAvailable {
+			// TODO(khouzam): For the moment, only show the plugin as installed.
+			// Please see https://github.com/vmware-tanzu/tanzu-cli/issues/65
+
+			status = common.PluginStatusInstalled
+		}
+
 		outputWriter.AddRow(
 			installedPlugins[index].Name,
 			installedPlugins[index].Description,
 			string(installedPlugins[index].Target),
 			installedPlugins[index].Version,
-			installedPlugins[index].Status,
+			status,
 			// context,
 		)
 	}
