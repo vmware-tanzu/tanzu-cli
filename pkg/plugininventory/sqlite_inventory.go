@@ -196,7 +196,6 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 				Publisher:          row.publisher,
 				Vendor:             row.vendor,
 				RecommendedVersion: row.recommendedVersion,
-				AvailableVersions:  []string{}, // Will be filled gradually below.
 			}
 			currentVersion = ""
 			artifacts = distribution.Artifacts{}
@@ -204,10 +203,8 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 
 		// Check if we have a new version
 		if currentVersion != row.version {
-			// This is a new version of our current plugin.  Add it to the array of versions.
-			// We can do this without verifying if the version is already there because
-			// we have requested the list of plugins from the database ordered by version.
-			currentPlugin.AvailableVersions = append(currentPlugin.AvailableVersions, row.version)
+			// We know this is a new version of our current plugin since we have
+			// requested the list of plugins from the database ordered by version.
 
 			// Store the list of artifacts for the previous version then start building
 			// the artifact list for the new version.
@@ -270,17 +267,21 @@ func convertTargetFromDB(target string) configtypes.Target {
 	return configtypes.StringToTarget(target)
 }
 
-// appendPlugin appends a Discovered plugins to the specified array.
+// appendPlugin appends a PluginInventoryEntry to the specified array.
 // This function needs to be used to do post-processing on the new plugin before storing it.
 func appendPlugin(allPlugins []*PluginInventoryEntry, plugin *PluginInventoryEntry) []*PluginInventoryEntry {
 	// Now that we are done gathering the information for the plugin
 	// we need to compute the recommendedVersion if it wasn't provided
 	// by the database
-	if err := utils.SortVersions(plugin.AvailableVersions); err != nil {
-		fmt.Fprintf(os.Stderr, "error parsing supported versions for plugin %s: %v", plugin.Name, err)
-	}
-	if plugin.RecommendedVersion == "" {
-		plugin.RecommendedVersion = plugin.AvailableVersions[len(plugin.AvailableVersions)-1]
+	if plugin.RecommendedVersion == "" && len(plugin.Artifacts) > 0 {
+		var versions []string
+		for v := range plugin.Artifacts {
+			versions = append(versions, v)
+		}
+		if err := utils.SortVersions(versions); err != nil {
+			fmt.Fprintf(os.Stderr, "error parsing versions for plugin %s: %v\n", plugin.Name, err)
+		}
+		plugin.RecommendedVersion = versions[len(versions)-1]
 	}
 	allPlugins = append(allPlugins, plugin)
 	return allPlugins

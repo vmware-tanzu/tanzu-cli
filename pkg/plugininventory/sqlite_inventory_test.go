@@ -215,16 +215,13 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					for _, p := range plugins {
 						if p.Name == "management-cluster" {
-							Expect(len(p.AvailableVersions)).To(Equal(2))
-							Expect(p.AvailableVersions[0]).To(Equal("v0.26.0"))
-							Expect(p.AvailableVersions[1]).To(Equal("v0.28.0"))
-
 							Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
 							Expect(string(p.Target)).To(Equal("kubernetes"))
 							Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
 							Expect(p.Vendor).To(Equal("vmware"))
 							Expect(p.Publisher).To(Equal("tkg"))
 
+							Expect(len(p.Artifacts)).To(Equal(2))
 							artifactList := p.Artifacts["v0.28.0"]
 							Expect(len(artifactList)).To(Equal(2))
 							for _, a := range artifactList {
@@ -250,15 +247,13 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 						} else {
 							Expect(p.Name).To(Equal("isolated-cluster"))
 
-							Expect(len(p.AvailableVersions)).To(Equal(1))
-							Expect(p.AvailableVersions[0]).To(Equal("v1.2.3"))
-
 							Expect(p.RecommendedVersion).To(Equal("v1.2.3"))
 							Expect(string(p.Target)).To(Equal(""))
 							Expect(p.Description).To(Equal("Isolated cluster plugin"))
 							Expect(p.Vendor).To(Equal("othervendor"))
 							Expect(p.Publisher).To(Equal("otherpublisher"))
 
+							Expect(len(p.Artifacts)).To(Equal(1))
 							a := p.Artifacts["v1.2.3"]
 							Expect(len(a)).To(Equal(1))
 
@@ -284,8 +279,6 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					p := plugins[0]
 					Expect(p.Name).To(Equal("management-cluster"))
-					Expect(len(p.AvailableVersions)).To(Equal(1))
-					Expect(p.AvailableVersions[0]).To(Equal("v0.26.0"))
 
 					Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
 					Expect(string(p.Target)).To(Equal("kubernetes"))
@@ -293,6 +286,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(p.Vendor).To(Equal("vmware"))
 					Expect(p.Publisher).To(Equal("tkg"))
 
+					Expect(len(p.Artifacts)).To(Equal(1))
 					artifactList := p.Artifacts["v0.26.0"]
 					Expect(len(artifactList)).To(Equal(1))
 					a := artifactList[0]
@@ -316,8 +310,6 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					p := plugins[0]
 					Expect(p.Name).To(Equal("management-cluster"))
-					Expect(len(p.AvailableVersions)).To(Equal(1))
-					Expect(p.AvailableVersions[0]).To(Equal("v0.28.0"))
 
 					Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
 					Expect(string(p.Target)).To(Equal("kubernetes"))
@@ -325,6 +317,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(p.Vendor).To(Equal("vmware"))
 					Expect(p.Publisher).To(Equal("tkg"))
 
+					Expect(len(p.Artifacts)).To(Equal(1))
 					artifactList := p.Artifacts["v0.28.0"]
 					Expect(len(artifactList)).To(Equal(1))
 					a := artifactList[0]
@@ -344,9 +337,9 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					p := plugins[0]
 					Expect(p.Name).To(Equal("management-cluster"))
-					Expect(len(p.AvailableVersions)).To(Equal(2))
-					Expect(p.AvailableVersions[0]).To(Equal("v0.26.0"))
-					Expect(p.AvailableVersions[1]).To(Equal("v0.28.0"))
+					Expect(len(p.Artifacts)).To(Equal(2))
+					Expect(p.Artifacts["v0.26.0"]).ToNot(BeNil())
+					Expect(p.Artifacts["v0.28.0"]).ToNot(BeNil())
 
 					Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
 					Expect(string(p.Target)).To(Equal("kubernetes"))
@@ -365,8 +358,8 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					p := plugins[0]
 					Expect(p.Name).To(Equal("isolated-cluster"))
-					Expect(len(p.AvailableVersions)).To(Equal(1))
-					Expect(p.AvailableVersions[0]).To(Equal("v1.2.3"))
+					Expect(len(p.Artifacts)).To(Equal(1))
+					Expect(p.Artifacts["v1.2.3"]).ToNot(BeNil())
 
 					Expect(p.RecommendedVersion).To(Equal("v1.2.3"))
 					Expect(string(p.Target)).To(Equal(""))
@@ -410,9 +403,9 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					p := plugins[0]
 					Expect(p.Name).To(Equal("management-cluster"))
-					Expect(len(p.AvailableVersions)).To(Equal(2))
-					Expect(p.AvailableVersions[0]).To(Equal("v0.0.1"))
-					Expect(p.AvailableVersions[1]).To(Equal("v0.0.2"))
+					Expect(len(p.Artifacts)).To(Equal(2))
+					Expect(p.Artifacts["v0.0.1"]).ToNot(BeNil())
+					Expect(p.Artifacts["v0.0.2"]).ToNot(BeNil())
 
 					Expect(p.RecommendedVersion).To(Equal("v0.0.2"))
 					Expect(string(p.Target)).To(Equal("mission-control"))

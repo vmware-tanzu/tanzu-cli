@@ -4,6 +4,8 @@
 package discovery
 
 import (
+	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 // inventoryDirName is the name of the directory where the file(s) describing
@@ -80,12 +83,21 @@ func (od *DBBackedOCIDiscovery) List() (plugins []Discovered, err error) {
 
 	var discoveredPlugins []Discovered
 	for _, entry := range pluginEntries {
+		// First build the sorted list of versions from the Artifacts map
+		var versions []string
+		for v := range entry.Artifacts {
+			versions = append(versions, v)
+		}
+		if err := utils.SortVersions(versions); err != nil {
+			fmt.Fprintf(os.Stderr, "error parsing versions for plugin %s: %v\n", entry.Name, err)
+		}
+
 		plugin := Discovered{
 			Name:               entry.Name,
 			Description:        entry.Description,
 			RecommendedVersion: entry.RecommendedVersion,
 			InstalledVersion:   "", // Not set when discovered, but later.
-			SupportedVersions:  entry.AvailableVersions,
+			SupportedVersions:  versions,
 			Distribution:       entry.Artifacts,
 			Optional:           false,
 			Scope:              common.PluginScopeStandalone,

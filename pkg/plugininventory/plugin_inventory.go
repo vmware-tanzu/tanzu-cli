@@ -41,10 +41,6 @@ type PluginInventoryEntry struct {
 	// The value should be a valid semantic version as defined in
 	// https://semver.org/. E.g., 2.0.1
 	RecommendedVersion string
-	// AvailableVersions is the list of versions available for this plugin.
-	// The values are sorted in the semver prescribed order as defined in
-	// https://github.com/Masterminds/semver#sorting-semantic-versions.
-	AvailableVersions []string
 	// Artifacts contains an artifact list for every available version.
 	Artifacts distribution.Artifacts
 }
