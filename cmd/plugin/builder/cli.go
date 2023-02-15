@@ -56,7 +56,6 @@ func newCompileCmd() *cobra.Command {
 	cmd.Flags().StringArrayVar(&compileArgs.TargetArch, "target", compileArgs.TargetArch, "Only compile for specific target(s), use 'local' to compile for host os")
 	cmd.Flags().StringVar(&compileArgs.SourcePath, "path", compileArgs.SourcePath, "Path of the plugins source directory")
 	cmd.Flags().StringVar(&compileArgs.ArtifactsDir, "artifacts", compileArgs.ArtifactsDir, "Path to output artifacts")
-	cmd.Flags().StringVar(&compileArgs.CorePath, "corepath", "", "Path for core binary")
 	cmd.Flags().StringVar(&compileArgs.GoPrivate, "goprivate", "", "Comma-separated list of glob patterns of module path prefixes to set as GOPRIVATE on build")
 
 	return cmd

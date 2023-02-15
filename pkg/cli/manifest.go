@@ -10,6 +10,8 @@ import (
 const (
 	// ManifestFileName is the file name for the manifest.
 	ManifestFileName = "manifest.yaml"
+	// PluginManifestFileName is the file name for the plugin manifest.
+	PluginManifestFileName = "plugin_manifest.yaml"
 	// PluginDescriptorFileName is the file name for the plugin descriptor.
 	PluginDescriptorFileName = "plugin.yaml"
 	// AllPlugins is the keyword for all plugins.
@@ -23,12 +25,6 @@ type Manifest struct {
 
 	// Plugins is a list of plugin artifacts available.
 	Plugins []Plugin `json:"plugins" yaml:"plugins"`
-
-	// Deprecated: Version of the root CLI.
-	Version string `json:"version" yaml:"version"`
-
-	// CoreVersion of the root CLI.
-	CoreVersion string `json:"coreVersion" yaml:"coreVersion"`
 }
 
 // GetCoreVersion returns the core version in a backwards compatible manner.
@@ -45,6 +41,9 @@ func (m *Manifest) GetCoreVersion() string {
 type Plugin struct {
 	// Name is the name of the plugin.
 	Name string `json:"name" yaml:"name"`
+
+	// Target is the name of the plugin.
+	Target string `json:"target" yaml:"target"`
 
 	// Description is the plugin's description.
 	Description string `json:"description" yaml:"description"`

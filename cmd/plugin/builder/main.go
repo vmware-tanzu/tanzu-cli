@@ -30,6 +30,7 @@ func main() {
 		NewCLICmd(),
 		NewInitCmd(),
 		NewPublishCmd(),
+		NewPluginCmd(),
 	)
 
 	if err := p.Execute(); err != nil {
