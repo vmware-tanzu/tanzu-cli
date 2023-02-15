@@ -5,6 +5,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 
@@ -123,6 +124,13 @@ func GetTrustedRegistries() []string {
 	// If custom image repository is defined add it to the list of trusted registries
 	if customImageRepo := os.Getenv(constants.ConfigVariableCustomImageRepository); customImageRepo != "" {
 		trustedRegistries = append(trustedRegistries, customImageRepo)
+	}
+
+	// If the pre-release plugin repo variable is set, add its host to the list of trusted registries
+	if preReleaseRepoImage := os.Getenv(constants.ConfigVariablePreReleasePluginRepoImage); preReleaseRepoImage != "" {
+		if u, err := url.ParseRequestURI("https://" + preReleaseRepoImage); err == nil {
+			trustedRegistries = append(trustedRegistries, u.Hostname())
+		}
 	}
 
 	// If ALLOWED_REGISTRY environment variable is specified, allow those registries as well

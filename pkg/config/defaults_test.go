@@ -4,8 +4,12 @@
 package config
 
 import (
+	"os"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 )
 
 var _ = Describe("defaults test cases", func() {
@@ -19,6 +23,19 @@ var _ = Describe("defaults test cases", func() {
 			trustedRegis := GetTrustedRegistries()
 			Expect(trustedRegis).NotTo(BeNil())
 			DefaultAllowedPluginRepositories = ""
+		})
+		It("trusted registries should include hostname of env var", func() {
+			testHost := "example.com"
+			oldValue := os.Getenv(constants.ConfigVariablePreReleasePluginRepoImage)
+			err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, testHost+"/test/path")
+			Expect(err).To(BeNil())
+
+			trustedRegis := GetTrustedRegistries()
+			Expect(trustedRegis).NotTo(BeNil())
+			Expect(trustedRegis).Should(ContainElement(testHost))
+
+			err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, oldValue)
+			Expect(err).To(BeNil())
 		})
 	})
 })

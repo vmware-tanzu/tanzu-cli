@@ -136,17 +136,16 @@ func DiscoverStandalonePlugins() ([]discovery.Discovered, error) {
 }
 
 // getPreReleasePluginDiscovery
-// For pre-alpha we use an environment variable to point to the
-// central repo.  This is because the content of
+// For our pre-releases we use an environment variable to point to the
+// repository of plugins.  This is because the configuration
 // cfg.ClientOptions.CLI.DiscoverySources
 // is read by older CLIs so we don't want to modify it.
 // TODO(khouzam): remove before 1.0
 func getPreReleasePluginDiscovery() (configtypes.PluginDiscovery, error) {
-	const tempVarNameForPluginImage = "TANZU_CLI_PRE_RELEASE_REPO_IMAGE"
-	centralRepoTestImage := os.Getenv(tempVarNameForPluginImage)
+	centralRepoTestImage := os.Getenv(constants.ConfigVariablePreReleasePluginRepoImage)
 	if centralRepoTestImage == "" {
 		// Don't set a default value.  This test repo URI is not meant to be public.
-		return configtypes.PluginDiscovery{}, fmt.Errorf("you must set the environment variable %s to the URI of the image of the plugin repository.  Please see the documentation", tempVarNameForPluginImage)
+		return configtypes.PluginDiscovery{}, fmt.Errorf("you must set the environment variable %s to the URI of the image of the plugin repository.  Please see the documentation", constants.ConfigVariablePreReleasePluginRepoImage)
 	}
 	return configtypes.PluginDiscovery{
 		OCI: &configtypes.OCIDiscovery{
