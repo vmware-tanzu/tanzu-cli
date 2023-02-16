@@ -11,6 +11,8 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 )
 
+const TRUE = "true"
+
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Command-Config]", func() {
 	var (
 		tf *framework.Framework
@@ -23,13 +25,13 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Command-Config]", func() 
 			It("should set flag and unset flag successfully", func() {
 				randomFlagName := "e2e-test-" + framework.RandomString(4)
 				randomFeatureFlagPath := "features.global." + randomFlagName
-				flagVal := "true"
+				flagVal := TRUE
 				err := tf.Config.ConfigSetFeatureFlag(randomFeatureFlagPath, flagVal)
 				Expect(err).To(BeNil())
 
 				val, err := tf.Config.ConfigGetFeatureFlag(randomFeatureFlagPath)
 				Expect(err).To(BeNil())
-				Expect(val).Should(Equal("true"))
+				Expect(val).Should(Equal(TRUE))
 
 				err = tf.Config.ConfigUnsetFeature(randomFeatureFlagPath)
 				Expect(err).To(BeNil())
@@ -53,13 +55,13 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Command-Config]", func() 
 				// set feature flag
 				randomFlagName := "e2e-test-" + framework.RandomString(4)
 				randomFeatureFlagPath := "features.global." + randomFlagName
-				flagVal := "true"
+				flagVal := TRUE
 				err = tf.Config.ConfigSetFeatureFlag(randomFeatureFlagPath, flagVal)
 				Expect(err).To(BeNil())
 
 				val, err := tf.Config.ConfigGetFeatureFlag(randomFeatureFlagPath)
 				Expect(err).To(BeNil())
-				Expect(val).Should(Equal("true"))
+				Expect(val).Should(Equal(TRUE))
 
 				// call init
 				err = tf.Config.ConfigInit()

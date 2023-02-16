@@ -53,8 +53,8 @@ func (ip *imgpkgOps) pushAndProcessOutput(cmd string) (url string, err error) {
 	if j < 0 {
 		return "", errors.New("invalid out from imgpkg push command")
 	}
-	registryBinaryUrl := remStr[:j]
-	return registryBinaryUrl, nil
+	registryBinaryURL := remStr[:j]
+	return registryBinaryURL, nil
 }
 
 func (ip *imgpkgOps) PullBinary(registryURL, outputPath string) (stdOut string, err error) {

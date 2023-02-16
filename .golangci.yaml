@@ -7,10 +7,10 @@ linters-settings:
   goheader:
     values:
       const:
-       COMPANY: VMware, Inc.
-       LICENSE: Apache-2.0
+        COMPANY: VMware, Inc.
+        LICENSE: Apache-2.0
       regexp:
-       YEAR: 20\d*-*\d*
+        YEAR: 20\d*-*\d*
     template: |-
       Copyright {{ YEAR }} {{ COMPANY }} All Rights Reserved.
       SPDX-License-Identifier: {{ LICENSE }}
@@ -46,7 +46,6 @@ linters-settings:
     require-specific: false # don't require nolint directives to be specific about which linter is being skipped
   whitespace:
     multi-func: true
-
 
 linters:
   disable-all: true
@@ -104,8 +103,8 @@ linters:
 issues:
   exclude:
     - 'declaration of "(err|ctx)" shadows declaration at'
-    - 'unnamedResult: consider giving a name to these results'
-    - '(Expect directory permissions to be 0750 or less|Expect (WriteFile|file) permissions to be 0600 or less)'
+    - "unnamedResult: consider giving a name to these results"
+    - "(Expect directory permissions to be 0750 or less|Expect (WriteFile|file) permissions to be 0600 or less)"
 
   exclude-rules:
     - path: _test\.go
@@ -137,7 +136,6 @@ issues:
 
 run:
   skip-dirs:
-    - test/
     - fakes/
   timeout: 15m
 

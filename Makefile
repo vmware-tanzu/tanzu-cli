@@ -5,6 +5,7 @@
 SHELL := /usr/bin/env bash
 
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
+CURRENT_DIR := $(shell pwd)
 ARTIFACTS_DIR ?= $(ROOT_DIR)/artifacts
 ARTIFACTS_ADMIN_DIR ?= $(ROOT_DIR)/artifacts-admin
 
@@ -40,7 +41,9 @@ VALE               := $(TOOLS_BIN_DIR)/vale
 MISSPELL           := $(TOOLS_BIN_DIR)/misspell
 CONTROLLER_GEN     := $(TOOLS_BIN_DIR)/controller-gen
 IMGPKG             := $(TOOLS_BIN_DIR)/imgpkg
-TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG)
+KUBECTL            := $(TOOLS_BIN_DIR)/kubectl
+KIND               := $(TOOLS_BIN_DIR)/kind
+TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND)
 
 # Build and version information
 
@@ -71,6 +74,14 @@ ENVS ?= linux-amd64 windows-amd64 darwin-amd64
 CLI_TARGETS := $(addprefix build-cli-,${ENVS})
 PLUGIN_TARGETS := $(addprefix build-plugin-admin-,${ENVS})
 ADMIN_PLUGINS ?= builder test
+ 
+ifndef TANZU_API_TOKEN
+TANZU_API_TOKEN = ""
+endif
+
+ifndef TANZU_CLI_TMC_UNSTABLE_URL
+TANZU_CLI_TMC_UNSTABLE_URL = ""
+endif
 
 ## --------------------------------------
 ## Help
@@ -208,7 +219,13 @@ test: fmt ## Run Tests
 
 .PHONY: e2e-cli-core
 e2e-cli-core: ## Run CLI Core E2E Tests
-	${GO} test ./test/e2e/... -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
+	$(eval export PATH=$(CURRENT_DIR)/bin:$(CURRENT_DIR)/hack/tools/bin:$(PATH))
+	@if [ "${TANZU_API_TOKEN}" = "" ] && [ "$(TANZU_CLI_TMC_UNSTABLE_URL)" = "" ]; then \
+		echo "***Skipping TMC specific e2e tests cases because environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL are not set***" ; \
+		${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
+	else \
+		${GO} test ./test/e2e/... -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
+	fi
 
 .PHONY: start-test-central-repo
 start-test-central-repo: stop-test-central-repo ## Starts up a test central repository locally with docker
