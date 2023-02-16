@@ -6,8 +6,6 @@ package discovery
 import (
 	"fmt"
 	"os"
-	"path"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 
@@ -36,6 +34,15 @@ type DBBackedOCIDiscovery struct {
 	// criteria specified different conditions that a plugin must respect to be discovered.
 	// This allows to filter the list of plugins that will be returned.
 	criteria *PluginDiscoveryCriteria
+	// pluginDataDir is the location where the plugin data will be stored once
+	// extracted from the OCI image
+	pluginDataDir string
+	// inventory is the pluginInventory to be used by this discovery.
+	inventory plugininventory.PluginInventory
+}
+
+func (od *DBBackedOCIDiscovery) getInventory() plugininventory.PluginInventory {
+	return od.inventory
 }
 
 // Name of the discovery.
@@ -49,27 +56,23 @@ func (od *DBBackedOCIDiscovery) Type() string {
 }
 
 // List available plugins.
-func (od *DBBackedOCIDiscovery) List() (plugins []Discovered, err error) {
-	pluginInventoryDir, err := od.fetchInventoryImage()
+func (od *DBBackedOCIDiscovery) List() ([]Discovered, error) {
+	err := od.fetchInventoryImage()
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to fetch the inventory of discovery '%s'", od.Name())
 	}
+	return od.listPluginsFromInventory()
+}
 
-	// The plugin inventory uses relative image URIs to be future-proof.
-	// Determine the image prefix from the main image.
-	// E.g., if the main image is at project.registry.vmware.com/tanzu-cli/plugins/plugin-inventory:latest
-	// then the image prefix should be project.registry.vmware.com/tanzu-cli/plugins/
-	imagePrefix := path.Dir(od.image)
-	inventory := plugininventory.NewSQLiteInventory(pluginInventoryDir, imagePrefix)
-
+func (od *DBBackedOCIDiscovery) listPluginsFromInventory() (plugins []Discovered, err error) {
 	var pluginEntries []*plugininventory.PluginInventoryEntry
 	if od.criteria == nil {
-		pluginEntries, err = inventory.GetAllPlugins()
+		pluginEntries, err = od.getInventory().GetAllPlugins()
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		pluginEntries, err = inventory.GetPlugins(&plugininventory.PluginInventoryFilter{
+		pluginEntries, err = od.getInventory().GetPlugins(&plugininventory.PluginInventoryFilter{
 			Name:    od.criteria.Name,
 			Target:  od.criteria.Target,
 			Version: od.criteria.Version,
@@ -114,12 +117,10 @@ func (od *DBBackedOCIDiscovery) List() (plugins []Discovered, err error) {
 
 // fetchInventoryImage downloads the OCI image containing the information about the
 // inventory of this discovery and stores it in the cache directory.
-// It returns the path to the exact directory used.
-func (od *DBBackedOCIDiscovery) fetchInventoryImage() (string, error) {
+func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 	// TODO(khouzam): Improve by checking if we really need to download again or if we can use the cache
-	pluginDataDir := filepath.Join(common.DefaultCacheDir, inventoryDirName, od.Name())
-	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, pluginDataDir); err != nil {
-		return "", errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
+	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, od.pluginDataDir); err != nil {
+		return errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
 	}
-	return pluginDataDir, nil
+	return nil
 }
