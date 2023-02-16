@@ -11,3 +11,23 @@ type PluginListInfo struct {
 	Status      string `json:"status"`
 	Version     string `json:"version"`
 }
+
+type ContextListInfo struct {
+	Endpoint            string `json:"endpoint"`
+	Iscurrent           string `json:"iscurrent"`
+	Ismanagementcluster string `json:"ismanagementcluster"`
+	Kubeconfigpath      string `json:"kubeconfigpath"`
+	Kubecontext         string `json:"kubecontext"`
+	Name                string `json:"name"`
+	Type                string `json:"type"`
+}
+
+type ContextInfo struct {
+	Name        string `json:"name"`
+	Target      string `json:"target"`
+	ClusterOpts struct {
+		Path                string `json:"path"`
+		Context             string `json:"context"`
+		IsManagementCluster bool   `json:"isManagementCluster"`
+	} `json:"clusterOpts"`
+}

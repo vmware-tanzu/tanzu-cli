@@ -62,7 +62,7 @@ func (po *pluginCmdOps) DeletePluginDiscoverySource(discoveryOpts *DiscoveryOpti
 }
 
 func (po *pluginCmdOps) ListPlugins() ([]PluginListInfo, error) {
-	out, _, err := po.cmdExe.Exec(ListPluginsCmd)
+	out, _, err := po.cmdExe.Exec(ListPluginsCmdInJSON)
 	if err != nil {
 		return nil, err
 	}
