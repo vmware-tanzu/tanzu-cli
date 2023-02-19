@@ -21,6 +21,9 @@ type PluginInventory interface {
 
 	// GetPlugins returns the plugins found in the inventory that match the provided filter.
 	GetPlugins(*PluginInventoryFilter) ([]*PluginInventoryEntry, error)
+
+	// GetAllGroups returns all plugin groups found in the inventory.
+	GetAllGroups() ([]*PluginGroup, error)
 }
 
 // PluginInventoryEntry represents the inventory information
@@ -62,4 +65,27 @@ type PluginInventoryFilter struct {
 	Publisher string
 	// Vendor the plugins to look for
 	Vendor string
+}
+
+// PluginIdentifier uniquely identifies a single version of a specific plugin
+type PluginIdentifier struct {
+	// Name is the name of the plugin
+	Name string
+	// Target is the target of the plugin
+	Target configtypes.Target
+	// Version is the version for the plugin
+	Version string
+}
+
+// PluginGroup represents a list of plugins.
+// The user will specify a group using
+// "<Publisher>/<Name>
+// e.g., "vmware-tkg/tkg-v2.1.0"
+type PluginGroup struct {
+	// Publisher of the group
+	Publisher string
+	// Name of the group
+	Name string
+	// The list of plugins specified by this group
+	Plugins []*PluginIdentifier
 }

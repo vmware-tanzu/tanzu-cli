@@ -35,6 +35,7 @@ var (
 	forceDelete  bool
 	outputFormat string
 	targetStr    string
+	group        string
 )
 
 func newPluginCmd() *cobra.Command {
@@ -68,6 +69,7 @@ func newPluginCmd() *cobra.Command {
 			// so let's panic so we notice immediately.
 			panic(err)
 		}
+		installPluginCmd.Flags().StringVar(&group, "group", "", "install the plugins specified in a plugin group")
 	}
 	installPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local discovery/distribution source")
 	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
@@ -92,6 +94,10 @@ func newPluginCmd() *cobra.Command {
 	)
 
 	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+		installPluginCmd.MarkFlagsMutuallyExclusive("group", "local")
+		installPluginCmd.MarkFlagsMutuallyExclusive("group", "version")
+		installPluginCmd.MarkFlagsMutuallyExclusive("group", "target")
+
 		pluginCmd.AddCommand(newSearchPluginCmd())
 	}
 
@@ -234,8 +240,16 @@ func newInstallPluginCmd() *cobra.Command {
 
 			pluginVersion := version
 			if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+				if group != "" {
+					err = pluginmanager.InstallPluginsFromGroup(pluginName, group)
+					if err != nil {
+						return err
+					}
+					return nil
+				}
+
 				if pluginName == cli.AllPlugins {
-					return fmt.Errorf("the '%s' argument is not longer supported. You must install each plugin individually",
+					return fmt.Errorf("the '%s' argument can only be used with the --group or --local flags",
 						cli.AllPlugins)
 				}
 			} else {

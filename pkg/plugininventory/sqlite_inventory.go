@@ -37,17 +37,20 @@ const (
 	// the OCI image describing the inventory of plugins.
 	sqliteDBFileName = "plugin_inventory.db"
 
-	// querySelectClause is the SELECT section of the SQL query to be used when querying the inventory DB.
-	querySelectClause = "SELECT PluginName,Target,RecommendedVersion,Version,Hidden,Description,Publisher,Vendor,OS,Architecture,Digest,URI FROM PluginBinaries"
+	// pluginSelectClause is the SELECT section of the SQL query to be used when querying the inventory DB.
+	pluginSelectClause = "SELECT PluginName,Target,RecommendedVersion,Version,Hidden,Description,Publisher,Vendor,OS,Architecture,Digest,URI FROM PluginBinaries"
 
-	// queryOrderClause is the ORDER section of the SQL query to be used when querying the inventory DB.
+	// pluginOrderClause is the ORDER section of the SQL query to be used when querying the inventory DB.
 	// It MUST be used as the order of the results is required by the functions processing the results.
 	// The column order must also match the order used in getNextRow().
-	queryOrderClause = "ORDER BY PluginName,Target,Version"
+	pluginOrderClause = "ORDER BY PluginName,Target,Version"
+
+	// groupSelectQuery is the query used to extract plugin groups from the PluginGroups table
+	groupSelectQuery = "SELECT Publisher,GroupName,PluginName,Target,Version FROM PluginGroups ORDER by Publisher,GroupName,PluginName"
 )
 
 // Structure of each row of the PluginBinaries table within the SQLite database
-type inventoryDBRow struct {
+type pluginDBRow struct {
 	name               string
 	target             string
 	recommendedVersion string
@@ -60,6 +63,15 @@ type inventoryDBRow struct {
 	arch               string
 	digest             string
 	uri                string
+}
+
+// Structure of each row of the PluginGroups table within the SQLite database
+type groupDBRow struct {
+	publisher  string
+	groupName  string
+	pluginName string
+	target     string
+	version    string
 }
 
 // NewSQLiteInventory returns a new PluginInventory connected to the data found at 'inventoryDir'.
@@ -104,6 +116,10 @@ func (b *SQLiteInventory) GetPlugins(filter *PluginInventoryFilter) ([]*PluginIn
 	return b.getPluginsFromDB(filter)
 }
 
+func (b *SQLiteInventory) GetAllGroups() ([]*PluginGroup, error) {
+	return b.getGroupsFromDB()
+}
+
 // getPluginsFromDB returns the plugins found in the DB 'inventoryFile' that match the filter
 func (b *SQLiteInventory) getPluginsFromDB(filter *PluginInventoryFilter) ([]*PluginInventoryEntry, error) {
 	db, err := sql.Open("sqlite3", b.inventoryFile)
@@ -120,7 +136,7 @@ func (b *SQLiteInventory) getPluginsFromDB(filter *PluginInventoryFilter) ([]*Pl
 	// Build the final query with the SELECT, WHERE and ORDER clauses.
 	// The ORDER clause is essential because the parsing algorithm of extractPluginsFromRows()
 	// assumes that ordering.
-	dbQuery := fmt.Sprintf("%s %s %s", querySelectClause, whereClause, queryOrderClause)
+	dbQuery := fmt.Sprintf("%s %s %s", pluginSelectClause, whereClause, pluginOrderClause)
 	rows, err := db.Query(dbQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to setup DB query for DB at '%s'", b.inventoryFile)
@@ -202,7 +218,7 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 	var artifacts distribution.Artifacts
 
 	for rows.Next() {
-		row, err := getNextRow(rows)
+		row, err := getPluginNextRow(rows)
 		if err != nil {
 			return allPlugins, err
 		}
@@ -268,9 +284,72 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 	return allPlugins, rows.Err()
 }
 
-// getNextRow simply extracts the next row of data from the DB.
-func getNextRow(rows *sql.Rows) (*inventoryDBRow, error) {
-	var row inventoryDBRow
+// getGroupsFromDB returns all the plugin groups found in the DB 'inventoryFile'
+func (b *SQLiteInventory) getGroupsFromDB() ([]*PluginGroup, error) {
+	db, err := sql.Open("sqlite3", b.inventoryFile)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to open the DB at '%s' for groups", b.inventoryFile)
+	}
+	defer db.Close()
+
+	rows, err := db.Query(groupSelectQuery)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to setup DB query for DB at '%s' for groups", b.inventoryFile)
+	}
+	defer rows.Close()
+
+	return b.extractGroupsFromRows(rows)
+}
+
+// extractGroupsFromRows loops through all DB rows and builds an array
+// of PluginGroups based on the data extracted.
+func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup, error) {
+	currentGroupID := ""
+	var currentGroup *PluginGroup
+	var allGroups []*PluginGroup
+	var pluginsOfGroup []*PluginIdentifier
+
+	for rows.Next() {
+		row, err := getGroupNextRow(rows)
+		if err != nil {
+			return allGroups, err
+		}
+
+		groupIDFromRow := fmt.Sprintf("%s/%s", row.publisher, row.groupName)
+		if currentGroupID != groupIDFromRow {
+			// Found a new group.
+			// Store the current one in the array and prepare the new one.
+			if currentGroup != nil {
+				currentGroup.Plugins = pluginsOfGroup
+				pluginsOfGroup = nil
+				allGroups = append(allGroups, currentGroup)
+			}
+			currentGroupID = groupIDFromRow
+
+			currentGroup = &PluginGroup{
+				Publisher: row.publisher,
+				Name:      row.groupName,
+				Plugins:   nil,
+			}
+		}
+
+		pluginsOfGroup = append(pluginsOfGroup, &PluginIdentifier{
+			Name:    row.pluginName,
+			Target:  convertTargetFromDB(row.target),
+			Version: row.version,
+		})
+	}
+	// Don't forget to store the very last group we were building
+	if currentGroup != nil {
+		currentGroup.Plugins = pluginsOfGroup
+		allGroups = append(allGroups, currentGroup)
+	}
+	return allGroups, rows.Err()
+}
+
+// getPluginNextRow simply extracts the next row of data from the DB.
+func getPluginNextRow(rows *sql.Rows) (*pluginDBRow, error) {
+	var row pluginDBRow
 	// The order of the fields MUST match the order specified in the
 	// SELECT query that generated the rows.
 	err := rows.Scan(
@@ -286,6 +365,21 @@ func getNextRow(rows *sql.Rows) (*inventoryDBRow, error) {
 		&row.arch,
 		&row.digest,
 		&row.uri,
+	)
+	return &row, err
+}
+
+// getGroupNextRow simply extracts the next row of data from the DB.
+func getGroupNextRow(rows *sql.Rows) (*groupDBRow, error) {
+	var row groupDBRow
+	// The order of the fields MUST match the order specified in the
+	// SELECT query that generated the rows.
+	err := rows.Scan(
+		&row.publisher,
+		&row.groupName,
+		&row.pluginName,
+		&row.target,
+		&row.version,
 	)
 	return &row, err
 }

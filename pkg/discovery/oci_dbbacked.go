@@ -59,13 +59,23 @@ func (od *DBBackedOCIDiscovery) Type() string {
 func (od *DBBackedOCIDiscovery) List() ([]Discovered, error) {
 	err := od.fetchInventoryImage()
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to fetch the inventory of discovery '%s'", od.Name())
+		return nil, errors.Wrapf(err, "unable to fetch the inventory of discovery '%s' for plugins", od.Name())
 	}
 	return od.listPluginsFromInventory()
 }
 
-func (od *DBBackedOCIDiscovery) listPluginsFromInventory() (plugins []Discovered, err error) {
+// GetAll returns all plugin groups defined in the discovery
+func (od *DBBackedOCIDiscovery) GetAll() ([]*plugininventory.PluginGroup, error) {
+	err := od.fetchInventoryImage()
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to fetch the inventory of discovery '%s' for groups", od.Name())
+	}
+	return od.listGroupsFromInventory()
+}
+
+func (od *DBBackedOCIDiscovery) listPluginsFromInventory() ([]Discovered, error) {
 	var pluginEntries []*plugininventory.PluginInventoryEntry
+	var err error
 	if od.criteria == nil {
 		pluginEntries, err = od.getInventory().GetAllPlugins()
 		if err != nil {
@@ -113,6 +123,10 @@ func (od *DBBackedOCIDiscovery) listPluginsFromInventory() (plugins []Discovered
 		discoveredPlugins = append(discoveredPlugins, plugin)
 	}
 	return discoveredPlugins, nil
+}
+
+func (od *DBBackedOCIDiscovery) listGroupsFromInventory() ([]*plugininventory.PluginGroup, error) {
+	return od.getInventory().GetAllGroups()
 }
 
 // fetchInventoryImage downloads the OCI image containing the information about the

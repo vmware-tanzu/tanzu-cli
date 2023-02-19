@@ -11,6 +11,7 @@ package discovery
 import (
 	"errors"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
@@ -24,6 +25,11 @@ type Discovery interface {
 
 	// Type returns type of discovery.
 	Type() string
+}
+
+type GroupDiscovery interface {
+	// GetAll returns all plugin groups defined in the discovery
+	GetAll() ([]*plugininventory.PluginGroup, error)
 }
 
 // PluginDiscoveryCriteria provides criteria to look for plugins
