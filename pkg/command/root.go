@@ -146,7 +146,7 @@ func findSubCommand(rootCmd, subCmd *cobra.Command) *cobra.Command {
 
 func isPluginRootCmdTargeted(pluginInfo *cli.PluginInfo) bool {
 	// Only '<none>' targeted and `k8s` targeted plugins are considered root cmd targeted plugins
-	return pluginInfo != nil && (pluginInfo.Target == configtypes.TargetNone || pluginInfo.Target == configtypes.TargetK8s)
+	return pluginInfo != nil && (pluginInfo.Target == configtypes.TargetUnknown || pluginInfo.Target == configtypes.TargetK8s)
 }
 
 func isStandalonePluginCommand(cmd *cobra.Command) bool {

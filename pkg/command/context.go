@@ -569,7 +569,7 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if !configtypes.IsValidTarget(targetStr) {
+	if !configtypes.IsValidTarget(targetStr, false, true) {
 		return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
 	}
 
@@ -729,7 +729,7 @@ func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.W
 
 	op := component.NewOutputWriter(writer, outputFormat, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext")
 	for _, ctx := range cfg.KnownContexts {
-		if target != configtypes.TargetNone && ctx.Target != target {
+		if target != configtypes.TargetUnknown && ctx.Target != target {
 			continue
 		}
 		isMgmtCluster := ctx.IsManagementCluster()
@@ -758,7 +758,7 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 	outputWriterK8sTarget := component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Endpoint", "KubeConfigPath", "KubeContext")
 	outputWriterTMCTarget := component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Endpoint")
 	for _, ctx := range cfg.KnownContexts {
-		if target != configtypes.TargetNone && ctx.Target != target {
+		if target != configtypes.TargetUnknown && ctx.Target != target {
 			continue
 		}
 		isCurrent := ctx.Name == cfg.CurrentContext[ctx.Target]
@@ -781,11 +781,11 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
-	if target == configtypes.TargetNone || target == configtypes.TargetK8s {
+	if target == configtypes.TargetUnknown || target == configtypes.TargetK8s {
 		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", configtypes.TargetK8s))
 		outputWriterK8sTarget.Render()
 	}
-	if target == configtypes.TargetNone || target == configtypes.TargetTMC {
+	if target == configtypes.TargetUnknown || target == configtypes.TargetTMC {
 		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", configtypes.TargetTMC))
 		outputWriterTMCTarget.Render()
 	}

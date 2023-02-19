@@ -294,7 +294,7 @@ func combineDuplicatePlugins(availablePlugins []discovery.Discovered) []discover
 	}
 
 	for i := range availablePlugins {
-		if availablePlugins[i].Target == configtypes.TargetNone {
+		if availablePlugins[i].Target == configtypes.TargetUnknown {
 			// As we are considering None targeted and k8s target plugin to be treated as same plugins
 			// in the case of plugin name conflicts, using `k8s` target to determine the plugin already
 			// exists or not.
@@ -561,7 +561,7 @@ func GetRecommendedVersionOfPlugin(pluginName string, target configtypes.Target)
 }
 
 func installOrUpgradePlugin(p *discovery.Discovered, version string, installTestPlugin bool) error {
-	if p.Target == configtypes.TargetNone {
+	if p.Target == configtypes.TargetUnknown {
 		log.Infof("Installing plugin '%v:%v'", p.Name, version)
 	} else {
 		log.Infof("Installing plugin '%v:%v' with target '%v'", p.Name, version, p.Target)
