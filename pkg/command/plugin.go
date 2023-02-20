@@ -98,7 +98,9 @@ func newPluginCmd() *cobra.Command {
 		installPluginCmd.MarkFlagsMutuallyExclusive("group", "version")
 		installPluginCmd.MarkFlagsMutuallyExclusive("group", "target")
 
-		pluginCmd.AddCommand(newSearchPluginCmd())
+		pluginCmd.AddCommand(
+			newSearchPluginCmd(),
+			newPluginGroupCmd())
 	}
 
 	return pluginCmd

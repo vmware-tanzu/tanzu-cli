@@ -105,10 +105,9 @@ func discoverSpecificPlugins(pd []configtypes.PluginDiscovery, criteria *discove
 	return allPlugins, nil
 }
 
-// discoverPluginGroup returns the one matching plugin group found in the discoveries
-func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupId string) (*plugininventory.PluginGroup, error) {
-	var matchingDiscoveries []string
-	var matchingGroup *plugininventory.PluginGroup
+// discoverPluginGroups returns all the plugin groups found in the discoveries
+func discoverPluginGroups(pd []configtypes.PluginDiscovery) ([]*discovery.DiscoveredPluginGroups, error) {
+	var allDiscovered []*discovery.DiscoveredPluginGroups
 	for _, d := range pd {
 		discObject, err := discovery.CreateDiscoveryFromV1alpha1(d, nil)
 		if err != nil {
@@ -127,18 +126,38 @@ func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupId string) (*plu
 			continue
 		}
 
-		for _, group := range groups {
+		allDiscovered = append(
+			allDiscovered,
+			&discovery.DiscoveredPluginGroups{
+				Source: discObject.Name(),
+				Groups: groups,
+			})
+	}
+	return allDiscovered, nil
+}
+
+// discoverPluginGroup returns the one matching plugin group found in the discoveries
+func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupID string) (*plugininventory.PluginGroup, error) {
+	groupsByDiscovery, err := discoverPluginGroups(pd)
+	if err != nil {
+		return nil, err
+	}
+
+	var matchingDiscoveries []string
+	var matchingGroup *plugininventory.PluginGroup
+	for _, discAndGroups := range groupsByDiscovery {
+		for _, group := range discAndGroups.Groups {
 			id := fmt.Sprintf("%s/%s", group.Publisher, group.Name)
-			if id == groupId {
+			if id == groupID {
 				// Found the group.
 				matchingGroup = group
-				matchingDiscoveries = append(matchingDiscoveries, discObject.Name())
+				matchingDiscoveries = append(matchingDiscoveries, discAndGroups.Source)
 			}
 		}
 	}
 
 	if len(matchingDiscoveries) > 1 {
-		return nil, fmt.Errorf("group '%s' was found in multiple discoveries: %v", groupId, matchingDiscoveries)
+		return nil, fmt.Errorf("group '%s' was found in multiple discoveries: %v", groupID, matchingDiscoveries)
 	}
 
 	return matchingGroup, nil
@@ -161,6 +180,16 @@ func DiscoverStandalonePlugins() ([]discovery.Discovered, error) {
 		plugins[i].Status = common.PluginStatusNotInstalled
 	}
 	return plugins, err
+}
+
+// DiscoverPluginGroups returns the available plugin groups
+func DiscoverPluginGroups() ([]*discovery.DiscoveredPluginGroups, error) {
+	discoveries, err := getPluginDiscoveries()
+	if err != nil {
+		return nil, err
+	}
+
+	return discoverPluginGroups(discoveries)
 }
 
 // getPreReleasePluginDiscovery
@@ -578,19 +607,19 @@ func UpgradePlugin(pluginName, version string, target configtypes.Target) error 
 }
 
 // InstallPluginsFromGroup installs either the specified plugin or all plugins from the named group
-func InstallPluginsFromGroup(pluginName, groupId string) error {
+func InstallPluginsFromGroup(pluginName, groupID string) error {
 	discoveries, err := getPluginDiscoveries()
 	if err != nil || len(discoveries) == 0 {
 		return err
 	}
 
-	group, err := discoverPluginGroup(discoveries, groupId)
+	group, err := discoverPluginGroup(discoveries, groupID)
 	if err != nil {
 		return err
 	}
 
 	if group == nil {
-		return fmt.Errorf("could not find group '%s'", groupId)
+		return fmt.Errorf("could not find group '%s'", groupID)
 	}
 
 	numErrors := 0
@@ -608,10 +637,10 @@ func InstallPluginsFromGroup(pluginName, groupId string) error {
 	}
 
 	if numErrors > 0 {
-		return fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupId)
+		return fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupID)
 	}
 	if numInstalled == 0 {
-		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupId)
+		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupID)
 	}
 	return nil
 }
