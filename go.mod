@@ -31,7 +31,7 @@ require (
 	github.com/tj/assert v0.0.3
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230130173350-eeda69d80a24
-	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230125222721-2af61852d9fb
+	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230221194443-4d4c14fcdb5c
 	go.pinniped.dev v0.20.0
 	go.uber.org/multierr v1.8.0
 	golang.org/x/mod v0.7.0
@@ -117,10 +117,10 @@ require (
 	github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20221207131309-7323ca04b86c // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	golang.org/x/crypto v0.5.0 // indirect
-	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/term v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
