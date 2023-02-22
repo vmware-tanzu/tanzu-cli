@@ -286,7 +286,7 @@ func TestInstallPlugin(t *testing.T) {
 			centralRepoFeature: "true",
 			args:               []string{"plugin", "install", "all"},
 			expectedFailure:    true,
-			expectedErrorMsg:   "the 'all' argument is not longer supported. You must install each plugin individually",
+			expectedErrorMsg:   "the 'all' argument can only be used with the --group or --local flags",
 		},
 		{
 			test:               "invalid target",

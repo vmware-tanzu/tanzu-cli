@@ -121,7 +121,7 @@ func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupId string) (*plu
 			continue
 		}
 
-		groups, err := groupDisc.GetAll()
+		groups, err := groupDisc.GetAllGroups()
 		if err != nil {
 			log.Warningf("unable to list groups from discovery '%v': %v", discObject.Name(), err.Error())
 			continue

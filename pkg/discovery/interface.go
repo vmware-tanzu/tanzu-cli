@@ -28,8 +28,8 @@ type Discovery interface {
 }
 
 type GroupDiscovery interface {
-	// GetAll returns all plugin groups defined in the discovery
-	GetAll() ([]*plugininventory.PluginGroup, error)
+	// GetAllGroups returns all plugin groups defined in the discovery
+	GetAllGroups() ([]*plugininventory.PluginGroup, error)
 }
 
 // PluginDiscoveryCriteria provides criteria to look for plugins
