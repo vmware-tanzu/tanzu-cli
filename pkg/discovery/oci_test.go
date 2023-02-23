@@ -4,9 +4,15 @@
 package discovery
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
 var testData1 = `---
@@ -127,4 +133,65 @@ func Test_ProcessOCIPluginManifest(t *testing.T) {
 	assert.Equal(2, len(plugins[1].SupportedVersions))
 	assert.Contains(plugins[1].SupportedVersions, "v0.0.1")
 	assert.Contains(plugins[1].SupportedVersions, "v0.0.2")
+}
+
+func Test_NewOCIDiscovery(t *testing.T) {
+	assert := assert.New(t)
+
+	tkgConfigFile, err := os.CreateTemp("", "config")
+	assert.Nil(err)
+	os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+
+	tkgConfigFileNG, err := os.CreateTemp("", "config_ng")
+	assert.Nil(err)
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+
+	featureArray := strings.Split(constants.FeatureContextCommand, ".")
+	err = config.SetFeature(featureArray[1], featureArray[2], "true")
+	assert.Nil(err)
+
+	defer func() {
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.RemoveAll(tkgConfigFile.Name())
+		os.RemoveAll(tkgConfigFileNG.Name())
+	}()
+
+	discoveryName := "test-discovery"
+	discoveryImage := "test-image:latest"
+	criteriaName := "test-criteria"
+	discoveryCriteria := PluginDiscoveryCriteria{Name: criteriaName}
+
+	// Turn on central repo feature
+	featureArray = strings.Split(constants.FeatureCentralRepository, ".")
+	err = config.SetFeature(featureArray[1], featureArray[2], "true")
+	assert.Nil(err)
+
+	// Check that the correct discovery type is returned
+	pd := NewOCIDiscovery(discoveryName, discoveryImage, &discoveryCriteria)
+	assert.NotNil(pd)
+	assert.Equal(discoveryName, pd.Name())
+	assert.Equal(common.DiscoveryTypeOCI, pd.Type())
+
+	dbDiscovery, ok := pd.(*DBBackedOCIDiscovery)
+	assert.True(ok)
+	assert.Equal(discoveryName, dbDiscovery.name)
+	assert.Equal(discoveryImage, dbDiscovery.image)
+	assert.Equal(discoveryCriteria, *dbDiscovery.criteria)
+
+	// Turn off central repo feature
+	featureArray = strings.Split(constants.FeatureCentralRepository, ".")
+	err = config.SetFeature(featureArray[1], featureArray[2], "false")
+	assert.Nil(err)
+
+	// Check that the correct discovery type is returned
+	pd = NewOCIDiscovery(discoveryName, discoveryImage, &discoveryCriteria)
+	assert.NotNil(pd)
+	assert.Equal(discoveryName, pd.Name())
+	assert.Equal(common.DiscoveryTypeOCI, pd.Type())
+
+	ociDiscovery, ok := pd.(*OCIDiscovery)
+	assert.True(ok)
+	assert.Equal(discoveryName, ociDiscovery.name)
+	assert.Equal(discoveryImage, ociDiscovery.image)
 }

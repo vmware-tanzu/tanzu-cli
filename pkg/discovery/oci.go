@@ -4,6 +4,8 @@
 package discovery
 
 import (
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -13,6 +15,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
@@ -29,11 +32,23 @@ type OCIDiscovery struct {
 }
 
 // NewOCIDiscovery returns a new Discovery using the specified OCI image.
-func NewOCIDiscovery(name, image string) Discovery {
+func NewOCIDiscovery(name, image string, criteria *PluginDiscoveryCriteria) Discovery {
 	if config.IsFeatureActivated(constants.FeatureCentralRepository) {
+		// The plugin inventory uses relative image URIs to be future-proof.
+		// Determine the image prefix from the main image.
+		// E.g., if the main image is at project.registry.vmware.com/tanzu-cli/plugins/plugin-inventory:latest
+		// then the image prefix should be project.registry.vmware.com/tanzu-cli/plugins/
+		imagePrefix := path.Dir(image)
+		// The data for the inventory is stored in the cache
+		pluginDataDir := filepath.Join(common.DefaultCacheDir, inventoryDirName, name)
+
+		inventory := plugininventory.NewSQLiteInventory(pluginDataDir, imagePrefix)
 		return &DBBackedOCIDiscovery{
-			name:  name,
-			image: image,
+			name:          name,
+			image:         image,
+			criteria:      criteria,
+			pluginDataDir: pluginDataDir,
+			inventory:     inventory,
 		}
 	}
 

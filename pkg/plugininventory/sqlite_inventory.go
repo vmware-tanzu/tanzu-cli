@@ -16,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -23,8 +24,6 @@ import (
 
 // SQLiteInventory is an inventory stored using SQLite
 type SQLiteInventory struct {
-	// discoveryName is the name of the discovery powered by this backend
-	discoveryName string
 	// inventoryFile represents the full path to the SQLite DB file
 	inventoryFile string
 	// uriPrefix is the prefix that must be added to the extracted URIs.
@@ -37,6 +36,14 @@ const (
 	// sqliteDBFileName is the name of the DB file that is stored in
 	// the OCI image describing the inventory of plugins.
 	sqliteDBFileName = "plugin_inventory.db"
+
+	// querySelectClause is the SELECT section of the SQL query to be used when querying the inventory DB.
+	querySelectClause = "SELECT PluginName,Target,RecommendedVersion,Version,Hidden,Description,Publisher,Vendor,OS,Architecture,Digest,URI FROM PluginBinaries"
+
+	// queryOrderClause is the ORDER section of the SQL query to be used when querying the inventory DB.
+	// It MUST be used as the order of the results is required by the functions processing the results.
+	// The column order must also match the order used in getNextRow().
+	queryOrderClause = "ORDER BY PluginName,Target,Version"
 )
 
 // Structure of each row of the PluginBinaries table within the SQLite database
@@ -56,38 +63,132 @@ type inventoryDBRow struct {
 }
 
 // NewSQLiteInventory returns a new PluginInventory connected to the data found at 'inventoryDir'.
-func NewSQLiteInventory(discoveryName, inventoryDir, prefix string) PluginInventory {
+func NewSQLiteInventory(inventoryDir, prefix string) PluginInventory {
 	return &SQLiteInventory{
-		discoveryName: discoveryName,
 		inventoryFile: filepath.Join(inventoryDir, sqliteDBFileName),
 		uriPrefix:     prefix,
 	}
 }
 
-// GetAllPlugins returns all plugins discovered in this backend.
+// GetAllPlugins returns all plugins found in the inventory.
 func (b *SQLiteInventory) GetAllPlugins() ([]*PluginInventoryEntry, error) {
-	return b.getPluginsFromDB()
+	return b.getPluginsFromDB(nil)
 }
 
-// getPluginsFromDB returns all plugins found in the DB 'inventoryFile'
-func (b *SQLiteInventory) getPluginsFromDB() ([]*PluginInventoryEntry, error) {
+// GetPlugins returns the plugin found in the inventory that matches the provided parameters.
+func (b *SQLiteInventory) GetPlugins(filter *PluginInventoryFilter) ([]*PluginInventoryEntry, error) {
+	// Since the Central Repo does not have its RecommendedVersion field set yet,
+	// we first search for it by looking for the latest version amongst all versions.
+	if filter.Version == cli.VersionLatest {
+		if filter.Name == "" {
+			return nil, fmt.Errorf("cannot get the recommended version of a plugin without a plugin name")
+		}
+		// Ask for all versions
+		filter.Version = ""
+		plugins, err := b.getPluginsFromDB(filter)
+		if err != nil {
+			return nil, err
+		}
+		// We could end up with two plugins if we didn't filter on target.
+		// We know this will cause an error as it trickles back up so we just return what
+		// we found without further processing.  This is NOT generic, but a temporary workaround.
+		// Also, if we have no plugins found, we can return immediately.
+		if len(plugins) != 1 {
+			return plugins, nil
+		}
+
+		// We can now use the RecommendedVersion field which was filled when parsing the DB.
+		filter.Version = plugins[0].RecommendedVersion
+	}
+
+	return b.getPluginsFromDB(filter)
+}
+
+// getPluginsFromDB returns the plugins found in the DB 'inventoryFile' that match the filter
+func (b *SQLiteInventory) getPluginsFromDB(filter *PluginInventoryFilter) ([]*PluginInventoryEntry, error) {
 	db, err := sql.Open("sqlite3", b.inventoryFile)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to open the DB for discovery '%s'", b.discoveryName)
+		return nil, errors.Wrapf(err, "failed to open the DB at '%s'", b.inventoryFile)
 	}
 	defer db.Close()
 
-	// We need to order the results properly because the logic of extractPluginsFromRows()
-	// expects an ordering of PluginName, then Target, then Version.
-	// The column order must also match the order used in getNextRow().
-	dbQuery := "SELECT PluginName,Target,RecommendedVersion,Version,Hidden,Description,Publisher,Vendor,OS,Architecture,Digest,URI FROM PluginBinaries ORDER BY PluginName,Target,Version;"
+	whereClause, err := createWhereClause(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the final query with the SELECT, WHERE and ORDER clauses.
+	// The ORDER clause is essential because the parsing algorithm of extractPluginsFromRows()
+	// assumes that ordering.
+	dbQuery := fmt.Sprintf("%s %s %s", querySelectClause, whereClause, queryOrderClause)
 	rows, err := db.Query(dbQuery)
 	if err != nil {
-		return nil, errors.Wrapf(err, "unable to setup DB query for discovery '%s'", b.discoveryName)
+		return nil, errors.Wrapf(err, "unable to setup DB query for DB at '%s'", b.inventoryFile)
 	}
 	defer rows.Close()
 
 	return b.extractPluginsFromRows(rows)
+}
+
+// createWhereClause parses the filter and creates the WHERE clause for the DB query.
+func createWhereClause(filter *PluginInventoryFilter) (string, error) {
+	var whereClause string
+
+	// If there is a filter, create a WHERE clause for the query.
+	if filter != nil {
+		if filter.Name != "" {
+			whereClause = fmt.Sprintf("%s PluginName='%s' AND", whereClause, filter.Name)
+		}
+		if filter.Target != "" {
+			var target string
+			switch filter.Target {
+			case configtypes.TargetK8s:
+				target = "k8s"
+			case configtypes.TargetTMC:
+				target = "tmc"
+			default:
+				return whereClause, fmt.Errorf("invalid target for plugin: %s", string(filter.Target))
+			}
+
+			whereClause = fmt.Sprintf("%s Target='%s' AND", whereClause, target)
+		}
+		if filter.Version != "" {
+			if filter.Version == cli.VersionLatest {
+				// We want the recommended version of the plugin.
+				// Note that currently the plugin repositories do not fill the RecommendedVersion column
+				// of the DB; therefore this query would fail to return any matches.
+				// To deal with this situation, the calling function finds the correct version
+				// and never sends a filter using filter.Version == cli.VersionLatest.
+				// This implies that the query below will never be triggered.
+				// We leave it in to prepare for the time when the repositories will have a
+				// RecommendedVersion column with correct values.
+				whereClause = fmt.Sprintf("%s Version=RecommendedVersion AND", whereClause)
+			} else {
+				// We want a specific version of the plugin
+				whereClause = fmt.Sprintf("%s Version='%s' AND", whereClause, filter.Version)
+			}
+		}
+		if filter.OS != "" {
+			whereClause = fmt.Sprintf("%s OS='%s' AND", whereClause, filter.OS)
+		}
+		if filter.Arch != "" {
+			whereClause = fmt.Sprintf("%s Architecture='%s' AND", whereClause, filter.Arch)
+		}
+		if filter.Publisher != "" {
+			whereClause = fmt.Sprintf("%s Publisher='%s' AND", whereClause, filter.Publisher)
+		}
+		if filter.Vendor != "" {
+			whereClause = fmt.Sprintf("%s Vendor='%s' AND", whereClause, filter.Vendor)
+		}
+
+		if whereClause != "" {
+			// Remove the last added "AND"
+			whereClause = strings.TrimSuffix(whereClause, "AND")
+			// Add the "WHERE" keyword
+			whereClause = fmt.Sprintf("WHERE %s", whereClause)
+		}
+	}
+	return whereClause, nil
 }
 
 // extractPluginsFromRows loops through all DB rows and builds an array
@@ -126,7 +227,6 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 				Publisher:          row.publisher,
 				Vendor:             row.vendor,
 				RecommendedVersion: row.recommendedVersion,
-				AvailableVersions:  []string{}, // Will be filled gradually below.
 			}
 			currentVersion = ""
 			artifacts = distribution.Artifacts{}
@@ -134,10 +234,8 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 
 		// Check if we have a new version
 		if currentVersion != row.version {
-			// This is a new version of our current plugin.  Add it to the array of versions.
-			// We can do this without verifying if the version is already there because
-			// we have requested the list of plugins from the database ordered by version.
-			currentPlugin.AvailableVersions = append(currentPlugin.AvailableVersions, row.version)
+			// We know this is a new version of our current plugin since we have
+			// requested the list of plugins from the database ordered by version.
 
 			// Store the list of artifacts for the previous version then start building
 			// the artifact list for the new version.
@@ -200,17 +298,21 @@ func convertTargetFromDB(target string) configtypes.Target {
 	return configtypes.StringToTarget(target)
 }
 
-// appendPlugin appends a Discovered plugins to the specified array.
+// appendPlugin appends a PluginInventoryEntry to the specified array.
 // This function needs to be used to do post-processing on the new plugin before storing it.
 func appendPlugin(allPlugins []*PluginInventoryEntry, plugin *PluginInventoryEntry) []*PluginInventoryEntry {
 	// Now that we are done gathering the information for the plugin
 	// we need to compute the recommendedVersion if it wasn't provided
 	// by the database
-	if err := utils.SortVersions(plugin.AvailableVersions); err != nil {
-		fmt.Fprintf(os.Stderr, "error parsing supported versions for plugin %s: %v", plugin.Name, err)
-	}
-	if plugin.RecommendedVersion == "" {
-		plugin.RecommendedVersion = plugin.AvailableVersions[len(plugin.AvailableVersions)-1]
+	if plugin.RecommendedVersion == "" && len(plugin.Artifacts) > 0 {
+		var versions []string
+		for v := range plugin.Artifacts {
+			versions = append(versions, v)
+		}
+		if err := utils.SortVersions(versions); err != nil {
+			fmt.Fprintf(os.Stderr, "error parsing versions for plugin %s: %v\n", plugin.Name, err)
+		}
+		plugin.RecommendedVersion = versions[len(versions)-1]
 	}
 	allPlugins = append(allPlugins, plugin)
 	return allPlugins
