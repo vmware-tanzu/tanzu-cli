@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command"
+	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/plugin"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
@@ -21,6 +22,8 @@ func NewPluginCmd() *cobra.Command {
 
 	pluginCmd.AddCommand(
 		newPluginBuildCmd(),
+		newPluginBuildPackageCmd(),
+		newPluginPublishPackageCmd(),
 	)
 	return pluginCmd
 }
@@ -32,6 +35,20 @@ type pluginBuildFlags struct {
 	OSArch      []string
 	Version     string
 	Match       string
+}
+
+type pluginBuildPackageFlags struct {
+	BinaryArtifactDir  string
+	PackageArtifactDir string
+	LocalOCIRepository string
+}
+
+type pluginPublishPackageFlags struct {
+	PackageArtifactDir string
+	Repository         string
+	Publisher          string
+	Vendor             string
+	DryRun             bool
 }
 
 func newPluginBuildCmd() *cobra.Command {
@@ -64,11 +81,63 @@ func newPluginBuildCmd() *cobra.Command {
 	}
 
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.PluginDir, "path", "", "./cmd/plugin", "path of plugin directory")
-	pluginBuildCmd.Flags().StringVarP(&pbFlags.ArtifactDir, "artifacts", "", "./artifacts", "path to output artifacts directory")
+	pluginBuildCmd.Flags().StringVarP(&pbFlags.ArtifactDir, "binary-artifacts", "", "./artifacts", "path to output artifacts directory")
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.LDFlags, "ldflags", "", "", "ldflags to set on build")
 	pluginBuildCmd.Flags().StringArrayVarP(&pbFlags.OSArch, "os-arch", "", []string{"all"}, "compile for specific os-arch, use 'local' for host os, use '<os>_<arch>' for specific")
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.Version, "version", "v", "", "version of the plugins")
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.Match, "match", "", "*", "match a plugin name to build, supports globbing")
 
 	return pluginBuildCmd
+}
+
+func newPluginBuildPackageCmd() *cobra.Command {
+	var pbpFlags = &pluginBuildPackageFlags{}
+
+	var pluginBuildPackageCmd = &cobra.Command{
+		Use:   "build-package",
+		Short: "Build plugin packages",
+		Long:  "Build plugin packages OCI image as tar.gz file that can be published to any repository",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			bppArgs := &plugin.BuildPluginPackageOptions{
+				BinaryArtifactDir:  pbpFlags.BinaryArtifactDir,
+				PackageArtifactDir: pbpFlags.PackageArtifactDir,
+				LocalOCIRegistry:   pbpFlags.LocalOCIRepository,
+			}
+			return bppArgs.BuildPluginPackages()
+		},
+	}
+
+	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.BinaryArtifactDir, "binary-artifacts", "", "./artifacts/plugins", "plugin binary artifact directory")
+	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.PackageArtifactDir, "package-artifacts", "", "./artifacts/packages", "plugin package artifacts directory")
+	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.LocalOCIRepository, "oci-registry", "", "", "local oci-registry to use for generating packages")
+
+	return pluginBuildPackageCmd
+}
+
+func newPluginPublishPackageCmd() *cobra.Command {
+	var pppFlags = &pluginPublishPackageFlags{}
+
+	var pluginBuildPackageCmd = &cobra.Command{
+		Use:   "publish-package",
+		Short: "Publish plugin packages",
+		Long:  "Publish plugin packages as OCI image to specified repository",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			bppArgs := &plugin.PublishPluginPackageOptions{
+				PackageArtifactDir: pppFlags.PackageArtifactDir,
+				Publisher:          pppFlags.Publisher,
+				Vendor:             pppFlags.Vendor,
+				Repository:         pppFlags.Repository,
+				DryRun:             pppFlags.DryRun,
+			}
+			return bppArgs.PublishPluginPackages()
+		},
+	}
+
+	pluginBuildPackageCmd.Flags().StringVarP(&pppFlags.PackageArtifactDir, "package-artifacts", "", "./artifacts/packages", "plugin package artifacts directory")
+	pluginBuildPackageCmd.Flags().StringVarP(&pppFlags.Repository, "repository", "", "", "repository to publish plugins")
+	pluginBuildPackageCmd.Flags().StringVarP(&pppFlags.Vendor, "vendor", "", "", "name of the vendor")
+	pluginBuildPackageCmd.Flags().StringVarP(&pppFlags.Publisher, "publisher", "", "", "name of the publisher")
+	pluginBuildPackageCmd.Flags().BoolVarP(&pppFlags.DryRun, "dry-run", "", false, "show commands without publishing plugin packages")
+
+	return pluginBuildPackageCmd
 }
