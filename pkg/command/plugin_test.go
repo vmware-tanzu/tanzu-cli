@@ -272,3 +272,126 @@ func TestDeletePlugin(t *testing.T) {
 		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
 	}
 }
+
+func TestInstallPlugin(t *testing.T) {
+	tests := []struct {
+		test               string
+		centralRepoFeature string
+		args               []string
+		expectedErrorMsg   string
+		expectedFailure    bool
+	}{
+		{
+			test:               "no 'all' option with central repo",
+			centralRepoFeature: "true",
+			args:               []string{"plugin", "install", "all"},
+			expectedFailure:    true,
+			expectedErrorMsg:   "the 'all' argument is not longer supported. You must install each plugin individually",
+		},
+		{
+			test:               "invalid target",
+			centralRepoFeature: "true",
+			args:               []string{"plugin", "install", "--target", "invalid", "myplugin"},
+			expectedFailure:    true,
+			expectedErrorMsg:   "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'",
+		},
+	}
+
+	assert := assert.New(t)
+
+	tkgConfigFile, err := os.CreateTemp("", "config")
+	assert.Nil(err)
+	os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+
+	tkgConfigFileNG, err := os.CreateTemp("", "config_ng")
+	assert.Nil(err)
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+
+	featureArray := strings.Split(constants.FeatureContextCommand, ".")
+	err = config.SetFeature(featureArray[1], featureArray[2], "true")
+	assert.Nil(err)
+
+	defer func() {
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.RemoveAll(tkgConfigFile.Name())
+		os.RemoveAll(tkgConfigFileNG.Name())
+	}()
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			// Set the Central Repository feature
+			featureArray := strings.Split(constants.FeatureCentralRepository, ".")
+			err := config.SetFeature(featureArray[1], featureArray[2], spec.centralRepoFeature)
+			assert.Nil(err)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Equal(err != nil, spec.expectedFailure)
+			if spec.expectedErrorMsg != "" {
+				assert.Contains(err.Error(), spec.expectedErrorMsg)
+			}
+		})
+	}
+}
+
+func TestUpgradePlugin(t *testing.T) {
+	tests := []struct {
+		test               string
+		centralRepoFeature string
+		args               []string
+		expectedErrorMsg   string
+		expectedFailure    bool
+	}{
+		{
+			test:               "invalid target",
+			centralRepoFeature: "true",
+			args:               []string{"plugin", "upgrade", "--target", "invalid", "myplugin"},
+			expectedFailure:    true,
+			expectedErrorMsg:   "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'",
+		},
+	}
+
+	assert := assert.New(t)
+
+	tkgConfigFile, err := os.CreateTemp("", "config")
+	assert.Nil(err)
+	os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+
+	tkgConfigFileNG, err := os.CreateTemp("", "config_ng")
+	assert.Nil(err)
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+
+	featureArray := strings.Split(constants.FeatureContextCommand, ".")
+	err = config.SetFeature(featureArray[1], featureArray[2], "true")
+	assert.Nil(err)
+
+	defer func() {
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.RemoveAll(tkgConfigFile.Name())
+		os.RemoveAll(tkgConfigFileNG.Name())
+	}()
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			// Set the Central Repository feature
+			featureArray := strings.Split(constants.FeatureCentralRepository, ".")
+			err := config.SetFeature(featureArray[1], featureArray[2], spec.centralRepoFeature)
+			assert.Nil(err)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Equal(err != nil, spec.expectedFailure)
+			if spec.expectedErrorMsg != "" {
+				assert.Contains(err.Error(), spec.expectedErrorMsg)
+			}
+		})
+	}
+}

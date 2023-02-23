@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/aunum/log"
@@ -61,6 +62,20 @@ var expectedDiscoveredStandalonePlugins = []discovery.Discovered{
 		Scope:              common.PluginScopeStandalone,
 		ContextName:        "",
 		Target:             configtypes.TargetK8s,
+	},
+	{
+		Name:               "myplugin",
+		RecommendedVersion: "v1.6.0",
+		Scope:              common.PluginScopeStandalone,
+		ContextName:        "",
+		Target:             configtypes.TargetK8s,
+	},
+	{
+		Name:               "myplugin",
+		RecommendedVersion: "v0.2.0",
+		Scope:              common.PluginScopeStandalone,
+		ContextName:        "",
+		Target:             configtypes.TargetTMC,
 	},
 }
 
@@ -125,7 +140,7 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	// Try installing cluster plugin through context-type=k8s with incorrect version
 	err = InstallPlugin("cluster", "v1.0.0", configtypes.TargetK8s)
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to fetch the plugin metadata")
+	assertions.Contains(err.Error(), "plugin pre-download verification failed")
 
 	// Try installing cluster plugin through context-type=k8s
 	err = InstallPlugin("cluster", "v1.6.0", configtypes.TargetK8s)
@@ -182,6 +197,97 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 		assertions.NotNil(pd)
 		assertions.Equal(expectedInstalledServerPlugins[i].Version, pd.Version)
 	}
+	for i := 0; i < len(expectedInstalledStandalonePlugins); i++ {
+		pd := findPluginInfo(installedStandalonePlugins, expectedInstalledStandalonePlugins[i].Name, expectedInstalledStandalonePlugins[i].Target)
+		assertions.NotNil(pd)
+		assertions.Equal(expectedInstalledStandalonePlugins[i].Version, pd.Version)
+	}
+}
+
+func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
+	t.Skip("Skipping until TANZU_CLI_PRE_RELEASE_REPO_IMAGE is no longer used")
+	assertions := assert.New(t)
+
+	defer setupLocalDistoForTesting()()
+	execCommand = fakeInfoExecCommand
+	defer func() { execCommand = exec.Command }()
+
+	// Turn on the Central Repository feature
+	featureArray := strings.Split(constants.FeatureCentralRepository, ".")
+	err := configlib.SetFeature(featureArray[1], featureArray[2], "true")
+	assertions.Nil(err)
+
+	// Try installing nonexistent plugin
+	err = InstallPlugin("not-exists", "v0.2.0", configtypes.TargetNone)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
+
+	// Install login (standalone) plugin
+	err = InstallPlugin("login", "v0.2.0", configtypes.TargetNone)
+	assertions.Nil(err)
+	// Verify installed plugin
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+	assertions.Nil(err)
+	assertions.Equal(1, len(installedPlugins))
+	assertions.Equal("login", installedPlugins[0].Name)
+
+	// Try installing myplugin plugin with no context-type
+	err = InstallPlugin("myplugin", "v0.2.0", configtypes.TargetNone)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to uniquely identify plugin 'myplugin'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag")
+
+	// Try installing myplugin plugin with context-type=tmc
+	err = InstallPlugin("myplugin", "v0.2.0", configtypes.TargetTMC)
+	assertions.Nil(err)
+
+	// Try installing myplugin plugin through context-type=k8s with incorrect version
+	err = InstallPlugin("myplugin", "v1.0.0", configtypes.TargetK8s)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "plugin pre-download verification failed")
+
+	// Try installing myplugin plugin through context-type=k8s
+	err = InstallPlugin("myplugin", "v1.6.0", configtypes.TargetK8s)
+	assertions.Nil(err)
+
+	// Try installing management-cluster plugin from standalone discovery
+	err = InstallPlugin("management-cluster", "v1.6.0", configtypes.TargetK8s)
+	assertions.Nil(err)
+
+	// Verify installed plugins
+	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
+	assertions.Nil(err)
+	assertions.Equal(4, len(installedStandalonePlugins))
+	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
+	assertions.Nil(err)
+	assertions.Equal(0, len(installedServerPlugins))
+
+	expectedInstalledStandalonePlugins := []cli.PluginInfo{
+		{
+			Name:    "login",
+			Version: "v0.2.0",
+			Scope:   common.PluginScopeStandalone,
+			Target:  configtypes.TargetNone,
+		},
+		{
+			Name:    "management-cluster",
+			Version: "v1.6.0",
+			Scope:   common.PluginScopeStandalone,
+			Target:  configtypes.TargetK8s,
+		},
+		{
+			Name:    "myplugin",
+			Version: "v1.6.0",
+			Scope:   common.PluginScopeStandalone,
+			Target:  configtypes.TargetK8s,
+		},
+		{
+			Name:    "myplugin",
+			Version: "v0.2.0",
+			Scope:   common.PluginScopeStandalone,
+			Target:  configtypes.TargetTMC,
+		},
+	}
+
 	for i := 0; i < len(expectedInstalledStandalonePlugins); i++ {
 		pd := findPluginInfo(installedStandalonePlugins, expectedInstalledStandalonePlugins[i].Name, expectedInstalledStandalonePlugins[i].Target)
 		assertions.NotNil(pd)
@@ -430,6 +536,18 @@ func Test_AvailablePlugins_From_LocalSource(t *testing.T) {
 		},
 		{
 			Name:   "cluster",
+			Scope:  common.PluginScopeStandalone,
+			Target: configtypes.TargetTMC,
+			Status: common.PluginStatusNotInstalled,
+		},
+		{
+			Name:   "myplugin",
+			Scope:  common.PluginScopeStandalone,
+			Target: configtypes.TargetK8s,
+			Status: common.PluginStatusNotInstalled,
+		},
+		{
+			Name:   "myplugin",
 			Scope:  common.PluginScopeStandalone,
 			Target: configtypes.TargetTMC,
 			Status: common.PluginStatusNotInstalled,

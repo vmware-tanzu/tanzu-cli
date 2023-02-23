@@ -4,14 +4,15 @@
 package discovery
 
 import (
-	"path"
-	"path/filepath"
+	"fmt"
+	"os"
 
 	"github.com/pkg/errors"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 // inventoryDirName is the name of the directory where the file(s) describing
@@ -30,6 +31,18 @@ type DBBackedOCIDiscovery struct {
 	// E.g., harbor.my-domain.local/tanzu-cli/plugins/plugins-inventory:latest
 	// This image contains a single SQLite database file.
 	image string
+	// criteria specified different conditions that a plugin must respect to be discovered.
+	// This allows to filter the list of plugins that will be returned.
+	criteria *PluginDiscoveryCriteria
+	// pluginDataDir is the location where the plugin data will be stored once
+	// extracted from the OCI image
+	pluginDataDir string
+	// inventory is the pluginInventory to be used by this discovery.
+	inventory plugininventory.PluginInventory
+}
+
+func (od *DBBackedOCIDiscovery) getInventory() plugininventory.PluginInventory {
+	return od.inventory
 }
 
 // Name of the discovery.
@@ -43,32 +56,51 @@ func (od *DBBackedOCIDiscovery) Type() string {
 }
 
 // List available plugins.
-func (od *DBBackedOCIDiscovery) List() (plugins []Discovered, err error) {
-	pluginInventoryDir, err := od.fetchInventoryImage()
+func (od *DBBackedOCIDiscovery) List() ([]Discovered, error) {
+	err := od.fetchInventoryImage()
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to fetch the inventory of discovery '%s'", od.Name())
 	}
+	return od.listPluginsFromInventory()
+}
 
-	// The plugin inventory uses relative image URIs to be future-proof.
-	// Determine the image prefix from the main image.
-	// E.g., if the main image is at project.registry.vmware.com/tanzu-cli/plugins/plugin-inventory:latest
-	// then the image prefix should be project.registry.vmware.com/tanzu-cli/plugins/
-	imagePrefix := path.Dir(od.image)
-	inventory := plugininventory.NewSQLiteInventory(od.Name(), pluginInventoryDir, imagePrefix)
-
-	pluginEntries, err := inventory.GetAllPlugins()
-	if err != nil {
-		return nil, err
+func (od *DBBackedOCIDiscovery) listPluginsFromInventory() (plugins []Discovered, err error) {
+	var pluginEntries []*plugininventory.PluginInventoryEntry
+	if od.criteria == nil {
+		pluginEntries, err = od.getInventory().GetAllPlugins()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		pluginEntries, err = od.getInventory().GetPlugins(&plugininventory.PluginInventoryFilter{
+			Name:    od.criteria.Name,
+			Target:  od.criteria.Target,
+			Version: od.criteria.Version,
+			OS:      od.criteria.OS,
+			Arch:    od.criteria.Arch,
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var discoveredPlugins []Discovered
 	for _, entry := range pluginEntries {
+		// First build the sorted list of versions from the Artifacts map
+		var versions []string
+		for v := range entry.Artifacts {
+			versions = append(versions, v)
+		}
+		if err := utils.SortVersions(versions); err != nil {
+			fmt.Fprintf(os.Stderr, "error parsing versions for plugin %s: %v\n", entry.Name, err)
+		}
+
 		plugin := Discovered{
 			Name:               entry.Name,
 			Description:        entry.Description,
 			RecommendedVersion: entry.RecommendedVersion,
 			InstalledVersion:   "", // Not set when discovered, but later.
-			SupportedVersions:  entry.AvailableVersions,
+			SupportedVersions:  versions,
 			Distribution:       entry.Artifacts,
 			Optional:           false,
 			Scope:              common.PluginScopeStandalone,
@@ -85,12 +117,10 @@ func (od *DBBackedOCIDiscovery) List() (plugins []Discovered, err error) {
 
 // fetchInventoryImage downloads the OCI image containing the information about the
 // inventory of this discovery and stores it in the cache directory.
-// It returns the path to the exact directory used.
-func (od *DBBackedOCIDiscovery) fetchInventoryImage() (string, error) {
+func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 	// TODO(khouzam): Improve by checking if we really need to download again or if we can use the cache
-	pluginDataDir := filepath.Join(common.DefaultCacheDir, inventoryDirName)
-	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, pluginDataDir); err != nil {
-		return "", errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
+	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, od.pluginDataDir); err != nil {
+		return errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
 	}
-	return pluginDataDir, nil
+	return nil
 }
