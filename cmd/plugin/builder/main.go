@@ -6,12 +6,14 @@ package main
 import (
 	"github.com/aunum/log"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo"
 )
 
 var descriptor = plugin.PluginDescriptor{
 	Name:        "builder",
+	Target:      types.TargetGlobal,
 	Description: "Build Tanzu components",
 	Group:       plugin.AdminCmdGroup,
 	Version:     buildinfo.Version,

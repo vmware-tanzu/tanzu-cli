@@ -178,7 +178,7 @@ func newDescribePluginCmd() *cobra.Command {
 			}
 			pluginName := args[0]
 
-			if !configtypes.IsValidTarget(targetStr) {
+			if !configtypes.IsValidTarget(targetStr, true, true) {
 				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
 			}
 
@@ -209,7 +209,7 @@ func newInstallPluginCmd() *cobra.Command {
 
 			pluginName := args[0]
 
-			if !configtypes.IsValidTarget(targetStr) {
+			if !configtypes.IsValidTarget(targetStr, true, true) {
 				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
 			}
 
@@ -279,7 +279,7 @@ func newUpgradePluginCmd() *cobra.Command {
 			}
 			pluginName := args[0]
 
-			if !configtypes.IsValidTarget(targetStr) {
+			if !configtypes.IsValidTarget(targetStr, true, true) {
 				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
 			}
 
@@ -317,7 +317,7 @@ func newDeletePluginCmd() *cobra.Command {
 			}
 			pluginName := args[0]
 
-			if !configtypes.IsValidTarget(targetStr) {
+			if !configtypes.IsValidTarget(targetStr, true, true) {
 				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
 			}
 

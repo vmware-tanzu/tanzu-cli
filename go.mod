@@ -31,7 +31,7 @@ require (
 	github.com/tj/assert v0.0.3
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230130173350-eeda69d80a24
-	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230221194443-4d4c14fcdb5c
+	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230223175026-9c303222c664
 	go.pinniped.dev v0.20.0
 	go.uber.org/multierr v1.8.0
 	golang.org/x/mod v0.7.0
