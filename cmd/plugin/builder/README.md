@@ -55,16 +55,16 @@ installation of plugins from the local directory with `tanzu plugin install --lo
 Below are the flags available with this command:
 
 ```txt
-      --artifacts string      path to output artifacts directory (default "./artifacts")
-  -h, --help                  help for build
-      --ldflags string        ldflags to set on build
-      --match string          match a plugin name to build, supports globbing (default "*")
-      --os-arch stringArray   compile for specific os-arch, use 'local' for host os, use '<os>_<arch>' for specific (e.g. 'linux_amd64') (default [all])
-      --path string           path of plugin directory (default "./cmd/plugin")
-  -v, --version string        version of the plugins
+      --binary-artifacts string   path to output artifacts directory (default "./artifacts")
+  -h, --help                      help for build
+      --ldflags string            ldflags to set on build
+      --match string              match a plugin name to build, supports globbing (default "*")
+      --os-arch stringArray       compile for specific os-arch, use 'local' for host os, use '<os>_<arch>' for specific (default [all])
+      --path string               path of plugin directory (default "./cmd/plugin")
+  -v, --version string            version of the plugins
 ```
 
-Below are a few examples:
+Below are the examples:
 
 ```shell
   # Build all plugins under the 'cmd/plugin' directory for the local host os and arch
@@ -112,21 +112,58 @@ Note: `tanzu builder plugin build` command expects plugin to met one of followin
 * Each plugin advertises the `Target` information as part of the PluginDescriptor.
 * Each plugin directory contains a `metadata.yaml` file which describes the name and the target of the plugin.
 
-### Publish
+### Publish-plugins
 
-`tanzu builder publish` is used to publish the compiled plugin to a target output. The two supported targets for
-publishing are "local" for the legacy local filesystem output, or "oci" for the recommended OCI image bundle.
+`tanzu builder plugin build-package` and `tanzu builder plugin publish-package` can be used to build the plugin packages
+and publish these package to the remote repository as OCI image.
 
-Arguments to the `publish` command are:
+The `tanzu builder plugin build-package` command takes binary artifacts directory generates as part of `tanzu builder plugin build` command
+as an input and generates the plugin package as archive files(`<plugin>.tar.gz`). It also uses a `plugin_manifest.yaml` to parse available plugins from the artifact directory.
+
+Below are the flags available with `tanzu builder plugin build-package` command:
 
 ```txt
---input-artifact-dir string                  artifact directory which is a output of 'tanzu builder cli compile' command
---local-output-discovery-dir string          local output directory where CLIPlugin resource yamls for discovery will be placed. Applicable to 'local' type
---local-output-distribution-dir string       local output directory where plugin binaries will be placed. Applicable to 'local' type
---oci-discovery-image string                 image path to publish oci image with CLIPlugin resource yamls. Applicable to 'oci' type
---oci-distribution-image-repository string   image path prefix to publish oci image for plugin binaries. Applicable to 'oci' type
---os-arch string                             list of os-arch (default "darwin-amd64 linux-amd64 windows-amd64")
---plugins string                             list of plugin names. Example: 'login management-cluster cluster'
---type string                                type of discovery and distribution for publishing plugins. Supported: local
---version string                             recommended version of the plugins
+      --binary-artifacts string    plugin binary artifact directory (default "./artifacts/plugins")
+  -h, --help                       help for build-package
+      --oci-registry string        local oci-registry to use for generating packages
+      --package-artifacts string   plugin package artifacts directory (default "./artifacts/packages")
+```
+
+Below are the examples:
+
+```shell
+  # Build all plugin packages available under the './artifacts/plugins' directory
+  tanzu builder plugin build-package --oci-registry localhost:5001 --binary-artifacts ./artifacts/plugins
+```
+
+Once user generate the plugin packages, user can use `tanzu builder plugin publish-package` command to actually publish the generate packages to the remote repository as OCI image.
+
+Below are the flags available with `tanzu builder plugin publish-package` this command:
+
+```txt
+      --dry-run                    show commands without publishing plugin packages
+  -h, --help                       help for publish-package
+      --package-artifacts string   plugin package artifacts directory (default "./artifacts/packages")
+      --publisher string           name of the publisher
+      --repository string          repository to publish plugins
+      --vendor string              name of the vendor
+```
+
+Below are the examples:
+
+```shell
+  # Publish all plugin packages available under the './artifacts/packages' directory
+  tanzu builder plugin publish-package
+                --repository gcr.io/repository/cli-plugins
+                --package-artifacts ./artifacts/packages
+                --vendor vmware
+                --publisher tkg
+
+  # Run without publishing plugin packages and just log commands with `--dry-run` flag
+    tanzu builder plugin publish-package
+                --repository gcr.io/repository/cli-plugins
+                --package-artifacts ./artifacts/packages
+                --vendor vmware
+                --publisher tkg
+                --dry-run
 ```
