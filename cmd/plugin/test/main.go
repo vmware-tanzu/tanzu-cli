@@ -9,6 +9,7 @@ import (
 	"github.com/aunum/log"
 	"github.com/spf13/cobra"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo"
 
@@ -19,6 +20,7 @@ import (
 
 var descriptor = plugin.PluginDescriptor{
 	Name:        "test",
+	Target:      types.TargetGlobal,
 	Description: "Test the CLI",
 	Group:       plugin.AdminCmdGroup,
 	Version:     buildinfo.Version,

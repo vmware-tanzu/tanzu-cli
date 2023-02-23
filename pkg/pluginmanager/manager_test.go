@@ -54,7 +54,7 @@ var expectedDiscoveredStandalonePlugins = []discovery.Discovered{
 		RecommendedVersion: "v0.2.0",
 		Scope:              common.PluginScopeStandalone,
 		ContextName:        "",
-		Target:             configtypes.TargetNone,
+		Target:             configtypes.TargetUnknown,
 	},
 	{
 		Name:               "management-cluster",
@@ -115,12 +115,12 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	defer func() { execCommand = exec.Command }()
 
 	// Try installing nonexistent plugin
-	err := InstallPlugin("not-exists", "v0.2.0", configtypes.TargetNone)
+	err := InstallPlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
 
 	// Install login (standalone) plugin
-	err = InstallPlugin("login", "v0.2.0", configtypes.TargetNone)
+	err = InstallPlugin("login", "v0.2.0", configtypes.TargetUnknown)
 	assertions.Nil(err)
 	// Verify installed plugin
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
@@ -129,7 +129,7 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	assertions.Equal("login", installedPlugins[0].Name)
 
 	// Try installing cluster plugin with no context-type
-	err = InstallPlugin("cluster", "v0.2.0", configtypes.TargetNone)
+	err = InstallPlugin("cluster", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to uniquely identify plugin 'cluster'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag")
 
@@ -147,7 +147,7 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	assertions.Nil(err)
 
 	// Try installing management-cluster plugin from standalone discovery without context-type
-	err = InstallPlugin("management-cluster", "v1.6.0", configtypes.TargetNone)
+	err = InstallPlugin("management-cluster", "v1.6.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to uniquely identify plugin 'management-cluster'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag")
 
@@ -182,7 +182,7 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 			Name:    "login",
 			Version: "v0.2.0",
 			Scope:   common.PluginScopeStandalone,
-			Target:  configtypes.TargetNone,
+			Target:  configtypes.TargetUnknown,
 		},
 		{
 			Name:    "management-cluster",
@@ -218,12 +218,12 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	assertions.Nil(err)
 
 	// Try installing nonexistent plugin
-	err = InstallPlugin("not-exists", "v0.2.0", configtypes.TargetNone)
+	err = InstallPlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
 
 	// Install login (standalone) plugin
-	err = InstallPlugin("login", "v0.2.0", configtypes.TargetNone)
+	err = InstallPlugin("login", "v0.2.0", configtypes.TargetUnknown)
 	assertions.Nil(err)
 	// Verify installed plugin
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
@@ -232,7 +232,7 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	assertions.Equal("login", installedPlugins[0].Name)
 
 	// Try installing myplugin plugin with no context-type
-	err = InstallPlugin("myplugin", "v0.2.0", configtypes.TargetNone)
+	err = InstallPlugin("myplugin", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to uniquely identify plugin 'myplugin'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag")
 
@@ -266,7 +266,7 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 			Name:    "login",
 			Version: "v0.2.0",
 			Scope:   common.PluginScopeStandalone,
-			Target:  configtypes.TargetNone,
+			Target:  configtypes.TargetUnknown,
 		},
 		{
 			Name:    "management-cluster",
@@ -316,7 +316,7 @@ func Test_AvailablePlugins(t *testing.T) {
 	}
 
 	// Install login, cluster plugins
-	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetNone)
+	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetUnknown)
 	mockInstallPlugin(assertions, "cluster", "v0.2.0", configtypes.TargetTMC)
 
 	expectedInstallationStatusOfPlugins := []discovery.Discovered{
@@ -334,7 +334,7 @@ func Test_AvailablePlugins(t *testing.T) {
 		},
 		{
 			Name:             "login",
-			Target:           configtypes.TargetNone,
+			Target:           configtypes.TargetUnknown,
 			InstalledVersion: "v0.2.0",
 			Status:           common.PluginStatusInstalled,
 		},
@@ -377,7 +377,7 @@ func Test_AvailablePlugins(t *testing.T) {
 		},
 		{
 			Name:             "login",
-			Target:           configtypes.TargetNone,
+			Target:           configtypes.TargetUnknown,
 			InstalledVersion: "v0.2.0",
 			Status:           common.PluginStatusInstalled,
 		},
@@ -407,7 +407,7 @@ func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_One_In
 	assertions.Equal(len(expectedDiscoveredPlugins), len(discoveredPlugins))
 
 	// Install login, cluster plugins
-	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetNone)
+	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetUnknown)
 
 	// Considering `login` plugin with `<none>` target is already installed and
 	// getting discovered through some discoveries source
@@ -460,7 +460,7 @@ func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_Plugin
 	assertions.Equal(len(expectedDiscoveredPlugins), len(discoveredPlugins))
 
 	// Install login, cluster plugins
-	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetNone)
+	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetUnknown)
 
 	// Considering `login` plugin with `<none>` target is already installed and
 	// getting discovered through some discoveries source
@@ -576,12 +576,12 @@ func Test_InstallPlugin_InstalledPlugins_From_LocalSource(t *testing.T) {
 	localPluginSourceDir := filepath.Join(currentDirAbsPath, "test", "local")
 
 	// Try installing nonexistent plugin
-	err := InstallPluginsFromLocalSource("not-exists", "v0.2.0", configtypes.TargetNone, localPluginSourceDir, false)
+	err := InstallPluginsFromLocalSource("not-exists", "v0.2.0", configtypes.TargetUnknown, localPluginSourceDir, false)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
 
 	// Install login from local source directory
-	err = InstallPluginsFromLocalSource("login", "v0.2.0", configtypes.TargetNone, localPluginSourceDir, false)
+	err = InstallPluginsFromLocalSource("login", "v0.2.0", configtypes.TargetUnknown, localPluginSourceDir, false)
 	assertions.Nil(err)
 	// Verify installed plugin
 	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
@@ -611,15 +611,15 @@ func Test_DescribePlugin(t *testing.T) {
 	defer setupLocalDistoForTesting()()
 
 	// Try to describe plugin when plugin is not installed
-	_, err := DescribePlugin("login", configtypes.TargetNone)
+	_, err := DescribePlugin("login", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'login'")
 
 	// Install login (standalone) package
-	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetNone)
+	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetUnknown)
 
 	// Try to describe plugin when plugin after installing plugin
-	pd, err := DescribePlugin("login", configtypes.TargetNone)
+	pd, err := DescribePlugin("login", configtypes.TargetUnknown)
 	assertions.Nil(err)
 	assertions.Equal("login", pd.Name)
 	assertions.Equal("v0.2.0", pd.Version)
@@ -645,12 +645,12 @@ func Test_DeletePlugin(t *testing.T) {
 	defer setupLocalDistoForTesting()()
 
 	// Try to delete plugin when plugin is not installed
-	err := DeletePlugin(DeletePluginOptions{PluginName: "login", Target: configtypes.TargetNone, ForceDelete: true})
+	err := DeletePlugin(DeletePluginOptions{PluginName: "login", Target: configtypes.TargetUnknown, ForceDelete: true})
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'login'")
 
 	// Install login (standalone) package
-	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetNone)
+	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetUnknown)
 
 	// Try to delete plugin when plugin is installed
 	err = DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: configtypes.TargetTMC, ForceDelete: true})
@@ -777,7 +777,7 @@ func Test_setAvailablePluginsStatus(t *testing.T) {
 	assertions := assert.New(t)
 
 	availablePlugins := []discovery.Discovered{{Name: "fake1", DiscoveryType: "oci", RecommendedVersion: "v1.0.0", Status: common.PluginStatusNotInstalled, Target: configtypes.TargetK8s}}
-	installedPlugin := []cli.PluginInfo{{Name: "fake2", Version: "v2.0.0", Discovery: "local", DiscoveredRecommendedVersion: "v2.0.0", Target: configtypes.TargetNone}}
+	installedPlugin := []cli.PluginInfo{{Name: "fake2", Version: "v2.0.0", Discovery: "local", DiscoveredRecommendedVersion: "v2.0.0", Target: configtypes.TargetUnknown}}
 
 	// If installed plugin is not part of available(discovered) plugins then
 	// installed version == ""
@@ -790,7 +790,7 @@ func Test_setAvailablePluginsStatus(t *testing.T) {
 	assertions.Equal(common.PluginStatusNotInstalled, availablePlugins[0].Status)
 
 	// If installed plugin is not part of available(discovered) plugins because of the Target mismatch
-	installedPlugin = []cli.PluginInfo{{Name: "fake1", Version: "v1.0.0", Discovery: "local", DiscoveredRecommendedVersion: "v1.0.0", Target: configtypes.TargetNone}}
+	installedPlugin = []cli.PluginInfo{{Name: "fake1", Version: "v1.0.0", Discovery: "local", DiscoveredRecommendedVersion: "v1.0.0", Target: configtypes.TargetUnknown}}
 	setAvailablePluginsStatus(availablePlugins, installedPlugin)
 	assertions.Equal(len(availablePlugins), 1)
 	assertions.Equal("fake1", availablePlugins[0].Name)
@@ -858,13 +858,13 @@ func Test_DiscoverPluginsFromLocalSourceWithLegacyDirectoryStructure(t *testing.
 	assertions.Equal("Foo plugin", discoveredPlugins[0].Description)
 	assertions.Equal("v0.12.0", discoveredPlugins[0].RecommendedVersion)
 	assertions.Equal(common.PluginScopeStandalone, discoveredPlugins[0].Scope)
-	assertions.Equal(configtypes.TargetNone, discoveredPlugins[0].Target)
+	assertions.Equal(configtypes.TargetUnknown, discoveredPlugins[0].Target)
 
 	assertions.Equal("bar", discoveredPlugins[1].Name)
 	assertions.Equal("Bar plugin", discoveredPlugins[1].Description)
 	assertions.Equal("v0.10.0", discoveredPlugins[1].RecommendedVersion)
 	assertions.Equal(common.PluginScopeStandalone, discoveredPlugins[1].Scope)
-	assertions.Equal(configtypes.TargetNone, discoveredPlugins[1].Target)
+	assertions.Equal(configtypes.TargetUnknown, discoveredPlugins[1].Target)
 }
 
 func Test_InstallPluginsFromLocalSourceWithLegacyDirectoryStructure(t *testing.T) {
@@ -875,7 +875,7 @@ func Test_InstallPluginsFromLocalSourceWithLegacyDirectoryStructure(t *testing.T
 
 	// Using generic InstallPluginsFromLocalSource to test the legacy directory install
 	// When passing legacy directory structure which contains manifest.yaml file
-	err := InstallPluginsFromLocalSource("all", "", configtypes.TargetNone, filepath.Join("test", "legacy"), false)
+	err := InstallPluginsFromLocalSource("all", "", configtypes.TargetUnknown, filepath.Join("test", "legacy"), false)
 	assertions.Nil(err)
 
 	// Verify installed plugin
@@ -1052,7 +1052,7 @@ func Test_removeDuplicates(t *testing.T) {
 			inputPlugins: []discovery.Discovered{
 				{
 					Name:   "foo",
-					Target: configtypes.TargetNone,
+					Target: configtypes.TargetUnknown,
 					Scope:  common.PluginScopeStandalone,
 				},
 				{
@@ -1084,7 +1084,7 @@ func Test_removeDuplicates(t *testing.T) {
 			inputPlugins: []discovery.Discovered{
 				{
 					Name:   "foo",
-					Target: configtypes.TargetNone,
+					Target: configtypes.TargetUnknown,
 					Scope:  common.PluginScopeStandalone,
 				},
 				{
@@ -1116,7 +1116,7 @@ func Test_removeDuplicates(t *testing.T) {
 			inputPlugins: []discovery.Discovered{
 				{
 					Name:   "foo",
-					Target: configtypes.TargetNone,
+					Target: configtypes.TargetUnknown,
 					Scope:  common.PluginScopeStandalone,
 				},
 				{
