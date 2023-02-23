@@ -77,7 +77,7 @@ func (b *SQLiteInventory) GetAllPlugins() ([]*PluginInventoryEntry, error) {
 
 // GetPlugins returns the plugin found in the inventory that matches the provided parameters.
 func (b *SQLiteInventory) GetPlugins(filter *PluginInventoryFilter) ([]*PluginInventoryEntry, error) {
-	// TODO(khouzam): Since the Central Repo does not have its RecommendedVersion field set yet,
+	// Since the Central Repo does not have its RecommendedVersion field set yet,
 	// we first search for it by looking for the latest version amongst all versions.
 	if filter.Version == cli.VersionLatest {
 		if filter.Name == "" {
@@ -154,7 +154,14 @@ func createWhereClause(filter *PluginInventoryFilter) (string, error) {
 		}
 		if filter.Version != "" {
 			if filter.Version == cli.VersionLatest {
-				// We want the recommended version of the plugin
+				// We want the recommended version of the plugin.
+				// Note that currently the plugin repositories do not fill the RecommendedVersion column
+				// of the DB; therefore this query would fail to return any matches.
+				// To deal with this situation, the calling function finds the correct version
+				// and never sends a filter using filter.Version == cli.VersionLatest.
+				// This implies that the query below will never be triggered.
+				// We leave it in to prepare for the time when the repositories will have a
+				// RecommendedVersion column with correct values.
 				whereClause = fmt.Sprintf("%s Version=RecommendedVersion AND", whereClause)
 			} else {
 				// We want a specific version of the plugin
