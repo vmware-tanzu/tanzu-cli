@@ -31,7 +31,10 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Setup dependencies
-        run: make tools
+        run: |
+          make tools
+          echo "${PWD}/hack/tools/bin" >> $GITHUB_PATH
+          echo "${PWD}/bin" >> $GITHUB_PATH
 
       - name: Build CLI Core
         run: |

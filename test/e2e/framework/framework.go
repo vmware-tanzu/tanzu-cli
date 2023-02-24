@@ -29,6 +29,21 @@ const (
 	AddPluginSource      = "tanzu plugin source add --name %s --type %s --uri %s"
 	DeletePluginSource   = "tanzu plugin source delete %s"
 	ListPluginsCmdInJSON = "tanzu plugin list -o json"
+	SearchPluginsCmd     = "tanzu plugin search"
+	InstallPLuginCmd     = "tanzu plugin install %s"
+	UninstallPLuginCmd   = "tanzu plugin delete %s --yes"
+	JSONOutput           = " -o json"
+	TestPluginsPrefix    = "test-plugin-"
+	PluginSubCommand     = "tanzu %s"
+
+	// Central repository
+	CentralRepositoryFeatureFlag         = "features.global.central-repository"
+	CentralRepositoryPreReleaseRepoImage = "TANZU_CLI_PRE_RELEASE_REPO_IMAGE"
+	TanzuCliE2ETestCentralRepositoryURL  = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
+
+	// General constants
+	True      = "true"
+	Installed = "installed"
 
 	// Context commands
 	CreateContextWithEndPoint              = "tanzu context create --endpoint %s --name %s"
