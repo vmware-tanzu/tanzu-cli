@@ -33,6 +33,7 @@ ROOT_DIR := $(shell git rev-parse --show-toplevel)
 PLUGIN_DIR := ./cmd/plugin
 PLUGIN_BINARY_ARTIFACTS_DIR := $(ROOT_DIR)/artifacts/plugins
 PLUGIN_PACKAGE_ARTIFACTS_DIR := $(ROOT_DIR)/artifacts/packages
+PLUGIN_MANIFEST_FILE := $(PLUGIN_PACKAGE_ARTIFACTS_DIR)/plugin_manifest.yaml
 
 REGISTRY_PORT := 5001
 REGISTRY_ENDPOINT := localhost:$(REGISTRY_PORT)
@@ -43,6 +44,14 @@ BUILDER := $(ROOT_DIR)/bin/builder
 PUBLISHER := tkg
 VENDOR := vmware
 PLUGIN_PUBLISH_REPOSITORY := localhost:$(REGISTRY_PORT)/test/v1/tanzu-cli/plugins
+PLUGIN_INVENTORY_IMAGE_TAG := latest
+OVERRIDE_INVENTORY_IMAGE :=
+
+# Process configuration and setup additional variables
+OVERRIDE_FLAG = 
+ifneq ($(strip $(OVERRIDE_INVENTORY_IMAGE)),)
+OVERRIDE_FLAG = --override
+endif
 
 ## --------------------------------------
 ## Plugin Build and Publish Tooling
@@ -83,6 +92,40 @@ plugin-publish-packages: ## Publish plugin packages
 
 .PHONY: plugin-build-and-publish-packages
 plugin-build-and-publish-packages: plugin-build plugin-build-packages plugin-publish-packages ## Build and Publish plugin packages
+
+.PHONY: inventory-init
+inventory-init: ## Initialize empty plugin inventory
+	$(BUILDER) inventory init \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		$(OVERRIDE_FLAG)
+
+.PHONY: inventory-plugin-insert
+inventory-plugin-insert: ## Insert plugins to the inventory database
+	$(BUILDER) inventory plugin insert \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--manifest $(PLUGIN_MANIFEST_FILE)
+
+.PHONY: inventory-plugin-activate
+inventory-plugin-activate: ## Activate plugins in the inventory database
+	$(BUILDER) inventory plugin activate \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--manifest $(PLUGIN_MANIFEST_FILE)
+
+.PHONY: inventory-plugin-deactivate
+inventory-plugin-deactivate: ## Deactivate plugins in the inventory database
+	$(BUILDER) inventory plugin deactivate \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--manifest $(PLUGIN_MANIFEST_FILE)
 
 ## --------------------------------------
 ## docker

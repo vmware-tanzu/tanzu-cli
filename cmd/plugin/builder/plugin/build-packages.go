@@ -1,6 +1,7 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// Package plugin implements plugin specific publishing functions
 package plugin
 
 import (
@@ -11,18 +12,17 @@ import (
 	"github.com/aunum/log"
 	"github.com/pkg/errors"
 
+	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
+	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
-
-type BuildPluginPackageImpl interface {
-	BuildPluginPackages() error
-}
 
 type BuildPluginPackageOptions struct {
 	BinaryArtifactDir  string
 	PackageArtifactDir string
 	LocalOCIRegistry   string
+	ImgpkgOptions      imgpkg.ImgpkgWrapper
 
 	pluginManifestFile string
 }
@@ -38,7 +38,7 @@ func (bpo *BuildPluginPackageOptions) BuildPluginPackages() error {
 		}
 	}
 
-	pluginManifest, err := readPluginManifest(bpo.pluginManifestFile)
+	pluginManifest, err := helpers.ReadPluginManifest(bpo.pluginManifestFile)
 	if err != nil {
 		return err
 	}
@@ -56,17 +56,17 @@ func (bpo *BuildPluginPackageOptions) BuildPluginPackages() error {
 					continue
 				}
 
-				pluginTarFilePath := filepath.Join(bpo.PackageArtifactDir, getPluginArchiveRelativePath(pluginManifest.Plugins[i], osArch, version))
+				pluginTarFilePath := filepath.Join(bpo.PackageArtifactDir, helpers.GetPluginArchiveRelativePath(pluginManifest.Plugins[i], osArch, version))
 				image := fmt.Sprintf("%s/plugins/%s/%s/%s:%s", bpo.LocalOCIRegistry, osArch.OS(), osArch.Arch(), pluginManifest.Plugins[i].Name, version)
 
 				log.Infof("Generating plugin package for 'plugin:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 
-				err := pushImage(image, pluginBinaryFilePath)
+				err := bpo.ImgpkgOptions.PushImage(image, pluginBinaryFilePath)
 				if err != nil {
 					return errors.Wrapf(err, "unable to push package to temporary registry for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 				}
 
-				err = copyImageToArchive(image, pluginTarFilePath)
+				err = bpo.ImgpkgOptions.CopyImageToArchive(image, pluginTarFilePath)
 				if err != nil {
 					return errors.Wrapf(err, "unable to generate package for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 				}

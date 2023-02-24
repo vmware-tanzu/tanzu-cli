@@ -167,3 +167,70 @@ Below are the examples:
                 --publisher tkg
                 --dry-run
 ```
+
+### Inventory-init
+
+As part of the central repository for plugins implementation, The Tanzu CLI is leveraging an sqlite based inventory database published as an OCI image to discover available plugins. The builder plugin implements `tanzu builder inventory init` command to generate this sqlite based inventory database and publish it as an OCI image.
+
+Below are the flags available with `tanzu builder inventory init` command:
+
+```txt
+  -h, --help                                help for init
+      --override                            override the inventory database image if already exists
+      --plugin-inventory-image-tag string   tag to which plugin inventory image needs to be published (default "latest")
+      --repository string                   repository to publish plugin inventory image
+```
+
+Below are the examples:
+
+```shell
+  # Command initialises inventory database at 'project-stg.registry.vmware.com/test/v1/tanzu-cli/plugins/plugin-inventory:latest'
+  tanzu builder inventory init --repository project-stg.registry.vmware.com/test/v1/tanzu-cli/plugins --plugin-inventory-image-tag latest
+```
+
+### Inventory-plugin-insert
+
+Once the inventory database has been initialized within the repository by publishing it as an OCI image the next thing would be to add plugin entries to the database. The builder plugin implements `tanzu builder inventory plugin insert` command to insert plugin entries to the sqlite based inventory database.
+
+Below are the flags available with `tanzu builder inventory plugin insert` command:
+
+```txt
+  -h, --help                                help for insert
+      --manifest string                     manifest file specifying plugin details that needs to be processed
+      --plugin-inventory-image-tag string   tag to which plugin inventory image needs to be published (default "latest")
+      --publisher string                    name of the publisher
+      --repository string                   repository to publish plugin inventory image
+      --vendor string                       name of the vendor
+```
+
+Below are the examples:
+
+```shell
+  # Insert plugin entries to the inventory database based on the specified manifest file
+  tanzu builder inventory plugin insert --repository project-stg.registry.vmware.com/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg --manifest ./artifacts/packages/plugin_manifest.yaml
+```
+
+### Inventory-plugin-activate-deactivate
+
+Once the plugins are inserted to the inventory database, there might be a need where publisher need to mark the plugin as hidden or in deactive state so that users do not discover these plugins from the central repository. To support this scenario builder plugin implements `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands.
+
+Below are the flags available with `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands:
+
+```txt
+  -h, --help                                help for activate/deactivate
+      --manifest string                     manifest file specifying plugin details that needs to be processed
+      --plugin-inventory-image-tag string   tag to which plugin inventory image needs to be published (default "latest")
+      --publisher string                    name of the publisher
+      --repository string                   repository to publish plugin inventory image
+      --vendor string                       name of the vendor
+```
+
+Below are the examples:
+
+```shell
+  # Activate plugins in the inventory database based on the specified manifest file
+  tanzu builder inventory plugin activate --repository localhost:5002/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg1 --manifest ./artifacts/packages/plugin_manifest.yaml
+
+  # Deactivate plugins in the inventory database based on the specified manifest file
+  tanzu builder inventory plugin deactivate --repository localhost:5002/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg1 --manifest ./artifacts/packages/plugin_manifest.yaml
+```

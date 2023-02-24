@@ -7,7 +7,6 @@ include ./plugin-tooling.mk
 SHELL := /usr/bin/env bash
 
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
-CURRENT_DIR := $(shell pwd)
 ARTIFACTS_DIR ?= $(ROOT_DIR)/artifacts
 
 XDG_CONFIG_HOME := ${HOME}/.config
@@ -86,14 +85,17 @@ help: ## Display this help (default)
 ## --------------------------------------
 
 .PHONY: all
-all: gomod build-all test lint ## Run all major targets (lint, test, build)
+all: gomod cross-build test lint ## Run all major targets (lint, test, cross-build)
 
 ## --------------------------------------
 ## Build
 ## --------------------------------------
 
 .PHONY: cross-build
-cross-build: ${CLI_TARGETS} plugin-build ## Build the Tanzu Core CLI and plugins for all supported platforms
+cross-build: ${CLI_TARGETS} cross-build-publish-plugins ## Build the Tanzu Core CLI and plugins for all supported platforms
+
+.PHONY: cross-build-publish-plugins
+cross-build-publish-plugins: prepare-builder plugin-build-and-publish-packages inventory-init inventory-plugin-insert inventory-plugin-deactivate inventory-plugin-activate ## Build and publish the plugins for all supported platforms
 
 .PHONY: build-all
 build-all: build prepare-builder plugin-build-local ## Build the Tanzu Core CLI, admin plugins for the local platform
@@ -185,7 +187,7 @@ test: fmt ## Run Tests
 
 .PHONY: e2e-cli-core
 e2e-cli-core: ## Run CLI Core E2E Tests
-	$(eval export PATH=$(CURRENT_DIR)/bin:$(CURRENT_DIR)/hack/tools/bin:$(PATH))
+	$(eval export PATH=$(ROOT_DIR)/bin:$(ROOT_DIR)/hack/tools/bin:$(PATH))
 	@if [ "${TANZU_API_TOKEN}" = "" ] && [ "$(TANZU_CLI_TMC_UNSTABLE_URL)" = "" ]; then \
 		echo "***Skipping TMC specific e2e tests cases because environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL are not set***" ; \
 		${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \

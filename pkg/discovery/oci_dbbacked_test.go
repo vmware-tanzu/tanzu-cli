@@ -343,6 +343,15 @@ func (stub *stubInventory) GetPlugins(filter *plugininventory.PluginInventoryFil
 func (stub *stubInventory) GetAllGroups() ([]*plugininventory.PluginGroup, error) {
 	return groupEntries, nil
 }
+func (stub *stubInventory) CreateSchema() error {
+	return nil
+}
+func (stub *stubInventory) InsertPlugin(pluginInventoryEntry *plugininventory.PluginInventoryEntry) error {
+	return nil
+}
+func (stub *stubInventory) UpdatePluginActivationState(pluginInventoryEntry *plugininventory.PluginInventoryEntry) error {
+	return nil
+}
 
 var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 	var (

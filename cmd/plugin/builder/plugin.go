@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command"
+	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/plugin"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
@@ -87,6 +88,8 @@ func newPluginBuildCmd() *cobra.Command {
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.Version, "version", "v", "", "version of the plugins")
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.Match, "match", "", "*", "match a plugin name to build, supports globbing")
 
+	_ = pluginBuildCmd.MarkFlagRequired("version")
+
 	return pluginBuildCmd
 }
 
@@ -102,6 +105,7 @@ func newPluginBuildPackageCmd() *cobra.Command {
 				BinaryArtifactDir:  pbpFlags.BinaryArtifactDir,
 				PackageArtifactDir: pbpFlags.PackageArtifactDir,
 				LocalOCIRegistry:   pbpFlags.LocalOCIRepository,
+				ImgpkgOptions:      imgpkg.NewImgpkgCLIWrapper(),
 			}
 			return bppArgs.BuildPluginPackages()
 		},
@@ -128,6 +132,7 @@ func newPluginPublishPackageCmd() *cobra.Command {
 				Vendor:             pppFlags.Vendor,
 				Repository:         pppFlags.Repository,
 				DryRun:             pppFlags.DryRun,
+				ImgpkgOptions:      imgpkg.NewImgpkgCLIWrapper(),
 			}
 			return bppArgs.PublishPluginPackages()
 		},
@@ -138,6 +143,10 @@ func newPluginPublishPackageCmd() *cobra.Command {
 	pluginBuildPackageCmd.Flags().StringVarP(&pppFlags.Vendor, "vendor", "", "", "name of the vendor")
 	pluginBuildPackageCmd.Flags().StringVarP(&pppFlags.Publisher, "publisher", "", "", "name of the publisher")
 	pluginBuildPackageCmd.Flags().BoolVarP(&pppFlags.DryRun, "dry-run", "", false, "show commands without publishing plugin packages")
+
+	_ = pluginBuildPackageCmd.MarkFlagRequired("repository")
+	_ = pluginBuildPackageCmd.MarkFlagRequired("vendor")
+	_ = pluginBuildPackageCmd.MarkFlagRequired("publisher")
 
 	return pluginBuildPackageCmd
 }
