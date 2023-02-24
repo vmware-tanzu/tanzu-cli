@@ -31,3 +31,8 @@ type ContextInfo struct {
 		IsManagementCluster bool   `json:"isManagementCluster"`
 	} `json:"clusterOpts"`
 }
+
+type PluginCompatibilityConf struct {
+	PluginNames        []string `json:"plugins"`
+	TestCentralRepoURL string   `json:"test-central-repo-url"`
+}

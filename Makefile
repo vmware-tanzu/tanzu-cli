@@ -77,6 +77,10 @@ ifndef TANZU_CLI_TMC_UNSTABLE_URL
 TANZU_CLI_TMC_UNSTABLE_URL = ""
 endif
 
+ifndef TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL
+TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL = gcr.io/eminent-nation-87317/tanzu-cli/test/v1/plugins/plugin-inventory:latest
+endif
+
 ## --------------------------------------
 ## Help
 ## --------------------------------------
@@ -202,15 +206,30 @@ choco-package: ## Build a Chocolatey package
 test: fmt ## Run Tests
 	${GO} test `go list ./... | grep -v test/e2e` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
 
-.PHONY: e2e-cli-core
-e2e-cli-core: ## Run CLI Core E2E Tests
-	$(eval export PATH=$(CURRENT_DIR)/bin:$(CURRENT_DIR)/hack/tools/bin:$(PATH))
+.PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
+e2e-cli-core: update-path-with-tools e2e-cli-plugin-compatibility-test e2e-cli-tmc-test 
+	${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc | grep -v test/e2e/plugins_compatibility` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
+
+.PHONY: e2e-cli-plugin-compatibility-test ## Execute CLI Core Plugin Compatibility E2E test cases
+e2e-cli-plugin-compatibility-test: update-path-with-tools
+	$(eval export TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL))
+	@if [ "${TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL}" = "" ]; then \
+		echo "***Skipping Plugin Compatibility test cases because environment variables TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL is not set***" ; \
+	else \
+		${GO} test ./test/e2e/plugins_compatibility -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
+	fi 
+
+.PHONY: e2e-cli-tmc-test ## Execute CLI Core TMC Specific E2E test cases
+e2e-cli-tmc-test: update-path-with-tools
 	@if [ "${TANZU_API_TOKEN}" = "" ] && [ "$(TANZU_CLI_TMC_UNSTABLE_URL)" = "" ]; then \
 		echo "***Skipping TMC specific e2e tests cases because environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL are not set***" ; \
-		${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
 	else \
-		${GO} test ./test/e2e/... -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
+		${GO} test ./test/e2e/context/tmc -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
 	fi
+
+.PHONY: update-path-with-tools
+update-path-with-tools:
+	$(eval export PATH=$(CURRENT_DIR)/bin:$(CURRENT_DIR)/hack/tools/bin:$(PATH))
 
 .PHONY: start-test-central-repo
 start-test-central-repo: stop-test-central-repo ## Starts up a test central repository locally with docker

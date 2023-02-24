@@ -5,9 +5,11 @@ package framework
 
 import (
 	"fmt"
+	"strings"
 
 	"encoding/json"
 
+	"github.com/aunum/log"
 	"github.com/pkg/errors"
 )
 
@@ -15,6 +17,14 @@ import (
 type PluginBasicOps interface {
 	// ListPlugins lists all plugins by running 'tanzu plugin list' command
 	ListPlugins() ([]PluginListInfo, error)
+	// SearchPlugins searches all plugins for given filter (keyword|regex) by running 'tanzu plugin search' command
+	SearchPlugins(filter string) ([]PluginListInfo, error)
+	// InstallPlugin installs given plugin
+	InstallPlugin(pluginName string) error
+	// UninstallPlugin uninstalls given plugin
+	UninstallPlugin(pluginName string) error
+	// ExecuteSubCommand executes specific plugin sub-command
+	ExecuteSubCommand(pluginWithSubCommand string) (string, error)
 }
 
 // PluginSourceOps helps 'plugin source' commands
@@ -73,4 +83,54 @@ func (po *pluginCmdOps) ListPlugins() ([]PluginListInfo, error) {
 		return nil, errors.Wrap(err, "failed to construct json node from config get output")
 	}
 	return list, nil
+}
+
+func (po *pluginCmdOps) SearchPlugins(filter string) ([]PluginListInfo, error) {
+	searchPluginCmdWithOptions := SearchPluginsCmd
+	if len(strings.TrimSpace(filter)) > 0 {
+		searchPluginCmdWithOptions = searchPluginCmdWithOptions + " " + strings.TrimSpace(filter)
+	}
+	searchPluginCmdWithOptions += JSONOutput
+	out, stdErr, err := po.cmdExe.Exec(searchPluginCmdWithOptions)
+
+	if err != nil {
+		log.Errorf("error while executing plugin search command:'%s', error:'%s' stdErr:'%s'", searchPluginCmdWithOptions, err.Error(), stdErr.String())
+		return nil, err
+	}
+	jsonStr := out.String()
+	var list []PluginListInfo
+	err = json.Unmarshal([]byte(jsonStr), &list)
+	if err != nil {
+		log.Errorf("failed to construct node from plugin search output:'%s' error:'%s' ", jsonStr, err.Error())
+		return nil, errors.Wrapf(err, "failed to construct json node from search output:'%s'", jsonStr)
+	}
+	return list, nil
+}
+
+func (po *pluginCmdOps) InstallPlugin(pluginName string) error {
+	installPluginCmd := fmt.Sprintf(InstallPLuginCmd, pluginName)
+	_, stdErr, err := po.cmdExe.Exec(installPluginCmd)
+	if err != nil {
+		log.Errorf("error while installing the plugin: %s, error: %s stdErr: %s", pluginName, err.Error(), stdErr.String())
+	}
+	return err
+}
+
+func (po *pluginCmdOps) UninstallPlugin(pluginName string) error {
+	uninstallPluginCmd := fmt.Sprintf(UninstallPLuginCmd, pluginName)
+	_, stdErr, err := po.cmdExe.Exec(uninstallPluginCmd)
+	if err != nil {
+		log.Errorf("error while uninstalling the plugin: %s, error: %s, stdErr: %s", pluginName, err.Error(), stdErr.String())
+	}
+	return err
+}
+
+func (po *pluginCmdOps) ExecuteSubCommand(pluginWithSubCommand string) (string, error) {
+	pluginCmdWithSubCommand := fmt.Sprintf(PluginSubCommand, pluginWithSubCommand)
+	stdOut, stdErr, err := po.cmdExe.Exec(pluginCmdWithSubCommand)
+	if err != nil {
+		log.Errorf("error while running the plugin command: %s, error: %s, stdErr: %s", pluginCmdWithSubCommand, err.Error(), stdErr.String())
+		return stdOut.String(), errors.Wrap(err, stdErr.String())
+	}
+	return stdOut.String(), nil
 }
