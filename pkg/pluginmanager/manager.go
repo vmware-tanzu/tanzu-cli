@@ -42,6 +42,8 @@ const (
 	exe = ".exe"
 	// ManifestFileName is the file name for the manifest.
 	ManifestFileName = "manifest.yaml"
+	// PluginManifestFileName is the file name for the manifest.
+	PluginManifestFileName = "plugin_manifest.yaml"
 	// PluginFileName is the file name for the plugin info.
 	PluginFileName = "plugin.yaml"
 )
@@ -845,14 +847,16 @@ func DiscoverPluginsFromLocalSource(localPath string) ([]discovery.Discovered, e
 		return plugins, nil
 	}
 
-	// Check if the manifest.yaml file exists to see if the directory is legacy structure or not
-	if _, err2 := os.Stat(filepath.Join(localPath, ManifestFileName)); errors.Is(err2, os.ErrNotExist) {
+	// Check if the manifest.yaml or plugin_manifest.yaml file exists to see if the directory can be used or not
+	_, err2 := os.Stat(filepath.Join(localPath, ManifestFileName))
+	_, err3 := os.Stat(filepath.Join(localPath, PluginManifestFileName))
+	if errors.Is(err2, os.ErrNotExist) && errors.Is(err3, os.ErrNotExist) {
 		return nil, err
 	}
 
-	// As manifest.yaml file exists it assumes in this case the directory is in
-	// the legacy structure, and attempt to process it as such
-	return discoverPluginsFromLocalSourceWithLegacyDirectoryStructure(localPath)
+	// As manifest.yaml or plugin_manifest.yaml file exists it assumes in this case the directory is supported
+	// and attempt to process it as such
+	return discoverPluginsFromLocalSourceBasedOnManifestFile(localPath)
 }
 
 func discoverPluginsFromLocalSource(localPath string) ([]discovery.Discovered, error) {
@@ -912,6 +916,7 @@ func getCLIPluginResourceWithLocalDistroFromPluginInfo(plugin *cli.PluginInfo, p
 		Spec: cliv1alpha1.CLIPluginSpec{
 			Description:        plugin.Description,
 			RecommendedVersion: plugin.Version,
+			Target:             plugin.Target,
 			Artifacts: map[string]cliv1alpha1.ArtifactList{
 				plugin.Version: []cliv1alpha1.Artifact{
 					{
@@ -926,17 +931,24 @@ func getCLIPluginResourceWithLocalDistroFromPluginInfo(plugin *cli.PluginInfo, p
 	}
 }
 
-// discoverPluginsFromLocalSourceWithLegacyDirectoryStructure returns the available plugins
+// discoverPluginsFromLocalSourceBasedOnManifestFile returns the available plugins
 // that are discovered from the provided local path
-func discoverPluginsFromLocalSourceWithLegacyDirectoryStructure(localPath string) ([]discovery.Discovered, error) {
+func discoverPluginsFromLocalSourceBasedOnManifestFile(localPath string) ([]discovery.Discovered, error) {
 	if localPath == "" {
 		return nil, nil
 	}
 
+	var manifest *cli.Manifest
 	// Get the plugin manifest object from manifest.yaml file
-	manifest, err := getPluginManifestResource(filepath.Join(localPath, ManifestFileName))
-	if err != nil {
-		return nil, err
+	manifest1, err1 := getPluginManifestResource(filepath.Join(localPath, ManifestFileName))
+	manifest2, err2 := getPluginManifestResource(filepath.Join(localPath, PluginManifestFileName))
+
+	if err2 == nil {
+		manifest = manifest2
+	} else if err1 == nil {
+		manifest = manifest1
+	} else {
+		return nil, kerrors.NewAggregate([]error{err1, err2})
 	}
 
 	var discoveredPlugins []discovery.Discovered
@@ -947,10 +959,23 @@ func discoverPluginsFromLocalSourceWithLegacyDirectoryStructure(localPath string
 			continue
 		}
 
-		// Get the plugin Info from the plugin.yaml file
-		plugin, err := getPluginInfoResource(filepath.Join(localPath, p.Name, PluginFileName))
-		if err != nil {
-			return nil, fmt.Errorf("could not unmarshal plugin.yaml: %v", err)
+		pluginInfo := cli.PluginInfo{
+			Name:        p.Name,
+			Description: p.Description,
+			Target:      configtypes.Target(p.Target),
+		}
+
+		if len(p.Versions) != 0 {
+			pluginInfo.Version = p.Versions[0]
+		}
+
+		if pluginInfo.Version == "" {
+			// Get the plugin version from the plugin.yaml file
+			plugin, err := getPluginInfoResource(filepath.Join(localPath, p.Name, PluginFileName))
+			if err != nil {
+				return nil, fmt.Errorf("could not unmarshal plugin.yaml: %v", err)
+			}
+			pluginInfo.Version = plugin.Version
 		}
 
 		absLocalPath, err := filepath.Abs(localPath)
@@ -958,10 +983,10 @@ func discoverPluginsFromLocalSourceWithLegacyDirectoryStructure(localPath string
 			return nil, err
 		}
 		// With legacy configuration directory structure creating the pluginBinary path from plugin Info
-		// Sample path: cli/<plugin-name>/<plugin-version>/tanzu-<plugin-name>-<os>_<arch>
-		// 				cli/login/v0.14.0/tanzu-login-darwin_amd64
+		// Sample path: cli/[target]/<plugin-name>/<plugin-version>/tanzu-<plugin-name>-<os>_<arch>
+		// 				cli/[target]/v0.14.0/tanzu-login-darwin_amd64
 		// As mentioned above, we expect the binary for user's OS-ARCH is present and hence creating path accordingly
-		pluginBinaryPath := filepath.Join(absLocalPath, p.Name, plugin.Version, fmt.Sprintf("tanzu-%s-%s_%s", p.Name, runtime.GOOS, runtime.GOARCH))
+		pluginBinaryPath := filepath.Join(absLocalPath, string(pluginInfo.Target), p.Name, pluginInfo.Version, fmt.Sprintf("tanzu-%s-%s_%s", p.Name, runtime.GOOS, runtime.GOARCH))
 		if cli.BuildArch().IsWindows() {
 			pluginBinaryPath += exe
 		}
@@ -970,7 +995,7 @@ func discoverPluginsFromLocalSourceWithLegacyDirectoryStructure(localPath string
 			return nil, errors.Wrapf(err, "unable to find plugin binary for %q", p.Name)
 		}
 
-		p := getCLIPluginResourceWithLocalDistroFromPluginInfo(plugin, pluginBinaryPath)
+		p := getCLIPluginResourceWithLocalDistroFromPluginInfo(&pluginInfo, pluginBinaryPath)
 
 		// Create  discovery.Discovered resource from CLIPlugin resource
 		dp, err := discovery.DiscoveredFromK8sV1alpha1(&p)

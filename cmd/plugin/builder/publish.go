@@ -7,11 +7,13 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
+// DefaultOSArch defines default OS/ARCH
+const DefaultOSArch = "darwin-amd64 linux-amd64 windows-amd64"
+
 var publishArgs = &command.PublishArgs{
-	OSArch: cli.DefaultOSArch,
+	OSArch: DefaultOSArch,
 }
 
 // NewPublishCmd creates a new command for plugin publishing.
