@@ -62,12 +62,6 @@ LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Date=$(BUILD_DAT
 LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.SHA=$(BUILD_SHA)'
 LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Version=$(BUILD_VERSION)'
 
-# On the same build the core CLI and plugins in this repo will be built with
-# the same build info, but said info is plumbed into the plugins differently.
-PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Date=$(BUILD_DATE)'
-PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.SHA=$(BUILD_SHA)'
-PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Version=$(BUILD_VERSION)'
-
 # Add supported OS-ARCHITECTURE combinations here
 ENVS ?= linux-amd64 windows-amd64 darwin-amd64
 
@@ -102,18 +96,18 @@ all: gomod build-all test lint ## Run all major targets (lint, test, build)
 ## --------------------------------------
 
 .PHONY: cross-build
-cross-build: ${CLI_TARGETS} ${PLUGIN_TARGETS} publish-admin-plugins-all-local## Build the Tanzu Core CLI and plugins for all supported platforms and also publish admin plugins locally
+cross-build: ${CLI_TARGETS} ${PLUGIN_TARGETS}## Build the Tanzu Core CLI and plugins for all supported platforms
 
 .PHONY: build-all
-build-all: build build-publish-admin-plugins-local ## Build the Tanzu Core CLI, admin plugins and publish admin plugins locally for the local platform
+build-all: build build-admin-plugins ## Build the Tanzu Core CLI, admin plugins for the local platform
 
 .PHONY: build
 build: build-cli-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI for the local platform
 	mkdir -p bin
 	cp $(ARTIFACTS_DIR)/$(GOHOSTOS)/$(GOHOSTARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(GOHOSTOS)_$(GOHOSTARCH) ./bin/tanzu
 
-.PHONY: build-publish-admin-plugins-local
-build-publish-admin-plugins-local: build-plugin-admin-${GOHOSTOS}-${GOHOSTARCH}  publish-admin-plugins-local
+.PHONY: build-admin-plugins
+build-admin-plugins: build-plugin-admin-${GOHOSTOS}-${GOHOSTARCH}
 
 build-cli-%: ##Build the Tanzu Core CLI for a platform
 	$(eval ARCH = $(word 2,$(subst -, ,$*)))
@@ -156,16 +150,7 @@ build-plugin-admin-%: prepare-builder
 	fi
 
 	@echo build $(OS)-$(ARCH) plugin with version: $(BUILD_VERSION)
-	$(BUILDER) cli compile --version $(BUILD_VERSION) --ldflags "$(PLUGIN_LD_FLAGS)" --path ./cmd/plugin --artifacts "$(ARTIFACTS_ADMIN_DIR)/$(OS)/$(ARCH)/cli" --target ${OS}_${ARCH}
-
-
-.PHONY: publish-admin-plugins-all-local
-publish-admin-plugins-all-local: prepare-builder ## Publish CLI admin plugins locally for all supported os-arch
-	$(BUILDER) publish --type local --plugins "$(ADMIN_PLUGINS)" --version $(BUILD_VERSION) --os-arch "${ENVS}" --local-output-discovery-dir "$(TANZU_PLUGIN_PUBLISH_PATH)/discovery/admin" --local-output-distribution-dir "$(TANZU_PLUGIN_PUBLISH_PATH)/distribution" --input-artifact-dir $(ARTIFACTS_ADMIN_DIR)
-
-.PHONY: publish-admin-plugins-local
-publish-admin-plugins-local: prepare-builder ## Publish CLI admin plugins locally for current host os-arch only
-	$(BUILDER) publish --type local --plugins "$(ADMIN_PLUGINS)" --version $(BUILD_VERSION) --os-arch "${GOHOSTOS}-${GOHOSTARCH}" --local-output-discovery-dir "$(TANZU_PLUGIN_PUBLISH_PATH)/discovery/admin" --local-output-distribution-dir "$(TANZU_PLUGIN_PUBLISH_PATH)/distribution" --input-artifact-dir $(ARTIFACTS_ADMIN_DIR)
+	$(BUILDER) plugin build --version $(BUILD_VERSION) --path ./cmd/plugin --artifacts "$(ARTIFACTS_ADMIN_DIR)" --os-arch ${OS}_${ARCH}
 
 ## --------------------------------------
 ## OS Packages

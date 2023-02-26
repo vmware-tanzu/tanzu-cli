@@ -21,8 +21,10 @@ import (
 	"github.com/gobwas/glob"
 	"gopkg.in/yaml.v3"
 
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	rtplugin "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
+	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/types"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
@@ -35,6 +37,7 @@ var (
 	version, artifactsDir, ldflags string
 	tags, goprivate                string
 	targetArch                     []string
+	groupByOSArch                  bool
 )
 
 type plugin struct {
@@ -43,22 +46,22 @@ type plugin struct {
 	testPath string
 	docPath  string
 	modPath  string
-	arch     cli.Arch
 	buildID  string
+	target   string
 }
 
 // PluginCompileArgs contains the values to use for compiling plugins.
 type PluginCompileArgs struct {
-	Version      string
-	SourcePath   string
-	ArtifactsDir string
-	LDFlags      string
-	Tags         string
-	CorePath     string
-	Match        string
-	Description  string
-	GoPrivate    string
-	TargetArch   []string
+	Version       string
+	SourcePath    string
+	ArtifactsDir  string
+	LDFlags       string
+	Tags          string
+	Match         string
+	Description   string
+	GoPrivate     string
+	TargetArch    []string
+	GroupByOSArch bool
 }
 
 const local = "local"
@@ -88,11 +91,20 @@ func getID(i int) string {
 	return identifiers[index]
 }
 
-func getBuildArch(targetArch []string) cli.Arch {
-	if targetArch[0] == local {
-		return cli.BuildArch()
+func getBuildArch(arch []string) []cli.Arch {
+	var arrArch []cli.Arch
+	for _, buildArch := range arch {
+		if buildArch == string(AllTargets) {
+			for arch := range archMap {
+				arrArch = append(arrArch, arch)
+			}
+		} else if buildArch == local {
+			arrArch = append(arrArch, cli.BuildArch())
+		} else {
+			arrArch = append(arrArch, cli.Arch(buildArch))
+		}
 	}
-	return cli.Arch(targetArch[0])
+	return arrArch
 }
 
 func getMaxParallelism() int {
@@ -101,32 +113,6 @@ func getMaxParallelism() int {
 		maxConcurrent = minConcurrent
 	}
 	return maxConcurrent
-}
-
-// compileCore builds the core plugin for the plugin at the given corePath and arch.
-func compileCore(corePath string, arch cli.Arch) cli.Plugin {
-	log.Break()
-	log.Info("building core binary")
-	err := buildTargets(corePath, filepath.Join(artifactsDir, cli.CoreName, version), cli.CoreName, arch, "", "")
-	if err != nil {
-		log.Errorf("error: %v", err)
-		os.Exit(1)
-	}
-
-	b, err := yaml.Marshal(cli.CoreDescriptor)
-	if err != nil {
-		log.Errorf("error: %v", err)
-		os.Exit(1)
-	}
-
-	configPath := filepath.Join(artifactsDir, cli.CoreDescriptor.Name, cli.PluginDescriptorFileName)
-	err = os.WriteFile(configPath, b, 0644)
-	if err != nil {
-		log.Errorf("error: %v", err)
-		os.Exit(1)
-	}
-
-	return cli.CorePlugin
 }
 
 type errInfo struct {
@@ -144,24 +130,21 @@ func setGlobals(compileArgs *PluginCompileArgs) {
 	tags = compileArgs.Tags
 	goprivate = compileArgs.GoPrivate
 	targetArch = compileArgs.TargetArch
+	groupByOSArch = compileArgs.GroupByOSArch
+
+	// Append version specific ldflag by default so that user doesn't need to pass this ldflag always.
+	ldflags = fmt.Sprintf("%s -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Version=%s'", ldflags, version)
 }
 
-func Compile(compileArgs *PluginCompileArgs) error { //nolint:funlen
+func Compile(compileArgs *PluginCompileArgs) error {
 	// Set our global values based on the passed args
 	setGlobals(compileArgs)
 
-	log.Infof("building local repository at %s", compileArgs.ArtifactsDir)
+	log.Infof("building local repository at %s, %v, %v", compileArgs.ArtifactsDir, compileArgs.Version, compileArgs.TargetArch)
 
 	manifest := cli.Manifest{
 		CreatedTime: time.Now(),
-		CoreVersion: compileArgs.Version,
 		Plugins:     []cli.Plugin{},
-	}
-	arch := getBuildArch(compileArgs.TargetArch)
-
-	if compileArgs.CorePath != "" {
-		corePlugin := compileCore(compileArgs.CorePath, arch)
-		manifest.Plugins = append(manifest.Plugins, corePlugin)
 	}
 
 	files, err := os.ReadDir(compileArgs.SourcePath)
@@ -186,13 +169,15 @@ func Compile(compileArgs *PluginCompileArgs) error { //nolint:funlen
 				guard <- struct{}{}
 				go func(fullPath, id string) {
 					defer wg.Done()
-					p, err := buildPlugin(fullPath, arch, id)
+					p, err := buildPlugin(fullPath, id)
 					if err != nil {
 						fatalErrors <- errInfo{Err: err, Path: fullPath, ID: id}
 					} else {
 						plug := cli.Plugin{
 							Name:        p.Name,
 							Description: p.Description,
+							Target:      p.target,
+							Versions:    []string{p.Version},
 						}
 						plugins <- plug
 					}
@@ -228,13 +213,7 @@ func Compile(compileArgs *PluginCompileArgs) error { //nolint:funlen
 		manifest.Plugins = append(manifest.Plugins, plug)
 	}
 
-	b, err := yaml.Marshal(manifest)
-	if err != nil {
-		return err
-	}
-
-	manifestPath := filepath.Join(compileArgs.ArtifactsDir, cli.ManifestFileName)
-	err = os.WriteFile(manifestPath, b, 0644)
+	err = savePluginManifest(manifest, compileArgs.ArtifactsDir, compileArgs.GroupByOSArch)
 	if err != nil {
 		return err
 	}
@@ -243,7 +222,7 @@ func Compile(compileArgs *PluginCompileArgs) error { //nolint:funlen
 	return nil
 }
 
-func buildPlugin(path string, arch cli.Arch, id string) (plugin, error) {
+func buildPlugin(path, id string) (plugin, error) {
 	log.Infof("%s - building plugin at path %q", id, path)
 
 	var modPath string
@@ -298,11 +277,16 @@ func buildPlugin(path string, arch cli.Arch, id string) (plugin, error) {
 		return plugin{}, err
 	}
 
+	target, err := getPluginTarget(&desc, path, id)
+	if err != nil {
+		return plugin{}, err
+	}
+
 	p := plugin{
 		PluginDescriptor: desc,
-		arch:             arch,
 		docPath:          docPath,
 		buildID:          id,
+		target:           target,
 	}
 
 	if modPath != "" {
@@ -459,34 +443,34 @@ func (p *plugin) compile() error {
 		return err
 	}
 
-	outPath := filepath.Join(absArtifactsDir, p.Name, p.Version)
-	err = buildTargets(p.path, outPath, p.Name, p.arch, p.buildID, p.modPath)
+	err = buildTargets(p.path, absArtifactsDir, p.Name, p.target, p.buildID, p.modPath, false)
 	if err != nil {
 		return err
 	}
 
 	if p.testPath != "" {
-		testOutPath := filepath.Join(absArtifactsDir, p.Name, p.Version, "test")
-		err = buildTargets(p.testPath, testOutPath, fmt.Sprintf("%s-test", p.Name), p.arch, p.buildID, p.modPath)
+		err = buildTargets(p.testPath, absArtifactsDir, p.Name, p.target, p.buildID, p.modPath, true)
 		if err != nil {
 			return err
 		}
 	}
 
-	b, err := yaml.Marshal(p.PluginDescriptor)
-	if err != nil {
-		return err
-	}
+	if !groupByOSArch {
+		b, err := yaml.Marshal(p.PluginDescriptor)
+		if err != nil {
+			return err
+		}
 
-	configPath := filepath.Join(absArtifactsDir, p.Name, cli.PluginDescriptorFileName)
-	err = os.WriteFile(configPath, b, 0644)
-	if err != nil {
-		return err
+		configPath := filepath.Join(absArtifactsDir, p.Name, cli.PluginDescriptorFileName)
+		err = os.WriteFile(configPath, b, 0644)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func buildTargets(targetPath, outPath, pluginName string, arch cli.Arch, id, modPath string) error {
+func buildTargets(targetPath, artifactsDir, pluginName, target, id, modPath string, isTest bool) error {
 	if id != "" {
 		id = fmt.Sprintf("%s - ", id)
 	}
@@ -496,7 +480,8 @@ func buildTargets(targetPath, outPath, pluginName string, arch cli.Arch, id, mod
 		if buildArch == string(AllTargets) {
 			targets = archMap
 		} else if buildArch == local {
-			targets[arch] = archMap[arch]
+			localArch := cli.BuildArch()
+			targets[localArch] = archMap[localArch]
 		} else {
 			bArch := cli.Arch(buildArch)
 			if val, ok := archMap[bArch]; !ok {
@@ -507,8 +492,20 @@ func buildTargets(targetPath, outPath, pluginName string, arch cli.Arch, id, mod
 		}
 	}
 
-	for _, targetBuilder := range targets {
-		tgt := targetBuilder(pluginName, outPath)
+	for arch, targetBuilder := range targets {
+		pn := pluginName
+
+		outputDir := artifactsDir
+		if groupByOSArch {
+			outputDir = filepath.Join(outputDir, arch.OS(), arch.Arch(), target)
+		}
+		outputDir = filepath.Join(outputDir, pn, version)
+		if isTest {
+			outputDir = filepath.Join(outputDir, "test")
+			pn = fmt.Sprintf("%s-test", pn)
+		}
+
+		tgt := targetBuilder(pn, outputDir)
 		err := tgt.build(targetPath, id, modPath, ldflags, tags)
 		if err != nil {
 			return err
@@ -543,4 +540,57 @@ func goCommand(arg ...string) *exec.Cmd {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("GOPRIVATE=%s", goprivate))
 	}
 	return cmd
+}
+
+func getPluginTarget(pd *rtplugin.PluginDescriptor, pluginPath, id string) (string, error) {
+	if !groupByOSArch || pd == nil {
+		return "", nil
+	}
+
+	// If target is specified in the plugin descriptor use it
+	if configtypes.IsValidTarget(string(pd.Target), true, false) {
+		return string(pd.Target), nil
+	}
+
+	// If target is not specified in the plugin descriptor check `metadata.yaml` in the
+	// plugin directory to get the target of the plugin
+	metadataFilePath := filepath.Join(pluginPath, "metadata.yaml")
+	b, err := os.ReadFile(metadataFilePath)
+	if err != nil {
+		log.Errorf("%s - plugin %q requires a metadata.yaml file", id, pd.Name)
+		return "", err
+	}
+	var metadata types.Metadata
+	err = yaml.Unmarshal(b, &metadata)
+	if err != nil {
+		log.Errorf("%s - error unmarshalling plugin metadata.yaml file: %v", id, err)
+		return "", err
+	}
+	return metadata.Target, nil
+}
+
+func savePluginManifest(manifest cli.Manifest, artifactsDir string, groupByOSArch bool) error {
+	b, err := yaml.Marshal(manifest)
+	if err != nil {
+		return err
+	}
+
+	if groupByOSArch {
+		arrTargetArch := getBuildArch(targetArch)
+		arrTargetArch = append(arrTargetArch, "")
+		for _, osarch := range arrTargetArch {
+			manifestPath := filepath.Join(artifactsDir, osarch.OS(), osarch.Arch(), cli.PluginManifestFileName)
+			err := os.WriteFile(manifestPath, b, 0644)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		manifestPath := filepath.Join(artifactsDir, cli.ManifestFileName)
+		err = os.WriteFile(manifestPath, b, 0644)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

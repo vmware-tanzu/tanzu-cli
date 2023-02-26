@@ -1,0 +1,11 @@
+plugins:
+  - name: foo
+    target: kubernetes
+    description: Foo plugin
+    versions:
+      - v0.12.0
+  - name: bar
+    target: global
+    description: Bar plugin
+    versions:
+      - v0.10.0

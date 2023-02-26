@@ -841,16 +841,17 @@ func Test_setAvailablePluginsStatus(t *testing.T) {
 	assertions.Equal(common.PluginStatusUpdateAvailable, availablePlugins[0].Status)
 }
 
-func Test_DiscoverPluginsFromLocalSourceWithLegacyDirectoryStructure(t *testing.T) {
+func Test_DiscoverPluginsFromLocalSourceBasedOnManifestFile(t *testing.T) {
 	assertions := assert.New(t)
 
-	// When passing directory structure where manifest.yaml file is missing
-	_, err := discoverPluginsFromLocalSourceWithLegacyDirectoryStructure(filepath.Join("test", "local"))
+	// When passing directory structure where manifest.yaml and plugin_manifest.yaml both files are missing
+	_, err := discoverPluginsFromLocalSourceBasedOnManifestFile(filepath.Join("test", "local"))
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "could not find manifest.yaml file")
+	assertions.Contains(err.Error(), "could not find plugin_manifest.yaml file")
 
-	// When passing legacy directory structure which contains manifest.yaml file
-	discoveredPlugins, err := discoverPluginsFromLocalSourceWithLegacyDirectoryStructure(filepath.Join("test", "legacy"))
+	// When passing directory structure which contains manifest.yaml file
+	discoveredPlugins, err := discoverPluginsFromLocalSourceBasedOnManifestFile(filepath.Join("test", "legacy"))
 	assertions.Nil(err)
 	assertions.Equal(2, len(discoveredPlugins))
 
@@ -865,6 +866,23 @@ func Test_DiscoverPluginsFromLocalSourceWithLegacyDirectoryStructure(t *testing.
 	assertions.Equal("v0.10.0", discoveredPlugins[1].RecommendedVersion)
 	assertions.Equal(common.PluginScopeStandalone, discoveredPlugins[1].Scope)
 	assertions.Equal(configtypes.TargetUnknown, discoveredPlugins[1].Target)
+
+	// When passing directory structure which contains plugin_manifest.yaml file
+	discoveredPlugins, err = discoverPluginsFromLocalSourceBasedOnManifestFile(filepath.Join("test", "artifacts1"))
+	assertions.Nil(err)
+	assertions.Equal(2, len(discoveredPlugins))
+
+	assertions.Equal("foo", discoveredPlugins[0].Name)
+	assertions.Equal("Foo plugin", discoveredPlugins[0].Description)
+	assertions.Equal("v0.12.0", discoveredPlugins[0].RecommendedVersion)
+	assertions.Equal(common.PluginScopeStandalone, discoveredPlugins[0].Scope)
+	assertions.Equal(configtypes.TargetK8s, discoveredPlugins[0].Target)
+
+	assertions.Equal("bar", discoveredPlugins[1].Name)
+	assertions.Equal("Bar plugin", discoveredPlugins[1].Description)
+	assertions.Equal("v0.10.0", discoveredPlugins[1].RecommendedVersion)
+	assertions.Equal(common.PluginScopeStandalone, discoveredPlugins[1].Scope)
+	assertions.Equal(configtypes.TargetGlobal, discoveredPlugins[1].Target)
 }
 
 func Test_InstallPluginsFromLocalSourceWithLegacyDirectoryStructure(t *testing.T) {
