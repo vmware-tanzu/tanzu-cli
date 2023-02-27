@@ -205,8 +205,11 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 }
 
 func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
-	t.Skip("Skipping until TANZU_CLI_PRE_RELEASE_REPO_IMAGE is no longer used")
 	assertions := assert.New(t)
+
+	// Bypass the environment variable for testing
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assertions.Nil(err)
 
 	defer setupLocalDistoForTesting()()
 	execCommand = fakeInfoExecCommand
@@ -214,7 +217,7 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 
 	// Turn on the Central Repository feature
 	featureArray := strings.Split(constants.FeatureCentralRepository, ".")
-	err := configlib.SetFeature(featureArray[1], featureArray[2], "true")
+	err = configlib.SetFeature(featureArray[1], featureArray[2], "true")
 	assertions.Nil(err)
 
 	// Try installing nonexistent plugin
