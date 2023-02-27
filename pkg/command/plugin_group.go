@@ -9,6 +9,7 @@ import (
 
 	"github.com/aunum/log"
 	"github.com/fatih/color"
+
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 

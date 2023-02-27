@@ -211,11 +211,26 @@ func newInstallPluginCmd() *cobra.Command {
 	var installCmd = &cobra.Command{
 		Use:   "install [name]",
 		Short: "Install a plugin",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
+			var pluginName string
 
-			pluginName := args[0]
+			if !config.IsFeatureActivated(constants.FeatureCentralRepository) || group == "" {
+				// We require the name of the plugin or `all`, unless we are installing from
+				// a plugin group, in which case, we default to `all`.
+				if len(args) == 0 {
+					return fmt.Errorf("missing plugin name or '%s' as an argument", cli.AllPlugins)
+				}
+				pluginName = args[0]
+			} else {
+				// We are installing from a group
+				if len(args) == 0 {
+					pluginName = cli.AllPlugins
+				} else {
+					pluginName = args[0]
+				}
+			}
 
 			if !configtypes.IsValidTarget(targetStr, true, true) {
 				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
