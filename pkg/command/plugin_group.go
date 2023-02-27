@@ -5,7 +5,10 @@ package command
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/aunum/log"
+	"github.com/fatih/color"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 
@@ -35,19 +38,41 @@ func newSearchCmd() *cobra.Command {
 		Short: "Search for available plugin groups",
 		Long:  "Search from the list of available plugin groups.  A plugin group provides a list of plugin name/version combinations which can be installed in one step.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "group", "source")
+			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "group")
 
 			groupsByDiscovery, err := pluginmanager.DiscoverPluginGroups()
 			if err != nil {
 				return err
 			}
+
+			discoveriesByGroupID := make(map[string][]string)
 			for _, discAndGroups := range groupsByDiscovery {
 				for _, group := range discAndGroups.Groups {
-					output.AddRow(fmt.Sprintf("%s/%s", group.Publisher, group.Name), discAndGroups.Source)
+					id := fmt.Sprintf("%s/%s", group.Publisher, group.Name)
+					output.AddRow(id)
+					discoveriesByGroupID[id] = append(discoveriesByGroupID[id], discAndGroups.Source)
 				}
 			}
-			output.Render()
 
+			// Check if one or more groups was discovered in different discoveries.
+			var duplicateMsg string
+			for id, discoveries := range discoveriesByGroupID {
+				if len(discoveries) > 1 {
+					// This group was found in multiple discoveries.
+					if duplicateMsg != "" {
+						duplicateMsg = fmt.Sprintf("%s, ", duplicateMsg)
+					}
+					duplicateMsg = fmt.Sprintf("%s%s was found in more than one source: %v", duplicateMsg, id, discoveries)
+				}
+			}
+			if duplicateMsg != "" {
+				// Print the warning to stderr
+				oldOut := color.Output
+				color.Output = os.Stderr
+				log.Warningf(duplicateMsg, os.Stderr)
+				color.Output = oldOut
+			}
+			output.Render()
 			return nil
 		},
 	}
