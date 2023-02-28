@@ -1,4 +1,4 @@
-# Copyright 2022 VMware, Inc. All Rights Reserved.
+# Copyright 2023 VMware, Inc. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
 # Ensure Make is run with bash shell as some syntax below is bash-specific
@@ -81,17 +81,17 @@ plugin-publish-packages: ## Publish plugin packages
 		--vendor $(VENDOR) \
 		--repository $(PLUGIN_PUBLISH_REPOSITORY)
 
-.PHONY: plugin-combined-build-publish-packages
-plugin-combined-build-publish-packages: plugin-build plugin-build-packages plugin-publish-packages ## Build and Publish plugin packages
+.PHONY: plugin-build-and-publish-packages
+plugin-build-and-publish-packages: plugin-build plugin-build-packages plugin-publish-packages ## Build and Publish plugin packages
 
 ## --------------------------------------
 ## docker
 ## --------------------------------------
 
 .PHONY: local-registry
-local-registry: clean-registry ## Starts up a local docker registry for the e2e tests
-	docker run -d -p $(REGISTRY_PORT):5000 --name registry mirror.gcr.io/library/registry:2
+local-registry: clean-registry ## Starts up a local docker registry for generating packages
+	docker run -d -p $(REGISTRY_PORT):5000 --name temp-package-registry mirror.gcr.io/library/registry:2
 
 .PHONY: clean-registry
 clean-registry: ## Stops and removes local docker registry
-	docker stop registry && docker rm -v registry || true
+	docker stop temp-package-registry && docker rm -v temp-package-registry || true

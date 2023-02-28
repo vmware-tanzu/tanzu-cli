@@ -47,7 +47,7 @@ Plugins will find that their `make build` command will suffice for most compile 
 `tanzu builder plugin build` can be used to build the plugins and create artifacts that can be used with tanzu cli.
 
 The artifacts output directory structure will be different compared to what we have with `tanzu builder cli compile`
-command in a way that the `tanzu builder plugin build` command will automatically group plugins based on the given os_arch
+command in that the `tanzu builder plugin build` command will automatically group plugins based on the given os_arch
 and `target`.
 This command will also generate a plugin manifest file (`plugin_manifest.yaml`) that can be used in the publishing and
 installation of plugins from the local directory with `tanzu plugin install --local`.

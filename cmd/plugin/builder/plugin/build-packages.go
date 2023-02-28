@@ -63,7 +63,7 @@ func (bpo *BuildPluginPackageOptions) BuildPluginPackages() error {
 
 				err := pushImage(image, pluginBinaryFilePath)
 				if err != nil {
-					return errors.Wrapf(err, "unable to publish package for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
+					return errors.Wrapf(err, "unable to push package to temporary registry for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 				}
 
 				err = copyImageToArchive(image, pluginTarFilePath)
