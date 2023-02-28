@@ -129,16 +129,20 @@ func DiscoverStandalonePlugins() ([]discovery.Discovered, error) {
 // cfg.ClientOptions.CLI.DiscoverySources
 // is read by older CLIs so we don't want to modify it.
 // TODO(khouzam): remove before 1.0
-func getPreReleasePluginDiscovery() (configtypes.PluginDiscovery, error) {
+func getPreReleasePluginDiscovery() ([]configtypes.PluginDiscovery, error) {
 	centralRepoTestImage := os.Getenv(constants.ConfigVariablePreReleasePluginRepoImage)
 	if centralRepoTestImage == "" {
 		// Don't set a default value.  This test repo URI is not meant to be public.
-		return configtypes.PluginDiscovery{}, fmt.Errorf("you must set the environment variable %s to the URI of the image of the plugin repository.  Please see the documentation", constants.ConfigVariablePreReleasePluginRepoImage)
+		return nil, fmt.Errorf("you must set the environment variable %s to the URI of the image of the plugin repository.  Please see the documentation", constants.ConfigVariablePreReleasePluginRepoImage)
+	} else if centralRepoTestImage == constants.ConfigVariablePreReleasePluginRepoImageBypass {
+		return nil, nil
 	}
-	return configtypes.PluginDiscovery{
-		OCI: &configtypes.OCIDiscovery{
-			Name:  "central_pre_release",
-			Image: centralRepoTestImage,
+	return []configtypes.PluginDiscovery{
+		{
+			OCI: &configtypes.OCIDiscovery{
+				Name:  "default_pre_release",
+				Image: centralRepoTestImage,
+			},
 		}}, nil
 }
 
@@ -1128,7 +1132,11 @@ func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
 		if err != nil {
 			return nil, err
 		}
-		return []configtypes.PluginDiscovery{pd}, nil
+		// If pd is nil without an error, we bypass the prerelease discovery
+		// and fallback to the normal plugin source configuration.
+		if pd != nil {
+			return pd, nil
+		}
 	}
 
 	cfg, err := configlib.GetClientConfig()
