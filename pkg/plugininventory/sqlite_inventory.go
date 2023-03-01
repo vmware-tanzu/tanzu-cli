@@ -46,7 +46,7 @@ const (
 	pluginOrderClause = "ORDER BY PluginName,Target,Version"
 
 	// groupSelectQuery is the query used to extract plugin groups from the PluginGroups table
-	groupSelectQuery = "SELECT Publisher,GroupName,PluginName,Target,Version FROM PluginGroups ORDER by Publisher,GroupName,PluginName"
+	groupSelectQuery = "SELECT Vendor,Publisher,GroupName,PluginName,Target,Version FROM PluginGroups ORDER by Vendor,Publisher,GroupName,PluginName"
 )
 
 // Structure of each row of the PluginBinaries table within the SQLite database
@@ -67,6 +67,7 @@ type pluginDBRow struct {
 
 // Structure of each row of the PluginGroups table within the SQLite database
 type groupDBRow struct {
+	vendor     string
 	publisher  string
 	groupName  string
 	pluginName string
@@ -315,7 +316,7 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 			return allGroups, err
 		}
 
-		groupIDFromRow := fmt.Sprintf("%s/%s", row.publisher, row.groupName)
+		groupIDFromRow := fmt.Sprintf("%s-%s/%s", row.vendor, row.publisher, row.groupName)
 		if currentGroupID != groupIDFromRow {
 			// Found a new group.
 			// Store the current one in the array and prepare the new one.
@@ -327,6 +328,7 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 			currentGroupID = groupIDFromRow
 
 			currentGroup = &PluginGroup{
+				Vendor:    row.vendor,
 				Publisher: row.publisher,
 				Name:      row.groupName,
 				Plugins:   nil,
@@ -375,6 +377,7 @@ func getGroupNextRow(rows *sql.Rows) (*groupDBRow, error) {
 	// The order of the fields MUST match the order specified in the
 	// SELECT query that generated the rows.
 	err := rows.Scan(
+		&row.vendor,
 		&row.publisher,
 		&row.groupName,
 		&row.pluginName,

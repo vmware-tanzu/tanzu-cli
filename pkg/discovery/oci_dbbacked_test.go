@@ -206,8 +206,9 @@ var pluginEntries = []*plugininventory.PluginInventoryEntry{
 
 var groupEntries = []*plugininventory.PluginGroup{
 	{
-		Publisher: "vmware-tkg",
-		Name:      "tkg-2.1.0",
+		Vendor:    "vmware",
+		Publisher: "tkg",
+		Name:      "2.1.0",
 		Plugins: []*plugininventory.PluginIdentifier{
 			{
 				Name:    "management-cluster",
@@ -237,8 +238,9 @@ var groupEntries = []*plugininventory.PluginGroup{
 		},
 	},
 	{
-		Publisher: "vmware-tkg",
-		Name:      "tkg-1.6.0",
+		Vendor:    "vmware",
+		Publisher: "tkg",
+		Name:      "1.6.0",
 		Plugins: []*plugininventory.PluginIdentifier{
 			{
 				Name:    "management-cluster",
@@ -263,6 +265,7 @@ var groupEntries = []*plugininventory.PluginGroup{
 		},
 	},
 	{
+		Vendor:    "independent",
 		Publisher: "other",
 		Name:      "mygroup",
 		Plugins: []*plugininventory.PluginIdentifier{

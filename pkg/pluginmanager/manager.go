@@ -147,7 +147,7 @@ func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupID string) (*plu
 	var matchingGroup *plugininventory.PluginGroup
 	for _, discAndGroups := range groupsByDiscovery {
 		for _, group := range discAndGroups.Groups {
-			id := fmt.Sprintf("%s/%s", group.Publisher, group.Name)
+			id := fmt.Sprintf("%s-%s/%s", group.Vendor, group.Publisher, group.Name)
 			if id == groupID {
 				// Found the group.
 				matchingGroup = group

@@ -6,9 +6,9 @@
 ROOT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 
 usage() {
-    echo "generate_central.sh [-h | -d | --dry-run]"
+    echo "upload-plugins.sh [-h | -d | --dry-run]"
     echo
-    echo "Create two test central repositories:"
+    echo "Creates two test central repositories:"
     echo "- localhost:9876/tanzu-cli/plugins/central:small with a small amount of plugins"
     echo "- localhost:9876/tanzu-cli/plugins/central:large with 100 plugins"
     echo
@@ -64,12 +64,13 @@ CREATE TABLE IF NOT EXISTS "PluginBinaries" (
 	);
 
 CREATE TABLE IF NOT EXISTS "PluginGroups" (
+		"Vendor"             TEXT NOT NULL,
 		"Publisher"          TEXT NOT NULL,
 		"GroupName"          TEXT NOT NULL,
 		"PluginName"         TEXT NOT NULL,
 		"Target"             TEXT NOT NULL,
 		"Version"            TEXT NOT NULL,
-		PRIMARY KEY("Publisher", "GroupName", "PluginName", "Target", "Version")
+		PRIMARY KEY("Vendor", "Publisher", "GroupName", "PluginName", "Target", "Version")
 	);
 EOF
 
@@ -133,15 +134,16 @@ addPlugin() {
 }
 
 addGroup() {
-    local publisher=$1
-    local name=$2
-    local plugin=$3
-    local target=$4
-    local version=$5
+    local vendor=$1
+    local publisher=$2
+    local name=$3
+    local plugin=$4
+    local target=$5
+    local version=$6
 
-    echo "Adding $plugin/$target version $version to plugin group $publisher/$name"
+    echo "Adding $plugin/$target version $version to plugin group $vendor-$publisher/$name"
 
-    local sql_cmd="INSERT INTO PluginGroups VALUES('$publisher','$name','$plugin','$target','$version');"
+    local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$plugin','$target','$version');"
     if [ "$dry_run" = "echo" ]; then
         echo $sql_cmd 
     else 
@@ -164,14 +166,14 @@ done
 
 for name in ${k8sPlugins[*]}; do
     addPlugin $name k8s true
-    addGroup vmware-tkg tkg-v1.0.0 $name k8s v0.0.1
-    addGroup vmware-tkg tkg-v2.1.0 $name k8s v9.9.9
+    addGroup vmware tkg v1.0.0 $name k8s v0.0.1
+    addGroup vmware tkg v2.1.0 $name k8s v9.9.9
 done
 
 for name in ${tmcPlugins[*]}; do
     addPlugin $name tmc true
-    addGroup vmware-tmc tmc-v1.2.3 $name tmc v0.0.1
-    addGroup vmware-tmc tmc-v9.0.0 $name tmc v9.9.9
+    addGroup vmware tmc v1.2.3 $name tmc v0.0.1
+    addGroup vmware tmc v9.0.0 $name tmc v9.9.9
 done
 
 # Push small inventory file

@@ -49,7 +49,7 @@ func newSearchCmd() *cobra.Command {
 			discoveriesByGroupID := make(map[string][]string)
 			for _, discAndGroups := range groupsByDiscovery {
 				for _, group := range discAndGroups.Groups {
-					id := fmt.Sprintf("%s/%s", group.Publisher, group.Name)
+					id := fmt.Sprintf("%s-%s/%s", group.Vendor, group.Publisher, group.Name)
 					output.AddRow(id)
 					discoveriesByGroupID[id] = append(discoveriesByGroupID[id], discAndGroups.Source)
 				}

@@ -43,12 +43,13 @@ CREATE TABLE IF NOT EXISTS "PluginBinaries" (
 );
 
 CREATE TABLE IF NOT EXISTS "PluginGroups" (
+	"Vendor"             TEXT NOT NULL,
 	"Publisher"          TEXT NOT NULL,
 	"GroupName"          TEXT NOT NULL,
 	"PluginName"         TEXT NOT NULL,
 	"Target"             TEXT NOT NULL,
 	"Version"            TEXT NOT NULL,
-	PRIMARY KEY("Publisher", "GroupName", "PluginName", "Target", "Version")
+	PRIMARY KEY("Vendor", "Publisher", "GroupName", "PluginName", "Target", "Version")
 );
 `
 
@@ -136,66 +137,77 @@ INSERT INTO PluginBinaries VALUES(
 `
 const createGroupsStmt = `
 INSERT INTO PluginGroups VALUES(
-	'vmware-tkg',
-	'tkg-2.1.0',
+	'vmware',
+	'tkg',
+	'2.1.0',
 	'management-cluster',
 	'k8s',
 	'v0.28.0');
 INSERT INTO PluginGroups VALUES(
-	'vmware-tkg',
-	'tkg-2.1.0',
+	'vmware',
+	'tkg',
+	'2.1.0',
 	'package',
 	'k8s',
 	'v0.28.0');
 INSERT INTO PluginGroups VALUES(
-	'vmware-tkg',
-	'tkg-2.1.0',
+	'vmware',
+	'tkg',
+	'2.1.0',
 	'feature',
 	'k8s',
 	'v0.28.0');
 INSERT INTO PluginGroups VALUES(
-	'vmware-tkg',
-	'tkg-2.1.0',
+	'vmware',
+	'tkg',
+	'2.1.0',
 	'kubernetes-release',
 	'k8s',
 	'v0.28.0');
 INSERT INTO PluginGroups VALUES(
-	'vmware-tkg',
-	'tkg-2.1.0',
+	'vmware',
+	'tkg',
+	'2.1.0',
 	'isolated-cluster',
 	'k8s',
 	'v0.28.0');
 INSERT INTO PluginGroups VALUES(
-	'vmware-tkg',
-	'tkg-1.6.0',
+	'vmware',
+	'tkg',
+	'1.6.0',
 	'management-cluster',
 	'k8s',
 	'v0.26.0');
 INSERT INTO PluginGroups VALUES(
-	'vmware-tkg',
-	'tkg-1.6.0',
+	'vmware',
+	'tkg',
+	'1.6.0',
 	'package',
 	'k8s',
 	'v0.26.0');
 INSERT INTO PluginGroups VALUES(
-	'vmware-tkg',
-	'tkg-1.6.0',
+	'vmware',
+	'tkg',
+	'1.6.0',
 	'feature',
 	'k8s',
 	'v0.26.0');
 INSERT INTO PluginGroups VALUES(
-	'vmware-tkg',
-	'tkg-1.6.0',
+	'vmware',
+	'tkg',
+	'1.6.0',
 	'kubernetes-release',
 	'k8s',
 	'v0.26.0');
 INSERT INTO PluginGroups VALUES(
+	'independent',
 	'other',
 	'mygroup',
 	'plugin1',
 	'k8s',
 	'v0.1.0');
 INSERT INTO PluginGroups VALUES(
+	'independent',
 	'other',
 	'mygroup',
 	'plugin2',
@@ -600,6 +612,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					sort.Sort(pluginGroupSorter(groups))
 
 					i := 0
+					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("mygroup"))
 
@@ -616,8 +629,9 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(plugins[j].Version).To(Equal("v0.2.0"))
 
 					i++
-					Expect(groups[i].Publisher).To(Equal("vmware-tkg"))
-					Expect(groups[i].Name).To(Equal("tkg-1.6.0"))
+					Expect(groups[i].Vendor).To(Equal("vmware"))
+					Expect(groups[i].Publisher).To(Equal("tkg"))
+					Expect(groups[i].Name).To(Equal("1.6.0"))
 					Expect(len(groups[i].Plugins)).To(Equal(4))
 
 					plugins = groups[i].Plugins
@@ -641,8 +655,9 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(plugins[j].Version).To(Equal("v0.26.0"))
 
 					i++
-					Expect(groups[i].Publisher).To(Equal("vmware-tkg"))
-					Expect(groups[i].Name).To(Equal("tkg-2.1.0"))
+					Expect(groups[i].Vendor).To(Equal("vmware"))
+					Expect(groups[i].Publisher).To(Equal("tkg"))
+					Expect(groups[i].Name).To(Equal("2.1.0"))
 					Expect(len(groups[i].Plugins)).To(Equal(5))
 
 					plugins = groups[i].Plugins
@@ -679,6 +694,9 @@ type pluginGroupSorter []*PluginGroup
 func (g pluginGroupSorter) Len() int      { return len(g) }
 func (g pluginGroupSorter) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
 func (g pluginGroupSorter) Less(i, j int) bool {
+	if g[i].Vendor != g[j].Vendor {
+		return g[i].Vendor < g[j].Vendor
+	}
 	if g[i].Publisher != g[j].Publisher {
 		return g[i].Publisher < g[j].Publisher
 	}
