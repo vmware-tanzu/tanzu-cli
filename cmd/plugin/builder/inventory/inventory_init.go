@@ -45,15 +45,15 @@ func (iio *InventoryInitOptions) InitializeInventory() error {
 	if err != nil {
 		return errors.Wrap(err, "error while creating database")
 	}
-	log.Infof("Create database locally at: %q", dbFile)
+	log.Infof("create database locally at: %q", dbFile)
 
 	// Publish the database to the remote repository
-	log.Infof("Publishing database at: %q", pluginInventoryDBImage)
+	log.Infof("publishing database at: %q", pluginInventoryDBImage)
 	err = iio.ImgpkgOptions.PushImage(pluginInventoryDBImage, dbFile)
 	if err != nil {
 		return errors.Wrapf(err, "error while publishing database to the repository as image: %q", pluginInventoryDBImage)
 	}
-	log.Infof("Successfully published plugin inventory database")
+	log.Infof("successfully published plugin inventory database")
 
 	return nil
 }

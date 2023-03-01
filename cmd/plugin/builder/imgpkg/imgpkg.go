@@ -13,28 +13,34 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
 )
 
+// ImgpkgOptions implements the ImgpkgWrapper interface by using `imgpkg` binary internally
 type ImgpkgOptions struct{}
 
+// ResolveImage invokes `imgpkg tag resolve -i <image>` command
 func (io *ImgpkgOptions) ResolveImage(image string) error {
 	output, err := exec.Command("imgpkg", "tag", "resolve", "-i", image).CombinedOutput()
 	return errors.Wrapf(err, "output: %s", string(output))
 }
 
+// PushImage invokes `imgpkg push -i <image> -f <filepath>` command
 func (io *ImgpkgOptions) PushImage(image, filePath string) error {
 	output, err := exec.Command("imgpkg", "push", "-i", image, "-f", filePath).CombinedOutput()
 	return errors.Wrapf(err, "output: %s", string(output))
 }
 
+// PullImage invokes `imgpkg pull -i <image> -o <dirPath>` command
 func (io *ImgpkgOptions) PullImage(image, dirPath string) error {
 	output, err := exec.Command("imgpkg", "pull", "-i", image, "-o", dirPath).CombinedOutput()
 	return errors.Wrapf(err, "output: %s", string(output))
 }
 
+// CopyArchiveToRepo invokes `imgpkg copy --tar <archivePath> --to-repo <imageRepo>` command
 func (io *ImgpkgOptions) CopyArchiveToRepo(imageRepo, archivePath string) error {
 	output, err := exec.Command("imgpkg", "copy", "--tar", archivePath, "--to-repo", imageRepo).CombinedOutput()
 	return errors.Wrapf(err, "output: %s", string(output))
 }
 
+// CopyImageToArchive invokes `imgpkg copy -i <image> --to-tar <archivePath>` command
 func (io *ImgpkgOptions) CopyImageToArchive(image, archivePath string) error {
 	err := os.MkdirAll(filepath.Dir(archivePath), 0755)
 	if err != nil {
@@ -45,6 +51,7 @@ func (io *ImgpkgOptions) CopyImageToArchive(image, archivePath string) error {
 	return errors.Wrapf(err, "output: %s", string(output))
 }
 
+// GetFileDigestFromImage invokes `PullImage` to fetch the image and returns the digest of the specified file
 func (io *ImgpkgOptions) GetFileDigestFromImage(image, fileName string) (string, error) {
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {

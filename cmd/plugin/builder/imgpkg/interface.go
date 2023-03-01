@@ -6,6 +6,7 @@ package imgpkg
 
 //go:generate counterfeiter -o ../fakes/imgpkgwrapper.go --fake-name ImgpkgWrapper . ImgpkgWrapper
 
+// ImgpkgWrapper defines the imgpkg command wrapper functions
 type ImgpkgWrapper interface {
 	// ResolveImage invokes `imgpkg tag resolve -i <image>` command
 	ResolveImage(image string) error

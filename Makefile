@@ -95,7 +95,7 @@ all: gomod cross-build test lint ## Run all major targets (lint, test, cross-bui
 cross-build: ${CLI_TARGETS} cross-build-publish-plugins ## Build the Tanzu Core CLI and plugins for all supported platforms
 
 .PHONY: cross-build-publish-plugins
-cross-build-publish-plugins: prepare-builder plugin-build-and-publish-packages inventory-init inventory-plugin-insert inventory-plugin-deactivate inventory-plugin-activate ## Build and publish the plugins for all supported platforms
+cross-build-publish-plugins: prepare-builder plugin-build-and-publish-packages inventory-init inventory-plugin-insert ## Build and publish the plugins for all supported platforms
 
 .PHONY: build-all
 build-all: build prepare-builder plugin-build-local ## Build the Tanzu Core CLI, admin plugins for the local platform

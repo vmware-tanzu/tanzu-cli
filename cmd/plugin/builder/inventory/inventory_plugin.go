@@ -78,7 +78,7 @@ func (ipuo *InventoryPluginUpdateOptions) genericInventoryUpdater(inventoryUpdat
 	}
 
 	dbFile := filepath.Join(dir, plugininventory.SQliteDBFileName)
-	pluginInventoryEntries, err := ipuo.getPluginInventoryEntries()
+	pluginInventoryEntries, err := ipuo.preparePluginInventoryEntriesFromManifest()
 	if err != nil {
 		return errors.Wrap(err, "error while updating plugin inventory database")
 	}
@@ -101,7 +101,7 @@ func (ipuo *InventoryPluginUpdateOptions) genericInventoryUpdater(inventoryUpdat
 	return nil
 }
 
-func (ipuo *InventoryPluginUpdateOptions) getPluginInventoryEntries() ([]*plugininventory.PluginInventoryEntry, error) {
+func (ipuo *InventoryPluginUpdateOptions) preparePluginInventoryEntriesFromManifest() ([]*plugininventory.PluginInventoryEntry, error) {
 	pluginManifest, err := helpers.ReadPluginManifest(ipuo.ManifestFile)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,6 @@ func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInven
 		OS:     osArch.OS(),
 		Arch:   osArch.Arch(),
 		Digest: digest,
-		URI:    pluginImageBasePath,
 		Image:  pluginImageBasePath,
 	}
 	pluginInventoryEntry.Artifacts[version] = append(pluginInventoryEntry.Artifacts[version], artifact)
