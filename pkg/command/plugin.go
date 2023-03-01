@@ -216,25 +216,40 @@ func newInstallPluginCmd() *cobra.Command {
 			var err error
 			var pluginName string
 
-			if !config.IsFeatureActivated(constants.FeatureCentralRepository) || group == "" {
-				// We require the name of the plugin or `all`, unless we are installing from
-				// a plugin group, in which case, we default to `all`.
-				if len(args) == 0 {
-					return fmt.Errorf("missing plugin name or '%s' as an argument", cli.AllPlugins)
-				}
-				pluginName = args[0]
-			} else {
+			if !configtypes.IsValidTarget(targetStr, true, true) {
+				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
+			}
+
+			if !config.IsFeatureActivated(constants.FeatureCentralRepository) {
+				return legacyPluginInstall(cmd, args)
+			}
+
+			if group != "" {
 				// We are installing from a group
 				if len(args) == 0 {
+					// Default to 'all' when installing from a group
 					pluginName = cli.AllPlugins
 				} else {
 					pluginName = args[0]
 				}
+
+				err = pluginmanager.InstallPluginsFromGroup(pluginName, group)
+				if err != nil {
+					return err
+				}
+				if pluginName == cli.AllPlugins {
+					log.Successf("successfully installed all plugins from group '%s'", group)
+				} else {
+					log.Successf("successfully installed '%s' from group '%s'", pluginName, group)
+				}
+
+				return nil
 			}
 
-			if !configtypes.IsValidTarget(targetStr, true, true) {
-				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
+			if len(args) == 0 {
+				return fmt.Errorf("missing plugin name or '%s' as an argument, or the use of '--group'", cli.AllPlugins)
 			}
+			pluginName = args[0]
 
 			// Invoke install plugin from local source if local files are provided
 			if local != "" {
@@ -255,39 +270,12 @@ func newInstallPluginCmd() *cobra.Command {
 				return nil
 			}
 
-			pluginVersion := version
-			if config.IsFeatureActivated(constants.FeatureCentralRepository) {
-				if group != "" {
-					err = pluginmanager.InstallPluginsFromGroup(pluginName, group)
-					if err != nil {
-						return err
-					}
-					return nil
-				}
-
-				if pluginName == cli.AllPlugins {
-					return fmt.Errorf("the '%s' argument can only be used with the --group or --local flags",
-						cli.AllPlugins)
-				}
-			} else {
-				// Invoke plugin sync if install all plugins is mentioned
-				if pluginName == cli.AllPlugins {
-					err = pluginmanager.SyncPlugins()
-					if err != nil {
-						return err
-					}
-					log.Successf("successfully installed all plugins")
-					return nil
-				}
-
-				if pluginVersion == cli.VersionLatest {
-					pluginVersion, err = pluginmanager.GetRecommendedVersionOfPlugin(pluginName, getTarget())
-					if err != nil {
-						return err
-					}
-				}
+			if pluginName == cli.AllPlugins {
+				return fmt.Errorf("the '%s' argument can only be used with the --group or --local flags",
+					cli.AllPlugins)
 			}
 
+			pluginVersion := version
 			err = pluginmanager.InstallPlugin(pluginName, pluginVersion, getTarget())
 			if err != nil {
 				return err
@@ -298,6 +286,58 @@ func newInstallPluginCmd() *cobra.Command {
 	}
 
 	return installCmd
+}
+
+func legacyPluginInstall(cmd *cobra.Command, args []string) error {
+	var err error
+	if len(args) == 0 {
+		return fmt.Errorf("missing plugin name or '%s' as an argument", cli.AllPlugins)
+	}
+	pluginName := args[0]
+
+	// Invoke install plugin from local source if local files are provided
+	if local != "" {
+		// get absolute local path
+		local, err = filepath.Abs(local)
+		if err != nil {
+			return err
+		}
+		err = pluginmanager.InstallPluginsFromLocalSource(pluginName, version, getTarget(), local, false)
+		if err != nil {
+			return err
+		}
+		if pluginName == cli.AllPlugins {
+			log.Successf("successfully installed all plugins")
+		} else {
+			log.Successf("successfully installed '%s' plugin", pluginName)
+		}
+		return nil
+	}
+
+	// Invoke plugin sync if install all plugins is mentioned
+	if pluginName == cli.AllPlugins {
+		err = pluginmanager.SyncPlugins()
+		if err != nil {
+			return err
+		}
+		log.Successf("successfully installed all plugins")
+		return nil
+	}
+
+	pluginVersion := version
+	if pluginVersion == cli.VersionLatest {
+		pluginVersion, err = pluginmanager.GetRecommendedVersionOfPlugin(pluginName, getTarget())
+		if err != nil {
+			return err
+		}
+	}
+
+	err = pluginmanager.InstallPlugin(pluginName, pluginVersion, getTarget())
+	if err != nil {
+		return err
+	}
+	log.Successf("successfully installed '%s' plugin", pluginName)
+	return nil
 }
 
 func newUpgradePluginCmd() *cobra.Command {
