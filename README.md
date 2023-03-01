@@ -1,8 +1,8 @@
 # Tanzu Core CLI
 
-:warning: NOTE: This repository is still under early development. We hope to be
-make Alpha releases available for evaluation in March 2023.  Please watch this
-page for further updates.
+:warning: NOTE: This repository is still under early development. We plan to
+make releases available for evaluation in the second quarter of 2023.  Please
+watch this page for further updates.
 
 ## Overview
 
@@ -18,12 +18,14 @@ plugins integrate with. Said binary serves the role of
 
 ## Development
 
-Details about how to get started with development for this project can be found in the development [guide](docs/dev.md).
+Details about how to get started with development for this project can be found
+in the development [guide](docs/dev.md).
 
 ## Contributing
 
 Thanks for taking the time to join our community and start contributing! We
-welcome pull requests. Feel free to dig through the [issues](https://github.com/vmware-tanzu/tanzu-cli/issues) and jump in.
+welcome pull requests. Feel free to dig through the
+[issues](https://github.com/vmware-tanzu/tanzu-cli/issues) and jump in.
 
 ### Before you begin
 
