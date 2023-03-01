@@ -83,8 +83,6 @@ github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmV
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
 github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a/go.mod h1:lB+ZfQJz7igIIfQNfa7Ml4HSf2uFQQRzpGGRXenZAgY=
-github.com/aunum/log v0.0.0-20200821225356-38d2e2c8b489 h1:DKOk8ZLAPnn4P/qTwGj5x5wAMqHmaE1oL4+nl1laIu8=
-github.com/aunum/log v0.0.0-20200821225356-38d2e2c8b489/go.mod h1:ze/JIQHfGKwpM8U2b39e8OH0KHt1ovEcjwPV3yfU+/c=
 github.com/aws/aws-sdk-go v1.15.11/go.mod h1:mFuSZ37Z9YOHbQEwBWztmVzqXrEkub65tZoCYDt7FT0=
 github.com/benbjohnson/clock v1.0.3/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
@@ -343,7 +341,6 @@ github.com/fvbommel/sortorder v1.0.1/go.mod h1:uk88iVf1ovNn1iLfgUVU2F9o5eO30ui72
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/getkin/kin-openapi v0.76.0/go.mod h1:660oXbgy5JFMKreazJaQTw7o+X00qeSyhcnluiMv+Xg=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
-github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/go-errors/errors v1.0.1/go.mod h1:f4zRHt4oKfwPJE5k8C9vpYG+aDHdBFUsgrm6/TyX73Q=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
@@ -910,8 +907,8 @@ github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20221207131309-7323ca04b
 github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20221207131309-7323ca04b86c/go.mod h1:ukZpKQ0hf5bjWdJLjn2M6qXP+9giZWQPxt8nOfrCR+o=
 github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230130173350-eeda69d80a24 h1:zz3XDCLPqvhtx8OMMRNjSn/krxhqkYnuw9Z9DBh6ruA=
 github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230130173350-eeda69d80a24/go.mod h1:rcIfoGpdav3evsyEMMzYH0xhGZOkIy+Ra3koypM8Aco=
-github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230223175026-9c303222c664 h1:rMPf1aRLkIHBcRIm1L98GtSCNvJ29c6+Z3RoxBhIN1s=
-github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230223175026-9c303222c664/go.mod h1:WBPd6bftNpIMkFje0Hh+oh/AcjGNGFaHDlyMajbVP0Y=
+github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230306195922-7870c5d3ac6f h1:e2dvB/MBIhDCbhSr+b8hLbpAgVnuK/qsnQa6qH1zhIA=
+github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230306195922-7870c5d3ac6f/go.mod h1:6TVfKmmTHlENAgpmMiq0HcmMF1K/UWD4Ixh407TdoVI=
 github.com/willf/bitset v1.1.11-0.20200630133818-d5bec3311243/go.mod h1:RjeCKbqT1RxIR/KWY6phxZiaY1IyutSBfGjNPySAYV4=
 github.com/willf/bitset v1.1.11/go.mod h1:83CECat5yLh5zVOf4P1ErAgKA5UDvKtgyUABdr3+MjI=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
@@ -1408,7 +1405,6 @@ gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.3/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.4/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.5/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
-gopkg.in/yaml.v2 v2.2.7/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.8/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.3.0/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.4.0 h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY=

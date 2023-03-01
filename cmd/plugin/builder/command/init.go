@@ -8,9 +8,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/aunum/log"
-
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/template"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 const (

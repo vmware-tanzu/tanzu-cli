@@ -9,8 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/aunum/log"
 	"github.com/spf13/cobra"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // GetCmdForPlugin returns a cobra command for the plugin.
@@ -82,7 +83,7 @@ func GetCmdForPlugin(p *PluginInfo) *cobra.Command {
 		ctx := context.Background()
 		err := runner.Run(ctx)
 		if err != nil {
-			log.Error("Help output for '%s' is not available.", c.Name())
+			log.Errorf("Help output for '%s' is not available.", c.Name())
 		}
 	})
 	return cmd

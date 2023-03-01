@@ -9,10 +9,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/aunum/log"
 	"github.com/pkg/errors"
 
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"

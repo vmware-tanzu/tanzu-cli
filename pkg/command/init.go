@@ -4,7 +4,6 @@
 package command
 
 import (
-	"github.com/aunum/log"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
@@ -12,6 +11,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 func init() {

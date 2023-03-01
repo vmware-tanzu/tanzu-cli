@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/aunum/log"
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -27,6 +26,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 var (
@@ -263,7 +263,7 @@ func newInstallPluginCmd() *cobra.Command {
 					return err
 				}
 				if pluginName == cli.AllPlugins {
-					log.Successf("successfully installed all plugins")
+					log.Success("successfully installed all plugins")
 				} else {
 					log.Successf("successfully installed '%s' plugin", pluginName)
 				}

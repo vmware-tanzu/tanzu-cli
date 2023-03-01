@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aunum/log"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 
@@ -24,6 +23,7 @@ import (
 	wcpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 var (
@@ -333,7 +333,7 @@ func createServerWithEndpoint() (server *configtypes.Server, err error) {
 		// Fall back to assuming non vSphere supervisor.
 		if err != nil {
 			err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
-			log.Error(err)
+			log.Error(err, "")
 			return nil, err
 		}
 		if isVSphereSupervisor {
@@ -341,14 +341,14 @@ func createServerWithEndpoint() (server *configtypes.Server, err error) {
 			kubeConfig, kubeContext, err = vSphereSupervisorLogin(endpoint)
 			if err != nil {
 				err := fmt.Errorf("error logging in to vSphere Supervisor: %v", err)
-				log.Error(err)
+				log.Error(err, "")
 				return nil, err
 			}
 		} else {
 			kubeConfig, kubeContext, err = tkgauth.KubeconfigWithPinnipedAuthLoginPlugin(endpoint, nil, tkgauth.DiscoveryStrategy{ClusterInfoConfigMap: tkgauth.DefaultClusterInfoConfigMap})
 			if err != nil {
 				err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
-				log.Error(err)
+				log.Error(err, "")
 				return nil, err
 			}
 		}
@@ -374,7 +374,7 @@ func globalLoginUsingServer(s *configtypes.Server) (err error) {
 		issuer = csp.StgIssuer
 	}
 	if apiTokenExists {
-		log.Debug("API token env var is set")
+		log.Info("API token env var is set")
 	} else {
 		apiTokenValue, err = promptAPIToken()
 		if err != nil {
@@ -419,7 +419,7 @@ func managementClusterLogin(s *configtypes.Server) error {
 		_, err := tkgauth.GetServerKubernetesVersion(s.ManagementClusterOpts.Path, s.ManagementClusterOpts.Context)
 		if err != nil {
 			err := fmt.Errorf("failed to login to the management cluster %s, %v", s.Name, err)
-			log.Error(err)
+			log.Error(err, "")
 			return err
 		}
 		err = config.PutServer(s, true)

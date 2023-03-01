@@ -5,17 +5,14 @@ package command
 
 import (
 	"fmt"
-	"os"
-
-	"github.com/aunum/log"
-	"github.com/fatih/color"
-
-	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 )
 
 func newPluginGroupCmd() *cobra.Command {
@@ -67,11 +64,7 @@ func newSearchCmd() *cobra.Command {
 				}
 			}
 			if duplicateMsg != "" {
-				// Print the warning to stderr
-				oldOut := color.Output
-				color.Output = os.Stderr
-				log.Warningf(duplicateMsg, os.Stderr)
-				color.Output = oldOut
+				log.Warning(duplicateMsg)
 			}
 			output.Render()
 			return nil

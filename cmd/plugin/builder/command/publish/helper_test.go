@@ -8,9 +8,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/aunum/log"
 	"github.com/spf13/afero"
 	"github.com/tj/assert"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 func Test_DetectAvailablePluginInfo(t *testing.T) {
@@ -71,7 +72,7 @@ func createDummyArtifactDir(directoryBasePath, pluginName, recommendedVersion, d
 	for _, v := range versions {
 		err = fs.MkdirAll(filepath.Join(directoryBasePath, pluginName, v), 0755)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(err, "")
 		}
 	}
 
@@ -81,6 +82,6 @@ version: %s`
 
 	err = afero.WriteFile(fs, filepath.Join(directoryBasePath, pluginName, "plugin.yaml"), []byte(fmt.Sprintf(data, pluginName, description, recommendedVersion)), 0644)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "")
 	}
 }

@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/aunum/log"
 	"github.com/golang-jwt/jwt"
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
@@ -21,6 +20,7 @@ import (
 	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/interfaces"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 const (

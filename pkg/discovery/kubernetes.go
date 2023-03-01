@@ -6,7 +6,6 @@ package discovery
 import (
 	"strings"
 
-	"github.com/aunum/log"
 	"github.com/pkg/errors"
 
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -16,6 +15,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // KubernetesDiscovery is an artifact discovery utilizing CLIPlugin API in kubernetes cluster
@@ -65,7 +65,7 @@ func (k *KubernetesDiscovery) GetDiscoveredPlugins(clusterClient cluster.Client)
 		if err != nil {
 			logMsg += err.Error()
 		}
-		log.Debug(logMsg)
+		log.V(4).Info(logMsg)
 		return nil, nil
 	}
 
@@ -77,7 +77,7 @@ func (k *KubernetesDiscovery) GetDiscoveredPlugins(clusterClient cluster.Client)
 
 	imageRepositoryOverride, err := clusterClient.GetCLIPluginImageRepositoryOverride()
 	if err != nil {
-		log.Debugf("unable to get image repository override information for some of the plugins. Error: %v", err)
+		log.Infof("unable to get image repository override information for some of the plugins. Error: %v", err)
 	}
 
 	// Convert all CLIPlugin resources to Discovered object
