@@ -43,3 +43,17 @@ func GetAvailableContexts(tf *framework.Framework, contextNames []string) []stri
 	}
 	return available
 }
+
+// GetAvailableServers takes list of servers and returns which are available in the 'tanzu config server list' command
+func GetAvailableServers(tf *framework.Framework, serverNames []string) []string {
+	var available []string
+	list, err := tf.Config.ConfigServerList()
+	gomega.Expect(err).To(gomega.BeNil(), "server list should not return any error")
+	set := framework.SliceToSet(serverNames)
+	for _, server := range list {
+		if _, ok := set[server.Name]; ok {
+			available = append(available, server.Name)
+		}
+	}
+	return available
+}

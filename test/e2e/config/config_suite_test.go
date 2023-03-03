@@ -1,7 +1,8 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package confige2e
+// Package config_e2e_test provides config command specific E2E test cases
+package config_e2e_test
 
 import (
 	"testing"

@@ -23,7 +23,7 @@ const (
 	ConfigUnset        = "tanzu config unset "
 	ConfigInit         = "tanzu config init"
 	ConfigServerList   = "tanzu config server list"
-	ConfigServerDelete = "tanzu config server delete "
+	ConfigServerDelete = "tanzu config server delete %s"
 
 	// Plugin commands
 	AddPluginSource      = "tanzu plugin source add --name %s --type %s --uri %s"
@@ -74,9 +74,11 @@ const (
 	TargetTypeK8s  = "kubernetes"
 )
 
-var TestDirPath string
-var TestPluginsDirPath string
-var TestStandalonePluginsPath string
+var (
+	TestDirPath               string
+	TestPluginsDirPath        string
+	TestStandalonePluginsPath string
+)
 
 // CLICoreDescribe annotates the test with the CLICore label.
 func CLICoreDescribe(text string, body func()) bool {
