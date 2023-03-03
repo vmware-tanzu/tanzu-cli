@@ -35,17 +35,17 @@ PLUGIN_BINARY_ARTIFACTS_DIR := $(ROOT_DIR)/artifacts/plugins
 PLUGIN_PACKAGE_ARTIFACTS_DIR := $(ROOT_DIR)/artifacts/packages
 PLUGIN_MANIFEST_FILE := $(PLUGIN_PACKAGE_ARTIFACTS_DIR)/plugin_manifest.yaml
 
-REGISTRY_PORT := 5001
-REGISTRY_ENDPOINT := localhost:$(REGISTRY_PORT)
-PLUGIN_NAME := "*"
+REGISTRY_PORT ?= 5001
+REGISTRY_ENDPOINT ?= localhost:$(REGISTRY_PORT)
+PLUGIN_NAME ?= "*"
 
 # Repository specific configuration
-BUILDER := $(ROOT_DIR)/bin/builder
-PUBLISHER := tkg
-VENDOR := vmware
-PLUGIN_PUBLISH_REPOSITORY := localhost:$(REGISTRY_PORT)/test/v1/tanzu-cli/plugins
-PLUGIN_INVENTORY_IMAGE_TAG := latest
-OVERRIDE_INVENTORY_IMAGE :=
+BUILDER ?= $(ROOT_DIR)/bin/builder
+PUBLISHER ?= tzcli
+VENDOR ?= vmware
+PLUGIN_PUBLISH_REPOSITORY ?= localhost:$(REGISTRY_PORT)/test/v1/tanzu-cli/plugins
+PLUGIN_INVENTORY_IMAGE_TAG ?= latest
+OVERRIDE_INVENTORY_IMAGE ?=
 
 # Process configuration and setup additional variables
 OVERRIDE_FLAG = 
