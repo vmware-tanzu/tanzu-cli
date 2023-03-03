@@ -23,7 +23,7 @@ const (
 	ConfigUnset        = "tanzu config unset "
 	ConfigInit         = "tanzu config init"
 	ConfigServerList   = "tanzu config server list"
-	ConfigServerDelete = "tanzu config server delete "
+	ConfigServerDelete = "tanzu config server delete %s"
 
 	// Plugin commands
 	AddPluginSource      = "tanzu plugin source add --name %s --type %s --uri %s"
