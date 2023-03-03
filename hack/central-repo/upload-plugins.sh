@@ -6,9 +6,9 @@
 ROOT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 
 usage() {
-    echo "generate_central.sh [-h | -d | --dry-run]"
+    echo "upload-plugins.sh [-h | -d | --dry-run]"
     echo
-    echo "Create two test central repositories:"
+    echo "Creates two test central repositories:"
     echo "- localhost:9876/tanzu-cli/plugins/central:small with a small amount of plugins"
     echo "- localhost:9876/tanzu-cli/plugins/central:large with 100 plugins"
     echo
@@ -62,6 +62,16 @@ CREATE TABLE IF NOT EXISTS "PluginBinaries" (
 		"URI"                TEXT NOT NULL,
 		PRIMARY KEY("PluginName", "Target", "Version", "OS", "Architecture")
 	);
+
+CREATE TABLE IF NOT EXISTS "PluginGroups" (
+		"Vendor"             TEXT NOT NULL,
+		"Publisher"          TEXT NOT NULL,
+		"GroupName"          TEXT NOT NULL,
+		"PluginName"         TEXT NOT NULL,
+		"Target"             TEXT NOT NULL,
+		"Version"            TEXT NOT NULL,
+		PRIMARY KEY("Vendor", "Publisher", "GroupName", "PluginName", "Target", "Version")
+	);
 EOF
 
 # Push an image with an empty table
@@ -71,12 +81,12 @@ echo "======================================"
 ${dry_run} imgpkg push -i $repoBasePath/central:emptytable -f $database --registry-insecure
 
 addPlugin() {
-    name=$1
-    target=$2
-    pushBinary=$3
+    local name=$1
+    local target=$2
+    local pushBinary=$3
 
-    tmpPluginPhase1="/tmp/fakeplugin1.sh"
-    tmpPluginPhase2="/tmp/fakeplugin2.sh"
+    local tmpPluginPhase1="/tmp/fakeplugin1.sh"
+    local tmpPluginPhase2="/tmp/fakeplugin2.sh"
 
     # Start preparing the plugin file with the name and target.
     # Start here to avoir repeating in the loop.
@@ -84,7 +94,7 @@ addPlugin() {
 
     # Define 10 versions for the plugin
     # We include version v0.0.1 to match the real TMC plugin versions
-    versions="v0.0.1 v1.1.1 v2.2.2 v3.3.3 v4.4.4 v5.5.5 v6.6.6 v7.7.7 v8.8.8 v9.9.9"
+    local versions="v0.0.1 v1.1.1 v2.2.2 v3.3.3 v4.4.4 v5.5.5 v6.6.6 v7.7.7 v8.8.8 v9.9.9"
     for version in $versions; do
 
         # Put printout to show progress
@@ -92,7 +102,7 @@ addPlugin() {
 
         # Create the plugin file with the correct version
         sed -e "s/__VERSION__/$version/" $tmpPluginPhase1 > $tmpPluginPhase2
-        digest=$(sha256sum $tmpPluginPhase2 | cut -f1 -d' ')
+        local digest=$(sha256sum $tmpPluginPhase2 | cut -f1 -d' ')
 
         for os in darwin linux windows; do
             for arch in amd64 arm64; do
@@ -101,9 +111,9 @@ addPlugin() {
                     continue
                 fi
 
-                image_path=$publisher/$os/$arch/$target/$name
+                local image_path=$publisher/$os/$arch/$target/$name
 
-                sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','v9.9.9','$version','FALSE','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_path:$version');"
+                local sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','v9.9.9','$version','FALSE','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_path:$version');"
                 if [ "$dry_run" = "echo" ]; then
                     echo $sql_cmd 
                 else 
@@ -123,6 +133,24 @@ addPlugin() {
     done
 }
 
+addGroup() {
+    local vendor=$1
+    local publisher=$2
+    local name=$3
+    local plugin=$4
+    local target=$5
+    local version=$6
+
+    echo "Adding $plugin/$target version $version to plugin group $vendor-$publisher/$name"
+
+    local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$plugin','$target','$version');"
+    if [ "$dry_run" = "echo" ]; then
+        echo $sql_cmd 
+    else 
+        echo $sql_cmd | sqlite3 -batch $database
+    fi
+}
+
 k8sPlugins=(cluster feature management-cluster package secret telemetry kubernetes-release)
 tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster events iam 
             inspection integration management-cluster policy workspace)
@@ -138,10 +166,14 @@ done
 
 for name in ${k8sPlugins[*]}; do
     addPlugin $name k8s true
+    addGroup vmware tkg v1.0.0 $name k8s v0.0.1
+    addGroup vmware tkg v2.1.0 $name k8s v9.9.9
 done
 
 for name in ${tmcPlugins[*]}; do
     addPlugin $name tmc true
+    addGroup vmware tmc v1.2.3 $name tmc v0.0.1
+    addGroup vmware tmc v9.0.0 $name tmc v9.9.9
 done
 
 # Push small inventory file

@@ -282,11 +282,25 @@ func TestInstallPlugin(t *testing.T) {
 		expectedFailure    bool
 	}{
 		{
+			test:               "need plugin name or 'all' without central repo",
+			centralRepoFeature: "false",
+			args:               []string{"plugin", "install"},
+			expectedFailure:    true,
+			expectedErrorMsg:   "missing plugin name or 'all' as an argument",
+		},
+		{
+			test:               "need plugin name or 'all' with central repo if no group",
+			centralRepoFeature: "true",
+			args:               []string{"plugin", "install"},
+			expectedFailure:    true,
+			expectedErrorMsg:   "missing plugin name or 'all' as an argument",
+		},
+		{
 			test:               "no 'all' option with central repo",
 			centralRepoFeature: "true",
 			args:               []string{"plugin", "install", "all"},
 			expectedFailure:    true,
-			expectedErrorMsg:   "the 'all' argument is not longer supported. You must install each plugin individually",
+			expectedErrorMsg:   "the 'all' argument can only be used with the --group or --local flags",
 		},
 		{
 			test:               "invalid target",
@@ -294,6 +308,27 @@ func TestInstallPlugin(t *testing.T) {
 			args:               []string{"plugin", "install", "--target", "invalid", "myplugin"},
 			expectedFailure:    true,
 			expectedErrorMsg:   "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'",
+		},
+		{
+			test:               "no --group and --local together",
+			centralRepoFeature: "true",
+			args:               []string{"plugin", "install", "--group", "testgroup", "--local", "./", "myplugin"},
+			expectedFailure:    true,
+			expectedErrorMsg:   "if any flags in the group [group local] are set none of the others can be",
+		},
+		{
+			test:               "no --group and --target together",
+			centralRepoFeature: "true",
+			args:               []string{"plugin", "install", "--group", "testgroup", "--target", "k8s", "myplugin"},
+			expectedFailure:    true,
+			expectedErrorMsg:   "if any flags in the group [group target] are set none of the others can be",
+		},
+		{
+			test:               "no --group and --version together",
+			centralRepoFeature: "true",
+			args:               []string{"plugin", "install", "--group", "testgroup", "--version", "v1.1.1", "myplugin"},
+			expectedFailure:    true,
+			expectedErrorMsg:   "if any flags in the group [group version] are set none of the others can be",
 		},
 	}
 
@@ -306,6 +341,10 @@ func TestInstallPlugin(t *testing.T) {
 	tkgConfigFileNG, err := os.CreateTemp("", "config_ng")
 	assert.Nil(err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+
+	// Bypass the environment variable for testing
+	err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assert.Nil(err)
 
 	featureArray := strings.Split(constants.FeatureContextCommand, ".")
 	err = config.SetFeature(featureArray[1], featureArray[2], "true")

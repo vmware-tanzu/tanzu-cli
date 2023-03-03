@@ -204,6 +204,85 @@ var pluginEntries = []*plugininventory.PluginInventoryEntry{
 	},
 }
 
+var groupEntries = []*plugininventory.PluginGroup{
+	{
+		Vendor:    "vmware",
+		Publisher: "tkg",
+		Name:      "2.1.0",
+		Plugins: []*plugininventory.PluginIdentifier{
+			{
+				Name:    "management-cluster",
+				Target:  configtypes.TargetK8s,
+				Version: "v0.28.0",
+			},
+			{
+				Name:    "package",
+				Target:  configtypes.TargetK8s,
+				Version: "v0.28.0",
+			},
+			{
+				Name:    "feature",
+				Target:  configtypes.TargetK8s,
+				Version: "v0.28.0",
+			},
+			{
+				Name:    "kubernetes-release",
+				Target:  configtypes.TargetK8s,
+				Version: "v0.28.0",
+			},
+			{
+				Name:    "isolated-cluster",
+				Target:  configtypes.TargetK8s,
+				Version: "v0.28.0",
+			},
+		},
+	},
+	{
+		Vendor:    "vmware",
+		Publisher: "tkg",
+		Name:      "1.6.0",
+		Plugins: []*plugininventory.PluginIdentifier{
+			{
+				Name:    "management-cluster",
+				Target:  configtypes.TargetK8s,
+				Version: "v0.26.0",
+			},
+			{
+				Name:    "package",
+				Target:  configtypes.TargetK8s,
+				Version: "v0.26.0",
+			},
+			{
+				Name:    "feature",
+				Target:  configtypes.TargetK8s,
+				Version: "v0.26.0",
+			},
+			{
+				Name:    "kubernetes-release",
+				Target:  configtypes.TargetK8s,
+				Version: "v0.26.0",
+			},
+		},
+	},
+	{
+		Vendor:    "independent",
+		Publisher: "other",
+		Name:      "mygroup",
+		Plugins: []*plugininventory.PluginIdentifier{
+			{
+				Name:    "plugin1",
+				Target:  configtypes.TargetK8s,
+				Version: "v0.1.0",
+			},
+			{
+				Name:    "plugin2",
+				Target:  configtypes.TargetTMC,
+				Version: "v0.2.0",
+			},
+		},
+	},
+}
+
 type stubInventory struct{}
 
 func (stub *stubInventory) GetAllPlugins() ([]*plugininventory.PluginInventoryEntry, error) {
@@ -259,6 +338,10 @@ func (stub *stubInventory) GetPlugins(filter *plugininventory.PluginInventoryFil
 		}
 	}
 	return matchingEntries, nil
+}
+
+func (stub *stubInventory) GetAllGroups() ([]*plugininventory.PluginGroup, error) {
+	return groupEntries, nil
 }
 
 var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
@@ -385,6 +468,49 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				Expect(artifact.Arch).To(Equal(filteredArch))
 				Expect(artifact.OS).To(Equal(filteredOS))
 			})
+		})
+	})
+
+	Describe("List plugin groups from inventory", func() {
+		BeforeEach(func() {
+			tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+			Expect(err).To(BeNil(), "unable to create temporary directory")
+
+			tkgConfigFile, err = os.CreateTemp("", "config")
+			Expect(err).To(BeNil())
+			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+
+			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
+			Expect(err).To(BeNil())
+			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+
+			// Turn on central repo feature
+			featureArray := strings.Split(constants.FeatureCentralRepository, ".")
+			err = config.SetFeature(featureArray[1], featureArray[2], "true")
+			Expect(err).To(BeNil())
+		})
+		AfterEach(func() {
+			os.Unsetenv("TANZU_CONFIG")
+			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+			os.RemoveAll(tkgConfigFile.Name())
+			os.RemoveAll(tkgConfigFileNG.Name())
+			os.RemoveAll(tmpDir)
+		})
+		It("should list three plugin groups", func() {
+			discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
+			Expect(err).To(BeNil(), "unable to create discovery")
+			dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+			Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+			// Inject the stub inventory and data dir
+			dbDiscovery.pluginDataDir = tmpDir
+			dbDiscovery.inventory = &stubInventory{}
+
+			groups, err := dbDiscovery.listGroupsFromInventory()
+			Expect(err).To(BeNil())
+			Expect(groups).ToNot(BeNil())
+			Expect(len(groups)).To(Equal(len(groupEntries)))
+			Expect(groups).To(Equal(groupEntries))
 		})
 	})
 })

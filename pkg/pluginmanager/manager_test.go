@@ -298,6 +298,53 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	}
 }
 
+func Test_InstallPluginFromGroup(t *testing.T) {
+	assertions := assert.New(t)
+
+	// Bypass the environment variable for testing
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assertions.Nil(err)
+
+	defer setupLocalDistoForTesting()()
+	execCommand = fakeInfoExecCommand
+	defer func() { execCommand = exec.Command }()
+
+	// Turn on the Central Repository feature
+	featureArray := strings.Split(constants.FeatureCentralRepository, ".")
+	err = configlib.SetFeature(featureArray[1], featureArray[2], "true")
+	assertions.Nil(err)
+
+	// A local discovery currently does not support groups, but we can
+	// at least do negative testing
+	groupID := "vmware-tkg/v2.1.0"
+	err = InstallPluginsFromGroup("cluster", groupID)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), fmt.Sprintf("could not find group '%s'", groupID))
+}
+
+func Test_DiscoverPluginGroups(t *testing.T) {
+	assertions := assert.New(t)
+
+	// Bypass the environment variable for testing
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assertions.Nil(err)
+
+	defer setupLocalDistoForTesting()()
+	execCommand = fakeInfoExecCommand
+	defer func() { execCommand = exec.Command }()
+
+	// Turn on the Central Repository feature
+	featureArray := strings.Split(constants.FeatureCentralRepository, ".")
+	err = configlib.SetFeature(featureArray[1], featureArray[2], "true")
+	assertions.Nil(err)
+
+	// A local discovery currently does not support groups, but we can
+	// at least do negative testing
+	groups, err := DiscoverPluginGroups()
+	assertions.Nil(err)
+	assertions.Equal(0, len(groups))
+}
+
 func Test_AvailablePlugins(t *testing.T) {
 	assertions := assert.New(t)
 
