@@ -7,12 +7,14 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	// Import the sqlite3 driver
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -38,7 +40,18 @@ CREATE TABLE IF NOT EXISTS "PluginBinaries" (
 	"Digest"             TEXT NOT NULL,
 	"URI"                TEXT NOT NULL,
 	PRIMARY KEY("PluginName", "Target", "Version", "OS", "Architecture")
-);`
+);
+
+CREATE TABLE IF NOT EXISTS "PluginGroups" (
+	"Vendor"             TEXT NOT NULL,
+	"Publisher"          TEXT NOT NULL,
+	"GroupName"          TEXT NOT NULL,
+	"PluginName"         TEXT NOT NULL,
+	"Target"             TEXT NOT NULL,
+	"Version"            TEXT NOT NULL,
+	PRIMARY KEY("Vendor", "Publisher", "GroupName", "PluginName", "Target", "Version")
+);
+`
 
 const createPluginsStmt = `
 INSERT INTO PluginBinaries VALUES(
@@ -122,6 +135,85 @@ INSERT INTO PluginBinaries VALUES(
 	'1111111111',
 	'vmware/tmc/linux/amd64/tmc/management-cluster:v0.0.2');
 `
+const createGroupsStmt = `
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'tkg',
+	'2.1.0',
+	'management-cluster',
+	'k8s',
+	'v0.28.0');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'tkg',
+	'2.1.0',
+	'package',
+	'k8s',
+	'v0.28.0');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'tkg',
+	'2.1.0',
+	'feature',
+	'k8s',
+	'v0.28.0');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'tkg',
+	'2.1.0',
+	'kubernetes-release',
+	'k8s',
+	'v0.28.0');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'tkg',
+	'2.1.0',
+	'isolated-cluster',
+	'k8s',
+	'v0.28.0');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'tkg',
+	'1.6.0',
+	'management-cluster',
+	'k8s',
+	'v0.26.0');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'tkg',
+	'1.6.0',
+	'package',
+	'k8s',
+	'v0.26.0');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'tkg',
+	'1.6.0',
+	'feature',
+	'k8s',
+	'v0.26.0');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'tkg',
+	'1.6.0',
+	'kubernetes-release',
+	'k8s',
+	'v0.26.0');
+INSERT INTO PluginGroups VALUES(
+	'independent',
+	'other',
+	'mygroup',
+	'plugin1',
+	'k8s',
+	'v0.1.0');
+INSERT INTO PluginGroups VALUES(
+	'independent',
+	'other',
+	'mygroup',
+	'plugin2',
+	'tmc',
+	'v0.2.0');
+`
 
 var _ = Describe("Unit tests for plugin inventory", func() {
 	var (
@@ -129,7 +221,6 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 		inventory PluginInventory
 		dbFile    *os.File
 		tmpDir    string
-		plugins   []*PluginInventoryEntry
 	)
 
 	Describe("Getting plugins from inventory", func() {
@@ -176,7 +267,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				os.RemoveAll(tmpDir)
 			})
 			It("should return an empty list of plugins with no error", func() {
-				plugins, err = inventory.GetAllPlugins()
+				plugins, err := inventory.GetAllPlugins()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(plugins)).To(Equal(0))
 			})
@@ -209,7 +300,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 			Context("When getting all plugins", func() {
 				It("should return a list of two plugins with no error", func() {
-					plugins, err = inventory.GetAllPlugins()
+					plugins, err := inventory.GetAllPlugins()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(len(plugins)).To(Equal(2))
 
@@ -267,7 +358,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 			Context("When getting a specific plugin version for k8s for an os/arch", func() {
 				It("should return a list of one plugin with no error", func() {
-					plugins, err = inventory.GetPlugins(&PluginInventoryFilter{
+					plugins, err := inventory.GetPlugins(&PluginInventoryFilter{
 						Name:    "management-cluster",
 						Target:  "kubernetes",
 						Version: "v0.26.0",
@@ -298,7 +389,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 			Context("When getting the recommended version of a plugin for an os/arch", func() {
 				It("should return a list of one plugin with no error", func() {
-					plugins, err = inventory.GetPlugins(&PluginInventoryFilter{
+					plugins, err := inventory.GetPlugins(&PluginInventoryFilter{
 						Name:    "management-cluster",
 						Target:  "kubernetes",
 						Version: cli.VersionLatest,
@@ -329,7 +420,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 			Context("When getting plugins by vendor", func() {
 				It("should return a list of one plugin with no error", func() {
-					plugins, err = inventory.GetPlugins(&PluginInventoryFilter{
+					plugins, err := inventory.GetPlugins(&PluginInventoryFilter{
 						Vendor: "vmware",
 					})
 					Expect(err).ToNot(HaveOccurred())
@@ -350,7 +441,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 			Context("When getting plugins by publisher", func() {
 				It("should return a list of one plugin with no error", func() {
-					plugins, err = inventory.GetPlugins(&PluginInventoryFilter{
+					plugins, err := inventory.GetPlugins(&PluginInventoryFilter{
 						Publisher: "otherpublisher",
 					})
 					Expect(err).ToNot(HaveOccurred())
@@ -397,7 +488,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 			Context("When getting all plugins", func() {
 				It("should return a list of one plugin with no error and recommended version set", func() {
-					plugins, err = inventory.GetAllPlugins()
+					plugins, err := inventory.GetAllPlugins()
 					Expect(err).ToNot(HaveOccurred())
 					Expect(len(plugins)).To(Equal(1))
 
@@ -423,7 +514,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 			Context("When getting a non-existent plugin version for tmc for an os/arch", func() {
 				It("should return an empty list of plugins no error", func() {
-					plugins, err = inventory.GetPlugins(&PluginInventoryFilter{
+					plugins, err := inventory.GetPlugins(&PluginInventoryFilter{
 						Name:    "management-cluster",
 						Target:  "mission-control",
 						Version: "v1.2.3",
@@ -436,4 +527,189 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 		})
 	})
+
+	Describe("Getting plugin groups from inventory", func() {
+		Context("With an empty DB file", func() {
+			BeforeEach(func() {
+				tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+				Expect(err).To(BeNil(), "unable to create temporary directory")
+
+				// Create empty file for the DB
+				dbFile, err = os.Create(filepath.Join(tmpDir, sqliteDBFileName))
+				Expect(err).To(BeNil())
+
+				inventory = NewSQLiteInventory(tmpDir, tmpDir)
+			})
+			AfterEach(func() {
+				os.RemoveAll(tmpDir)
+			})
+			It("should return an error", func() {
+				_, err = inventory.GetAllGroups()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("unable to setup DB"))
+			})
+		})
+		Context("With an empty DB table", func() {
+			BeforeEach(func() {
+				tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+				Expect(err).To(BeNil(), "unable to create temporary directory")
+
+				// Create DB file
+				dbFile, err = os.Create(filepath.Join(tmpDir, sqliteDBFileName))
+				Expect(err).To(BeNil())
+				// Open DB with the sqlite driver
+				db, err := sql.Open("sqlite3", dbFile.Name())
+				Expect(err).To(BeNil(), "failed to open the DB for testing")
+				defer db.Close()
+
+				// Create the table but don't add any rows
+				_, err = db.Exec(createTableStmt)
+				Expect(err).To(BeNil(), "failed to create DB table for testing")
+
+				inventory = NewSQLiteInventory(tmpDir, tmpDir)
+			})
+			AfterEach(func() {
+				os.RemoveAll(tmpDir)
+			})
+			It("should return an empty list of plugin groups with no error", func() {
+				groups, err := inventory.GetAllGroups()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(0))
+			})
+		})
+		Describe("With a DB table with three groups", func() {
+			BeforeEach(func() {
+				tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+				Expect(err).To(BeNil(), "unable to create temporary directory")
+
+				// Create DB file
+				dbFile, err = os.Create(filepath.Join(tmpDir, sqliteDBFileName))
+				Expect(err).To(BeNil())
+				// Open DB with the sqlite driver
+				db, err := sql.Open("sqlite3", dbFile.Name())
+				Expect(err).To(BeNil(), "failed to open the DB for testing")
+				defer db.Close()
+
+				// Create the table
+				_, err = db.Exec(createTableStmt)
+				Expect(err).To(BeNil(), "failed to create DB table for testing")
+
+				// Add a plugin entry to the DB
+				_, err = db.Exec(createGroupsStmt)
+				Expect(err).To(BeNil(), "failed to create groups for testing")
+
+				inventory = NewSQLiteInventory(tmpDir, tmpDir)
+			})
+			AfterEach(func() {
+				os.RemoveAll(tmpDir)
+			})
+			Context("When getting all groups", func() {
+				It("should return a list of three groups with no error", func() {
+					groups, err := inventory.GetAllGroups()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(groups)).To(Equal(3))
+
+					sort.Sort(pluginGroupSorter(groups))
+
+					i := 0
+					Expect(groups[i].Vendor).To(Equal("independent"))
+					Expect(groups[i].Publisher).To(Equal("other"))
+					Expect(groups[i].Name).To(Equal("mygroup"))
+
+					plugins := groups[i].Plugins
+					Expect(len(plugins)).To(Equal(2))
+					sort.Sort(pluginIdentifierSorter(plugins))
+					j := 0
+					Expect(plugins[j].Name).To(Equal("plugin1"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.1.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("plugin2"))
+					Expect(plugins[j].Target).To(Equal(types.TargetTMC))
+					Expect(plugins[j].Version).To(Equal("v0.2.0"))
+
+					i++
+					Expect(groups[i].Vendor).To(Equal("vmware"))
+					Expect(groups[i].Publisher).To(Equal("tkg"))
+					Expect(groups[i].Name).To(Equal("1.6.0"))
+					Expect(len(groups[i].Plugins)).To(Equal(4))
+
+					plugins = groups[i].Plugins
+					Expect(len(plugins)).To(Equal(4))
+					sort.Sort(pluginIdentifierSorter(plugins))
+					j = 0
+					Expect(plugins[j].Name).To(Equal("feature"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("kubernetes-release"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("management-cluster"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("package"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+
+					i++
+					Expect(groups[i].Vendor).To(Equal("vmware"))
+					Expect(groups[i].Publisher).To(Equal("tkg"))
+					Expect(groups[i].Name).To(Equal("2.1.0"))
+					Expect(len(groups[i].Plugins)).To(Equal(5))
+
+					plugins = groups[i].Plugins
+					Expect(len(plugins)).To(Equal(5))
+					sort.Sort(pluginIdentifierSorter(plugins))
+					j = 0
+					Expect(plugins[j].Name).To(Equal("feature"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("isolated-cluster"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("kubernetes-release"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("management-cluster"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("package"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+				})
+			})
+		})
+	})
 })
+
+type pluginGroupSorter []*PluginGroup
+
+func (g pluginGroupSorter) Len() int      { return len(g) }
+func (g pluginGroupSorter) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
+func (g pluginGroupSorter) Less(i, j int) bool {
+	if g[i].Vendor != g[j].Vendor {
+		return g[i].Vendor < g[j].Vendor
+	}
+	if g[i].Publisher != g[j].Publisher {
+		return g[i].Publisher < g[j].Publisher
+	}
+	return g[i].Name < g[j].Name
+}
+
+type pluginIdentifierSorter []*PluginIdentifier
+
+func (g pluginIdentifierSorter) Len() int      { return len(g) }
+func (g pluginIdentifierSorter) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
+func (g pluginIdentifierSorter) Less(i, j int) bool {
+	if g[i].Target != g[j].Target {
+		return g[i].Target < g[j].Target
+	}
+	return g[i].Name < g[j].Name
+}

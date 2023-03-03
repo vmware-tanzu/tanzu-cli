@@ -34,6 +34,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
@@ -104,6 +105,64 @@ func discoverSpecificPlugins(pd []configtypes.PluginDiscovery, criteria *discove
 	return allPlugins, nil
 }
 
+// discoverPluginGroups returns all the plugin groups found in the discoveries
+func discoverPluginGroups(pd []configtypes.PluginDiscovery) ([]*discovery.DiscoveredPluginGroups, error) {
+	var allDiscovered []*discovery.DiscoveredPluginGroups
+	for _, d := range pd {
+		discObject, err := discovery.CreateDiscoveryFromV1alpha1(d, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to create discovery")
+		}
+
+		groupDisc, ok := discObject.(discovery.GroupDiscovery)
+		if !ok {
+			// This discovery does not support plugin groups
+			continue
+		}
+
+		groups, err := groupDisc.GetAllGroups()
+		if err != nil {
+			log.Warningf("unable to list groups from discovery '%v': %v", discObject.Name(), err.Error())
+			continue
+		}
+
+		allDiscovered = append(
+			allDiscovered,
+			&discovery.DiscoveredPluginGroups{
+				Source: discObject.Name(),
+				Groups: groups,
+			})
+	}
+	return allDiscovered, nil
+}
+
+// discoverPluginGroup returns the one matching plugin group found in the discoveries
+func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupID string) (*plugininventory.PluginGroup, error) {
+	groupsByDiscovery, err := discoverPluginGroups(pd)
+	if err != nil {
+		return nil, err
+	}
+
+	var matchingDiscoveries []string
+	var matchingGroup *plugininventory.PluginGroup
+	for _, discAndGroups := range groupsByDiscovery {
+		for _, group := range discAndGroups.Groups {
+			id := fmt.Sprintf("%s-%s/%s", group.Vendor, group.Publisher, group.Name)
+			if id == groupID {
+				// Found the group.
+				matchingGroup = group
+				matchingDiscoveries = append(matchingDiscoveries, discAndGroups.Source)
+			}
+		}
+	}
+
+	if len(matchingDiscoveries) > 1 {
+		return nil, fmt.Errorf("group '%s' was found in multiple discoveries: %v", groupID, matchingDiscoveries)
+	}
+
+	return matchingGroup, nil
+}
+
 // DiscoverStandalonePlugins returns the available standalone plugins
 func DiscoverStandalonePlugins() ([]discovery.Discovered, error) {
 	discoveries, err := getPluginDiscoveries()
@@ -121,6 +180,16 @@ func DiscoverStandalonePlugins() ([]discovery.Discovered, error) {
 		plugins[i].Status = common.PluginStatusNotInstalled
 	}
 	return plugins, err
+}
+
+// DiscoverPluginGroups returns the available plugin groups
+func DiscoverPluginGroups() ([]*discovery.DiscoveredPluginGroups, error) {
+	discoveries, err := getPluginDiscoveries()
+	if err != nil {
+		return nil, err
+	}
+
+	return discoverPluginGroups(discoveries)
 }
 
 // getPreReleasePluginDiscovery
@@ -535,6 +604,45 @@ func InstallPlugin(pluginName, version string, target configtypes.Target) error 
 // UpgradePlugin upgrades a plugin from the given repository.
 func UpgradePlugin(pluginName, version string, target configtypes.Target) error {
 	return InstallPlugin(pluginName, version, target)
+}
+
+// InstallPluginsFromGroup installs either the specified plugin or all plugins from the named group
+func InstallPluginsFromGroup(pluginName, groupID string) error {
+	discoveries, err := getPluginDiscoveries()
+	if err != nil || len(discoveries) == 0 {
+		return err
+	}
+
+	group, err := discoverPluginGroup(discoveries, groupID)
+	if err != nil {
+		return err
+	}
+
+	if group == nil {
+		return fmt.Errorf("could not find group '%s'", groupID)
+	}
+
+	numErrors := 0
+	numInstalled := 0
+	for _, plugin := range group.Plugins {
+		if pluginName == cli.AllPlugins || pluginName == plugin.Name {
+			err = InstallPlugin(plugin.Name, plugin.Version, plugin.Target)
+			if err != nil {
+				numErrors++
+				log.Warningf("unable to install plugin '%s': %v", plugin.Name, err.Error())
+			} else {
+				numInstalled++
+			}
+		}
+	}
+
+	if numErrors > 0 {
+		return fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupID)
+	}
+	if numInstalled == 0 {
+		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupID)
+	}
+	return nil
 }
 
 // GetRecommendedVersionOfPlugin returns recommended version of the plugin
