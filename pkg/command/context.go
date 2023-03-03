@@ -136,11 +136,15 @@ func createCtx(_ *cobra.Command, _ []string) (err error) {
 	}
 
 	// Sync all required plugins
-	if err = pluginmanager.SyncPlugins(); err != nil {
-		log.Warning("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually")
-	}
+	syncContextPlugins()
 
 	return nil
+}
+
+func syncContextPlugins() {
+	if err := pluginmanager.SyncPlugins(); err != nil {
+		log.Warning("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually")
+	}
 }
 
 func isGlobalContext(endpoint string) bool {
@@ -721,6 +725,10 @@ func useCtx(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Sync all required plugins
+	syncContextPlugins()
+
 	return nil
 }
 
