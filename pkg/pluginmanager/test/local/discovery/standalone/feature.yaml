@@ -1,26 +1,26 @@
 apiVersion: cli.tanzu.vmware.com/v1alpha1
 kind: CLIPlugin
 metadata:
-  name: cluster
+  name: feature
 spec:
-  description: Cluster operation for the Kubernetes Cluster
+  description: Feature plugin
   artifacts:
-    v1.6.0:
-      - uri: v1.6.0/tanzu-cluster
+    v0.2.0:
+      - uri: v0.2.0/tanzu-feature
         os: darwin
         arch: amd64
         type: local
-      - uri: v1.6.0/tanzu-cluster
+      - uri: v0.2.0/tanzu-feature
         os: linux
         arch: amd64
         type: local
-      - uri: v1.6.0/tanzu-cluster
+      - uri: v0.2.0/tanzu-feature
         os: windows
         arch: amd64
         type: local
-      - uri: v1.6.0/tanzu-cluster
+      - uri: v0.2.0/tanzu-feature
         os: darwin
         arch: arm64
         type: local
-  recommendedVersion: v1.6.0
+  recommendedVersion: v0.2.0
   target: kubernetes

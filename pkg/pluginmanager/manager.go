@@ -499,16 +499,20 @@ func DescribePlugin(pluginName string, target configtypes.Target) (info *cli.Plu
 		return nil, err
 	}
 	var matchedPlugins []cli.PluginInfo
-
 	for i := range plugins {
-		if plugins[i].Name == pluginName {
+		if plugins[i].Name == pluginName &&
+			(target == configtypes.TargetUnknown || target == plugins[i].Target) {
 			matchedPlugins = append(matchedPlugins, plugins[i])
 		}
 	}
 
 	if len(matchedPlugins) == 0 {
+		if target != configtypes.TargetUnknown {
+			return nil, errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+		}
 		return nil, errors.Errorf("unable to find plugin '%v'", pluginName)
 	}
+
 	if len(matchedPlugins) == 1 {
 		return &matchedPlugins[0], nil
 	}
@@ -541,6 +545,7 @@ func InitializePlugin(plugin *cli.PluginInfo) error {
 }
 
 // InstallPlugin installs a plugin by name, version and target.
+// nolint: gocyclo
 func InstallPlugin(pluginName, version string, target configtypes.Target) error {
 	var availablePlugins []discovery.Discovered
 	var err error
@@ -561,6 +566,9 @@ func InstallPlugin(pluginName, version string, target configtypes.Target) error 
 		}
 
 		if len(availablePlugins) == 0 {
+			if target != configtypes.TargetUnknown {
+				return errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+			}
 			return errors.Errorf("unable to find plugin '%v'", pluginName)
 		}
 
@@ -580,11 +588,15 @@ func InstallPlugin(pluginName, version string, target configtypes.Target) error 
 
 	var matchedPlugins []discovery.Discovered
 	for i := range availablePlugins {
-		if availablePlugins[i].Name == pluginName {
+		if availablePlugins[i].Name == pluginName &&
+			(target == configtypes.TargetUnknown || target == availablePlugins[i].Target) {
 			matchedPlugins = append(matchedPlugins, availablePlugins[i])
 		}
 	}
 	if len(matchedPlugins) == 0 {
+		if target != configtypes.TargetUnknown {
+			return errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+		}
 		return errors.Errorf("unable to find plugin '%v'", pluginName)
 	}
 
@@ -654,11 +666,15 @@ func GetRecommendedVersionOfPlugin(pluginName string, target configtypes.Target)
 
 	var matchedPlugins []discovery.Discovered
 	for i := range availablePlugins {
-		if availablePlugins[i].Name == pluginName {
+		if availablePlugins[i].Name == pluginName &&
+			(target == configtypes.TargetUnknown || target == availablePlugins[i].Target) {
 			matchedPlugins = append(matchedPlugins, availablePlugins[i])
 		}
 	}
 	if len(matchedPlugins) == 0 {
+		if target != configtypes.TargetUnknown {
+			return "", errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+		}
 		return "", errors.Errorf("unable to find plugin '%v'", pluginName)
 	}
 
@@ -819,7 +835,8 @@ func DeletePlugin(options DeletePluginOptions) error {
 
 		plugins := c.List()
 		for i := range plugins {
-			if plugins[i].Name == options.PluginName && (options.Target == "" || options.Target == plugins[i].Target) {
+			if plugins[i].Name == options.PluginName &&
+				(options.Target == configtypes.TargetUnknown || options.Target == plugins[i].Target) {
 				plugin = plugins[i]
 				matchedPluginCatalog = c
 				matchedPluginCount++
@@ -828,6 +845,9 @@ func DeletePlugin(options DeletePluginOptions) error {
 	}
 
 	if matchedPluginCount == 0 {
+		if options.Target != configtypes.TargetUnknown {
+			return errors.Errorf("unable to find plugin '%v' for target '%s'", options.PluginName, string(options.Target))
+		}
 		return errors.Errorf("unable to find plugin '%v'", options.PluginName)
 	}
 	if matchedPluginCount > 1 {
@@ -903,6 +923,7 @@ func SyncPlugins() error {
 }
 
 // InstallPluginsFromLocalSource installs plugin from local source directory
+// nolint: gocyclo
 func InstallPluginsFromLocalSource(pluginName, version string, target configtypes.Target, localPath string, installTestPlugin bool) error {
 	// Set default local plugin distro to local-path as while installing the plugin
 	// from local source we should take t
@@ -917,11 +938,22 @@ func InstallPluginsFromLocalSource(pluginName, version string, target configtype
 
 	var matchedPlugins []discovery.Discovered
 	for i := range availablePlugins {
-		if pluginName == cli.AllPlugins || availablePlugins[i].Name == pluginName {
+		if (pluginName == cli.AllPlugins || availablePlugins[i].Name == pluginName) &&
+			(target == configtypes.TargetUnknown || target == availablePlugins[i].Target) {
 			matchedPlugins = append(matchedPlugins, availablePlugins[i])
 		}
 	}
 	if len(matchedPlugins) == 0 {
+		if pluginName == cli.AllPlugins {
+			if target != configtypes.TargetUnknown {
+				return errors.Errorf("unable to find any plugins for target '%s'", string(target))
+			}
+			return errors.Errorf("unable to find any plugins at the specified location")
+		}
+
+		if target != configtypes.TargetUnknown {
+			return errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+		}
 		return errors.Errorf("unable to find plugin '%v'", pluginName)
 	}
 
