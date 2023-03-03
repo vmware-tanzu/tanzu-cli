@@ -4,10 +4,13 @@
 package framework
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/aunum/log"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
@@ -27,7 +30,7 @@ type ConfigLifecycleOps interface {
 	ConfigUnsetFeature(path string) error
 	ConfigInit() error
 	GetConfig() (*configapi.ClientConfig, error)
-	ConfigServerList() error
+	ConfigServerList() ([]Server, error)
 	ConfigServerDelete(serverName string) error
 	DeleteCLIConfigurationFiles() error
 	IsCLIConfigurationFilesExists() bool
@@ -93,15 +96,28 @@ func (co *configOps) ConfigInit() (err error) {
 }
 
 // ConfigServerList returns the server list
-// TODO: should return the servers info in proper format
-func (co *configOps) ConfigServerList() (err error) {
-	_, _, err = co.Exec(ConfigServerList)
-	return
+func (co *configOps) ConfigServerList() ([]Server, error) {
+	stdOut, _, err := co.Exec(ConfigServerList)
+	if err != nil {
+		log.Errorf("error while executing `config server list`, error:%s", err.Error())
+		return nil, err
+	}
+	jsonStr := stdOut.String()
+	var list []Server
+	err = json.Unmarshal([]byte(jsonStr), &list)
+	if err != nil {
+		log.Errorf("failed to construct node from config server list output:'%s' error:'%s' ", jsonStr, err.Error())
+		return nil, errors.Wrapf(err, "failed to construct node from config server list output:'%s'", jsonStr)
+	}
+	return list, nil
 }
 
 // ConfigServerDelete deletes a server from tanzu config
 func (co *configOps) ConfigServerDelete(serverName string) error {
-	_, _, err := co.Exec(ConfigServerDelete + serverName)
+	_, _, err := co.Exec(fmt.Sprintf(ConfigServerDelete, serverName))
+	if err != nil {
+		log.Error(err)
+	}
 	return err
 }
 
