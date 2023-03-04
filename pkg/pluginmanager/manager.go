@@ -867,14 +867,17 @@ func SyncPlugins() error {
 		// Note: to install all plugins for a specific product, plugin groups will
 		// need to be used.
 		plugins, err = DiscoverServerPlugins()
+		if err != nil {
+			return err
+		}
 		if installedPlugins, err := pluginsupplier.GetInstalledServerPlugins(); err == nil {
 			setAvailablePluginsStatus(plugins, installedPlugins)
 		}
 	} else {
 		plugins, err = AvailablePlugins()
-	}
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	installed := false

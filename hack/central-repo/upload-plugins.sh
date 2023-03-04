@@ -153,7 +153,8 @@ addGroup() {
 
 k8sPlugins=(cluster feature management-cluster package secret telemetry kubernetes-release)
 tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster events iam 
-            inspection integration management-cluster policy workspace)
+            inspection integration management-cluster policy workspace helm secret 
+            continuousdelivery tanzupackage)
 globalPlugins=(isolated-cluster pinniped-auth)
 
 echo "======================================"
