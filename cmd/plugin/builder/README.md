@@ -212,7 +212,7 @@ Below are the examples:
 
 ### Inventory-plugin-activate-deactivate
 
-Once the plugins are inserted to the inventory database, there might be a need where publisher need to mark the plugin as hidden or in deactive state so that users do not discover these plugins from the central repository. To support this scenario builder plugin implements `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands.
+Once the plugins are inserted to the inventory database, there might be a scenario where publisher need to mark the plugin as hidden or in deactive state so that users do not discover these plugins from the central repository. To support this scenario builder plugin implements `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands.
 
 Below are the flags available with `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands:
 
