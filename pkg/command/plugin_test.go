@@ -19,6 +19,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
@@ -28,6 +29,7 @@ func TestPluginList(t *testing.T) {
 		centralRepoFeature bool
 		plugins            []string
 		versions           []string
+		targets            []configtypes.Target
 		args               []string
 		expected           string
 		expectedFailure    bool
@@ -43,22 +45,25 @@ func TestPluginList(t *testing.T) {
 			test:            "With empty config file(no discovery sources added) and when one additional plugin installed",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
+			targets:         []configtypes.Target{configtypes.TargetK8s},
 			args:            []string{"plugin", "list"},
 			expectedFailure: false,
-			expected:        "NAME DESCRIPTION TARGET DISCOVERY VERSION STATUS foo some foo description v0.1.0 installed",
+			expected:        "NAME DESCRIPTION TARGET DISCOVERY VERSION STATUS foo some foo description kubernetes v0.1.0 installed",
 		},
 		{
 			test:            "With empty config file(no discovery sources added) and when more than one plugin is installed",
 			plugins:         []string{"foo", "bar"},
 			versions:        []string{"v0.1.0", "v0.2.0"},
+			targets:         []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s},
 			args:            []string{"plugin", "list"},
 			expectedFailure: false,
-			expected:        "NAME DESCRIPTION TARGET DISCOVERY VERSION STATUS bar some bar description v0.2.0 installed foo some foo description v0.1.0 installed",
+			expected:        "NAME DESCRIPTION TARGET DISCOVERY VERSION STATUS bar some bar description kubernetes v0.2.0 installed foo some foo description mission-control v0.1.0 installed",
 		},
 		{
 			test:            "when json output is requested",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
+			targets:         []configtypes.Target{configtypes.TargetK8s},
 			args:            []string{"plugin", "list", "-o", "json"},
 			expectedFailure: false,
 			expected:        `[ { "description": "some foo description", "discovery": "", "name": "foo", "scope": "Standalone", "status": "installed", "version": "v0.1.0" } ]`,
@@ -67,6 +72,7 @@ func TestPluginList(t *testing.T) {
 			test:            "when yaml output is requested",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
+			targets:         []configtypes.Target{configtypes.TargetK8s},
 			args:            []string{"plugin", "list", "-o", "yaml"},
 			expectedFailure: false,
 			expected:        `- description: some foo description discovery: "" name: foo scope: Standalone status: installed version: v0.1.0`,
@@ -91,36 +97,40 @@ func TestPluginList(t *testing.T) {
 			centralRepoFeature: true,
 			plugins:            []string{"foo"},
 			versions:           []string{"v0.1.0"},
+			targets:            []configtypes.Target{configtypes.TargetK8s},
 			args:               []string{"plugin", "list"},
 			expectedFailure:    false,
-			expected:           "NAME DESCRIPTION TARGET VERSION STATUS foo some foo description v0.1.0 installed",
+			expected:           "NAME DESCRIPTION TARGET VERSION STATUS foo some foo description kubernetes v0.1.0 installed",
 		},
 		{
 			test:               "With empty config file(no discovery sources added) and when more than one plugin is installed with central repo",
 			centralRepoFeature: true,
 			plugins:            []string{"foo", "bar"},
 			versions:           []string{"v0.1.0", "v0.2.0"},
+			targets:            []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s},
 			args:               []string{"plugin", "list"},
 			expectedFailure:    false,
-			expected:           "NAME DESCRIPTION TARGET VERSION STATUS bar some bar description v0.2.0 installed foo some foo description v0.1.0 installed",
+			expected:           "NAME DESCRIPTION TARGET VERSION STATUS bar some bar description kubernetes v0.2.0 installed foo some foo description mission-control v0.1.0 installed",
 		},
 		{
 			test:               "when json output is requested with central repo",
 			centralRepoFeature: true,
 			plugins:            []string{"foo"},
 			versions:           []string{"v0.1.0"},
+			targets:            []configtypes.Target{configtypes.TargetK8s},
 			args:               []string{"plugin", "list", "-o", "json"},
 			expectedFailure:    false,
-			expected:           `[ { "description": "some foo description", "name": "foo", "status": "installed", "target": "", "version": "v0.1.0" } ]`,
+			expected:           `[ { "description": "some foo description", "name": "foo", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
 		},
 		{
 			test:               "when yaml output is requested with central repo",
 			centralRepoFeature: true,
 			plugins:            []string{"foo"},
 			versions:           []string{"v0.1.0"},
+			targets:            []configtypes.Target{configtypes.TargetK8s},
 			args:               []string{"plugin", "list", "-o", "yaml"},
 			expectedFailure:    false,
-			expected:           `- description: some foo description name: foo status: installed target: "" version: v0.1.0`,
+			expected:           `- description: some foo description name: foo status: installed target: kubernetes version: v0.1.0`,
 		},
 	}
 
@@ -156,7 +166,7 @@ func TestPluginList(t *testing.T) {
 			cc, err := catalog.NewContextCatalog("")
 			assert.Nil(err)
 			for i, pluginName := range spec.plugins {
-				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, 1, false, []string{pluginName[:2]})
+				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
 				assert.Nil(err)
 				pi := &cli.PluginInfo{
 					Name:             pluginName,
@@ -166,6 +176,7 @@ func TestPluginList(t *testing.T) {
 					Version:          spec.versions[i],
 					InstallationPath: filepath.Join(common.DefaultPluginRoot, pluginName),
 					Status:           common.PluginStatusInstalled,
+					Target:           spec.targets[i],
 				}
 				assert.Nil(err)
 				err = cc.Upsert(pi)
@@ -205,6 +216,7 @@ func TestDeletePlugin(t *testing.T) {
 		test             string
 		plugins          []string
 		versions         []string
+		targets          []configtypes.Target
 		args             []string
 		expectedErrorMsg string
 		expectedFailure  bool
@@ -221,6 +233,7 @@ func TestDeletePlugin(t *testing.T) {
 			test:            "delete an installed plugin",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
+			targets:         []configtypes.Target{configtypes.TargetK8s},
 			args:            []string{"plugin", "delete", "foo", "-y"},
 			expectedFailure: false,
 		},
@@ -239,7 +252,7 @@ func TestDeletePlugin(t *testing.T) {
 			assert.Nil(err)
 
 			for i, pluginName := range spec.plugins {
-				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, 1, false, []string{pluginName[:2]})
+				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
 				assert.Nil(err)
 				pi := &cli.PluginInfo{
 					Name:             pluginName,

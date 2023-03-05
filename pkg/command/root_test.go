@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
@@ -34,7 +35,8 @@ info() {
   "group": "%s",
   "hidden": %s,
   "aliases": %s,
-  "completionType": %d
+  "completionType": %d,
+  "target": "%s"
 }
 EOF
   exit 0
@@ -105,6 +107,7 @@ func TestSubcommands(t *testing.T) {
 		plugin            string
 		version           string
 		cmdGroup          plugin.CmdGroup
+		target            configtypes.Target
 		postInstallResult uint8
 		hidden            bool
 		aliases           []string
@@ -118,13 +121,51 @@ func TestSubcommands(t *testing.T) {
 			plugin:   "dummy",
 			version:  "v0.1.0",
 			cmdGroup: plugin.SystemCmdGroup,
+			target:   configtypes.TargetK8s,
 			expected: "dummy",
+		},
+		{
+			test:     "k8s target",
+			plugin:   "dummy",
+			version:  "v0.1.0",
+			cmdGroup: plugin.SystemCmdGroup,
+			target:   configtypes.TargetK8s,
+			args:     []string{"dummy", "say", "hello"},
+			expected: "hello",
+		},
+		{
+			test:     "global target",
+			plugin:   "dummy",
+			version:  "v0.1.0",
+			cmdGroup: plugin.SystemCmdGroup,
+			target:   configtypes.TargetGlobal,
+			args:     []string{"dummy", "say", "hello"},
+			expected: "hello",
+		},
+		{
+			test:     "unknown target (backwards-compatibility)",
+			plugin:   "dummy",
+			version:  "v0.1.0",
+			cmdGroup: plugin.SystemCmdGroup,
+			target:   configtypes.TargetUnknown,
+			args:     []string{"dummy", "say", "hello"},
+			expected: "hello",
+		},
+		{
+			test:            "tmc target",
+			plugin:          "dummy",
+			version:         "v0.1.0",
+			cmdGroup:        plugin.SystemCmdGroup,
+			target:          configtypes.TargetTMC,
+			args:            []string{"dummy", "say", "hello"},
+			expectedFailure: true,
 		},
 		{
 			test:     "run info subcommand",
 			plugin:   "dummy",
 			version:  "v0.1.0",
 			cmdGroup: plugin.SystemCmdGroup,
+			target:   configtypes.TargetK8s,
 			expected: `{
   "name": "dummy",
   "description": "dummy functionality",
@@ -133,7 +174,8 @@ func TestSubcommands(t *testing.T) {
   "group": "System",
   "hidden": false,
   "aliases": [],
-  "completionType": 0
+  "completionType": 0,
+  "target": "kubernetes"
 }`,
 			args: []string{"dummy", "info"},
 		},
@@ -142,6 +184,7 @@ func TestSubcommands(t *testing.T) {
 			plugin:          "dummy",
 			version:         "v0.1.0",
 			cmdGroup:        plugin.SystemCmdGroup,
+			target:          configtypes.TargetK8s,
 			args:            []string{"dummy", "bad"},
 			expectedFailure: true,
 			expected:        "bad command failed",
@@ -151,6 +194,7 @@ func TestSubcommands(t *testing.T) {
 			plugin:          "dummy",
 			version:         "v0.1.0",
 			cmdGroup:        plugin.SystemCmdGroup,
+			target:          configtypes.TargetK8s,
 			args:            []string{"dummy", "missing command"},
 			expectedFailure: false,
 			expected:        "Available Commands:",
@@ -160,6 +204,7 @@ func TestSubcommands(t *testing.T) {
 			plugin:            "dummy",
 			version:           "v0.1.0",
 			cmdGroup:          plugin.SystemCmdGroup,
+			target:            configtypes.TargetK8s,
 			postInstallResult: 0,
 			args:              []string{"dummy", "post-install"},
 			expectedFailure:   false,
@@ -169,6 +214,7 @@ func TestSubcommands(t *testing.T) {
 			plugin:            "dummy",
 			version:           "v0.1.0",
 			cmdGroup:          plugin.SystemCmdGroup,
+			target:            configtypes.TargetK8s,
 			postInstallResult: 1,
 			args:              []string{"dummy", "post-install"},
 			expectedFailure:   true,
@@ -178,6 +224,7 @@ func TestSubcommands(t *testing.T) {
 			plugin:          "dummy",
 			version:         "v0.1.0",
 			cmdGroup:        plugin.SystemCmdGroup,
+			target:          configtypes.TargetK8s,
 			args:            []string{"dummy", "shout", "lots", "of", "things"},
 			expected:        "lots of things !!",
 			expectedFailure: false,
@@ -187,6 +234,7 @@ func TestSubcommands(t *testing.T) {
 			plugin:          "dummy",
 			version:         "v0.1.0",
 			cmdGroup:        plugin.SystemCmdGroup,
+			target:          configtypes.TargetK8s,
 			hidden:          true,
 			args:            []string{},
 			expectedFailure: false,
@@ -220,7 +268,7 @@ func TestSubcommands(t *testing.T) {
 			os.Stdout = w
 			os.Stderr = w
 
-			err = setupFakePlugin(dir, spec.plugin, spec.version, spec.cmdGroup, completionType, spec.postInstallResult, spec.hidden, spec.aliases)
+			err = setupFakePlugin(dir, spec.plugin, spec.version, spec.cmdGroup, completionType, spec.target, spec.postInstallResult, spec.hidden, spec.aliases)
 			assert.Nil(err)
 
 			pi := &cli.PluginInfo{
@@ -230,6 +278,7 @@ func TestSubcommands(t *testing.T) {
 				Aliases:          []string{},
 				Hidden:           spec.hidden,
 				InstallationPath: filepath.Join(dir, spec.plugin),
+				Target:           spec.target,
 			}
 			cc, err := catalog.NewContextCatalog("")
 			assert.Nil(err)
@@ -245,7 +294,7 @@ func TestSubcommands(t *testing.T) {
 			w.Close()
 			got := <-c
 
-			assert.Equal(err != nil, spec.expectedFailure)
+			assert.Equal(spec.expectedFailure, err != nil)
 			if spec.expected != "" {
 				assert.Contains(string(got), spec.expected)
 			}
@@ -257,7 +306,7 @@ func TestSubcommands(t *testing.T) {
 	}
 }
 
-func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGroup, completionType uint8, postInstallResult uint8, hidden bool, aliases []string) error {
+func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGroup, completionType uint8, target configtypes.Target, postInstallResult uint8, hidden bool, aliases []string) error {
 	filePath := filepath.Join(dir, pluginName)
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
@@ -274,7 +323,7 @@ func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGro
 		aliasesString = "[]"
 	}
 
-	fmt.Fprintf(f, fakePluginScriptFmtString, pluginName, pluginName, commandGroup, strconv.FormatBool(hidden), aliasesString, completionType, postInstallResult, pluginName, pluginName)
+	fmt.Fprintf(f, fakePluginScriptFmtString, pluginName, pluginName, commandGroup, strconv.FormatBool(hidden), aliasesString, completionType, target, postInstallResult, pluginName, pluginName)
 
 	return nil
 }
