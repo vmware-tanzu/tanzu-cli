@@ -1,18 +1,16 @@
 # Copyright 2022 VMware, Inc. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+include ./plugin-tooling.mk
+
 # Ensure Make is run with bash shell as some syntax below is bash-specific
 SHELL := /usr/bin/env bash
 
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
-CURRENT_DIR := $(shell pwd)
 ARTIFACTS_DIR ?= $(ROOT_DIR)/artifacts
-ARTIFACTS_ADMIN_DIR ?= $(ROOT_DIR)/artifacts-admin
 
 XDG_CONFIG_HOME := ${HOME}/.config
 export XDG_CONFIG_HOME
-# Local path to publish the tanzu CLI plugins
-TANZU_PLUGIN_PUBLISH_PATH ?= $(XDG_CONFIG_HOME)/_tanzu-plugins
 
 # Golang specific variables
 GOOS ?= $(shell go env GOOS)
@@ -66,8 +64,6 @@ LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Version=$(BUILD_
 ENVS ?= linux-amd64 windows-amd64 darwin-amd64
 
 CLI_TARGETS := $(addprefix build-cli-,${ENVS})
-PLUGIN_TARGETS := $(addprefix build-plugin-admin-,${ENVS})
-ADMIN_PLUGINS ?= builder test
  
 ifndef TANZU_API_TOKEN
 TANZU_API_TOKEN = ""
@@ -89,25 +85,25 @@ help: ## Display this help (default)
 ## --------------------------------------
 
 .PHONY: all
-all: gomod build-all test lint ## Run all major targets (lint, test, build)
+all: gomod cross-build test lint ## Run all major targets (lint, test, cross-build)
 
 ## --------------------------------------
 ## Build
 ## --------------------------------------
 
 .PHONY: cross-build
-cross-build: ${CLI_TARGETS} ${PLUGIN_TARGETS}## Build the Tanzu Core CLI and plugins for all supported platforms
+cross-build: ${CLI_TARGETS} cross-build-publish-plugins ## Build the Tanzu Core CLI and plugins for all supported platforms
+
+.PHONY: cross-build-publish-plugins
+cross-build-publish-plugins: prepare-builder plugin-build-and-publish-packages inventory-init inventory-plugin-insert ## Build and publish the plugins for all supported platforms
 
 .PHONY: build-all
-build-all: build build-admin-plugins ## Build the Tanzu Core CLI, admin plugins for the local platform
+build-all: build prepare-builder plugin-build-local ## Build the Tanzu Core CLI, admin plugins for the local platform
 
 .PHONY: build
 build: build-cli-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI for the local platform
 	mkdir -p bin
 	cp $(ARTIFACTS_DIR)/$(GOHOSTOS)/$(GOHOSTARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(GOHOSTOS)_$(GOHOSTARCH) ./bin/tanzu
-
-.PHONY: build-admin-plugins
-build-admin-plugins: build-plugin-admin-${GOHOSTOS}-${GOHOSTARCH}
 
 build-cli-%: ##Build the Tanzu Core CLI for a platform
 	$(eval ARCH = $(word 2,$(subst -, ,$*)))
@@ -138,19 +134,6 @@ $(BUILDER): $(BUILDER_SRC)
 
 .PHONY: prepare-builder
 prepare-builder: $(BUILDER) ## Build Tanzu CLI builder plugin
-
-build-plugin-admin-%: prepare-builder
-	$(eval ARCH = $(word 2,$(subst -, ,$*)))
-	$(eval OS = $(word 1,$(subst -, ,$*)))
-
-	@if [ "$(filter $(OS)-$(ARCH),$(ENVS))" = "" ]; then\
-		printf "\n\n======================================\n";\
-		printf "! $(OS)-$(ARCH) is not an officially supported platform!\n";\
-		printf "======================================\n\n";\
-	fi
-
-	@echo build $(OS)-$(ARCH) plugin with version: $(BUILD_VERSION)
-	$(BUILDER) plugin build --version $(BUILD_VERSION) --path ./cmd/plugin --artifacts "$(ARTIFACTS_ADMIN_DIR)" --os-arch ${OS}_${ARCH}
 
 ## --------------------------------------
 ## OS Packages
@@ -204,7 +187,7 @@ test: fmt ## Run Tests
 
 .PHONY: e2e-cli-core
 e2e-cli-core: ## Run CLI Core E2E Tests
-	$(eval export PATH=$(CURRENT_DIR)/bin:$(CURRENT_DIR)/hack/tools/bin:$(PATH))
+	$(eval export PATH=$(ROOT_DIR)/bin:$(ROOT_DIR)/hack/tools/bin:$(PATH))
 	@if [ "${TANZU_API_TOKEN}" = "" ] && [ "$(TANZU_CLI_TMC_UNSTABLE_URL)" = "" ]; then \
 		echo "***Skipping TMC specific e2e tests cases because environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL are not set***" ; \
 		${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
@@ -286,17 +269,6 @@ generate-manifests:  ## Generate API manifests e.g. CRD
 
 generate: generate-controller-code generate-manifests 	## Generate controller code and manifests e.g. CRD etc.
 
-## --------------------------------------
-## docker
-## --------------------------------------
-
-.PHONY: local-registry
-local-registry: clean-registry ## Starts up a local docker registry for the e2e tests
-	docker run -d -p 5001:5000 --name registry mirror.gcr.io/library/registry:2
-
-.PHONY: clean-registry
-clean-registry: ## Stops and removes local docker registry
-	docker stop registry && docker rm -v registry || true
 
 ## --------------------------------------
 ## Tooling Binaries

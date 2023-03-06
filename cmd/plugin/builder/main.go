@@ -31,6 +31,7 @@ func main() {
 		NewInitCmd(),
 		NewPublishCmd(),
 		NewPluginCmd(),
+		newInventoryCmd(),
 	)
 
 	if err := p.Execute(); err != nil {
