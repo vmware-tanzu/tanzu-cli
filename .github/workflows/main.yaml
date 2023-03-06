@@ -43,6 +43,11 @@ jobs:
         path: ${{ runner.temp }}/lint_cache
         key: ${{ runner.os }}-lint-cache-2
 
+    - name: Setup dependencies
+      run: |
+        make tools
+        echo "${PWD}/hack/tools/bin" >> $GITHUB_PATH
+
     - name: Test
       run: |
         make all

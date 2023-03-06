@@ -24,6 +24,16 @@ type PluginInventory interface {
 
 	// GetAllGroups returns all plugin groups found in the inventory.
 	GetAllGroups() ([]*PluginGroup, error)
+
+	// CreateSchema creates table schemas to the provided database.
+	// returns error if table creation fails for any reason
+	CreateSchema() error
+
+	// InsertPlugin inserts plugin to the inventory
+	InsertPlugin(pluginInventoryEntry *PluginInventoryEntry) error
+
+	// UpdatePluginActivationState updates plugin metadata to activate or deactivate plugin
+	UpdatePluginActivationState(pluginInventoryEntry *PluginInventoryEntry) error
 }
 
 // PluginInventoryEntry represents the inventory information
@@ -44,6 +54,8 @@ type PluginInventoryEntry struct {
 	// The value should be a valid semantic version as defined in
 	// https://semver.org/. E.g., 2.0.1
 	RecommendedVersion string
+	// Hidden tells whether the plugin is marked as hidden or not.
+	Hidden bool
 	// Artifacts contains an artifact list for every available version.
 	Artifacts distribution.Artifacts
 }

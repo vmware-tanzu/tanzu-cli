@@ -42,7 +42,7 @@ func NewOCIDiscovery(name, image string, criteria *PluginDiscoveryCriteria) Disc
 		// The data for the inventory is stored in the cache
 		pluginDataDir := filepath.Join(common.DefaultCacheDir, inventoryDirName, name)
 
-		inventory := plugininventory.NewSQLiteInventory(pluginDataDir, imagePrefix)
+		inventory := plugininventory.NewSQLiteInventory(filepath.Join(pluginDataDir, plugininventory.SQliteDBFileName), imagePrefix)
 		return &DBBackedOCIDiscovery{
 			name:          name,
 			image:         image,
