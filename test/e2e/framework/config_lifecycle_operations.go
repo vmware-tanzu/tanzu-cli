@@ -115,9 +115,10 @@ func (co *configOps) ConfigServerList() ([]Server, error) {
 
 // ConfigServerDelete deletes a server from tanzu config
 func (co *configOps) ConfigServerDelete(serverName string) error {
-	_, _, err := co.Exec(fmt.Sprintf(ConfigServerDelete, serverName))
+	configDelCmd := fmt.Sprintf(ConfigServerDelete, serverName)
+	_, _, err := co.Exec(configDelCmd)
 	if err != nil {
-		log.Error(err)
+		log.Error(err,"error while running: "+configDelCmd)
 	}
 	return err
 }
