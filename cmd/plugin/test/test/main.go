@@ -4,11 +4,11 @@
 package main
 
 import (
-	"log"
 	"os"
 
 	"github.com/spf13/cobra"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 	clitest "github.com/vmware-tanzu/tanzu-plugin-runtime/test/framework"
 )
@@ -19,7 +19,7 @@ func main() {
 	defer Cleanup()
 	p, err := plugin.NewPlugin(descriptor)
 	if err != nil {
-		log.Fatal(err) //nolint:gocritic
+		log.Fatal(err, "") //nolint:gocritic
 	}
 	p.Cmd.RunE = test
 	if err := p.Execute(); err != nil {

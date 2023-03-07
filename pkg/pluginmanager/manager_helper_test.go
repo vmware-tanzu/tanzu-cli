@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/aunum/log"
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/assert"
 
@@ -19,6 +18,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 func findDiscoveredPlugin(discovered []discovery.Discovered, pluginName string, target configtypes.Target) *discovery.Discovered {

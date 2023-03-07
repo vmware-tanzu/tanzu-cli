@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/aunum/log"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 const (
@@ -26,16 +26,16 @@ func IsVSphereSupervisor(endpoint string, httpClient *http.Client) (bool, error)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		log.Debug("Failed to test for vSphere supervisor: %+v", err)
+		log.Infof("Failed to test for vSphere supervisor: %+v", err)
 		return false, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		log.Debug("Got login banner from server")
+		log.V(4).Info("Got login banner from server")
 		return true, nil
 	}
 
-	log.Debug("Could not get login banner from server, response code = %+v", resp.StatusCode)
+	log.Infof("Could not get login banner from server, response code = %+v", resp.StatusCode)
 	return false, nil
 }

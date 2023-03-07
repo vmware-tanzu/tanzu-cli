@@ -10,7 +10,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 
-	"github.com/aunum/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -20,6 +19,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 var (

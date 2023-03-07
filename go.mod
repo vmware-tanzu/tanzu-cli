@@ -7,7 +7,6 @@ replace cloud.google.com/go => cloud.google.com/go v0.102.1
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/adrg/xdg v0.4.0
-	github.com/aunum/log v0.0.0-20200821225356-38d2e2c8b489
 	github.com/cppforlife/go-cli-ui v0.0.0-20200716203538-1e47f820817f
 	github.com/fatih/color v1.13.0
 	github.com/gobwas/glob v0.2.3
@@ -31,7 +30,7 @@ require (
 	github.com/tj/assert v0.0.3
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230130173350-eeda69d80a24
-	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230223175026-9c303222c664
+	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230306195922-7870c5d3ac6f
 	go.pinniped.dev v0.20.0
 	go.uber.org/multierr v1.8.0
 	golang.org/x/mod v0.7.0
@@ -68,7 +67,6 @@ require (
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.1 // indirect

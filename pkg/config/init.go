@@ -5,10 +5,9 @@
 package config
 
 import (
-	"github.com/aunum/log"
-
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 func init() {

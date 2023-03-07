@@ -13,14 +13,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aunum/log"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
-	"golang.org/x/sync/errgroup"
-
 	oidcapi "go.pinniped.dev/generated/latest/apis/supervisor/oidc"
 	"go.pinniped.dev/pkg/oidcclient/pkce"
 	"go.pinniped.dev/pkg/oidcclient/state"
+	"golang.org/x/oauth2"
+	"golang.org/x/sync/errgroup"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 const (
@@ -65,7 +65,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	if code == "" {
 		errMsg := fmt.Sprintf("[state] query params is required, URL %s did not have this query parameters", r.URL.String())
 		http.Error(w, errMsg, http.StatusBadRequest)
-		log.Debug(errMsg)
+		log.Info(errMsg)
 		return
 	}
 
@@ -74,7 +74,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errMsg := fmt.Sprintf("failed to exchange auth code for oauth tokens, err=%v", err)
 		http.Error(w, errMsg, http.StatusInternalServerError)
-		log.Debug(errMsg)
+		log.Info(errMsg)
 		return
 	}
 	fmt.Fprint(w, "You have successfully logged in! You can now safely close this window")
@@ -85,7 +85,7 @@ func interruptHandler(d context.CancelFunc) {
 	signal.Notify(c, os.Interrupt)
 	for range c {
 		d()
-		log.Fatal("Login flow interrupted\n")
+		log.Fatal(nil, "login flow interrupted")
 	}
 }
 
@@ -154,7 +154,7 @@ func GetAccessTokenFromSelfManagedIDP(refreshToken, issuerURL string) (*Token, e
 				TokenType:    "id_token",
 			}, nil
 		}
-		log.Debugf("failed to refresh token, err %v", err)
+		log.Infof("failed to refresh token, err %v", err)
 		// proceed with login flow through the browser
 	}
 	// set the issuer package variable to be used in the callback handler

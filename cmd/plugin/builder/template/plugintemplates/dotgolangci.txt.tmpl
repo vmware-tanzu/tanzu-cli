@@ -23,13 +23,6 @@ linters-settings:
         checks: argument,case,condition,return
   govet:
     check-shadowing: true
-    settings:
-      printf:
-        funcs:
-          - (github.com/aunum/log").Infof
-          - (github.com/aunum/log").Warnf
-          - (github.com/aunum/log").Errorf
-          - (github.com/aunum/log").Fatalf
   misspell:
     locale: US
   nolintlint:

@@ -12,8 +12,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-
-	"github.com/aunum/log"
 )
 
 // Runner is a plugin runner.
@@ -77,7 +75,6 @@ func (r *Runner) run(ctx context.Context, pluginPath string, stdout, stderr *byt
 		return fmt.Errorf("%q is a directory", pluginPath)
 	}
 
-	log.Debugf("running command path %s args: %+v", pluginPath, r.args)
 	cmd := exec.CommandContext(ctx, pluginPath, r.args...) //nolint:gosec
 
 	cmd.Stdin = os.Stdin

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aunum/log"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	grpc_oauth "google.golang.org/grpc/credentials/oauth"
@@ -17,6 +16,7 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/interfaces"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 const (
@@ -144,7 +144,7 @@ func GetAuthOptsOrExit() grpc.CallOption {
 	var err error
 	authOpts, err = WithCredentialDiscovery()
 	if err != nil {
-		log.Fatal("Not logged in. Please retry after logging in")
+		log.Fatal(nil, "not logged in. Please retry after logging in")
 	}
 
 	return authOpts
