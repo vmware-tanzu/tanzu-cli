@@ -57,6 +57,13 @@ var expectedDiscoveredStandalonePlugins = []discovery.Discovered{
 		Target:             configtypes.TargetUnknown,
 	},
 	{
+		Name:               "feature",
+		RecommendedVersion: "v0.2.0",
+		Scope:              common.PluginScopeStandalone,
+		ContextName:        "",
+		Target:             configtypes.TargetK8s,
+	},
+	{
 		Name:               "management-cluster",
 		RecommendedVersion: "v1.6.0",
 		Scope:              common.PluginScopeStandalone,
@@ -154,6 +161,11 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	// Try installing management-cluster plugin from standalone discovery
 	err = InstallPlugin("management-cluster", "v1.6.0", configtypes.TargetK8s)
 	assertions.Nil(err)
+
+	// Try installing the feature plugin which is targeted for k8s but requesting the TMC target
+	err = InstallPlugin("feature", "v0.2.0", configtypes.TargetTMC)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
 
 	// Verify installed plugins
 	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
@@ -255,6 +267,11 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	// Try installing management-cluster plugin from standalone discovery
 	err = InstallPlugin("management-cluster", "v1.6.0", configtypes.TargetK8s)
 	assertions.Nil(err)
+
+	// Try installing the feature plugin which is targeted for k8s but requesting the TMC target
+	err = InstallPlugin("feature", "v0.2.0", configtypes.TargetTMC)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
 
 	// Verify installed plugins
 	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
@@ -585,6 +602,12 @@ func Test_AvailablePlugins_From_LocalSource(t *testing.T) {
 			Status: common.PluginStatusNotInstalled,
 		},
 		{
+			Name:   "feature",
+			Scope:  common.PluginScopeStandalone,
+			Target: configtypes.TargetK8s,
+			Status: common.PluginStatusNotInstalled,
+		},
+		{
 			Name:   "cluster",
 			Scope:  common.PluginScopeStandalone,
 			Target: configtypes.TargetTMC,
@@ -629,6 +652,11 @@ func Test_InstallPlugin_InstalledPlugins_From_LocalSource(t *testing.T) {
 	err := InstallPluginsFromLocalSource("not-exists", "v0.2.0", configtypes.TargetUnknown, localPluginSourceDir, false)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
+
+	// Try installing the feature plugin which is targeted for k8s but requesting the TMC target
+	err = InstallPluginsFromLocalSource("feature", "v0.2.0", configtypes.TargetTMC, localPluginSourceDir, false)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
 
 	// Install login from local source directory
 	err = InstallPluginsFromLocalSource("login", "v0.2.0", configtypes.TargetUnknown, localPluginSourceDir, false)
@@ -687,6 +715,13 @@ func Test_DescribePlugin(t *testing.T) {
 	assertions.Nil(err)
 	assertions.Equal("cluster", pd.Name)
 	assertions.Equal("v0.2.0", pd.Version)
+
+	// Install the feature plugin for k8s
+	mockInstallPlugin(assertions, "feature", "v0.2.0", configtypes.TargetK8s)
+	// Try to describe the feature plugin but requesting the TMC target
+	_, err = DescribePlugin("feature", configtypes.TargetTMC)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
 }
 
 func Test_DeletePlugin(t *testing.T) {
@@ -720,6 +755,13 @@ func Test_DeletePlugin(t *testing.T) {
 	// Try to Delete plugin after installing plugin
 	err = DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: "", ForceDelete: true})
 	assertions.Nil(err)
+
+	// Install the feature plugin for k8s
+	mockInstallPlugin(assertions, "feature", "v0.2.0", configtypes.TargetK8s)
+	// Try to delete the feature plugin but requesting the TMC target
+	err = DeletePlugin(DeletePluginOptions{PluginName: "feature", Target: configtypes.TargetTMC, ForceDelete: true})
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
 
 	// Install cluster (context) package from TMC target
 	mockInstallPlugin(assertions, "cluster", "v0.2.0", configtypes.TargetTMC)
