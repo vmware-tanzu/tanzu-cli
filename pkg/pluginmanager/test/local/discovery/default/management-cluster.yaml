@@ -23,4 +23,4 @@ spec:
         arch: arm64
         type: local
   recommendedVersion: v1.6.0
-  target: k8s
+  target: kubernetes
