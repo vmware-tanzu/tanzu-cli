@@ -2,13 +2,13 @@
 
 ## Using the test Central Repo
 
-From the root directory of the tanzu-cli repo, run `make start-test-central-repo`.  This will start an OCI registry
-containing different test central repositories:
+From the root directory of the tanzu-cli repo, run `make start-test-central-repo`.
+This will start an OCI registry containing different test central repositories:
 
 1. `localhost:9876/tanzu-cli/plugins/central:small` - a small repo with a few plugins with names that match real product plugins.  Such a repo can be simpler to test with.
 1. `localhost:9876/tanzu-cli/plugins/central:large` - a large repo with the same plugins as the small repo plus extra stub plugins making the total number of plugins 100. This repo aims to mimic a full Central Repository.
-1. `localhost:9876/tanzu-cli/plugins/sandbox1:small` - the same plugins as the `central:small` image, but with version `v11.11.11`.  This aims to mimic a sandbox repo that can be added to the CLI through the `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` variable.
-1. `localhost:9876/tanzu-cli/plugins/sandbox2:small` - the same plugins as the `central:small` image, but with version `v22.22.22`.  This aims to mimic a sandbox repo that can be added to the CLI through the `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` variable.
+1. `localhost:9876/tanzu-cli/plugins/sandbox1:small` - the same plugins as the `central:small` image, but with version `v11.11.11`. This aims to mimic a sandbox repo that can be added to the CLI through the `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` variable.
+1. `localhost:9876/tanzu-cli/plugins/sandbox2:small` - the same plugins as the `central:small` image, but with version `v22.22.22`. This aims to mimic a sandbox repo that can be added to the CLI through the `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` variable.
 
 Limitations:
 
@@ -44,8 +44,8 @@ tz context create --name tmc-unstable --endpoint unstable.tmc-dev.cloud.vmware.c
 tz plugin sync
 ```
 
-The above `tz plugin sync` will install the plugins versions recommended by the TMC context (`v0.0.1`), but will install
-them from the test Central Repository.
+The above `tz plugin sync` will install the plugins versions recommended by the
+TMC context (`v0.0.1`), but will install them from the test Central Repository.
 
 To use the large test central repo instead:
 
@@ -60,13 +60,13 @@ Note that the registry is pre-configured through the existing `hack/central-repo
 ## Generating the test Central Repo
 
 This should only be done if a new version of the registry should be generated.
-Normally, the content of the repo is persisted on disk under `hack/central-repo/registry-content`
-which avoids having to regenerate the repo.  When using the Makefile target `make start-test-central-repo`
-the directory `registry-content` is extracted from the `registry-content.bz2` tarball.
-A tarball is used to dramatically reduce the size saved in git.
+Normally, the content of the repo is persisted on disk under
+`hack/central-repo/registry-content` which avoids having to regenerate the
+repo. When using the Makefile target `make start-test-central-repo` the
+directory `registry-content` is extracted from the `registry-content.bz2`
+tarball. A tarball is used to dramatically reduce the size saved in git.
 
-If it is necessary to re-generate a new test central repo, it took around 4 minutes on a Mac M1.
-The procedure follows:
+To re-generated a new test repo, use the procedure below:
 
 ```bash
 cd tanzu-cli
@@ -78,3 +78,5 @@ tar cjf registry-content.bz2 registry-content
 git add registry-content.bz2
 git commit -m "Regenerated the test central repos"
 ```
+
+The regeneration took 4 minutes on an Mac M1.
