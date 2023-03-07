@@ -7,9 +7,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/aunum/log"
-
 	"github.com/vmware-tanzu/tanzu-cli/pkg/command"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 func main() {
@@ -21,7 +20,7 @@ func main() {
 		} else {
 			// We got an error other than a plugin exiting with an error, let's
 			// print the error message.
-			log.Fatal(err)
+			log.Fatal(err, "")
 		}
 	}
 }

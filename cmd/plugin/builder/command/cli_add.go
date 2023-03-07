@@ -9,9 +9,8 @@ import (
 	"errors"
 	"os"
 
-	"github.com/aunum/log"
-
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/template"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // looksLikeARepo tries to verify we are running from the root of a repo or

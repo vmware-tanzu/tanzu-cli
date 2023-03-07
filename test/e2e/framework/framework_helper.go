@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/aunum/log"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // SliceToSet converts the given slice to set type

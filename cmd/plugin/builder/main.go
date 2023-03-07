@@ -4,9 +4,8 @@
 package main
 
 import (
-	"github.com/aunum/log"
-
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo"
 )
@@ -23,7 +22,7 @@ var descriptor = plugin.PluginDescriptor{
 func main() {
 	p, err := plugin.NewPlugin(&descriptor)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "")
 	}
 
 	p.AddCommands(
@@ -35,6 +34,6 @@ func main() {
 	)
 
 	if err := p.Execute(); err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "")
 	}
 }

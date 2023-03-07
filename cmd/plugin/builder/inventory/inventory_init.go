@@ -8,8 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/aunum/log"
 	"github.com/pkg/errors"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
@@ -45,7 +46,7 @@ func (iio *InventoryInitOptions) InitializeInventory() error {
 	if err != nil {
 		return errors.Wrap(err, "error while creating database")
 	}
-	log.Infof("create database locally at: %q", dbFile)
+	log.Infof("created database locally at: %q", dbFile)
 
 	// Publish the database to the remote repository
 	log.Infof("publishing database at: %q", pluginInventoryDBImage)

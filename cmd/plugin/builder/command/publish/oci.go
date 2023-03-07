@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/aunum/log"
 	"github.com/pkg/errors"
 
 	// TODO(vui) remove after discovery/distribution changes
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // OCIPublisher defines OCI publisher configuration
@@ -58,7 +58,7 @@ func (o *OCIPublisher) PublishPlugin(sourcePath, version, os, arch, plugin strin
 	if err != nil {
 		return "", errors.Wrapf(err, "%v", string(out))
 	}
-	log.Success("Successfully published plugin:", plugin)
+	log.Successf("successfully published plugin: %v", plugin)
 	return artifactImage, nil
 }
 
@@ -70,7 +70,7 @@ func (o *OCIPublisher) PublishDiscovery() error {
 	if err != nil {
 		return errors.Wrapf(err, "%v", string(out))
 	}
-	log.Success("Successfully published CLIPlugin resources to discovery image:", o.OCIDiscoveryImage)
+	log.Successf("successfully published CLIPlugin resources to discovery image: %v", o.OCIDiscoveryImage)
 	return nil
 }
 

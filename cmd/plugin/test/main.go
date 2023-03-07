@@ -6,10 +6,10 @@ package main
 import (
 	"os"
 
-	"github.com/aunum/log"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo"
 
@@ -37,7 +37,7 @@ func init() {
 func main() {
 	p, err := plugin.NewPlugin(&descriptor)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "")
 	}
 
 	p.AddCommands(
@@ -47,7 +47,7 @@ func main() {
 
 	installedPlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "")
 	}
 
 	for i := range installedPlugins {
@@ -60,7 +60,7 @@ func main() {
 	}
 
 	if err := p.Execute(); err != nil {
-		log.Fatal(err)
+		log.Fatal(err, "")
 	}
 }
 

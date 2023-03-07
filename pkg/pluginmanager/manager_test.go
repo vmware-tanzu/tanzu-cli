@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aunum/log"
 	"github.com/stretchr/testify/assert"
 
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -23,6 +22,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 var expectedDiscoveredContextPlugins = []discovery.Discovered{

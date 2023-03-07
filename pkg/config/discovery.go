@@ -4,12 +4,11 @@
 package config
 
 import (
-	"github.com/aunum/log"
-
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 func populateDefaultStandaloneDiscovery(c *configtypes.ClientConfig) bool {
