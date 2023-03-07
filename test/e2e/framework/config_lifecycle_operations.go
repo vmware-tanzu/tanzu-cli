@@ -11,8 +11,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"gopkg.in/yaml.v3"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
