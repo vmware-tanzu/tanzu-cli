@@ -76,14 +76,15 @@ func NewRootCmd() (*cobra.Command, error) {
 		// Only add plugins that should be available as root level command
 		if isPluginRootCmdTargeted(&plugins[i]) {
 			cmd := cli.GetCmdForPlugin(&plugins[i])
-			// check and find if same command already exists as part of root command
+			// check and find if a command/plugin with the same name already exists as part of the root command
 			matchedCmd := findSubCommand(rootCmd, cmd)
 			if matchedCmd == nil { // If the subcommand for the plugin doesn't exist add the command
 				rootCmd.AddCommand(cmd)
 			} else if plugins[i].Scope == common.PluginScopeContext && isStandalonePluginCommand(matchedCmd) {
-				// If the subcommand already exists but plugin is `Context-Scoped` plugin
-				// then context-scoped plugin gets higher precedence, so, replace the existing command
-				// to point to new command by removing and adding new command.
+				// If the subcommand already exists because of a standalone plugin but the new plugin
+				// is `Context-Scoped` then the new context-scoped plugin gets higher precedence.
+				// We therefore replace the existing command with the new command by removing the old and
+				// adding the new one.
 				maskedPlugins = append(maskedPlugins, matchedCmd.Name())
 				rootCmd.RemoveCommand(matchedCmd)
 				rootCmd.AddCommand(cmd)
@@ -145,8 +146,14 @@ func findSubCommand(rootCmd, subCmd *cobra.Command) *cobra.Command {
 }
 
 func isPluginRootCmdTargeted(pluginInfo *cli.PluginInfo) bool {
-	// Only '<none>' targeted and `k8s` targeted plugins are considered root cmd targeted plugins
-	return pluginInfo != nil && (pluginInfo.Target == configtypes.TargetUnknown || pluginInfo.Target == configtypes.TargetK8s)
+	// Plugins are considered "root-targeted" if their target is one of:
+	// - global
+	// - k8s
+	// - unknown (backwards-compatibility: old designation for "global")
+	return pluginInfo != nil &&
+		(pluginInfo.Target == configtypes.TargetGlobal ||
+			pluginInfo.Target == configtypes.TargetK8s ||
+			pluginInfo.Target == configtypes.TargetUnknown)
 }
 
 func isStandalonePluginCommand(cmd *cobra.Command) bool {
