@@ -22,7 +22,7 @@ We welcome many different types of contributions and not all of them need a Pull
 
 ## Getting started
 
-Details about how to get started with the project can be found in the development [guide](docs/dev.md).
+Details about how to get started with the project can be found in the development [guide](docs/dev/main.md).
 
 ## Contribution Flow
 
