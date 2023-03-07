@@ -118,7 +118,7 @@ func (co *configOps) ConfigServerDelete(serverName string) error {
 	configDelCmd := fmt.Sprintf(ConfigServerDelete, serverName)
 	_, _, err := co.Exec(configDelCmd)
 	if err != nil {
-		log.Error(err,"error while running: "+configDelCmd)
+		log.Error(err, "error while running: "+configDelCmd)
 	}
 	return err
 }
