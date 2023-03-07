@@ -2,9 +2,9 @@ name: Main
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ main, docs* ]
   push:
-    branches: [ main, test* ]
+    branches: [ main, test*, docs* ]
 
 jobs:
 
@@ -26,6 +26,11 @@ jobs:
 
     - name: Check out code into the Go module directory
       uses: actions/checkout@v1
+
+    - name: Run markdown link check
+      uses: gaurav-nelson/github-action-markdown-link-check@v1
+      with:
+        use-quiet-mode: 'yes'
 
     - name: go cache
       uses: actions/cache@v3
