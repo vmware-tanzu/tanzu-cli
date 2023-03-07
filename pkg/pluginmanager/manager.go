@@ -437,6 +437,7 @@ func DiscoveredFromPlugininfo(p *cli.PluginInfo) discovery.Discovered {
 		RecommendedVersion: p.Version,
 		Source:             p.Discovery,
 		SupportedVersions:  []string{p.Version},
+		Target:             p.Target,
 	}
 	return dp
 }
