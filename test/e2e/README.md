@@ -2,19 +2,40 @@
 
 ## E2E tests
 
-End-to-End (E2E) test cases validate the Tanzu CLI Core product functionality in an environment which resembles a real production environment. They also validate the backward compatibility of plugins which are developed with versions of the Tanzu Plugin Runtime library older than the one used by the current CLI Core. The CLI Core project has unit and integration test cases covering current functionality, but the E2E tests perform validation from an end user's perspective and test the product as a whole in a production-like environment.
+End-to-End (E2E) test cases validate the Tanzu CLI Core product functionality
+in an environment which resembles a real production environment. They also
+validate the backward compatibility of plugins which are developed with
+versions of the Tanzu Plugin Runtime library older than the one used by the
+current CLI Core. The CLI Core project has unit and integration test cases
+covering current functionality, but the E2E tests perform validation from an
+end user's perspective and test the product as a whole in a production-like
+environment.
 
-E2E tests ensure the consistent and reliable behavior of the CLI Core code base. CLI Core E2E CI pipelines are the final signal to ensure that the CLI Core product is functional according to product specifications, and ready for release.
+E2E tests ensure the consistent and reliable behavior of the CLI Core code
+base. CLI Core E2E CI pipelines are the final signal to ensure that the CLI
+Core product is functional according to product specifications, and ready for
+release.
 
 ## E2E Framework and Tools
 
-The End-to-End (E2E) test framework provides basic tooling and utility functions to write E2E test cases. This framework includes: generating and publishing plugin binaries/bundles, creating k8s clusters, executing unix commands, and performing CLI core commands and processing their output.
-Apart from the basic framework tooling, the test cases are written and executed using the Ginkgo Test Framework. Before writing E2E tests one should be familiar with how to write test cases using Ginkgo and how to add logging information using that framework. One should also be familiar with the E2E framework itself so as to use the existing tooling instead of potentially re-writing utility functions.
+The End-to-End (E2E) test framework provides basic tooling and utility
+functions to write E2E test cases. This framework includes: generating and
+publishing plugin binaries/bundles, creating k8s clusters, executing unix
+commands, and performing CLI core commands and processing their output. Apart
+from the basic framework tooling, the test cases are written and executed using
+the Ginkgo Test Framework. Before writing E2E tests one should be familiar with
+how to write test cases using Ginkgo and how to add logging information using
+that framework. One should also be familiar with the E2E framework itself so as
+to use the existing tooling instead of potentially re-writing utility
+functions.
 
 **E2E Framework Interfaces**:
 
-The CLI Core E2E framework has a struct type called `Framework` which provides all the interfaces and utility functions mentioned in the previous section.
-To write an E2E test, one should create an object of type `Framework` using `framework.NewFramework()`, then use the object to trigger different CLI core commands lifecycle operations and access helper functions.
+The CLI Core E2E framework has a struct type called `Framework` which provides
+all the interfaces and utility functions mentioned in the previous section. To
+write an E2E test, one should create an object of type `Framework` using
+`framework.NewFramework()`, then use the object to trigger different CLI core
+commands lifecycle operations and access helper functions.
 
 ```go
 // Framework has all CLI Core commands lifecycle operations and helper functions to write CLI e2e test cases
@@ -27,7 +48,10 @@ type Framework struct {
 }
 ```
 
-Below are the major interfaces defined and implemented as part of the E2E Framework (which are part of the `Framework` struct type). These interfaces are used to write E2E test cases using the Ginkgo test framework. The interfaces are self-explanatory:
+Below are the major interfaces defined and implemented as part of the E2E
+Framework (which are part of the `Framework` struct type). These interfaces are
+used to write E2E test cases using the Ginkgo test framework. The interfaces
+are self-explanatory:
 
 To execute unix commands:
 
@@ -43,7 +67,8 @@ type CmdOps interface {
 }
 ```
 
-To generate plugins and publish plugin binaries and bundles to a local OCI repository and TMC (yet to implement)
+To generate plugins and publish plugin binaries and bundles to a local OCI
+repository and TMC (yet to implement)
 
 ```go
 // GeneratePluginOps helps to generate script-based plugin binaries, and plugin binaries can be used to perform plugin testing
