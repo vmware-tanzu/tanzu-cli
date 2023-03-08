@@ -122,12 +122,12 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	defer func() { execCommand = exec.Command }()
 
 	// Try installing nonexistent plugin
-	err := InstallPlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
+	err := InstallStandalonePlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
 
 	// Install login (standalone) plugin
-	err = InstallPlugin("login", "v0.2.0", configtypes.TargetUnknown)
+	err = InstallStandalonePlugin("login", "v0.2.0", configtypes.TargetUnknown)
 	assertions.Nil(err)
 	// Verify installed plugin
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
@@ -136,34 +136,34 @@ func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
 	assertions.Equal("login", installedPlugins[0].Name)
 
 	// Try installing cluster plugin with no context-type
-	err = InstallPlugin("cluster", "v0.2.0", configtypes.TargetUnknown)
+	err = InstallStandalonePlugin("cluster", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to uniquely identify plugin 'cluster'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag")
 
 	// Try installing cluster plugin with context-type=tmc
-	err = InstallPlugin("cluster", "v0.2.0", configtypes.TargetTMC)
+	err = InstallStandalonePlugin("cluster", "v0.2.0", configtypes.TargetTMC)
 	assertions.Nil(err)
 
 	// Try installing cluster plugin through context-type=k8s with incorrect version
-	err = InstallPlugin("cluster", "v1.0.0", configtypes.TargetK8s)
+	err = InstallStandalonePlugin("cluster", "v1.0.0", configtypes.TargetK8s)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "plugin pre-download verification failed")
 
 	// Try installing cluster plugin through context-type=k8s
-	err = InstallPlugin("cluster", "v1.6.0", configtypes.TargetK8s)
+	err = InstallStandalonePlugin("cluster", "v1.6.0", configtypes.TargetK8s)
 	assertions.Nil(err)
 
 	// Try installing management-cluster plugin from standalone discovery without context-type
-	err = InstallPlugin("management-cluster", "v1.6.0", configtypes.TargetUnknown)
+	err = InstallStandalonePlugin("management-cluster", "v1.6.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to uniquely identify plugin 'management-cluster'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag")
 
 	// Try installing management-cluster plugin from standalone discovery
-	err = InstallPlugin("management-cluster", "v1.6.0", configtypes.TargetK8s)
+	err = InstallStandalonePlugin("management-cluster", "v1.6.0", configtypes.TargetK8s)
 	assertions.Nil(err)
 
 	// Try installing the feature plugin which is targeted for k8s but requesting the TMC target
-	err = InstallPlugin("feature", "v0.2.0", configtypes.TargetTMC)
+	err = InstallStandalonePlugin("feature", "v0.2.0", configtypes.TargetTMC)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
 
@@ -233,12 +233,12 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	assertions.Nil(err)
 
 	// Try installing nonexistent plugin
-	err = InstallPlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
+	err = InstallStandalonePlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
 
 	// Install login (standalone) plugin
-	err = InstallPlugin("login", "v0.2.0", configtypes.TargetUnknown)
+	err = InstallStandalonePlugin("login", "v0.2.0", configtypes.TargetUnknown)
 	assertions.Nil(err)
 	// Verify installed plugin
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
@@ -247,29 +247,29 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	assertions.Equal("login", installedPlugins[0].Name)
 
 	// Try installing myplugin plugin with no context-type
-	err = InstallPlugin("myplugin", "v0.2.0", configtypes.TargetUnknown)
+	err = InstallStandalonePlugin("myplugin", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to uniquely identify plugin 'myplugin'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag")
 
 	// Try installing myplugin plugin with context-type=tmc
-	err = InstallPlugin("myplugin", "v0.2.0", configtypes.TargetTMC)
+	err = InstallStandalonePlugin("myplugin", "v0.2.0", configtypes.TargetTMC)
 	assertions.Nil(err)
 
 	// Try installing myplugin plugin through context-type=k8s with incorrect version
-	err = InstallPlugin("myplugin", "v1.0.0", configtypes.TargetK8s)
+	err = InstallStandalonePlugin("myplugin", "v1.0.0", configtypes.TargetK8s)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "plugin pre-download verification failed")
 
 	// Try installing myplugin plugin through context-type=k8s
-	err = InstallPlugin("myplugin", "v1.6.0", configtypes.TargetK8s)
+	err = InstallStandalonePlugin("myplugin", "v1.6.0", configtypes.TargetK8s)
 	assertions.Nil(err)
 
 	// Try installing management-cluster plugin from standalone discovery
-	err = InstallPlugin("management-cluster", "v1.6.0", configtypes.TargetK8s)
+	err = InstallStandalonePlugin("management-cluster", "v1.6.0", configtypes.TargetK8s)
 	assertions.Nil(err)
 
 	// Try installing the feature plugin which is targeted for k8s but requesting the TMC target
-	err = InstallPlugin("feature", "v0.2.0", configtypes.TargetTMC)
+	err = InstallStandalonePlugin("feature", "v0.2.0", configtypes.TargetTMC)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
 

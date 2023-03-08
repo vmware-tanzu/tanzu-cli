@@ -92,7 +92,7 @@ func mockInstallPlugin(assert *assert.Assertions, name, version string, target c
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
-	err := InstallPlugin(name, version, target)
+	err := InstallStandalonePlugin(name, version, target)
 	assert.Nil(err)
 }
 

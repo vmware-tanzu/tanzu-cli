@@ -276,7 +276,7 @@ func newInstallPluginCmd() *cobra.Command {
 			}
 
 			pluginVersion := version
-			err = pluginmanager.InstallPlugin(pluginName, pluginVersion, getTarget())
+			err = pluginmanager.InstallStandalonePlugin(pluginName, pluginVersion, getTarget())
 			if err != nil {
 				return err
 			}
@@ -332,7 +332,7 @@ func legacyPluginInstall(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	err = pluginmanager.InstallPlugin(pluginName, pluginVersion, getTarget())
+	err = pluginmanager.InstallStandalonePlugin(pluginName, pluginVersion, getTarget())
 	if err != nil {
 		return err
 	}
