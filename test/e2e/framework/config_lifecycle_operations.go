@@ -22,14 +22,23 @@ const (
 
 // ConfigLifecycleOps performs "tanzu config" command operations
 type ConfigLifecycleOps interface {
+	// ConfigSetFeatureFlag sets the tanzu config feature flag
 	ConfigSetFeatureFlag(path, value string) error
+	// ConfigGetFeatureFlag gets the tanzu config feature flag
 	ConfigGetFeatureFlag(path string) (string, error)
+	// ConfigUnsetFeature un-sets the tanzu config feature flag
 	ConfigUnsetFeature(path string) error
+	// ConfigInit performs "tanzu config init"
 	ConfigInit() error
+	// GetConfig gets the tanzu config
 	GetConfig() (*configapi.ClientConfig, error)
+	// ConfigServerList returns the server list
 	ConfigServerList() error
+	// ConfigServerDelete deletes given server from tanzu config
 	ConfigServerDelete(serverName string) error
+	// DeleteCLIConfigurationFiles deletes cli configuration files
 	DeleteCLIConfigurationFiles() error
+	// IsCLIConfigurationFilesExists checks the existence of cli configuration files
 	IsCLIConfigurationFilesExists() bool
 }
 
@@ -58,14 +67,14 @@ func (co *configOps) GetConfig() (*configapi.ClientConfig, error) {
 	return cnf, nil
 }
 
-// ConfigSetFeature sets the tanzu config feature flag
+// ConfigSetFeatureFlag sets the given tanzu config feature flag
 func (co *configOps) ConfigSetFeatureFlag(path, value string) (err error) {
 	confSetCmd := ConfigSet + path + " " + value
 	_, _, err = co.Exec(confSetCmd)
 	return err
 }
 
-// ConfigSetFeature sets the tanzu config feature flag
+// ConfigGetFeatureFlag gets the given tanzu config feature flag
 func (co *configOps) ConfigGetFeatureFlag(path string) (string, error) {
 	cnf, err := co.GetConfig()
 	if err != nil {
