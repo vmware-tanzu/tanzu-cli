@@ -33,8 +33,10 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -213,6 +215,31 @@ func getPreReleasePluginDiscovery() ([]configtypes.PluginDiscovery, error) {
 				Image: centralRepoTestImage,
 			},
 		}}, nil
+}
+
+// getAdditionalTestPluginDiscoveries returns an array of plugin discoveries that
+// are meant to be used for testing new plugin version.  The comma-separated list of
+// such discoveries can be specified through the environment variable
+// "ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY".
+// Each entry in the variable should be the URI of an OCI image of the DB of the
+// discovery in question.
+func getAdditionalTestPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
+	var testDiscoveries []configtypes.PluginDiscovery
+	testDiscoveryImages := strings.Split(os.Getenv(constants.ConfigVariableAdditionalDiscoveryForTesting), ",")
+	count := 0
+	for _, image := range testDiscoveryImages {
+		image = strings.TrimSpace(image)
+		if image != "" {
+			testDiscoveries = append(testDiscoveries, configtypes.PluginDiscovery{
+				OCI: &configtypes.OCIDiscovery{
+					Name:  fmt.Sprintf("test_%d", count),
+					Image: image,
+				},
+			})
+			count++
+		}
+	}
+	return testDiscoveries, nil
 }
 
 // DiscoverServerPlugins returns the available plugins associated all the active contexts
@@ -400,6 +427,98 @@ func combineDuplicatePlugins(availablePlugins []discovery.Discovered) []discover
 	}
 
 	return selectedPlugins
+}
+
+func mergePluginEntries(plugin1, plugin2 *discovery.Discovered) *discovery.Discovered {
+	// Combine the installation status and installedVersion result when combining plugins
+	if plugin2.Status == common.PluginStatusInstalled {
+		plugin1.Status = common.PluginStatusInstalled
+	}
+	if plugin2.InstalledVersion != "" {
+		plugin1.InstalledVersion = plugin2.InstalledVersion
+	}
+
+	// Build a combined Source string
+	if plugin1.Source != plugin2.Source {
+		plugin1.Source = fmt.Sprintf("%s/%s", plugin1.Source, plugin2.Source)
+	}
+
+	// The discovery type could be OCI or Local.
+	// When dealing with different discovery types, unset it
+	if plugin1.DiscoveryType != plugin2.DiscoveryType {
+		plugin1.DiscoveryType = ""
+	}
+
+	artifacts1, ok := plugin1.Distribution.(distribution.Artifacts)
+	if !ok {
+		// This should not happened
+		log.Warningf("Plugin '%s' has an unexpected distribution type", plugin1.Name)
+		return plugin1
+	}
+
+	artifacts2, ok := plugin2.Distribution.(distribution.Artifacts)
+	if !ok {
+		// This should not happened
+		log.Warningf("Plugin '%s' has an unexpected distribution type", plugin2.Name)
+		return plugin1
+	}
+
+	// For every version in the second plugin, if it doesn't already exist
+	// in the first plugin, add it.
+	// Also build the new list of supported versions
+	for version := range artifacts2 {
+		_, exists := artifacts1[version]
+		if !exists {
+			artifacts1[version] = artifacts2[version]
+			plugin1.SupportedVersions = append(plugin1.SupportedVersions, version)
+		}
+	}
+	plugin1.Distribution = artifacts1
+	_ = utils.SortVersions(plugin1.SupportedVersions)
+
+	// Keep the following fields from the first plugin found
+	// - RecommendedVersion
+	// - Optional
+	// - ContextName
+	// - Scope
+	return plugin1
+}
+
+// mergeDuplicatePlugins combines the same plugins to eliminate duplicates by merging the information
+// of multiple entries of the same plugin into a single entry.  For example, the Central Repository can
+// provide details about a plugin, but an additional test discovery can provide other versions of the
+// same plugin.  This function will join all the information into one.
+// A plugin is determined by its name-target combination.
+// Note that if two versions of the same plugin are found more than once, it will be the first one
+// found that will be kept.  The order of the array "plugins" therefore matters.
+// This merge operation is deterministic due to the sequence of sources/plugins that we process always
+// being the same.
+func mergeDuplicatePlugins(plugins []discovery.Discovered) []discovery.Discovered {
+	mapOfSelectedPlugins := make(map[string]*discovery.Discovered)
+	for i := range plugins {
+		target := plugins[i].Target
+		if target == configtypes.TargetUnknown {
+			// Two plugins with the same name having `k8s` and `none` as targets are also considered the same for
+			// backward compatibility reasons. This is because we are adding `k8s`-targeted plugins as root-level commands.
+			target = configtypes.TargetK8s
+		}
+
+		// If plugin doesn't exist in the map then add the plugin to the map
+		// else merge the two entries, giving priority to the first one found
+		key := fmt.Sprintf("%s_%s", plugins[i].Name, target)
+		dp, exists := mapOfSelectedPlugins[key]
+		if !exists {
+			mapOfSelectedPlugins[key] = &plugins[i]
+		} else {
+			mapOfSelectedPlugins[key] = mergePluginEntries(dp, &plugins[i])
+		}
+	}
+
+	var mergedPlugins []discovery.Discovered
+	for key := range mapOfSelectedPlugins {
+		mergedPlugins = append(mergedPlugins, *mapOfSelectedPlugins[key])
+	}
+	return mergedPlugins
 }
 
 func getInstalledButNotDiscoveredStandalonePlugins(availablePlugins []discovery.Discovered, installedPlugins []cli.PluginInfo) []discovery.Discovered {
@@ -592,7 +711,7 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 	}
 
 	// Deal with duplicates from different plugin discovery sources
-	availablePlugins = combineDuplicatePlugins(availablePlugins)
+	availablePlugins = mergeDuplicatePlugins(availablePlugins)
 
 	var matchedPlugins []discovery.Discovered
 	for i := range availablePlugins {
@@ -1328,25 +1447,33 @@ func FindVersion(recommendedPluginVersion, requestedVersion string) string {
 
 // getPluginDiscoveries returns the plugin discoveries found in the configuration file.
 func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
+	var discoveries []configtypes.PluginDiscovery
 	if !configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
+		// Look for testing discoveries.  Those should be stored and searched first.
+		if testDiscoveries, err := getAdditionalTestPluginDiscoveries(); err == nil {
+			discoveries = testDiscoveries
+		}
+
+		// Look for the pre-release Central Repository discovery
 		pd, err := getPreReleasePluginDiscovery()
 		if err != nil {
-			return nil, err
+			return discoveries, err
 		}
 		// If pd is nil without an error, we bypass the prerelease discovery
 		// and fallback to the normal plugin source configuration.
 		if pd != nil {
-			return pd, nil
+			return append(discoveries, pd...), nil
 		}
 	}
 
+	// Look for configured plugin discovery sources
 	cfg, err := configlib.GetClientConfig()
 	if err != nil {
-		return []configtypes.PluginDiscovery{}, errors.Wrapf(err, "unable to get client configuration")
+		return discoveries, errors.Wrapf(err, "unable to get client configuration")
 	}
 
 	if cfg == nil || cfg.ClientOptions == nil || cfg.ClientOptions.CLI == nil {
-		return []configtypes.PluginDiscovery{}, nil
+		return discoveries, nil
 	}
-	return cfg.ClientOptions.CLI.DiscoverySources, nil
+	return append(discoveries, cfg.ClientOptions.CLI.DiscoverySources...), nil
 }
