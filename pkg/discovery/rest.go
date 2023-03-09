@@ -121,6 +121,9 @@ func (d *RESTDiscovery) List() ([]Discovered, error) {
 		if err != nil {
 			return nil, err
 		}
+		if dp.Name == "" {
+			continue
+		}
 		dp.Source = d.name
 		plugins = append(plugins, dp)
 	}
