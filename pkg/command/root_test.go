@@ -306,6 +306,44 @@ func TestSubcommands(t *testing.T) {
 	}
 }
 
+func TestEnvVarsSet(t *testing.T) {
+	assert := assert.New(t)
+
+	// Create test configuration files
+	configFile, _ := os.CreateTemp("", "config")
+	os.Setenv("TANZU_CONFIG", configFile.Name())
+	defer os.RemoveAll(configFile.Name())
+	configFileNG, _ := os.CreateTemp("", "config_ng")
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+	defer os.RemoveAll(configFileNG.Name())
+
+	rootCmd, err := NewRootCmd()
+	assert.Nil(err)
+
+	envVarName := "SOME_TEST_ENV_VAR"
+	envVarValue := "SOME_TEST_ENV_VALUE"
+
+	// First check the env var does not exist
+	assert.Equal("", os.Getenv(envVarName))
+
+	// Create an environment variable in the CLI
+	rootCmd.SetArgs([]string{"config", "set", "env." + envVarName, envVarValue})
+	err = rootCmd.Execute()
+	assert.Nil(err)
+
+	// Re-initialize the CLI with the config files containing the variable.
+	// It is in this call that the CLI creates the OS variables.
+	_, err = NewRootCmd()
+	assert.Nil(err)
+	// Make sure the variable is now set during the call to the CLI
+	assert.Equal(envVarValue, os.Getenv(envVarName))
+
+	// Cleanup
+	os.Unsetenv("TANZU_CONFIG")
+	os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+	os.Unsetenv(envVarName)
+}
+
 func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGroup, completionType uint8, target configtypes.Target, postInstallResult uint8, hidden bool, aliases []string) error {
 	filePath := filepath.Join(dir, pluginName)
 
