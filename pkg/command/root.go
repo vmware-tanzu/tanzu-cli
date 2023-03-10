@@ -17,6 +17,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
@@ -36,6 +37,10 @@ func NewRootCmd() (*cobra.Command, error) {
 
 	uFunc := cli.NewMainUsage().UsageFunc()
 	rootCmd.SetUsageFunc(uFunc)
+
+	// Configure defined environment variables found in the config file
+	cliconfig.ConfigureEnvVariables()
+
 	rootCmd.AddCommand(
 		newVersionCmd(),
 		newPluginCmd(),
