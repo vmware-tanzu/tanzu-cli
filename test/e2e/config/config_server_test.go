@@ -19,6 +19,17 @@ const ContextNameConfigPrefix = "config-k8s-"
 // tests the 'tanzu config server list' and 'tanzu config server delete' commands
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Config-Server]", func() {
 	Context("tanzu config server command test cases ", func() {
+		// Test case: delete config files and initialize config
+		It("should initialize configuration successfully", func() {
+			// delete config files
+			err := tf.Config.DeleteCLIConfigurationFiles()
+			Expect(err).To(BeNil())
+			// call init
+			err = tf.Config.ConfigInit()
+			Expect(err).To(BeNil())
+			// should create config files
+			Expect(tf.Config.IsCLIConfigurationFilesExists()).To(BeTrue())
+		})
 		// Test case: delete servers if any exists, with command 'tanzu config server delete'
 		It("list and delete servers if any exists before running tests", func() {
 			By("delete servers if any exists before running tests")
@@ -36,18 +47,18 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Config-Server]", func() {
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterContext)
+			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
-			Expect(context.IsContextExists(tf, ctxName)).To(BeTrue(), "context should be available")
+			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), "context should be available")
 			contextNames = append(contextNames, ctxName)
 		})
 		// Test case: Create context for k8s target with "default" kubeconfig and its context only as input value
 		It("create context with default kubeconfig and context", func() {
 			By("create context with default kubeconfig and context")
 			ctxName := "context-defaultConfig-" + framework.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithDefaultKubeconfig(ctxName, clusterInfo.ClusterContext)
+			err := tf.ContextCmd.CreateContextWithDefaultKubeconfig(ctxName, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
-			Expect(context.IsContextExists(tf, ctxName)).To(BeTrue(), "context should be available")
+			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), "context should be available")
 			contextNames = append(contextNames, ctxName)
 		})
 		// Test case: test 'tanzu config server list' command, should list all contexts created as servers

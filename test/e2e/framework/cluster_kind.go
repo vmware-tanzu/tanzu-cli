@@ -9,6 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
+
 	"gopkg.in/yaml.v3"
 	configapi "k8s.io/client-go/tools/clientcmd/api/v1"
 )
@@ -74,6 +76,17 @@ func (kc *kindCluster) ClusterStatus(kindClusterName string) (output string, err
 		return stdOutBuffer.String(), fmt.Errorf(stdErrBuffer.String(), err)
 	}
 	return stdOutBuffer.String(), err
+}
+
+func (kc *kindCluster) ApplyConfig(contextName, configFilePath string) error {
+	applyCmd := fmt.Sprintf(KubectlApply, contextName, configFilePath)
+	stdOut, stdErr, err := kc.CmdOps.Exec(applyCmd)
+	if err != nil {
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, applyCmd, err.Error(), stdErr.String(), stdOut.String())
+		return err
+	}
+	log.Infof("the config:%s applied successfully to context:%s", configFilePath, contextName)
+	return err
 }
 
 // GetClusterEndpoint returns given kind cluster control plane endpoint

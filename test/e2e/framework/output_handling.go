@@ -11,6 +11,7 @@ type PluginInfo struct {
 	Scope       string `json:"scope"`
 	Status      string `json:"status"`
 	Version     string `json:"version"`
+	Context     string `json:"context"`
 }
 
 type PluginSearch struct {

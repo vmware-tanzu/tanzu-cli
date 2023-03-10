@@ -16,20 +16,19 @@ func TestContext(t *testing.T) {
 	RunSpecs(t, "Context-K8S Suite")
 }
 
-const ContextShouldNotExists = "the context %s should not exists"
-const ContextShouldExistsAsCreated = "the context %s should exists as its been created"
-
 var (
 	tf           *framework.Framework
 	clusterInfo  *framework.ClusterInfo
 	contextNames []string
+	err          error
 )
 
 // BeforeSuite created KIND cluster
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
 	// Create KIND cluster, which is used in test cases to create context's
-	clusterInfo = CreateKindCluster(tf, "context-e2e-"+framework.RandomNumber(4))
+	clusterInfo, err = framework.CreateKindCluster(tf, "context-e2e-"+framework.RandomNumber(4))
+	Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
 	contextNames = make([]string, 0)
 })
 
