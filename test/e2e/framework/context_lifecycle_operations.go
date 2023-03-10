@@ -90,6 +90,6 @@ func (cc *contextCmdOps) DeleteContext(contextName string) error {
 		log.Infof("failed to delete context:%s", contextName)
 		return errors.Wrapf(err, FailedToDeleteContext+", stderr:%s stdout:%s , ", stdErr.String(), stdOut.String())
 	}
-	log.Infof(ContextCreated, contextName)
+	log.Infof(ContextDeleted, contextName)
 	return err
 }

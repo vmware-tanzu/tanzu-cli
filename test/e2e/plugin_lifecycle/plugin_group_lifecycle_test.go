@@ -1,8 +1,8 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// plugin provides plugin command specific E2E test cases
-package plugin
+// pluginlifecyclee2e provides plugin command specific E2E test cases
+package pluginlifecyclee2e
 
 import (
 	. "github.com/onsi/ginkgo"
