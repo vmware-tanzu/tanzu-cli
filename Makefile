@@ -77,6 +77,10 @@ ifndef TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL
 TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL = gcr.io/eminent-nation-87317/tanzu-cli/test/v1/plugins/plugin-inventory:latest
 endif
 
+ifndef TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL
+TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL = localhost:9876/tanzu-cli/plugins/central:small
+endif
+
 ## --------------------------------------
 ## Help
 ## --------------------------------------
@@ -190,8 +194,8 @@ test: fmt ## Run Tests
 	${GO} test `go list ./... | grep -v test/e2e` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
 
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
-e2e-cli-core: e2e-cli-plugin-compatibility-test e2e-cli-tmc-test 
-	${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc | grep -v test/e2e/plugins_compatibility` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
+e2e-cli-core: e2e-cli-plugin-compatibility-test e2e-cli-tmc-test e2e-cli-plugin-lifecycle-test
+	${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc | grep -v test/e2e/plugins_compatibility | grep -v test/e2e/plugin_lifecycle` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
 
 .PHONY: e2e-cli-plugin-compatibility-test ## Execute CLI Core Plugin Compatibility E2E test cases
 e2e-cli-plugin-compatibility-test:
@@ -201,6 +205,16 @@ e2e-cli-plugin-compatibility-test:
 		export TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
 		${GO} test ./test/e2e/plugins_compatibility -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
 	fi 
+
+.PHONY: e2e-cli-plugin-lifecycle-test ## Execute CLI Core Plugin life cycle E2E test cases
+e2e-cli-plugin-lifecycle-test:
+	@if [ "${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL}" = "" ]; then \
+		echo "***Skipping Plugin life cycle test cases because environment variables TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL is not set***" ; \
+	else \
+		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
+		export TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
+		${GO} test ./test/e2e/plugin_lifecycle -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
+	fi
 
 .PHONY: e2e-cli-tmc-test ## Execute CLI Core TMC Specific E2E test cases
 e2e-cli-tmc-test:
@@ -213,7 +227,7 @@ e2e-cli-tmc-test:
 .PHONY: start-test-central-repo
 start-test-central-repo: stop-test-central-repo ## Starts up a test central repository locally with docker
 	if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
-		(cd $(ROOT_DIR)/hack/central-repo && tar xzf registry-content.bz2 || true;) \
+		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
 	fi
 	docker run --rm -d -p 9876:5000 --name central \
 		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \

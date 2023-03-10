@@ -42,7 +42,7 @@ jobs:
 
       - name: Start local OCI registry
         run: |
-          make local-registry
+          make start-test-central-repo
 
       - name: E2E Tests
         env:
