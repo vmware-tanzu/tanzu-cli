@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	basePath = "/v1alpha1/cli/plugins"
+	basePath      = "/v1alpha1/cli/plugins"
+	discoveryName = "test"
 )
 
 var (
@@ -96,10 +97,28 @@ var (
 		},
 		Optional: true,
 	}
-	plugins = []Plugin{pluginFoo, pluginBar}
+	// I has has happened that some test endpoints have returned such output
+	// The CLI should protect against it
+	pluginEmpty = Plugin{
+		Artifacts: map[string]cliv1alpha1.ArtifactList{
+			"0.0.1": {
+				{
+					Digest: "test digest",
+				},
+				{
+					Digest: "test digest",
+				},
+				{
+					Digest: "test digest",
+				},
+			},
+		},
+	}
+	validPlugins   = []Plugin{pluginFoo, pluginBar}
+	invalidPlugins = []Plugin{pluginEmpty}
 )
 
-func createTestServer() *httptest.Server {
+func createTestServer(plugins []Plugin) *httptest.Server {
 	m := mux.NewRouter()
 	m.HandleFunc(basePath, func(w http.ResponseWriter, _ *http.Request) {
 		res := ListPluginsResponse{plugins}
@@ -117,16 +136,35 @@ func createTestServer() *httptest.Server {
 }
 
 func TestRESTDiscovery(t *testing.T) {
-	s := createTestServer()
+	s := createTestServer(validPlugins)
 	defer s.Close()
 
-	d := NewRESTDiscovery("test", s.URL, basePath)
+	d := NewRESTDiscovery(discoveryName, s.URL, basePath)
 
-	expList := make([]Discovered, len(plugins))
-	for i := range plugins {
-		p, err := DiscoveredFromREST(&plugins[i])
+	expList := make([]Discovered, len(validPlugins))
+	for i := range validPlugins {
+		p, err := DiscoveredFromREST(&validPlugins[i])
 		assert.NoError(t, err)
-		p.Source = "test"
+		p.Source = discoveryName
+		expList[i] = p
+	}
+	actList, err := d.List()
+	assert.NoError(t, err)
+	assert.Equal(t, expList, actList)
+}
+
+func TestRESTDiscoveryWithInvalidPlugins(t *testing.T) {
+	s := createTestServer(append(validPlugins, invalidPlugins...))
+	defer s.Close()
+
+	d := NewRESTDiscovery(discoveryName, s.URL, basePath)
+
+	// Only the valid plugins are expected
+	expList := make([]Discovered, len(validPlugins))
+	for i := range validPlugins {
+		p, err := DiscoveredFromREST(&validPlugins[i])
+		assert.NoError(t, err)
+		p.Source = discoveryName
 		expList[i] = p
 	}
 	actList, err := d.List()
