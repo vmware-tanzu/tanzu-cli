@@ -545,46 +545,101 @@ func InitializePlugin(plugin *cli.PluginInfo) error {
 	return nil
 }
 
-// InstallPlugin installs a plugin by name, version and target.
+// InstallStandalonePlugin installs a plugin by name, version and target as a standalone plugin.
+func InstallStandalonePlugin(pluginName, version string, target configtypes.Target) error {
+	return installPlugin(pluginName, version, target, "")
+}
+
+// InstallPluginFromContext installs a plugin by name, version and target as a context-scope plugin.
+func InstallPluginFromContext(pluginName, version string, target configtypes.Target, contextName string) error {
+	if contextName == "" {
+		log.V(4).Warning("Missing context name for a context-scope plugin: %s/%s/%s", pluginName, version, string(target))
+	}
+	return installPlugin(pluginName, version, target, contextName)
+}
+
+// installs a plugin by name, version and target.
+// If the contextName is not empty, it implies the plugin is a context-scope plugin, otherwise
+// we are installing a standalone plugin.
 // nolint: gocyclo
-func InstallPlugin(pluginName, version string, target configtypes.Target) error {
-	var availablePlugins []discovery.Discovered
-	var err error
-	if configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
-		discoveries, err := getPluginDiscoveries()
-		if err != nil || len(discoveries) == 0 {
-			return err
-		}
-		availablePlugins, err = discoverSpecificPlugins(discoveries, &discovery.PluginDiscoveryCriteria{
-			Name:    pluginName,
-			Target:  target,
-			Version: version,
-			OS:      runtime.GOOS,
-			Arch:    runtime.GOARCH,
-		})
-		if err != nil {
-			return err
-		}
+func installPlugin(pluginName, version string, target configtypes.Target, contextName string) error {
+	if !configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
+		// The legacy installation can figure out if the plugin is from a context
+		// because it searches all contexts for plugins.  So, we don't need to pass on that parameter.
+		return legacyPluginInstall(pluginName, version, target)
+	}
 
-		if len(availablePlugins) == 0 {
-			if target != configtypes.TargetUnknown {
-				return errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+	discoveries, err := getPluginDiscoveries()
+	if err != nil || len(discoveries) == 0 {
+		return err
+	}
+	availablePlugins, err := discoverSpecificPlugins(discoveries, &discovery.PluginDiscoveryCriteria{
+		Name:    pluginName,
+		Target:  target,
+		Version: version,
+		OS:      runtime.GOOS,
+		Arch:    runtime.GOARCH,
+	})
+	if err != nil {
+		return err
+	}
+
+	if len(availablePlugins) == 0 {
+		if target != configtypes.TargetUnknown {
+			return errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+		}
+		return errors.Errorf("unable to find plugin '%v'", pluginName)
+	}
+
+	// Deal with duplicates from different plugin discovery sources
+	availablePlugins = combineDuplicatePlugins(availablePlugins)
+
+	var matchedPlugins []discovery.Discovered
+	for i := range availablePlugins {
+		if availablePlugins[i].Name == pluginName &&
+			(target == configtypes.TargetUnknown || target == availablePlugins[i].Target) {
+			// If the plugin was recommended by a context, lets store that info
+			if contextName != "" {
+				availablePlugins[i].ContextName = contextName
 			}
-			return errors.Errorf("unable to find plugin '%v'", pluginName)
+			matchedPlugins = append(matchedPlugins, availablePlugins[i])
 		}
+	}
+	if len(matchedPlugins) == 0 {
+		if target != configtypes.TargetUnknown {
+			return errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+		}
+		return errors.Errorf("unable to find plugin '%v'", pluginName)
+	}
 
-		// Deal with duplicates from different plugin discovery sources
-		availablePlugins = combineDuplicatePlugins(availablePlugins)
-
+	if len(matchedPlugins) == 1 {
 		// If the version requested was the RecommendedVersion, we should set it explicitly
 		if version == cli.VersionLatest {
-			version = availablePlugins[0].RecommendedVersion
+			version = matchedPlugins[0].RecommendedVersion
 		}
-	} else {
-		availablePlugins, err = AvailablePlugins()
-		if err != nil {
-			return err
+
+		return installOrUpgradePlugin(&matchedPlugins[0], version, false)
+	}
+
+	for i := range matchedPlugins {
+		if matchedPlugins[i].Target == target {
+			// If the version requested was the RecommendedVersion, we should set it explicitly
+			if version == cli.VersionLatest {
+				version = matchedPlugins[i].RecommendedVersion
+			}
+			return installOrUpgradePlugin(&matchedPlugins[i], version, false)
 		}
+	}
+
+	return errors.Errorf("unable to uniquely identify plugin '%v'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag", pluginName)
+}
+
+// legacyInstallPlugin installs a plugin by name, version and target.
+// This function is only used without the Central Repository feature.
+func legacyPluginInstall(pluginName, version string, target configtypes.Target) error {
+	availablePlugins, err := AvailablePlugins()
+	if err != nil {
+		return err
 	}
 
 	var matchedPlugins []discovery.Discovered
@@ -616,7 +671,9 @@ func InstallPlugin(pluginName, version string, target configtypes.Target) error 
 
 // UpgradePlugin upgrades a plugin from the given repository.
 func UpgradePlugin(pluginName, version string, target configtypes.Target) error {
-	return InstallPlugin(pluginName, version, target)
+	// Upgrade is only triggered from a manual user operation.
+	// This means a plugin is installed manually, which means it is installed as a standalone plugin.
+	return InstallStandalonePlugin(pluginName, version, target)
 }
 
 // InstallPluginsFromGroup installs either the specified plugin or all plugins from the named group
@@ -639,7 +696,7 @@ func InstallPluginsFromGroup(pluginName, groupID string) error {
 	numInstalled := 0
 	for _, plugin := range group.Plugins {
 		if pluginName == cli.AllPlugins || pluginName == plugin.Name {
-			err = InstallPlugin(plugin.Name, plugin.Version, plugin.Target)
+			err = InstallStandalonePlugin(plugin.Name, plugin.Version, plugin.Target)
 			if err != nil {
 				numErrors++
 				log.Warningf("unable to install plugin '%s': %v", plugin.Name, err.Error())
@@ -905,9 +962,10 @@ func SyncPlugins() error {
 
 	errList := make([]error, 0)
 	for idx := range plugins {
-		if plugins[idx].Status != common.PluginStatusInstalled {
+		if plugins[idx].Status == common.PluginStatusNotInstalled {
 			installed = true
-			err = InstallPlugin(plugins[idx].Name, plugins[idx].RecommendedVersion, plugins[idx].Target)
+			p := plugins[idx]
+			err = InstallPluginFromContext(p.Name, p.RecommendedVersion, p.Target, p.ContextName)
 			if err != nil {
 				errList = append(errList, err)
 			}
