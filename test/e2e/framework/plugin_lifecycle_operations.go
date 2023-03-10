@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	"encoding/json"
-
 	"github.com/pkg/errors"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -17,9 +15,9 @@ import (
 // PluginBasicOps helps to perform the plugin command operations
 type PluginBasicOps interface {
 	// ListPlugins lists all plugins by running 'tanzu plugin list' command
-	ListPlugins() ([]PluginInfo, error)
+	ListPlugins() ([]*PluginInfo, error)
 	// SearchPlugins searches all plugins for given filter (keyword|regex) by running 'tanzu plugin search' command
-	SearchPlugins(filter string) ([]PluginInfo, error)
+	SearchPlugins(filter string) ([]*PluginInfo, error)
 	// InstallPlugin installs given plugin and flags
 	InstallPlugin(pluginName, target, versions string) error
 	// DescribePlugin describes given plugin and flags
@@ -46,13 +44,23 @@ type PluginSourceOps interface {
 	DeletePluginDiscoverySource(pluginSourceName string) (string, error)
 
 	// ListPluginSources returns all available plugin discovery sources
-	ListPluginSources() ([]PluginSourceInfo, error)
+	ListPluginSources() ([]*PluginSourceInfo, error)
+}
+
+type PluginGroupOps interface {
+	// SearchPluginGroups performs plugin group search
+	// input: flagsWithValues - flags and values if any
+	SearchPluginGroups(flagsWithValues string) ([]*PluginGroup, error)
+
+	// InstallPluginsFromGroup a plugin or all plugins from the given plugin group
+	InstallPluginsFromGroup(pluginNameORAll, groupName string) error
 }
 
 // PluginCmdOps helps to perform the plugin and its sub-commands lifecycle operations
 type PluginCmdOps interface {
 	PluginBasicOps
 	PluginSourceOps
+	PluginGroupOps
 }
 
 type DiscoveryOptions struct {
@@ -84,62 +92,37 @@ func (po *pluginCmdOps) UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOpti
 	return out.String(), err
 }
 
-func (po *pluginCmdOps) ListPluginSources() ([]PluginSourceInfo, error) {
-	stdOut, stdErr, err := po.cmdExe.Exec(ListPluginSources)
-	if err != nil {
-		log.Errorf("error while executing plugin source list command:'%s', error:'%s' stdErr:'%s' stdOut:'%s'", ListPluginSources, err.Error(), stdErr.String(), stdOut.String())
-		return nil, err
-	}
-	jsonStr := stdOut.String()
-	var list []PluginSourceInfo
-	err = json.Unmarshal([]byte(jsonStr), &list)
-	if err != nil {
-		log.Errorf("failed to construct node from plugin source list output:'%s' error:'%s' ", jsonStr, err.Error())
-		return nil, errors.Wrapf(err, "failed to construct json node from plugin source list output:'%s'", jsonStr)
-	}
-	return list, nil
+func (po *pluginCmdOps) ListPluginSources() ([]*PluginSourceInfo, error) {
+	return ExecuteCmdAndBuildJSONOutput[PluginSourceInfo](po.cmdExe, ListPluginSourcesWithJSONOutputFlag)
 }
 
 func (po *pluginCmdOps) DeletePluginDiscoverySource(pluginSourceName string) (string, error) {
 	deleteCmd := fmt.Sprintf(DeletePluginSource, pluginSourceName)
-	out, _, err := po.cmdExe.Exec(deleteCmd)
+	out, stdErr, err := po.cmdExe.Exec(deleteCmd)
+	if err != nil {
+		log.Errorf(ErrorLogForCommandWithErrAndStdErr, deleteCmd, err.Error(), stdErr.String())
+	}
 	return out.String(), err
 }
 
-func (po *pluginCmdOps) ListPlugins() ([]PluginInfo, error) {
-	out, _, err := po.cmdExe.Exec(ListPluginsCmdInJSON)
-	if err != nil {
-		return nil, err
-	}
-	jsonStr := out.String()
-	var list []PluginInfo
-	err = json.Unmarshal([]byte(jsonStr), &list)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to construct json node from config get output")
-	}
-	return list, nil
+func (po *pluginCmdOps) ListPlugins() ([]*PluginInfo, error) {
+	return ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag)
 }
 
-func (po *pluginCmdOps) SearchPlugins(filter string) ([]PluginInfo, error) {
+func (po *pluginCmdOps) SearchPlugins(filter string) ([]*PluginInfo, error) {
 	searchPluginCmdWithOptions := SearchPluginsCmd
 	if len(strings.TrimSpace(filter)) > 0 {
 		searchPluginCmdWithOptions = searchPluginCmdWithOptions + " " + strings.TrimSpace(filter)
 	}
-	searchPluginCmdWithOptions += JSONOutput
-	out, stdErr, err := po.cmdExe.Exec(searchPluginCmdWithOptions)
+	return ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, searchPluginCmdWithOptions+JSONOutput)
+}
 
-	if err != nil {
-		log.Errorf("error while executing plugin search command:'%s', error:'%s' stdErr:'%s'", searchPluginCmdWithOptions, err.Error(), stdErr.String())
-		return nil, err
+func (po *pluginCmdOps) SearchPluginGroups(flagsWithValues string) ([]*PluginGroup, error) {
+	searchPluginGroupCmdWithOptions := SearchPluginGroupsCmd
+	if len(strings.TrimSpace(flagsWithValues)) > 0 {
+		searchPluginGroupCmdWithOptions = searchPluginGroupCmdWithOptions + " " + strings.TrimSpace(flagsWithValues)
 	}
-	jsonStr := out.String()
-	var list []PluginInfo
-	err = json.Unmarshal([]byte(jsonStr), &list)
-	if err != nil {
-		log.Errorf("failed to construct node from plugin search output:'%s' error:'%s' ", jsonStr, err.Error())
-		return nil, errors.Wrapf(err, "failed to construct json node from search output:'%s'", jsonStr)
-	}
-	return list, nil
+	return ExecuteCmdAndBuildJSONOutput[PluginGroup](po.cmdExe, searchPluginGroupCmdWithOptions+JSONOutput)
 }
 
 func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string) error {
@@ -152,7 +135,21 @@ func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string) error
 	}
 	_, stdErr, err := po.cmdExe.Exec(installPluginCmd)
 	if err != nil {
-		log.Errorf("error while installing the plugin: %s, error: %s stdErr: %s", pluginName, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrAndStdErr, installPluginCmd, err.Error(), stdErr.String())
+	}
+	return err
+}
+
+func (po *pluginCmdOps) InstallPluginsFromGroup(pluginNameORAll, groupName string) error {
+	var installPluginCmd string
+	if len(pluginNameORAll) > 0 {
+		installPluginCmd = fmt.Sprintf(InstallPluginFromGroupCmd, pluginNameORAll, groupName)
+	} else {
+		installPluginCmd = fmt.Sprintf(InstallAllPluginsFromGroupCmd, groupName)
+	}
+	_, stdErr, err := po.cmdExe.Exec(installPluginCmd)
+	if err != nil {
+		log.Errorf(ErrorLogForCommandWithErrAndStdErr, installPluginCmd, err.Error(), stdErr.String())
 	}
 	return err
 }
@@ -165,7 +162,7 @@ func (po *pluginCmdOps) DescribePlugin(pluginName, target string) (string, error
 
 	stdOut, stdErr, err := po.cmdExe.Exec(installPluginCmd)
 	if err != nil {
-		log.Errorf("error for plugin describe command: %s, error: %s stdErr: %s", pluginName, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrAndStdErr, installPluginCmd, err.Error(), stdErr.String())
 	}
 	return stdOut.String(), err
 }
@@ -181,7 +178,7 @@ func (po *pluginCmdOps) UninstallPlugin(pluginName, target string) error {
 	}
 	_, stdErr, err := po.cmdExe.Exec(uninstallPluginCmd)
 	if err != nil {
-		log.Errorf("error while uninstalling the plugin: %s, error: %s, stdErr: %s", pluginName, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrAndStdErr, uninstallPluginCmd, err.Error(), stdErr.String())
 	}
 	return err
 }
@@ -190,7 +187,7 @@ func (po *pluginCmdOps) ExecuteSubCommand(pluginWithSubCommand string) (string, 
 	pluginCmdWithSubCommand := fmt.Sprintf(PluginSubCommand, pluginWithSubCommand)
 	stdOut, stdErr, err := po.cmdExe.Exec(pluginCmdWithSubCommand)
 	if err != nil {
-		log.Errorf("error while running the plugin command: %s, error: %s, stdErr: %s", pluginCmdWithSubCommand, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrAndStdErr, pluginCmdWithSubCommand, err.Error(), stdErr.String())
 		return stdOut.String(), errors.Wrap(err, stdErr.String())
 	}
 	return stdOut.String(), nil
@@ -199,7 +196,7 @@ func (po *pluginCmdOps) ExecuteSubCommand(pluginWithSubCommand string) (string, 
 func (po *pluginCmdOps) CleanPlugins() error {
 	_, stdErr, err := po.cmdExe.Exec(CleanPluginsCmd)
 	if err != nil {
-		log.Errorf("error for plugin clean command: %s, error: %s, stdErr: %s", CleanPluginsCmd, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrAndStdErr, CleanPluginsCmd, err.Error(), stdErr.String())
 	}
 	return err
 }

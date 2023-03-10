@@ -15,10 +15,10 @@ import (
 )
 
 // PluginsForCompatibilityTesting search for test-plugin-'s from the test central repository and returns all test-plugin-'s
-func PluginsForCompatibilityTesting(tf *framework.Framework) []framework.PluginInfo {
+func PluginsForCompatibilityTesting(tf *framework.Framework) []*framework.PluginInfo {
 	list, err := tf.PluginCmd.SearchPlugins("")
 	gomega.Expect(err).To(gomega.BeNil(), "should not occur any error while searching for plugins")
-	testPlugins := make([]framework.PluginInfo, 0)
+	testPlugins := make([]*framework.PluginInfo, 0)
 	for _, plugin := range list {
 		if strings.HasPrefix(plugin.Name, framework.TestPluginsPrefix) {
 			testPlugins = append(testPlugins, plugin)
@@ -28,10 +28,10 @@ func PluginsForCompatibilityTesting(tf *framework.Framework) []framework.PluginI
 }
 
 // IsAllPluginsInstalled takes list of plugins and checks if all plugins are installed
-func IsAllPluginsInstalled(tf *framework.Framework, plugins []framework.PluginInfo) bool {
+func IsAllPluginsInstalled(tf *framework.Framework, plugins []*framework.PluginInfo) bool {
 	pluginListOutput, err := tf.PluginCmd.ListPlugins()
 	gomega.Expect(err).To(gomega.BeNil(), "should not occur any error while listing plugins")
-	pluginMap := framework.PluginListToSet(&plugins)
+	pluginMap := framework.PluginListToSet(plugins)
 	for _, pluginInfo := range pluginListOutput {
 		key := fmt.Sprintf(framework.PluginKey, pluginInfo.Name, pluginInfo.Target, pluginInfo.Version)
 		_, ok := pluginMap[key]
@@ -43,10 +43,10 @@ func IsAllPluginsInstalled(tf *framework.Framework, plugins []framework.PluginIn
 }
 
 // IsAllPluginsUnInstalled takes list of plugins and checks if all plugins are uninstalled
-func IsAllPluginsUnInstalled(tf *framework.Framework, plugins []framework.PluginInfo) bool {
+func IsAllPluginsUnInstalled(tf *framework.Framework, plugins []*framework.PluginInfo) bool {
 	pluginListOutput, err := tf.PluginCmd.ListPlugins()
 	gomega.Expect(err).To(gomega.BeNil(), "should not occur any error while listing plugins")
-	pluginMap := framework.PluginListToSet(&plugins)
+	pluginMap := framework.PluginListToSet(plugins)
 	for _, pluginInfo := range pluginListOutput {
 		key := fmt.Sprintf(framework.PluginKey, pluginInfo.Name, pluginInfo.Target, pluginInfo.Version)
 		_, ok := pluginMap[key]
@@ -59,10 +59,10 @@ func IsAllPluginsUnInstalled(tf *framework.Framework, plugins []framework.Plugin
 }
 
 // UninstallPlugins lists plugins and uninstalls provided plugins if any plugins are installed
-func UninstallPlugins(tf *framework.Framework, plugins []framework.PluginInfo) {
+func UninstallPlugins(tf *framework.Framework, plugins []*framework.PluginInfo) {
 	pluginListOutput, err := tf.PluginCmd.ListPlugins()
 	gomega.Expect(err).To(gomega.BeNil(), "should not occur any error while listing plugins")
-	pluginMap := framework.PluginListToSet(&plugins)
+	pluginMap := framework.PluginListToSet(plugins)
 	for _, pluginInfo := range pluginListOutput {
 		key := fmt.Sprintf(framework.PluginKey, pluginInfo.Name, pluginInfo.Target, pluginInfo.Version)
 		_, ok := pluginMap[key]

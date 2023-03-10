@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // CmdOps performs the Command line exec operations
@@ -31,6 +33,7 @@ func NewCmdOps() CmdOps {
 
 // Exec the command, exit on error
 func (co *cmdOps) Exec(command string) (stdOut, stdErr *bytes.Buffer, err error) {
+	log.Infof(ExecutingCommand, command)
 	cmdInput := strings.Split(command, " ")
 	cmdName := cmdInput[0]
 	cmdArgs := cmdInput[1:]

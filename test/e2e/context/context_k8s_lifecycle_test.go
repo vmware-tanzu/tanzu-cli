@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 const ContextNameConfigPrefix = "context-config-k8s-"
@@ -32,6 +33,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 	Context("Context lifecycle tests for k8s target", func() {
 		// Test case: Create context for k8s target with kubeconfig and its context as input
 		It("create context with kubeconfig and context", func() {
+			By("create context with kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
 			err := tf.ContextCmd.CreateConextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterContext)
 			Expect(err).To(BeNil(), "context should create without any error")
@@ -39,6 +41,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 		})
 		// Test case: (negative test) Create context for k8s target with incorrect kubeconfig file path and its context as input
 		It("create context with incorrect kubeconfig and context", func() {
+			By("create context with incorrect kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
 			err := tf.ContextCmd.CreateConextWithKubeconfig(ctxName, framework.RandomString(4), clusterInfo.ClusterContext)
 			Expect(err).ToNot(BeNil())
@@ -46,6 +49,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 		})
 		// Test case: (negative test) Create context for k8s target with kubeconfig file path and incorrect context as input
 		It("create context with kubeconfig and incorrect context", func() {
+			By("create context with kubeconfig and incorrect context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
 			err := tf.ContextCmd.CreateConextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, framework.RandomString(4))
 			Expect(err).ToNot(BeNil())
@@ -53,19 +57,21 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 		})
 		// Test case: Create context for k8s target with "default" kubeconfig and its context only as input value
 		It("create context with kubeconfig and context", func() {
+			By("create context with kubeconfig and context")
 			ctxName := "context-defaultConfig-" + framework.RandomString(4)
 			err := tf.ContextCmd.CreateContextWithDefaultKubeconfig(ctxName, clusterInfo.ClusterContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			contextNames = append(contextNames, ctxName)
-			active, err := tf.ContextCmd.GetActiveContext(framework.TargetTypeK8s)
+			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(ctxName), "the active context should be recently added context")
 		})
 		// Test case: test 'tanzu context use' command with the specific context name (not the recently created one)
 		It("use context command", func() {
+			By("use context command")
 			err := tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
-			active, err := tf.ContextCmd.GetActiveContext(framework.TargetTypeK8s)
+			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
 		})
@@ -76,11 +82,13 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 		})
 		// Test case: test 'tanzu context list' command, should list all contexts created
 		It("list context should have all added contexts", func() {
+			By("list context should have all added contexts")
 			list := GetAvailableContexts(tf, contextNames)
 			Expect(len(list)).To(Equal(len(contextNames)), "list context should have all contexts added in previous tests")
 		})
 		// Test case: test 'tanzu context delete' command, make sure to delete all context's created in previous test cases
 		It("delete context command", func() {
+			By("delete all contexts created in previous tests")
 			for _, ctx := range contextNames {
 				err := tf.ContextCmd.DeleteContext(ctx)
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
@@ -90,6 +98,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 		})
 		// Test case: (negative test) test 'tanzu context delete' command for context name which is not exists
 		It("delete context command", func() {
+			By("delete context command with random string")
 			err := tf.ContextCmd.DeleteContext(framework.RandomString(4))
 			Expect(err).ToNot(BeNil())
 		})

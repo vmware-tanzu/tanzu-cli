@@ -6,7 +6,6 @@ package plugin
 
 import (
 	"fmt"
-	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -24,27 +23,6 @@ import (
 // 1. plugin search, install, delete, describe, list (with negative use cases)
 // 2. plugin source add/update/list/delete (with negative use cases)
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func() {
-	var (
-		tf                         *framework.Framework
-		e2eTestLocalCentralRepoURL string
-		pluginSourceName           string
-		pluginsSearchList          *[]framework.PluginInfo
-	)
-	BeforeSuite(func() {
-		tf = framework.NewFramework()
-		// check E2E test central repo URL
-		e2eTestLocalCentralRepoURL = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryURL)
-		Expect(e2eTestLocalCentralRepoURL).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository URL", framework.TanzuCliE2ETestLocalCentralRepositoryURL))
-		// set E2E test central repo URL to TANZU_CLI_PRE_RELEASE_REPO_IMAGE
-		os.Setenv(framework.CentralRepositoryPreReleaseRepoImage, e2eTestLocalCentralRepoURL)
-
-		// search plugins and make sure there are plugins available
-		pluginsSearchList = SearchAllPlugins(tf)
-		Expect(len(*pluginsSearchList)).Should(BeNumerically(">", 0))
-
-		// check all required plugins (framework.PluginsForLifeCycleTests) for plugin life cycle e2e are available in plugin search output
-		CheckAllPluginsAvailable(pluginsSearchList, framework.PluginsForLifeCycleTests)
-	})
 	Context("plugin source use cases: tanzu plugin source add, list, update, delete", func() {
 		// Test case: add plugin source
 		It("add plugin source", func() {
@@ -123,7 +101,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			pluginsList, err := tf.PluginCmd.ListPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(Equal(len(framework.PluginsForLifeCycleTests)), "plugins list should return all installed plugins")
-			Expect(CheckAllPluginsExists(&pluginsList, &framework.PluginsForLifeCycleTests)).Should(BeTrue(), "the plugin list output is not same as the plugins being installed")
+			Expect(CheckAllPluginsExists(pluginsList, framework.PluginsForLifeCycleTests)).Should(BeTrue(), "the plugin list output is not same as the plugins being installed")
 		})
 		// Test case: delete all plugins which are installed, and validate by running list plugin command
 		It("delete all plugins and verify with plugin list", func() {
