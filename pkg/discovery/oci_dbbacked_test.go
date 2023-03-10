@@ -4,13 +4,16 @@
 package discovery
 
 import (
+	"fmt"
 	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -535,6 +538,65 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			Expect(groups).ToNot(BeNil())
 			Expect(len(groups)).To(Equal(len(groupEntries)))
 			Expect(groups).To(Equal(groupEntries))
+		})
+	})
+
+	Describe("Verify inventory image signature", func() {
+		var (
+			cosignVerifier *fakes.Cosignhelperfake
+			dbDiscovery    *DBBackedOCIDiscovery
+			ok             bool
+		)
+		BeforeEach(func() {
+			tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+			Expect(err).To(BeNil(), "unable to create temporary directory")
+
+			tkgConfigFile, err = os.CreateTemp("", "config")
+			Expect(err).To(BeNil())
+			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+
+			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
+			Expect(err).To(BeNil())
+			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+
+			discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
+			Expect(err).To(BeNil(), "unable to create discovery")
+			dbDiscovery, ok = discovery.(*DBBackedOCIDiscovery)
+			Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+		})
+		AfterEach(func() {
+			os.Unsetenv(constants.PluginDiscoveryImageSignatureVerificationSkipList)
+			os.Unsetenv("TANZU_CONFIG")
+			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+			os.RemoveAll(tkgConfigFile.Name())
+			os.RemoveAll(tkgConfigFileNG.Name())
+			os.RemoveAll(tmpDir)
+		})
+		Context("Cosign signature verification is success", func() {
+			It("should return success", func() {
+				cosignVerifier = &fakes.Cosignhelperfake{}
+				cosignVerifier.VerifyReturns(nil)
+				err = dbDiscovery.verifyInventoryImageSignature(cosignVerifier)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+		Context("When Cosign signature verification failed and TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST environment variable is set", func() {
+			It("should skip signature verification and return success", func() {
+				cosignVerifier = &fakes.Cosignhelperfake{}
+				cosignVerifier.VerifyReturns(fmt.Errorf("signature verification fake error"))
+				os.Setenv(constants.PluginDiscoveryImageSignatureVerificationSkipList, dbDiscovery.image)
+				err = dbDiscovery.verifyInventoryImageSignature(cosignVerifier)
+				Expect(err).ToNot(HaveOccurred())
+			})
+		})
+		Context("Cosign signature verification failed", func() {
+			It("should return error", func() {
+				cosignVerifier = &fakes.Cosignhelperfake{}
+				cosignVerifier.VerifyReturns(fmt.Errorf("signature verification fake error"))
+				err = dbDiscovery.verifyInventoryImageSignature(cosignVerifier)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("signature verification fake error"))
+			})
 		})
 	})
 })

@@ -193,3 +193,16 @@ func (r *registry) downloadBundleOrImage(imageName, outputDir string, isBundle b
 
 	return pullOptions.Run()
 }
+
+// GetImageDigest gets the digest of an OCI image similarly to the `imgpkg tag resolve -i` command
+func (r *registry) GetImageDigest(imageWithTag string) (string, string, error) {
+	ref, err := regname.ParseReference(imageWithTag, regname.WeakValidation)
+	if err != nil {
+		return "", "", err
+	}
+	hash, err := r.registry.Digest(ref)
+	if err != nil {
+		return "", "", err
+	}
+	return hash.Algorithm, hash.Hex, nil
+}

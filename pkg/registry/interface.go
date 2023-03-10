@@ -19,4 +19,6 @@ type Registry interface {
 	DownloadBundle(imageName, outputDir string) error
 	// DownloadImage downloads an OCI image similarly to the `imgpkg pull -i` command
 	DownloadImage(imageName, outputDir string) error
+	// GetImageDigest gets the digest of an OCI image similar to the `imgpkg tag resolve -i` command
+	GetImageDigest(imageWithTag string) (string, string, error)
 }
