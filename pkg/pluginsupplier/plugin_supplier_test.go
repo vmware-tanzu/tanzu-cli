@@ -352,7 +352,7 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 			installedServerPlugins, err := GetInstalledServerPlugins()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(installedServerPlugins)).To(Equal(2))
-			Expect(installedServerPlugins[0]).Should(Equal(
+			Expect(installedServerPlugins).Should(ContainElement(
 				cli.PluginInfo{
 					Name:                         "cluster",
 					Description:                  "cluster functionality",
@@ -376,7 +376,7 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 					PostInstallHook:              nil,
 				},
 			))
-			Expect(installedServerPlugins[1]).Should(Equal(
+			Expect(installedServerPlugins).Should(ContainElement(
 				cli.PluginInfo{
 					Name:                         "iam",
 					Description:                  "IAM Policies for tmc resources",

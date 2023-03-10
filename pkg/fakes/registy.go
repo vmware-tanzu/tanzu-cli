@@ -59,6 +59,21 @@ type Registry struct {
 		result1 map[string][]byte
 		result2 error
 	}
+	GetImageDigestStub        func(string) (string, string, error)
+	getImageDigestMutex       sync.RWMutex
+	getImageDigestArgsForCall []struct {
+		arg1 string
+	}
+	getImageDigestReturns struct {
+		result1 string
+		result2 string
+		result3 error
+	}
+	getImageDigestReturnsOnCall map[int]struct {
+		result1 string
+		result2 string
+		result3 error
+	}
 	ListImageTagsStub        func(string) ([]string, error)
 	listImageTagsMutex       sync.RWMutex
 	listImageTagsArgsForCall []struct {
@@ -329,6 +344,73 @@ func (fake *Registry) GetFilesReturnsOnCall(i int, result1 map[string][]byte, re
 	}{result1, result2}
 }
 
+func (fake *Registry) GetImageDigest(arg1 string) (string, string, error) {
+	fake.getImageDigestMutex.Lock()
+	ret, specificReturn := fake.getImageDigestReturnsOnCall[len(fake.getImageDigestArgsForCall)]
+	fake.getImageDigestArgsForCall = append(fake.getImageDigestArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.GetImageDigestStub
+	fakeReturns := fake.getImageDigestReturns
+	fake.recordInvocation("GetImageDigest", []interface{}{arg1})
+	fake.getImageDigestMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+}
+
+func (fake *Registry) GetImageDigestCallCount() int {
+	fake.getImageDigestMutex.RLock()
+	defer fake.getImageDigestMutex.RUnlock()
+	return len(fake.getImageDigestArgsForCall)
+}
+
+func (fake *Registry) GetImageDigestCalls(stub func(string) (string, string, error)) {
+	fake.getImageDigestMutex.Lock()
+	defer fake.getImageDigestMutex.Unlock()
+	fake.GetImageDigestStub = stub
+}
+
+func (fake *Registry) GetImageDigestArgsForCall(i int) string {
+	fake.getImageDigestMutex.RLock()
+	defer fake.getImageDigestMutex.RUnlock()
+	argsForCall := fake.getImageDigestArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *Registry) GetImageDigestReturns(result1 string, result2 string, result3 error) {
+	fake.getImageDigestMutex.Lock()
+	defer fake.getImageDigestMutex.Unlock()
+	fake.GetImageDigestStub = nil
+	fake.getImageDigestReturns = struct {
+		result1 string
+		result2 string
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *Registry) GetImageDigestReturnsOnCall(i int, result1 string, result2 string, result3 error) {
+	fake.getImageDigestMutex.Lock()
+	defer fake.getImageDigestMutex.Unlock()
+	fake.GetImageDigestStub = nil
+	if fake.getImageDigestReturnsOnCall == nil {
+		fake.getImageDigestReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 string
+			result3 error
+		})
+	}
+	fake.getImageDigestReturnsOnCall[i] = struct {
+		result1 string
+		result2 string
+		result3 error
+	}{result1, result2, result3}
+}
+
 func (fake *Registry) ListImageTags(arg1 string) ([]string, error) {
 	fake.listImageTagsMutex.Lock()
 	ret, specificReturn := fake.listImageTagsReturnsOnCall[len(fake.listImageTagsArgsForCall)]
@@ -404,6 +486,8 @@ func (fake *Registry) Invocations() map[string][][]interface{} {
 	defer fake.getFileMutex.RUnlock()
 	fake.getFilesMutex.RLock()
 	defer fake.getFilesMutex.RUnlock()
+	fake.getImageDigestMutex.RLock()
+	defer fake.getImageDigestMutex.RUnlock()
 	fake.listImageTagsMutex.RLock()
 	defer fake.listImageTagsMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
