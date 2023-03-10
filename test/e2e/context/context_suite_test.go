@@ -17,11 +17,14 @@ func TestContext(t *testing.T) {
 }
 
 var (
-	tf           *framework.Framework
-	clusterInfo  *framework.ClusterInfo
-	contextNames []string
-	err          error
+	tf                 *framework.Framework
+	clusterInfo        *framework.ClusterInfo
+	contextNames       []string
+	contextNamesStress []string
+	err                error
 )
+
+const ContextCreateLimit = 100
 
 // BeforeSuite created KIND cluster
 var _ = BeforeSuite(func() {
@@ -30,6 +33,7 @@ var _ = BeforeSuite(func() {
 	clusterInfo, err = framework.CreateKindCluster(tf, "context-e2e-"+framework.RandomNumber(4))
 	Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
 	contextNames = make([]string, 0)
+	contextNamesStress = make([]string, 0)
 })
 
 // AfterSuite deletes the KIND cluster created in BeforeSuite

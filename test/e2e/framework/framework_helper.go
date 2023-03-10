@@ -290,3 +290,27 @@ func GetGivenPluginFromTheGivenPluginList(pluginList []*PluginInfo, requiredPlug
 	superSet := PluginListToMap(pluginList)
 	return superSet[GetMapKeyForPlugin(requiredPlugin)]
 }
+
+// LogConfigFiles logs info level, contents of files config.yaml and config-ng.yaml
+func LogConfigFiles() error {
+	err := LogFile(ConfigFilePath)
+	if err != nil {
+		return err
+	}
+	err = LogFile(ConfigNGFilePath)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// LogFile logs in info level, the given file content
+func LogFile(file string) error {
+	dat, err := os.ReadFile(file)
+	if err != nil {
+		log.Infof("error while reading file: %s error:%s", file, err.Error())
+		return err
+	}
+	log.Infof(FileContent, ConfigFilePath, string(dat))
+	return err
+}
