@@ -4,15 +4,21 @@
 package discovery
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // inventoryDirName is the name of the directory where the file(s) describing
@@ -133,8 +139,57 @@ func (od *DBBackedOCIDiscovery) listGroupsFromInventory() ([]*plugininventory.Pl
 // inventory of this discovery and stores it in the cache directory.
 func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 	// TODO(khouzam): Improve by checking if we really need to download again or if we can use the cache
+
+	// Get the custom public key path and prepare cosign verifier, if empty, cosign verifier would use embedded public key for verification
+	customPublicKeyPath := os.Getenv(constants.PublicKeyPathForPluginDiscoveryImageSignature)
+	cosignVerifier := cosignhelper.NewCosignVerifier(customPublicKeyPath)
+	if sigVerifyErr := od.verifyInventoryImageSignature(cosignVerifier); sigVerifyErr != nil {
+		// Check if the error is due to invalid image repository URL or due to actual signature verification failure and throw the appropriate error message
+		var errMsg string
+		_, _, ImgResolveErr := carvelhelpers.GetImageDigest(od.image)
+		if ImgResolveErr != nil {
+			log.Warningf("Unable to resolve the plugin discovery image: %v", ImgResolveErr)
+			errMsg = fmt.Sprintf("Fatal, plugins discovery image resolution failed. Please check the repository image URL %q is correct ", od.image)
+		} else {
+			log.Warningf("Unable to verify the plugins discovery image signature: %v", sigVerifyErr)
+			// TODO(pkalle): Update the message to convey user to check if they could use the latest public key after we get details of the well known location of the public key
+			errMsg = fmt.Sprintf("Fatal, plugins discovery image signature verification failed. The `tanzu` CLI can not ensure the integrity of the plugins to be installed. To ignore this validation please append %q to the comma-separated list in the environment variable %q.  This is NOT RECOMMENDED and could put your environment at risk!",
+				od.image, constants.PluginDiscoveryImageSignatureVerificationSkipList)
+		}
+		log.Fatal(nil, errMsg)
+	}
+
 	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, od.pluginDataDir); err != nil {
 		return errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
 	}
 	return nil
+}
+
+func (od *DBBackedOCIDiscovery) verifyInventoryImageSignature(verifier cosignhelper.Cosignhelper) error {
+	signatureVerificationSkipSet := getPluginDiscoveryImagesSkippedForSignatureVerification()
+	if _, exists := signatureVerificationSkipSet[strings.TrimSpace(od.image)]; exists {
+		// log warning message iff user had not chosen to skip warning message for signature verification
+		if skip, _ := strconv.ParseBool(os.Getenv(constants.SuppressSkipSignatureVerificationWarning)); !skip {
+			log.Warningf("Skipping the plugins discovery image signature verification for %q\n ", od.image)
+		}
+		return nil
+	}
+
+	err := verifier.Verify(context.Background(), []string{od.image})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func getPluginDiscoveryImagesSkippedForSignatureVerification() map[string]struct{} {
+	discoveryImages := map[string]struct{}{}
+	discoveryImagesList := strings.Split(os.Getenv(constants.PluginDiscoveryImageSignatureVerificationSkipList), ",")
+	for _, image := range discoveryImagesList {
+		image = strings.TrimSpace(image)
+		if image != "" {
+			discoveryImages[image] = struct{}{}
+		}
+	}
+	return discoveryImages
 }

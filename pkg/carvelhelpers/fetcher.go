@@ -63,6 +63,21 @@ func DownloadImageAndSaveFilesToDir(imageWithTag, destinationDir string) error {
 	return nil
 }
 
+// GetImageDigest gets digest of the image
+func GetImageDigest(imageWithTag string) (string, string, error) {
+	reg, err := newRegistry()
+	if err != nil {
+		return "", "", errors.Wrapf(err, "unable to initialize registry")
+	}
+
+	hashAlgorithm, hashHexVal, err := reg.GetImageDigest(imageWithTag)
+	if err != nil {
+		return "", "", errors.Wrap(err, "error getting the image digest")
+	}
+
+	return hashAlgorithm, hashHexVal, nil
+}
+
 // newRegistry returns a new registry object by also
 // taking into account for any custom registry or proxy
 // environment variable provided by the user
