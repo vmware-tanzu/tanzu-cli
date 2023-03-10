@@ -120,7 +120,7 @@ func TestPluginList(t *testing.T) {
 			targets:            []configtypes.Target{configtypes.TargetK8s},
 			args:               []string{"plugin", "list", "-o", "json"},
 			expectedFailure:    false,
-			expected:           `[ { "description": "some foo description", "name": "foo", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
+			expected:           `[ { "context": "", "description": "some foo description", "name": "foo", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
 		},
 		{
 			test:               "when yaml output is requested with central repo",
@@ -130,7 +130,7 @@ func TestPluginList(t *testing.T) {
 			targets:            []configtypes.Target{configtypes.TargetK8s},
 			args:               []string{"plugin", "list", "-o", "yaml"},
 			expectedFailure:    false,
-			expected:           `- description: some foo description name: foo status: installed target: kubernetes version: v0.1.0`,
+			expected:           `- context: "" description: some foo description name: foo status: installed target: kubernetes version: v0.1.0`,
 		},
 	}
 

@@ -553,7 +553,7 @@ func InstallStandalonePlugin(pluginName, version string, target configtypes.Targ
 // InstallPluginFromContext installs a plugin by name, version and target as a context-scope plugin.
 func InstallPluginFromContext(pluginName, version string, target configtypes.Target, contextName string) error {
 	if contextName == "" {
-		log.V(4).Warning("Missing context name for a context-scope plugin: %s/%s/%s", pluginName, version, string(target))
+		log.Warning("Missing context name for a context-scope plugin: %s/%s/%s", pluginName, version, string(target))
 	}
 	return installPlugin(pluginName, version, target, contextName)
 }
