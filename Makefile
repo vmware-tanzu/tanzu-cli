@@ -213,7 +213,7 @@ e2e-cli-tmc-test:
 .PHONY: start-test-central-repo
 start-test-central-repo: stop-test-central-repo ## Starts up a test central repository locally with docker
 	if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
-		(cd $(ROOT_DIR)/hack/central-repo && tar xzf registry-content.bz2 || true;) \
+		(cd $(ROOT_DIR)/hack/central-repo && tar xzf registry-content.tgz;) \
 	fi
 	docker run --rm -d -p 9876:5000 --name central \
 		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \

@@ -61,7 +61,7 @@ Note that the registry is pre-configured through the existing `hack/central-repo
 This should only be done if a new version of the registry should be generated.
 Normally, the content of the repo is persisted on disk under `hack/central-repo/registry-content`
 which avoids having to regenerate the repo.  When using the Makefile target `make start-test-central-repo`
-the directory `registry-content` is extracted from the `registry-content.bz2` tarball.
+the directory `registry-content` is extracted from the `registry-content.tgz` tarball.
 A tarball is used to dramatically reduce the size saved in git.
 
 If it is necessary to re-generate a new test central repo, it took around 4 minutes on a Mac M1.
@@ -71,9 +71,9 @@ The procedure follows:
 cd tanzu-cli
 make stop-test-central-repo
 cd hack/central-repo
-\rm -rf registry-content registry-content.bz2
+\rm -rf registry-content registry-content.tgz
 ./generate-central.sh
-tar cjf registry-content.bz2 registry-content
-git add registry-content.bz2
+tar czf registry-content.tgz registry-content
+git add registry-content.tgz
 git commit -m "Regenerated the test central repos"
 ```
