@@ -8,7 +8,7 @@ ROOT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 # Start a registry
 make -C $ROOT_DIR/../.. start-test-central-repo
 
-mkdir -p bin && cp ../../pkg/plugininventory/data/sqlite/create_tables.sql bin/create_tables.sql
+cp ../../pkg/plugininventory/data/sqlite/create_tables.sql .
 
 # Build a run a docker image that contains imgpkg and sqlite3
 # to avoid having to install them locally
@@ -30,7 +30,7 @@ docker build -t ${IMAGE} ${ROOT_DIR} -f - <<- EOF
    WORKDIR /work
    COPY upload-plugins.sh .
    COPY fakeplugin.sh .
-   COPY bin/create_tables.sql .
+   COPY create_tables.sql .
 EOF
 
 # Generate both the small and large test central repositories
