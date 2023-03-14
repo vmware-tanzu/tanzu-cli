@@ -19,7 +19,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
-var _ = Describe("Unit tests for inventory plugin insert", func() {
+var _ = Describe("Unit tests for inventory plugin add", func() {
 	manifestFile, err := createTestManifestFile()
 	Expect(err).ToNot(HaveOccurred())
 
@@ -81,7 +81,7 @@ var _ = Describe("Unit tests for inventory plugin insert", func() {
 		return nil
 	}
 
-	var _ = Context("tests for the inventory plugin insert function", func() {
+	var _ = Context("tests for the inventory plugin add function", func() {
 
 		var _ = It("when plugin inventory database cannot be pulled from the repository", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
@@ -89,7 +89,7 @@ var _ = Describe("Unit tests for inventory plugin insert", func() {
 			fakeImgpkgWrapper.PullImageReturns(nil)
 			fakeImgpkgWrapper.PullImageReturnsOnCall(0, errors.New("unable to pull inventory database"))
 
-			err := iip.PluginInsert()
+			err := iip.PluginAdd()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error while pulling database from the image"))
 			Expect(err.Error()).To(ContainSubstring("unable to pull inventory database"))
@@ -101,7 +101,7 @@ var _ = Describe("Unit tests for inventory plugin insert", func() {
 			fakeImgpkgWrapper.PullImageCalls(pullDBImageStub)
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("", errors.New("error while getting digest"))
 
-			err := iip.PluginInsert()
+			err := iip.PluginAdd()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error while getting digest"))
 			Expect(err.Error()).To(ContainSubstring("error while getting plugin binary digest"))
@@ -113,7 +113,7 @@ var _ = Describe("Unit tests for inventory plugin insert", func() {
 			fakeImgpkgWrapper.PullImageCalls(pullDBImageStub)
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("fake-digest", nil)
 
-			err := iip.PluginInsert()
+			err := iip.PluginAdd()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("image not found"))
 			Expect(err.Error()).To(ContainSubstring("error while publishing inventory database to the repository"))
@@ -126,7 +126,7 @@ var _ = Describe("Unit tests for inventory plugin insert", func() {
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("fake-digest", nil)
 
 			iip.DeactivatePlugins = false
-			err := iip.PluginInsert()
+			err := iip.PluginAdd()
 			Expect(err).NotTo(HaveOccurred())
 
 			// verify that the local db file was updated before publishing the database to remote repository
@@ -151,7 +151,7 @@ var _ = Describe("Unit tests for inventory plugin insert", func() {
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("fake-digest", nil)
 
 			iip.DeactivatePlugins = true
-			err := iip.PluginInsert()
+			err := iip.PluginAdd()
 			Expect(err).NotTo(HaveOccurred())
 
 			// verify that the local db file was updated before publishing the database to remote repository

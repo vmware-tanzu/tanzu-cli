@@ -21,7 +21,7 @@ func newInventoryPluginCmd() *cobra.Command {
 	inventoryPluginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 
 	inventoryPluginCmd.AddCommand(
-		newInventoryPluginInsertCmd(),
+		newInventoryPluginAddCmd(),
 		newInventoryPluginActivateCmd(),
 		newInventoryPluginDeactivateCmd(),
 	)
@@ -29,7 +29,7 @@ func newInventoryPluginCmd() *cobra.Command {
 	return inventoryPluginCmd
 }
 
-type inventoryPluginInsertFlags struct {
+type inventoryPluginAddFlags struct {
 	Repository        string
 	InventoryImageTag string
 	ManifestFile      string
@@ -38,40 +38,40 @@ type inventoryPluginInsertFlags struct {
 	DeactivatePlugins bool
 }
 
-func newInventoryPluginInsertCmd() *cobra.Command {
-	var ipiFlags = &inventoryPluginInsertFlags{}
+func newInventoryPluginAddCmd() *cobra.Command {
+	var ipaFlags = &inventoryPluginAddFlags{}
 
-	var pluginInsertCmd = &cobra.Command{
-		Use:     "insert",
-		Short:   "Insert the plugin to the inventory database available on the remote repository",
+	var pluginAddCmd = &cobra.Command{
+		Use:     "add",
+		Short:   "Add the plugin to the inventory database available on the remote repository",
 		Example: ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			piOptions := inventory.InventoryPluginUpdateOptions{
-				Repository:        ipiFlags.Repository,
-				InventoryImageTag: ipiFlags.InventoryImageTag,
-				ManifestFile:      ipiFlags.ManifestFile,
-				Vendor:            ipiFlags.Vendor,
-				Publisher:         ipiFlags.Publisher,
-				DeactivatePlugins: ipiFlags.DeactivatePlugins,
+			paOptions := inventory.InventoryPluginUpdateOptions{
+				Repository:        ipaFlags.Repository,
+				InventoryImageTag: ipaFlags.InventoryImageTag,
+				ManifestFile:      ipaFlags.ManifestFile,
+				Vendor:            ipaFlags.Vendor,
+				Publisher:         ipaFlags.Publisher,
+				DeactivatePlugins: ipaFlags.DeactivatePlugins,
 				ImgpkgOptions:     imgpkg.NewImgpkgCLIWrapper(),
 			}
-			return piOptions.PluginInsert()
+			return paOptions.PluginAdd()
 		},
 	}
 
-	pluginInsertCmd.Flags().StringVarP(&ipiFlags.Repository, "repository", "", "", "repository to publish plugin inventory image")
-	pluginInsertCmd.Flags().StringVarP(&ipiFlags.InventoryImageTag, "plugin-inventory-image-tag", "", "latest", "tag to which plugin inventory image needs to be published")
-	pluginInsertCmd.Flags().StringVarP(&ipiFlags.ManifestFile, "manifest", "", "", "manifest file specifying plugin details that needs to be processed")
-	pluginInsertCmd.Flags().StringVarP(&ipiFlags.Vendor, "vendor", "", "", "name of the vendor")
-	pluginInsertCmd.Flags().StringVarP(&ipiFlags.Publisher, "publisher", "", "", "name of the publisher")
-	pluginInsertCmd.Flags().BoolVarP(&ipiFlags.DeactivatePlugins, "deactivate", "", false, "mark plugins as deactivated")
+	pluginAddCmd.Flags().StringVarP(&ipaFlags.Repository, "repository", "", "", "repository to publish plugin inventory image")
+	pluginAddCmd.Flags().StringVarP(&ipaFlags.InventoryImageTag, "plugin-inventory-image-tag", "", "latest", "tag to which plugin inventory image needs to be published")
+	pluginAddCmd.Flags().StringVarP(&ipaFlags.ManifestFile, "manifest", "", "", "manifest file specifying plugin details that needs to be processed")
+	pluginAddCmd.Flags().StringVarP(&ipaFlags.Vendor, "vendor", "", "", "name of the vendor")
+	pluginAddCmd.Flags().StringVarP(&ipaFlags.Publisher, "publisher", "", "", "name of the publisher")
+	pluginAddCmd.Flags().BoolVarP(&ipaFlags.DeactivatePlugins, "deactivate", "", false, "mark plugins as deactivated")
 
-	_ = pluginInsertCmd.MarkFlagRequired("repository")
-	_ = pluginInsertCmd.MarkFlagRequired("vendor")
-	_ = pluginInsertCmd.MarkFlagRequired("publisher")
-	_ = pluginInsertCmd.MarkFlagRequired("manifest")
+	_ = pluginAddCmd.MarkFlagRequired("repository")
+	_ = pluginAddCmd.MarkFlagRequired("vendor")
+	_ = pluginAddCmd.MarkFlagRequired("publisher")
+	_ = pluginAddCmd.MarkFlagRequired("manifest")
 
-	return pluginInsertCmd
+	return pluginAddCmd
 }
 
 type inventoryPluginActivateDeactivateFlags struct {

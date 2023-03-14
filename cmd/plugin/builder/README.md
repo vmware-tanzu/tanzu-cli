@@ -188,14 +188,14 @@ Below are the examples:
   tanzu builder inventory init --repository project-stg.registry.vmware.com/test/v1/tanzu-cli/plugins --plugin-inventory-image-tag latest
 ```
 
-### Inventory-plugin-insert
+### Inventory-plugin-add
 
-Once the inventory database has been initialized within the repository by publishing it as an OCI image the next thing would be to add plugin entries to the database. The builder plugin implements `tanzu builder inventory plugin insert` command to insert plugin entries to the sqlite based inventory database.
+Once the inventory database has been initialized within the repository by publishing it as an OCI image the next thing would be to add plugin entries to the database. The builder plugin implements `tanzu builder inventory plugin add` command to add plugin entries to the sqlite based inventory database.
 
-Below are the flags available with `tanzu builder inventory plugin insert` command:
+Below are the flags available with `tanzu builder inventory plugin add` command:
 
 ```txt
-  -h, --help                                help for insert
+  -h, --help                                help for add
       --manifest string                     manifest file specifying plugin details that needs to be processed
       --plugin-inventory-image-tag string   tag to which plugin inventory image needs to be published (default "latest")
       --publisher string                    name of the publisher
@@ -206,13 +206,13 @@ Below are the flags available with `tanzu builder inventory plugin insert` comma
 Below are the examples:
 
 ```shell
-  # Insert plugin entries to the inventory database based on the specified manifest file
-  tanzu builder inventory plugin insert --repository project-stg.registry.vmware.com/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg --manifest ./artifacts/packages/plugin_manifest.yaml
+  # Add plugin entries to the inventory database based on the specified manifest file
+  tanzu builder inventory plugin add --repository project-stg.registry.vmware.com/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg --manifest ./artifacts/packages/plugin_manifest.yaml
 ```
 
 ### Inventory-plugin-activate-deactivate
 
-Once the plugins are inserted to the inventory database, there might be a scenario where publisher need to mark the plugin as hidden or in deactive state so that users do not discover these plugins from the central repository. To support this scenario builder plugin implements `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands.
+Once the plugins are added to the inventory database, there might be a scenario where publisher need to mark the plugin as hidden or in deactive state so that users do not discover these plugins from the central repository. To support this scenario builder plugin implements `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands.
 
 Below are the flags available with `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands:
 
