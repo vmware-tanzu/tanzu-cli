@@ -94,9 +94,7 @@ spec:
                   for standalone plugins
                 type: string
             required:
-            - artifacts
             - description
-            - optional
             - recommendedVersion
             type: object
         required:
