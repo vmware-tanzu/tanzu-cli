@@ -41,7 +41,7 @@ func (ppo *PublishPluginPackageOptions) PublishPluginPackages() error {
 		return err
 	}
 
-	log.Infof("Using plugin package artifacts from %q", ppo.PackageArtifactDir)
+	log.Infof("using plugin package artifacts from %q", ppo.PackageArtifactDir)
 
 	for i := range pluginManifest.Plugins {
 		for _, osArch := range cli.AllOSArch {
@@ -52,16 +52,16 @@ func (ppo *PublishPluginPackageOptions) PublishPluginPackages() error {
 				}
 
 				imageRepo := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s", ppo.Repository, ppo.Vendor, ppo.Publisher, osArch.OS(), osArch.Arch(), pluginManifest.Plugins[i].Target, pluginManifest.Plugins[i].Name)
-				log.Infof("Publishing plugin 'name:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
+				log.Infof("publishing plugin 'name:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 
 				if ppo.DryRun {
-					log.Infof("Command: 'imgpkg copy --tar %s --to-repo %s", pluginTarFilePath, imageRepo)
+					log.Infof("command: 'imgpkg copy --tar %s --to-repo %s", pluginTarFilePath, imageRepo)
 				} else {
 					err = ppo.ImgpkgOptions.CopyArchiveToRepo(imageRepo, pluginTarFilePath)
 					if err != nil {
 						return errors.Wrapf(err, "unable to publish plugin (name:%s, target:%s, os:%s, arch:%s, version:%s)", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 					}
-					log.Infof("Published plugin at '%s:%s'", imageRepo, version)
+					log.Infof("published plugin at '%s:%s'", imageRepo, version)
 				}
 			}
 		}

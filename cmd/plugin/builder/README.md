@@ -200,6 +200,7 @@ Below are the flags available with `tanzu builder inventory plugin add` command:
       --plugin-inventory-image-tag string   tag to which plugin inventory image needs to be published (default "latest")
       --publisher string                    name of the publisher
       --repository string                   repository to publish plugin inventory image
+      --validate                            validate whether plugins already exists in the plugin inventory or not
       --vendor string                       name of the vendor
 ```
 
