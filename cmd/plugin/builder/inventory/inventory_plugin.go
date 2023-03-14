@@ -33,10 +33,10 @@ type InventoryPluginUpdateOptions struct {
 	ImgpkgOptions imgpkg.ImgpkgWrapper
 }
 
-// PluginInsert add plugin entry to the inventory database by downloading the database from the repository, updating it locally
+// PluginAdd add plugin entry to the inventory database by downloading the database from the repository, updating it locally
 // and publishing the inventory database as OCI image on the remote repository
-func (ipuo *InventoryPluginUpdateOptions) PluginInsert() error {
-	pluginInsertFunc := func(dbFile string, entry *plugininventory.PluginInventoryEntry) error {
+func (ipuo *InventoryPluginUpdateOptions) PluginAdd() error {
+	pluginAddFunc := func(dbFile string, entry *plugininventory.PluginInventoryEntry) error {
 		db := plugininventory.NewSQLiteInventory(dbFile, "")
 		err := db.InsertPlugin(entry)
 		if err != nil {
@@ -44,7 +44,7 @@ func (ipuo *InventoryPluginUpdateOptions) PluginInsert() error {
 		}
 		return nil
 	}
-	return ipuo.genericInventoryUpdater(pluginInsertFunc)
+	return ipuo.genericInventoryUpdater(pluginAddFunc)
 }
 
 // UpdatePluginActivationState updates plugin entry in the inventory database by downloading the
