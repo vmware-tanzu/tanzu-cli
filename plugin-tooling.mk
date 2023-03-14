@@ -100,9 +100,9 @@ inventory-init: ## Initialize empty plugin inventory
 		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
 		$(OVERRIDE_FLAG)
 
-.PHONY: inventory-plugin-insert
-inventory-plugin-insert: ## Insert plugins to the inventory database
-	$(BUILDER) inventory plugin insert \
+.PHONY: inventory-plugin-add
+inventory-plugin-add: ## Add plugins to the inventory database
+	$(BUILDER) inventory plugin add \
 		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
 		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
 		--publisher $(PUBLISHER) \
