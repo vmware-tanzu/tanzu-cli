@@ -32,6 +32,14 @@ func GetInstalledStandalonePlugins() ([]cli.PluginInfo, error) {
 		return nil, err
 	}
 	plugins := standAloneCatalog.List()
+
+	// Any server plugin installed takes precedence over the same plugin
+	// installed as standalone.  We therefore remove those standalone
+	// plugins from the list.
+	plugins, err = removeInstalledServerPlugins(plugins)
+	if err != nil {
+		return nil, err
+	}
 	return plugins, nil
 }
 
@@ -54,4 +62,27 @@ func GetInstalledServerPlugins() ([]cli.PluginInfo, error) {
 	}
 
 	return serverPlugins, nil
+}
+
+// Remove any installed standalone plugin if it is also installed as a server plugin.
+func removeInstalledServerPlugins(standalone []cli.PluginInfo) ([]cli.PluginInfo, error) {
+	serverPlugins, err := GetInstalledServerPlugins()
+	if err != nil {
+		return nil, err
+	}
+
+	var installedStandalone []cli.PluginInfo
+	for i := range standalone {
+		found := false
+		for j := range serverPlugins {
+			if standalone[i].Name == serverPlugins[j].Name && standalone[i].Target == serverPlugins[j].Target {
+				found = true
+				break
+			}
+		}
+		if !found {
+			installedStandalone = append(installedStandalone, standalone[i])
+		}
+	}
+	return installedStandalone, nil
 }
