@@ -76,7 +76,7 @@ func genCoreCMD(cmd *cobra.Command) error {
 		return fmt.Errorf("error opening tanzu.md %q", err)
 	}
 	defer t.Close()
-	if err := doc.GenMarkdown(cmd.Root(), t); err != nil {
+	if err := doc.GenMarkdownTree(cmd.Root(), docsDir); err != nil {
 		return fmt.Errorf("error generating markdown %q", err)
 	}
 	return nil
