@@ -1322,7 +1322,7 @@ func TestGetAdditionalTestPluginDiscoveries(t *testing.T) {
 	err := os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, "")
 	assertions.Nil(err)
 
-	discoveries, err := getAdditionalTestPluginDiscoveries()
+	discoveries := getAdditionalTestPluginDiscoveries()
 	assertions.Nil(err)
 	assertions.Equal(0, len(discoveries))
 
@@ -1331,7 +1331,7 @@ func TestGetAdditionalTestPluginDiscoveries(t *testing.T) {
 	err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, expectedDiscovery)
 	assertions.Nil(err)
 
-	discoveries, err = getAdditionalTestPluginDiscoveries()
+	discoveries = getAdditionalTestPluginDiscoveries()
 	assertions.Nil(err)
 	assertions.Equal(1, len(discoveries))
 	assertions.Equal(expectedDiscovery, discoveries[0].OCI.Image)
@@ -1348,8 +1348,7 @@ func TestGetAdditionalTestPluginDiscoveries(t *testing.T) {
 		expectedDiscoveries[0]+","+expectedDiscoveries[1]+"   ,"+expectedDiscoveries[2]+"  ,  "+expectedDiscoveries[3])
 	assertions.Nil(err)
 
-	discoveries, err = getAdditionalTestPluginDiscoveries()
-	assertions.Nil(err)
+	discoveries = getAdditionalTestPluginDiscoveries()
 	assertions.Equal(len(expectedDiscoveries), len(discoveries))
 	assertions.Equal(expectedDiscoveries[0], discoveries[0].OCI.Image)
 	assertions.Equal(expectedDiscoveries[1], discoveries[1].OCI.Image)
@@ -1379,19 +1378,20 @@ func TestGetPluginDiscoveries(t *testing.T) {
 	assertions.Equal("fake", discoveries[1].Local.Name)
 
 	// Set a single test discovery
-	expectedDiscovery := "localhost:9876/my/discovery/image:v10"
-	err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, expectedDiscovery)
+	expectedTestDiscovery := "localhost:9876/my/discovery/image:v10"
+	err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, expectedTestDiscovery)
 	assertions.Nil(err)
 
 	discoveries, err = getPluginDiscoveries()
 	assertions.Nil(err)
 	assertions.Equal(3, len(discoveries))
-	assertions.Equal(expectedDiscovery, discoveries[0].OCI.Image)
-	assertions.Equal("default-local", discoveries[1].Local.Name)
-	assertions.Equal("fake", discoveries[2].Local.Name)
+	// The test discovery must be last
+	assertions.Equal("default-local", discoveries[0].Local.Name)
+	assertions.Equal("fake", discoveries[1].Local.Name)
+	assertions.Equal(expectedTestDiscovery, discoveries[2].OCI.Image)
 
 	// Set multiple additional discoveries
-	expectedDiscoveries := []string{
+	expectedTestDiscoveries := []string{
 		"localhost:9876/my/discovery/image:v11",
 		"localhost:9876/my/discovery/image:v13",
 		"localhost:9876/my/discovery/image:v12",
@@ -1399,18 +1399,19 @@ func TestGetPluginDiscoveries(t *testing.T) {
 	}
 	// Use different spacing between discoveries
 	err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting,
-		expectedDiscoveries[0]+","+expectedDiscoveries[1]+"   ,"+expectedDiscoveries[2]+"  ,  "+expectedDiscoveries[3])
+		expectedTestDiscoveries[0]+","+expectedTestDiscoveries[1]+"   ,"+expectedTestDiscoveries[2]+"  ,  "+expectedTestDiscoveries[3])
 	assertions.Nil(err)
 
 	discoveries, err = getPluginDiscoveries()
 	assertions.Nil(err)
-	assertions.Equal(len(expectedDiscoveries)+2, len(discoveries))
-	assertions.Equal(expectedDiscoveries[0], discoveries[0].OCI.Image)
-	assertions.Equal(expectedDiscoveries[1], discoveries[1].OCI.Image)
-	assertions.Equal(expectedDiscoveries[2], discoveries[2].OCI.Image)
-	assertions.Equal(expectedDiscoveries[3], discoveries[3].OCI.Image)
-	assertions.Equal("default-local", discoveries[4].Local.Name)
-	assertions.Equal("fake", discoveries[5].Local.Name)
+	assertions.Equal(len(expectedTestDiscoveries)+2, len(discoveries))
+	// The test discoveries in order but after the configured discoveries
+	assertions.Equal("default-local", discoveries[0].Local.Name)
+	assertions.Equal("fake", discoveries[1].Local.Name)
+	assertions.Equal(expectedTestDiscoveries[0], discoveries[2].OCI.Image)
+	assertions.Equal(expectedTestDiscoveries[1], discoveries[3].OCI.Image)
+	assertions.Equal(expectedTestDiscoveries[2], discoveries[4].OCI.Image)
+	assertions.Equal(expectedTestDiscoveries[3], discoveries[5].OCI.Image)
 
 	// Test with the Central Repo feature disabled
 	featureArray := strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")

@@ -223,7 +223,7 @@ func getPreReleasePluginDiscovery() ([]configtypes.PluginDiscovery, error) {
 // "ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY".
 // Each entry in the variable should be the URI of an OCI image of the DB of the
 // discovery in question.
-func getAdditionalTestPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
+func getAdditionalTestPluginDiscoveries() []configtypes.PluginDiscovery {
 	var testDiscoveries []configtypes.PluginDiscovery
 	testDiscoveryImages := strings.Split(os.Getenv(constants.ConfigVariableAdditionalDiscoveryForTesting), ",")
 	count := 0
@@ -239,7 +239,7 @@ func getAdditionalTestPluginDiscoveries() ([]configtypes.PluginDiscovery, error)
 			count++
 		}
 	}
-	return testDiscoveries, nil
+	return testDiscoveries
 }
 
 // DiscoverServerPlugins returns the available plugins associated all the active contexts
@@ -1447,33 +1447,37 @@ func FindVersion(recommendedPluginVersion, requestedVersion string) string {
 
 // getPluginDiscoveries returns the plugin discoveries found in the configuration file.
 func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
-	var discoveries []configtypes.PluginDiscovery
+	var testDiscoveries []configtypes.PluginDiscovery
 	if !configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
-		// Look for testing discoveries.  Those should be stored and searched first.
-		if testDiscoveries, err := getAdditionalTestPluginDiscoveries(); err == nil {
-			discoveries = testDiscoveries
-		}
+		// Look for testing discoveries.  Those should be stored and searched AFTER the central repo.
+		testDiscoveries = getAdditionalTestPluginDiscoveries()
 
 		// Look for the pre-release Central Repository discovery
 		pd, err := getPreReleasePluginDiscovery()
 		if err != nil {
-			return discoveries, err
+			return testDiscoveries, err
 		}
 		// If pd is nil without an error, we bypass the prerelease discovery
 		// and fallback to the normal plugin source configuration.
 		if pd != nil {
-			return append(discoveries, pd...), nil
+			// The central repository discovery MUST be searched first
+			// so we insert before the test discoveries
+			return append(pd, testDiscoveries...), nil
 		}
 	}
 
 	// Look for configured plugin discovery sources
 	cfg, err := configlib.GetClientConfig()
 	if err != nil {
-		return discoveries, errors.Wrapf(err, "unable to get client configuration")
+		return testDiscoveries, errors.Wrapf(err, "unable to get client configuration")
 	}
 
 	if cfg == nil || cfg.ClientOptions == nil || cfg.ClientOptions.CLI == nil {
-		return discoveries, nil
+		return testDiscoveries, nil
 	}
-	return append(discoveries, cfg.ClientOptions.CLI.DiscoverySources...), nil
+	// The configured discoveries should be searched BEFORE the test discoveries.
+	// For example, if the staging central repo is added as a test discovery, it
+	// may contain older versions of a plugin that is now published to the production
+	// central repo; we therefore need to search the test discoveries last.
+	return append(cfg.ClientOptions.CLI.DiscoverySources, testDiscoveries...), nil
 }
