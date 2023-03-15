@@ -26,12 +26,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", f
 		tf      *framework.Framework
 		plugins []string
 	)
-	// In the BeforeSuite sets the "features.global.central-repository" flag
-	// and searches for the test-plugin-'s from the TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL test central repository
+	// In the BeforeSuite search for the test-plugin-'s from the TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL test central repository
 	BeforeSuite(func() {
 		tf = framework.NewFramework()
-		err := tf.Config.ConfigSetFeatureFlag(framework.CentralRepositoryFeatureFlag, framework.True)
-		Expect(err).To(BeNil())
 		// get all plugins with name prefix "test-plugin-"
 		plugins = PluginsForCompatibilityTesting(tf)
 		Expect(len(plugins)).NotTo(BeZero(), fmt.Sprintf("there are no test-plugin-'s in test central repo:%s , make sure its valid test central repo with test-plugins", os.Getenv(framework.TanzuCliE2ETestCentralRepositoryURL)))

@@ -18,7 +18,6 @@ Also, only versions `v0.0.1` and `v9.9.9` for the other plugins can be installed
 The steps to follow to use the test central repo are:
 
 1. Start the test repo with `make start-test-central-repo`.
-1. Enable the central repository using the temporary feature flag: `tz config set features.global.central-repository true`
 1. Configure the plugin source for the test central repo: `tz plugin source add -n default -t oci -u localhost:9876/tanzu-cli/plugins/central:small`
 1. Allow the use of a local registry: `export ALLOWED_REGISTRY=localhost:9876`
 
@@ -28,7 +27,6 @@ Here are the exact commands:
 cd tanzu-cli
 make build
 make start-test-central-repo
-tz config set features.global.central-repository true
 tz plugin source add -n default -t oci -u localhost:9876/tanzu-cli/plugins/central:small
 export ALLOWED_REGISTRY=localhost:9876
 

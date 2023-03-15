@@ -90,6 +90,8 @@ func Test_DiscoverPlugins(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistoForTesting()()
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assertions.Nil(err)
 
 	serverPlugins, standalonePlugins := DiscoverPlugins()
 	assertions.Equal(len(expectedDiscoveredContextPlugins), len(serverPlugins))
@@ -106,7 +108,7 @@ func Test_DiscoverPlugins(t *testing.T) {
 		assertions.Equal(expectedDiscoveredPlugins[i].Target, p.Target)
 	}
 
-	err := configlib.SetFeature("global", "context-target-v2", "false")
+	err = configlib.SetFeature("global", "context-target-v2", "false")
 	assertions.Nil(err)
 
 	serverPlugins, standalonePlugins = DiscoverPlugins()
@@ -114,15 +116,20 @@ func Test_DiscoverPlugins(t *testing.T) {
 	assertions.Equal(len(expectedDiscoveredStandalonePlugins), len(standalonePlugins))
 }
 
-func Test_InstallPlugin_InstalledPlugins(t *testing.T) {
+func Test_InstallPlugin_InstalledPlugins_No_Central_Repo(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistoForTesting()()
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
+	// Turn off central repo feature
+	featureArray := strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
+	err := configlib.SetFeature(featureArray[1], featureArray[2], "true")
+	assertions.Nil(err)
+
 	// Try installing nonexistent plugin
-	err := InstallStandalonePlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
+	err = InstallStandalonePlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
 
@@ -227,11 +234,6 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
-	// Turn on the Central Repository feature
-	featureArray := strings.Split(constants.FeatureCentralRepository, ".")
-	err = configlib.SetFeature(featureArray[1], featureArray[2], "true")
-	assertions.Nil(err)
-
 	// Try installing nonexistent plugin
 	err = InstallStandalonePlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
@@ -326,11 +328,6 @@ func Test_InstallPluginFromGroup(t *testing.T) {
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
-	// Turn on the Central Repository feature
-	featureArray := strings.Split(constants.FeatureCentralRepository, ".")
-	err = configlib.SetFeature(featureArray[1], featureArray[2], "true")
-	assertions.Nil(err)
-
 	// A local discovery currently does not support groups, but we can
 	// at least do negative testing
 	groupID := "vmware-tkg/v2.1.0"
@@ -350,11 +347,6 @@ func Test_DiscoverPluginGroups(t *testing.T) {
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
-	// Turn on the Central Repository feature
-	featureArray := strings.Split(constants.FeatureCentralRepository, ".")
-	err = configlib.SetFeature(featureArray[1], featureArray[2], "true")
-	assertions.Nil(err)
-
 	// A local discovery currently does not support groups, but we can
 	// at least do negative testing
 	groups, err := DiscoverPluginGroups()
@@ -366,6 +358,9 @@ func Test_AvailablePlugins(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistoForTesting()()
+	// Bypass the environment variable for testing
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assertions.Nil(err)
 
 	expectedDiscoveredPlugins := append(expectedDiscoveredContextPlugins, expectedDiscoveredStandalonePlugins...)
 	discoveredPlugins, err := AvailablePlugins()
@@ -382,19 +377,19 @@ func Test_AvailablePlugins(t *testing.T) {
 		assertions.Equal(common.PluginStatusNotInstalled, pd.Status)
 	}
 
-	// Install login, cluster plugins
+	// Install login, myplugin plugins
 	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetUnknown)
-	mockInstallPlugin(assertions, "cluster", "v0.2.0", configtypes.TargetTMC)
+	mockInstallPlugin(assertions, "myplugin", "v0.2.0", configtypes.TargetTMC)
 
 	expectedInstallationStatusOfPlugins := []discovery.Discovered{
 		{
-			Name:             "cluster",
+			Name:             "myplugin",
 			Target:           configtypes.TargetTMC,
 			InstalledVersion: "v0.2.0",
 			Status:           common.PluginStatusInstalled,
 		},
 		{
-			Name:             "cluster",
+			Name:             "myplugin",
 			Target:           configtypes.TargetK8s,
 			InstalledVersion: "",
 			Status:           common.PluginStatusNotInstalled,
@@ -419,26 +414,26 @@ func Test_AvailablePlugins(t *testing.T) {
 		assertions.Equal(eisp.InstalledVersion, p.InstalledVersion)
 	}
 
-	// Install management-cluster, cluster plugins
-	mockInstallPlugin(assertions, "management-cluster", "v0.2.0", configtypes.TargetTMC)
-	mockInstallPlugin(assertions, "cluster", "v1.6.0", configtypes.TargetK8s)
+	// Install management-cluster, feature plugins
+	mockInstallPlugin(assertions, "management-cluster", "v1.6.0", configtypes.TargetK8s)
+	mockInstallPlugin(assertions, "feature", "v0.2.0", configtypes.TargetK8s)
 
 	expectedInstallationStatusOfPlugins = []discovery.Discovered{
 		{
 			Name:             "management-cluster",
-			Target:           configtypes.TargetTMC,
-			InstalledVersion: "v0.2.0",
-			Status:           common.PluginStatusInstalled,
-		},
-		{
-			Name:             "cluster",
 			Target:           configtypes.TargetK8s,
 			InstalledVersion: "v1.6.0",
 			Status:           common.PluginStatusInstalled,
 		},
 		{
-			Name:             "management-cluster",
+			Name:             "feature",
 			Target:           configtypes.TargetK8s,
+			InstalledVersion: "v0.2.0",
+			Status:           common.PluginStatusInstalled,
+		},
+		{
+			Name:             "management-cluster",
+			Target:           configtypes.TargetTMC,
 			InstalledVersion: "",
 			Status:           common.PluginStatusNotInstalled,
 		},
@@ -467,6 +462,9 @@ func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_One_In
 	assertions := assert.New(t)
 
 	defer setupLocalDistoForTesting()()
+	// Bypass the environment variable for testing
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assertions.Nil(err)
 
 	expectedDiscoveredPlugins := append(expectedDiscoveredContextPlugins, expectedDiscoveredStandalonePlugins...)
 	discoveredPlugins, err := AvailablePlugins()
@@ -520,6 +518,9 @@ func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_Plugin
 	assertions := assert.New(t)
 
 	defer setupLocalDistoForTesting()()
+	// Bypass the environment variable for testing
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assertions.Nil(err)
 
 	expectedDiscoveredPlugins := append(expectedDiscoveredContextPlugins, expectedDiscoveredStandalonePlugins...)
 	discoveredPlugins, err := AvailablePlugins()
@@ -687,9 +688,12 @@ func Test_DescribePlugin(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistoForTesting()()
+	// Bypass the environment variable for testing
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assertions.Nil(err)
 
 	// Try to describe plugin when plugin is not installed
-	_, err := DescribePlugin("login", configtypes.TargetUnknown)
+	_, err = DescribePlugin("login", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'login'")
 
@@ -707,13 +711,13 @@ func Test_DescribePlugin(t *testing.T) {
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'cluster'")
 
-	// Install cluster (context) package
-	mockInstallPlugin(assertions, "cluster", "v0.2.0", configtypes.TargetTMC)
+	// Install cluster package
+	mockInstallPlugin(assertions, "myplugin", "v0.2.0", configtypes.TargetTMC)
 
 	// Try to describe plugin when plugin after installing plugin
-	pd, err = DescribePlugin("cluster", configtypes.TargetTMC)
+	pd, err = DescribePlugin("myplugin", configtypes.TargetTMC)
 	assertions.Nil(err)
-	assertions.Equal("cluster", pd.Name)
+	assertions.Equal("myplugin", pd.Name)
 	assertions.Equal("v0.2.0", pd.Version)
 
 	// Install the feature plugin for k8s
@@ -728,32 +732,27 @@ func Test_DeletePlugin(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistoForTesting()()
+	// Bypass the environment variable for testing
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assertions.Nil(err)
 
 	// Try to delete plugin when plugin is not installed
-	err := DeletePlugin(DeletePluginOptions{PluginName: "login", Target: configtypes.TargetUnknown, ForceDelete: true})
-	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to find plugin 'login'")
-
-	// Install login (standalone) package
-	mockInstallPlugin(assertions, "login", "v0.2.0", configtypes.TargetUnknown)
-
-	// Try to delete plugin when plugin is installed
 	err = DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: configtypes.TargetTMC, ForceDelete: true})
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'cluster'")
 
-	// Install cluster (context) package from TMC target
-	mockInstallPlugin(assertions, "cluster", "v0.2.0", configtypes.TargetTMC)
+	// Install cluster package from TMC target
+	mockInstallPlugin(assertions, "myplugin", "v0.2.0", configtypes.TargetTMC)
 
 	// Try to Delete plugin after installing plugin
-	err = DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: configtypes.TargetTMC, ForceDelete: true})
+	err = DeletePlugin(DeletePluginOptions{PluginName: "myplugin", Target: configtypes.TargetTMC, ForceDelete: true})
 	assertions.Nil(err)
 
-	// Install cluster (context) package from TMC target
-	mockInstallPlugin(assertions, "cluster", "v0.2.0", configtypes.TargetTMC)
+	// Install myplugin package from TMC target
+	mockInstallPlugin(assertions, "myplugin", "v0.2.0", configtypes.TargetTMC)
 
 	// Try to Delete plugin after installing plugin
-	err = DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: "", ForceDelete: true})
+	err = DeletePlugin(DeletePluginOptions{PluginName: "myplugin", Target: "", ForceDelete: true})
 	assertions.Nil(err)
 
 	// Install the feature plugin for k8s
@@ -763,13 +762,13 @@ func Test_DeletePlugin(t *testing.T) {
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
 
-	// Install cluster (context) package from TMC target
-	mockInstallPlugin(assertions, "cluster", "v0.2.0", configtypes.TargetTMC)
-	// Install cluster (context) package from k8s target
-	mockInstallPlugin(assertions, "cluster", "v1.6.0", configtypes.TargetK8s)
+	// Install myplugin package from TMC target
+	mockInstallPlugin(assertions, "myplugin", "v0.2.0", configtypes.TargetTMC)
+	// Install myplugin package from k8s target
+	mockInstallPlugin(assertions, "myplugin", "v1.6.0", configtypes.TargetK8s)
 	// Try to Delete plugin without passing target after installing plugin with different targets
-	err = DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: "", ForceDelete: true})
-	assertions.Contains(err.Error(), "unable to uniquely identify plugin 'cluster'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag")
+	err = DeletePlugin(DeletePluginOptions{PluginName: "myplugin", Target: "", ForceDelete: true})
+	assertions.Contains(err.Error(), "unable to uniquely identify plugin 'myplugin'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag")
 }
 
 func Test_ValidatePlugin(t *testing.T) {
@@ -786,12 +785,17 @@ func Test_ValidatePlugin(t *testing.T) {
 	assertions.Contains(err.Error(), "plugin \"fake-plugin\" group cannot be empty")
 }
 
-func Test_SyncPlugins_All_Plugins(t *testing.T) {
+func Test_SyncPlugins_All_Plugins_No_Central_Repo(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistoForTesting()()
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
+
+	// Turn off central repo feature
+	featureArray := strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
+	err := configlib.SetFeature(featureArray[1], featureArray[2], "true")
+	assertions.Nil(err)
 
 	expectedDiscoveredPlugins := append(expectedDiscoveredContextPlugins, expectedDiscoveredStandalonePlugins...)
 
