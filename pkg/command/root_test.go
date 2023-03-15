@@ -13,11 +13,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	configcli "github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 )
 
 const (
@@ -316,6 +319,15 @@ func TestEnvVarsSet(t *testing.T) {
 	configFileNG, _ := os.CreateTemp("", "config_ng")
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 	defer os.RemoveAll(configFileNG.Name())
+
+	// Setup default feature flags since we have created new config files
+	// TODO(khouzam): This is because AddDefaultFeatureFlagsIfMissing() has already
+	// been called in an init() function.  We should fix that in a more generic way.
+	c, err := config.GetClientConfigNoLock()
+	assert.Nil(err)
+	if configcli.AddDefaultFeatureFlagsIfMissing(c, constants.DefaultCliFeatureFlags) {
+		_ = config.StoreClientConfig(c)
+	}
 
 	rootCmd, err := NewRootCmd()
 	assert.Nil(err)

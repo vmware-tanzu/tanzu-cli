@@ -5,17 +5,14 @@ package discovery
 
 import (
 	"os"
-	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
@@ -374,11 +371,6 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
 			Expect(err).To(BeNil())
 			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
-
-			// Turn on central repo feature
-			featureArray := strings.Split(constants.FeatureCentralRepository, ".")
-			err = config.SetFeature(featureArray[1], featureArray[2], "true")
-			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			os.Unsetenv("TANZU_CONFIG")
@@ -492,11 +484,6 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
 			Expect(err).To(BeNil())
 			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
-
-			// Turn on central repo feature
-			featureArray := strings.Split(constants.FeatureCentralRepository, ".")
-			err = config.SetFeature(featureArray[1], featureArray[2], "true")
-			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			os.Unsetenv("TANZU_CONFIG")

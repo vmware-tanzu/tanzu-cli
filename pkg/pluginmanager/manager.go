@@ -563,7 +563,7 @@ func InstallPluginFromContext(pluginName, version string, target configtypes.Tar
 // we are installing a standalone plugin.
 // nolint: gocyclo
 func installPlugin(pluginName, version string, target configtypes.Target, contextName string) error {
-	if !configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
+	if configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		// The legacy installation can figure out if the plugin is from a context
 		// because it searches all contexts for plugins.  So, we don't need to pass on that parameter.
 		return legacyPluginInstall(pluginName, version, target)
@@ -927,14 +927,13 @@ func DeletePlugin(options DeletePluginOptions) error {
 	return nil
 }
 
-// SyncPlugins when the "central-repository" feature flag is enabled, will
-// automatically install the plugins required by the current contexts.
-// If that feature flag is disabled, all discovered plugins will be installed.
+// SyncPlugins will install the plugins required by the current contexts.
+// If the central-repo is disabled, all discovered plugins will be installed.
 func SyncPlugins() error {
 	log.Info("Checking for required plugins...")
 	var plugins []discovery.Discovered
 	var err error
-	if configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
+	if !configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		// We no longer sync standalone plugins.
 		// With a centralized approach to discovering plugins, synchronizing
 		// standalone plugins would install ALL plugins available for ALL
@@ -1329,7 +1328,7 @@ func FindVersion(recommendedPluginVersion, requestedVersion string) string {
 
 // getPluginDiscoveries returns the plugin discoveries found in the configuration file.
 func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
-	if configlib.IsFeatureActivated(constants.FeatureCentralRepository) {
+	if !configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		pd, err := getPreReleasePluginDiscovery()
 		if err != nil {
 			return nil, err

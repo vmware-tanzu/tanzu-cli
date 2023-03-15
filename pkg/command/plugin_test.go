@@ -35,14 +35,14 @@ func TestPluginList(t *testing.T) {
 		expectedFailure    bool
 	}{
 		{
-			test:            "With empty config file(no discovery sources added) and no plugins installed",
+			test:            "With empty config file(no discovery sources added) and no plugins installed with no central repo",
 			plugins:         []string{},
 			args:            []string{"plugin", "list"},
 			expectedFailure: false,
 			expected:        "NAME DESCRIPTION TARGET DISCOVERY VERSION STATUS",
 		},
 		{
-			test:            "With empty config file(no discovery sources added) and when one additional plugin installed",
+			test:            "With empty config file(no discovery sources added) and when one additional plugin installed with no central repo",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
 			targets:         []configtypes.Target{configtypes.TargetK8s},
@@ -51,7 +51,7 @@ func TestPluginList(t *testing.T) {
 			expected:        "NAME DESCRIPTION TARGET DISCOVERY VERSION STATUS foo some foo description kubernetes v0.1.0 installed",
 		},
 		{
-			test:            "With empty config file(no discovery sources added) and when more than one plugin is installed",
+			test:            "With empty config file(no discovery sources added) and when more than one plugin is installed with no central repo",
 			plugins:         []string{"foo", "bar"},
 			versions:        []string{"v0.1.0", "v0.2.0"},
 			targets:         []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s},
@@ -60,7 +60,7 @@ func TestPluginList(t *testing.T) {
 			expected:        "NAME DESCRIPTION TARGET DISCOVERY VERSION STATUS bar some bar description kubernetes v0.2.0 installed foo some foo description mission-control v0.1.0 installed",
 		},
 		{
-			test:            "when json output is requested",
+			test:            "when json output is requested with no central repo",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
 			targets:         []configtypes.Target{configtypes.TargetK8s},
@@ -69,7 +69,7 @@ func TestPluginList(t *testing.T) {
 			expected:        `[ { "description": "some foo description", "discovery": "", "name": "foo", "scope": "Standalone", "status": "installed", "version": "v0.1.0" } ]`,
 		},
 		{
-			test:            "when yaml output is requested",
+			test:            "when yaml output is requested with no central repo",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
 			targets:         []configtypes.Target{configtypes.TargetK8s},
@@ -78,14 +78,14 @@ func TestPluginList(t *testing.T) {
 			expected:        `- description: some foo description discovery: "" name: foo scope: Standalone status: installed version: v0.1.0`,
 		},
 		{
-			test:               "no '--local' option with central repo",
+			test:               "no '--local' option",
 			centralRepoFeature: true,
 			args:               []string{"plugin", "list", "--local", "someDirectory"},
 			expectedFailure:    true,
 			expected:           "the '--local' flag does not apply to this command. Please use 'tanzu plugin search --local'",
 		},
 		{
-			test:               "With empty config file(no discovery sources added) and no plugins installed with central repo",
+			test:               "With empty config file(no discovery sources added) and no plugins installed",
 			centralRepoFeature: true,
 			plugins:            []string{},
 			args:               []string{"plugin", "list"},
@@ -93,7 +93,7 @@ func TestPluginList(t *testing.T) {
 			expected:           "NAME DESCRIPTION TARGET VERSION STATUS",
 		},
 		{
-			test:               "With empty config file(no discovery sources added) and when one additional plugin installed with central repo",
+			test:               "With empty config file(no discovery sources added) and when one additional plugin installed",
 			centralRepoFeature: true,
 			plugins:            []string{"foo"},
 			versions:           []string{"v0.1.0"},
@@ -103,7 +103,7 @@ func TestPluginList(t *testing.T) {
 			expected:           "NAME DESCRIPTION TARGET VERSION STATUS foo some foo description kubernetes v0.1.0 installed",
 		},
 		{
-			test:               "With empty config file(no discovery sources added) and when more than one plugin is installed with central repo",
+			test:               "With empty config file(no discovery sources added) and when more than one plugin is installed",
 			centralRepoFeature: true,
 			plugins:            []string{"foo", "bar"},
 			versions:           []string{"v0.1.0", "v0.2.0"},
@@ -113,7 +113,7 @@ func TestPluginList(t *testing.T) {
 			expected:           "NAME DESCRIPTION TARGET VERSION STATUS bar some bar description kubernetes v0.2.0 installed foo some foo description mission-control v0.1.0 installed",
 		},
 		{
-			test:               "when json output is requested with central repo",
+			test:               "when json output is requested",
 			centralRepoFeature: true,
 			plugins:            []string{"foo"},
 			versions:           []string{"v0.1.0"},
@@ -123,7 +123,7 @@ func TestPluginList(t *testing.T) {
 			expected:           `[ { "context": "", "description": "some foo description", "name": "foo", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
 		},
 		{
-			test:               "when yaml output is requested with central repo",
+			test:               "when yaml output is requested",
 			centralRepoFeature: true,
 			plugins:            []string{"foo"},
 			versions:           []string{"v0.1.0"},
@@ -153,9 +153,9 @@ func TestPluginList(t *testing.T) {
 		err = config.SetFeature(featureArray[1], featureArray[2], "true")
 		assert.Nil(t, err)
 
-		// Set the Central Repository feature
-		if spec.centralRepoFeature {
-			featureArray := strings.Split(constants.FeatureCentralRepository, ".")
+		// Disable the Central Repository feature if needed
+		if !spec.centralRepoFeature {
+			featureArray := strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
 			err := config.SetFeature(featureArray[1], featureArray[2], "true")
 			assert.Nil(t, err)
 		}
@@ -288,60 +288,60 @@ func TestDeletePlugin(t *testing.T) {
 
 func TestInstallPlugin(t *testing.T) {
 	tests := []struct {
-		test               string
-		centralRepoFeature string
-		args               []string
-		expectedErrorMsg   string
-		expectedFailure    bool
+		test                string
+		centralRepoDisabled string
+		args                []string
+		expectedErrorMsg    string
+		expectedFailure     bool
 	}{
 		{
-			test:               "need plugin name or 'all' without central repo",
-			centralRepoFeature: "false",
-			args:               []string{"plugin", "install"},
-			expectedFailure:    true,
-			expectedErrorMsg:   "missing plugin name or 'all' as an argument",
+			test:                "need plugin name or 'all' with no central repo",
+			centralRepoDisabled: "true",
+			args:                []string{"plugin", "install"},
+			expectedFailure:     true,
+			expectedErrorMsg:    "missing plugin name or 'all' as an argument",
 		},
 		{
-			test:               "need plugin name or 'all' with central repo if no group",
-			centralRepoFeature: "true",
-			args:               []string{"plugin", "install"},
-			expectedFailure:    true,
-			expectedErrorMsg:   "missing plugin name or 'all' as an argument",
+			test:                "need plugin name or 'all' if no group",
+			centralRepoDisabled: "false",
+			args:                []string{"plugin", "install"},
+			expectedFailure:     true,
+			expectedErrorMsg:    "missing plugin name or 'all' as an argument",
 		},
 		{
-			test:               "no 'all' option with central repo",
-			centralRepoFeature: "true",
-			args:               []string{"plugin", "install", "all"},
-			expectedFailure:    true,
-			expectedErrorMsg:   "the 'all' argument can only be used with the --group or --local flags",
+			test:                "no 'all' option",
+			centralRepoDisabled: "false",
+			args:                []string{"plugin", "install", "all"},
+			expectedFailure:     true,
+			expectedErrorMsg:    "the 'all' argument can only be used with the --group or --local flags",
 		},
 		{
-			test:               "invalid target",
-			centralRepoFeature: "true",
-			args:               []string{"plugin", "install", "--target", "invalid", "myplugin"},
-			expectedFailure:    true,
-			expectedErrorMsg:   "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'",
+			test:                "invalid target",
+			centralRepoDisabled: "false",
+			args:                []string{"plugin", "install", "--target", "invalid", "myplugin"},
+			expectedFailure:     true,
+			expectedErrorMsg:    "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'",
 		},
 		{
-			test:               "no --group and --local together",
-			centralRepoFeature: "true",
-			args:               []string{"plugin", "install", "--group", "testgroup", "--local", "./", "myplugin"},
-			expectedFailure:    true,
-			expectedErrorMsg:   "if any flags in the group [group local] are set none of the others can be",
+			test:                "no --group and --local together",
+			centralRepoDisabled: "false",
+			args:                []string{"plugin", "install", "--group", "testgroup", "--local", "./", "myplugin"},
+			expectedFailure:     true,
+			expectedErrorMsg:    "if any flags in the group [group local] are set none of the others can be",
 		},
 		{
-			test:               "no --group and --target together",
-			centralRepoFeature: "true",
-			args:               []string{"plugin", "install", "--group", "testgroup", "--target", "k8s", "myplugin"},
-			expectedFailure:    true,
-			expectedErrorMsg:   "if any flags in the group [group target] are set none of the others can be",
+			test:                "no --group and --target together",
+			centralRepoDisabled: "false",
+			args:                []string{"plugin", "install", "--group", "testgroup", "--target", "k8s", "myplugin"},
+			expectedFailure:     true,
+			expectedErrorMsg:    "if any flags in the group [group target] are set none of the others can be",
 		},
 		{
-			test:               "no --group and --version together",
-			centralRepoFeature: "true",
-			args:               []string{"plugin", "install", "--group", "testgroup", "--version", "v1.1.1", "myplugin"},
-			expectedFailure:    true,
-			expectedErrorMsg:   "if any flags in the group [group version] are set none of the others can be",
+			test:                "no --group and --version together",
+			centralRepoDisabled: "false",
+			args:                []string{"plugin", "install", "--group", "testgroup", "--version", "v1.1.1", "myplugin"},
+			expectedFailure:     true,
+			expectedErrorMsg:    "if any flags in the group [group version] are set none of the others can be",
 		},
 	}
 
@@ -372,9 +372,9 @@ func TestInstallPlugin(t *testing.T) {
 
 	for _, spec := range tests {
 		t.Run(spec.test, func(t *testing.T) {
-			// Set the Central Repository feature
-			featureArray := strings.Split(constants.FeatureCentralRepository, ".")
-			err := config.SetFeature(featureArray[1], featureArray[2], spec.centralRepoFeature)
+			// Disable the Central Repository feature if needed
+			featureArray := strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
+			err := config.SetFeature(featureArray[1], featureArray[2], spec.centralRepoDisabled)
 			assert.Nil(err)
 
 			rootCmd, err := NewRootCmd()
@@ -392,18 +392,16 @@ func TestInstallPlugin(t *testing.T) {
 
 func TestUpgradePlugin(t *testing.T) {
 	tests := []struct {
-		test               string
-		centralRepoFeature string
-		args               []string
-		expectedErrorMsg   string
-		expectedFailure    bool
+		test             string
+		args             []string
+		expectedErrorMsg string
+		expectedFailure  bool
 	}{
 		{
-			test:               "invalid target",
-			centralRepoFeature: "true",
-			args:               []string{"plugin", "upgrade", "--target", "invalid", "myplugin"},
-			expectedFailure:    true,
-			expectedErrorMsg:   "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'",
+			test:             "invalid target",
+			args:             []string{"plugin", "upgrade", "--target", "invalid", "myplugin"},
+			expectedFailure:  true,
+			expectedErrorMsg: "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'",
 		},
 	}
 
@@ -430,11 +428,6 @@ func TestUpgradePlugin(t *testing.T) {
 
 	for _, spec := range tests {
 		t.Run(spec.test, func(t *testing.T) {
-			// Set the Central Repository feature
-			featureArray := strings.Split(constants.FeatureCentralRepository, ".")
-			err := config.SetFeature(featureArray[1], featureArray[2], spec.centralRepoFeature)
-			assert.Nil(err)
-
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)

@@ -37,9 +37,7 @@ const (
 	PluginSubCommand     = "tanzu %s"
 
 	// Central repository
-	CentralRepositoryFeatureFlag         = "features.global.central-repository"
-	CentralRepositoryPreReleaseRepoImage = "TANZU_CLI_PRE_RELEASE_REPO_IMAGE"
-	TanzuCliE2ETestCentralRepositoryURL  = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
+	TanzuCliE2ETestCentralRepositoryURL = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
 
 	// General constants
 	True      = "true"

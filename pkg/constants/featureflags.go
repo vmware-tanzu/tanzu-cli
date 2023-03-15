@@ -7,8 +7,8 @@ package constants
 const (
 	// FeatureContextCommand determines whether to surface the context command. This is disabled by default.
 	FeatureContextCommand = "features.global.context-target-v2"
-	// FeatureCentralRepository determines if the CLI uses the Central Repository of plugins.
-	FeatureCentralRepository = "features.global.central-repository"
+	// FeatureDisableCentralRepositoryForTesting determines if the CLI uses the Central Repository of plugins.
+	FeatureDisableCentralRepositoryForTesting = "features.global.no-central-repo-test-only"
 )
 
 // DefaultCliFeatureFlags is used to populate an initially empty config file with default values for feature flags.
@@ -25,7 +25,8 @@ const (
 var (
 	DefaultCliFeatureFlags = map[string]bool{
 		FeatureContextCommand: true,
-		// TODO(khouzam) turn this on before the 1.0 release, or remove the flag completely
-		FeatureCentralRepository: false,
+		// Do NOT include the test feature flag to disable the central repo.
+		// We don't want to publicize this feature flag.
+		// It defaults to false when not specified, which is what is needed.
 	}
 )
