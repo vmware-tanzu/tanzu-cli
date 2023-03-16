@@ -27,17 +27,24 @@ const (
 
 	// Plugin commands
 	AddPluginSource      = "tanzu plugin source add --name %s --type %s --uri %s"
+	UpdatePluginSource   = "tanzu plugin source update %s --type %s --uri %s"
+	ListPluginSources    = "tanzu plugin source list -o json"
 	DeletePluginSource   = "tanzu plugin source delete %s"
 	ListPluginsCmdInJSON = "tanzu plugin list -o json"
 	SearchPluginsCmd     = "tanzu plugin search"
-	InstallPLuginCmd     = "tanzu plugin install %s"
+	InstallPluginCmd     = "tanzu plugin install %s"
+	DescribePluginCmd    = "tanzu plugin describe %s"
 	UninstallPLuginCmd   = "tanzu plugin delete %s --yes"
+	CleanPluginsCmd      = "tanzu plugin clean"
 	JSONOutput           = " -o json"
 	TestPluginsPrefix    = "test-plugin-"
 	PluginSubCommand     = "tanzu %s"
+	PluginKey            = "%s_%s_%s" // Plugins - Name_Target_Versions
 
 	// Central repository
-	TanzuCliE2ETestCentralRepositoryURL = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
+	CentralRepositoryPreReleaseRepoImage     = "TANZU_CLI_PRE_RELEASE_REPO_IMAGE"
+	TanzuCliE2ETestCentralRepositoryURL      = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
+	TanzuCliE2ETestLocalCentralRepositoryURL = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL"
 
 	// General constants
 	True      = "true"
@@ -70,11 +77,24 @@ const (
 	TestPluginsDir = ".e2e-test-plugins"
 	TargetTypeTMC  = "mission-control"
 	TargetTypeK8s  = "kubernetes"
+	SourceType     = "oci"
+	GlobalTarget   = "global"
+
+	// Error messages
+	UnableToFindPluginForTarget = "unable to find plugin '%s' for target '%s'"
+	UnableToFindPlugin          = "unable to find plugin '%s'"
+	InvalidTargetSpecified      = "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'"
+	InvalidTargetGlobal         = "invalid target for plugin: global"
+	UnknownDiscoverySourceType  = "unknown discovery source type"
+	DiscoverySourceNotFound     = "cli discovery source not found"
 )
 
 var TestDirPath string
 var TestPluginsDirPath string
 var TestStandalonePluginsPath string
+
+// PluginsForLifeCycleTests is list of plugins (which are published in local central repo) used in plugin life cycle test cases
+var PluginsForLifeCycleTests []PluginInfo
 
 // CLICoreDescribe annotates the test with the CLICore label.
 func CLICoreDescribe(text string, body func()) bool {
@@ -109,4 +129,7 @@ func init() {
 	TestPluginsDirPath = filepath.Join(TestDirPath, TestPluginsDir)
 	TestStandalonePluginsPath = filepath.Join(filepath.Join(filepath.Join(filepath.Join(TestDirPath, ".config"), "tanzu-plugins"), "discovery"), "standalone")
 	_ = CreateDir(TestStandalonePluginsPath)
+	// TODO:cpamuluri: need to move plugins info to configuration file with positive and negative use cases
+	PluginsForLifeCycleTests = make([]PluginInfo, 3)
+	PluginsForLifeCycleTests = []PluginInfo{{Name: "cluster", Target: "kubernetes", Version: "v9.9.9", Description: "cluster functionality"}, {Name: "cluster", Target: "mission-control", Version: "v9.9.9", Description: "cluster functionality"}, {Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "pinniped-auth functionality"}}
 }

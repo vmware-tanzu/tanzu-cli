@@ -3,13 +3,20 @@
 
 package framework
 
-type PluginListInfo struct {
-	Description string `json:"description"`
-	Discovery   string `json:"discovery"`
+type PluginInfo struct {
 	Name        string `json:"name"`
+	Description string `json:"description"`
+	Target      string `json:"target"`
+	Discovery   string `json:"discovery"`
 	Scope       string `json:"scope"`
 	Status      string `json:"status"`
 	Version     string `json:"version"`
+}
+
+type PluginSourceInfo struct {
+	Name  string `json:"name"`
+	Scope string `json:"scope"`
+	Type  string `json:"type"`
 }
 
 type ContextListInfo struct {
