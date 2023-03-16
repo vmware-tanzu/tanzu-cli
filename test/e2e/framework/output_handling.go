@@ -39,7 +39,10 @@ type ContextInfo struct {
 	} `json:"clusterOpts"`
 }
 
-type PluginCompatibilityConf struct {
-	PluginNames        []string `json:"plugins"`
-	TestCentralRepoURL string   `json:"test-central-repo-url"`
+type Server struct {
+	Context  string `json:"context"`
+	Endpoint string `json:"endpoint"`
+	Name     string `json:"name"`
+	Path     string `json:"path"`
+	Type     string `json:"type"`
 }

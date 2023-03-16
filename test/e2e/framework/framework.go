@@ -23,7 +23,7 @@ const (
 	ConfigUnset        = "tanzu config unset "
 	ConfigInit         = "tanzu config init"
 	ConfigServerList   = "tanzu config server list"
-	ConfigServerDelete = "tanzu config server delete "
+	ConfigServerDelete = "tanzu config server delete %s"
 
 	// Plugin commands
 	AddPluginSource      = "tanzu plugin source add --name %s --type %s --uri %s"
@@ -89,9 +89,11 @@ const (
 	DiscoverySourceNotFound     = "cli discovery source not found"
 )
 
-var TestDirPath string
-var TestPluginsDirPath string
-var TestStandalonePluginsPath string
+var (
+	TestDirPath               string
+	TestPluginsDirPath        string
+	TestStandalonePluginsPath string
+)
 
 // PluginsForLifeCycleTests is list of plugins (which are published in local central repo) used in plugin life cycle test cases
 var PluginsForLifeCycleTests []PluginInfo

@@ -4,12 +4,16 @@
 package framework
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
@@ -33,7 +37,7 @@ type ConfigLifecycleOps interface {
 	// GetConfig gets the tanzu config
 	GetConfig() (*configapi.ClientConfig, error)
 	// ConfigServerList returns the server list
-	ConfigServerList() error
+	ConfigServerList() ([]Server, error)
 	// ConfigServerDelete deletes given server from tanzu config
 	ConfigServerDelete(serverName string) error
 	// DeleteCLIConfigurationFiles deletes cli configuration files
@@ -102,15 +106,29 @@ func (co *configOps) ConfigInit() (err error) {
 }
 
 // ConfigServerList returns the server list
-// TODO: should return the servers info in proper format
-func (co *configOps) ConfigServerList() (err error) {
-	_, _, err = co.Exec(ConfigServerList)
-	return
+func (co *configOps) ConfigServerList() ([]Server, error) {
+	stdOut, _, err := co.Exec(ConfigServerList)
+	if err != nil {
+		log.Errorf("error while executing `config server list`, error:%s", err.Error())
+		return nil, err
+	}
+	jsonStr := stdOut.String()
+	var list []Server
+	err = json.Unmarshal([]byte(jsonStr), &list)
+	if err != nil {
+		log.Errorf("failed to construct node from config server list output:'%s' error:'%s' ", jsonStr, err.Error())
+		return nil, errors.Wrapf(err, "failed to construct node from config server list output:'%s'", jsonStr)
+	}
+	return list, nil
 }
 
 // ConfigServerDelete deletes a server from tanzu config
 func (co *configOps) ConfigServerDelete(serverName string) error {
-	_, _, err := co.Exec(ConfigServerDelete + serverName)
+	configDelCmd := fmt.Sprintf(ConfigServerDelete, serverName)
+	_, _, err := co.Exec(configDelCmd)
+	if err != nil {
+		log.Error(err, "error while running: "+configDelCmd)
+	}
 	return err
 }
 
