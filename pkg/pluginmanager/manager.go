@@ -152,14 +152,17 @@ func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupID string) (*plu
 			id := fmt.Sprintf("%s-%s/%s", group.Vendor, group.Publisher, group.Name)
 			if id == groupID {
 				// Found the group.
-				matchingGroup = group
+				if matchingGroup == nil {
+					// Store the first matching group found
+					matchingGroup = group
+				}
 				matchingDiscoveries = append(matchingDiscoveries, discAndGroups.Source)
 			}
 		}
 	}
 
 	if len(matchingDiscoveries) > 1 {
-		return nil, fmt.Errorf("group '%s' was found in multiple discoveries: %v", groupID, matchingDiscoveries)
+		log.Warningf("group '%s' was found in multiple discoveries: %v.  Using the first one.", groupID, matchingDiscoveries)
 	}
 
 	return matchingGroup, nil
