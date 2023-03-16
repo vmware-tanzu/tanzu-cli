@@ -24,7 +24,7 @@ import (
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", func() {
 	var (
 		tf      *framework.Framework
-		plugins []string
+		plugins []framework.PluginInfo
 	)
 	// In the BeforeSuite search for the test-plugin-'s from the TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL test central repository
 	BeforeSuite(func() {
@@ -46,7 +46,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", f
 		It("Install all test plugins", func() {
 			for _, plugin := range plugins {
 				log.Infof("Installing test plugin:%s", plugin)
-				err := tf.PluginCmd.InstallPlugin(plugin)
+				err := tf.PluginCmd.InstallPlugin(plugin.Name, "", "")
 				Expect(err).To(BeNil(), fmt.Sprintf("should not occur any error while installing the test plugin: %s", plugin))
 			}
 		})
@@ -60,7 +60,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", f
 		// Test case: run basic commands on installed test plugins, to make sure works/co-exists with other plugins build with different runtime version
 		It("run basic commands on the installed test-plugins", func() {
 			for _, plugin := range plugins {
-				info, err := tf.PluginCmd.ExecuteSubCommand(plugin + " info")
+				info, err := tf.PluginCmd.ExecuteSubCommand(plugin.Name + " info")
 				Expect(err).To(BeNil(), "should not occur any error when plugin info command executed")
 				Expect(info).NotTo(BeNil(), "there should be some out for plugin info command executed")
 			}
@@ -70,7 +70,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", f
 		// Test case: run hello-world commands on installed test plugins, to make sure works/co-exists with other plugins build with different runtime version
 		It("run hello-world commands on the installed test-plugins", func() {
 			for _, plugin := range plugins {
-				output, err := tf.PluginCmd.ExecuteSubCommand(plugin + " hello-world")
+				output, err := tf.PluginCmd.ExecuteSubCommand(plugin.Name + " hello-world")
 				Expect(err).To(BeNil(), "should not occur any error when plugin hello-world command executed")
 				Expect(output).To(ContainSubstring("the command hello-world executed successfully"))
 			}
@@ -81,7 +81,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", f
 		It("uninstall all test-plugins", func() {
 			for _, plugin := range plugins {
 				log.Infof("Uninstalling test plugin: %s", plugin)
-				err := tf.PluginCmd.UninstallPlugin(plugin)
+				err := tf.PluginCmd.UninstallPlugin(plugin.Name, plugin.Target)
 				Expect(err).To(BeNil(), fmt.Sprintf("should not occur any error while uninstalling the test plugin: %s", plugin))
 			}
 		})

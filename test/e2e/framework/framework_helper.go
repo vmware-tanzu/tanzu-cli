@@ -6,6 +6,7 @@ package framework
 
 import (
 	"crypto/rand"
+	"fmt"
 	"math/big"
 	"os"
 
@@ -20,6 +21,25 @@ func SliceToSet(slice []string) map[string]struct{} {
 		set[ele] = exists
 	}
 	return set
+}
+
+// PluginListToSet converts the given PluginInfo slice to set type, key is combination  of plugin's name_target_version
+func PluginListToSet(pluginsToInstall *[]PluginInfo) map[string]struct{} {
+	set := make(map[string]struct{})
+	exists := struct{}{}
+	for _, plugin := range *pluginsToInstall {
+		set[fmt.Sprintf(PluginKey, plugin.Name, plugin.Target, plugin.Version)] = exists
+	}
+	return set
+}
+
+// PluginListToMap converts the given PluginInfo slice to map type, key is combination  of plugin's name_target_version and value is PluginInfo
+func PluginListToMap(pluginsList *[]PluginInfo) map[string]*PluginInfo {
+	m := make(map[string]*PluginInfo)
+	for i := range *pluginsList {
+		m[fmt.Sprintf(PluginKey, (*pluginsList)[i].Name, (*pluginsList)[i].Target, (*pluginsList)[i].Version)] = &(*pluginsList)[i]
+	}
+	return m
 }
 
 // RandomString generates random string of given length
