@@ -37,13 +37,13 @@ type CLIPluginSpec struct {
 	// https://semver.org/. E.g., 2.0.1
 	RecommendedVersion string `json:"recommendedVersion"`
 	// Artifacts contains an artifact list for every supported version.
-	Artifacts map[string]ArtifactList `json:"artifacts"`
+	Artifacts map[string]ArtifactList `json:"artifacts,omitempty"`
 	// Optional specifies whether the plugin is mandatory or optional
 	// If optional, the plugin will not get auto-downloaded as part of
 	// `tanzu login` or `tanzu plugin sync` command
 	// To view the list of plugin, user can use `tanzu plugin list` and
 	// to download a specific plugin run, `tanzu plugin install <plugin-name>`
-	Optional bool `json:"optional"`
+	Optional bool `json:"optional,omitempty"`
 	// Target specifies the target of the plugin. Only needed for standalone plugins
 	Target configtypes.Target `json:"target,omitempty"`
 }
