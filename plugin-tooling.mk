@@ -34,6 +34,7 @@ PLUGIN_DIR := ./cmd/plugin
 PLUGIN_BINARY_ARTIFACTS_DIR := $(ROOT_DIR)/artifacts/plugins
 PLUGIN_PACKAGE_ARTIFACTS_DIR := $(ROOT_DIR)/artifacts/packages
 PLUGIN_MANIFEST_FILE := $(PLUGIN_PACKAGE_ARTIFACTS_DIR)/plugin_manifest.yaml
+PLUGIN_GROUP_MANIFEST_FILE := $(PLUGIN_BINARY_ARTIFACTS_DIR)/plugin_group_manifest.yaml
 
 REGISTRY_PORT ?= 5001
 REGISTRY_ENDPOINT ?= localhost:$(REGISTRY_PORT)
@@ -45,11 +46,14 @@ PUBLISHER ?= tzcli
 VENDOR ?= vmware
 PLUGIN_PUBLISH_REPOSITORY ?= localhost:$(REGISTRY_PORT)/test/v1/tanzu-cli/plugins
 PLUGIN_INVENTORY_IMAGE_TAG ?= latest
-OVERRIDE_INVENTORY_IMAGE ?=
+
+PLUGIN_SCOPE_ASSOCIATION_FILE ?= ./cmd/plugin/plugin-scope-association.yaml
+PLUGIN_GROUP_NAME ?= 
 
 # Process configuration and setup additional variables
+OVERRIDE ?=
 OVERRIDE_FLAG = 
-ifneq ($(strip $(OVERRIDE_INVENTORY_IMAGE)),)
+ifneq ($(strip $(OVERRIDE)),)
 OVERRIDE_FLAG = --override
 endif
 
@@ -73,7 +77,8 @@ plugin-build-%:
 		--version $(PLUGIN_BUILD_VERSION) \
 		--ldflags "$(PLUGIN_LD_FLAGS)" \
 		--os-arch $(OS)_$(ARCH) \
-		--match $(PLUGIN_NAME)
+		--match $(PLUGIN_NAME) \
+		--plugin-scope-association-file $(PLUGIN_SCOPE_ASSOCIATION_FILE)
 
 .PHONY: plugin-build-packages
 plugin-build-packages: local-registry ## Build plugin packages
@@ -126,6 +131,35 @@ inventory-plugin-deactivate: ## Deactivate plugins in the inventory database
 		--publisher $(PUBLISHER) \
 		--vendor $(VENDOR) \
 		--manifest $(PLUGIN_MANIFEST_FILE)
+
+.PHONY: inventory-plugin-group-add
+inventory-plugin-group-add: ## Add plugin-group to the inventory database. Requires PLUGIN_GROUP_NAME
+	$(BUILDER) inventory plugin-group add \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--manifest $(PLUGIN_GROUP_MANIFEST_FILE) \
+		--name $(PLUGIN_GROUP_NAME) \
+		$(OVERRIDE_FLAG)
+
+.PHONY: inventory-plugin-group-activate
+inventory-plugin-group-activate: ## Activate plugin-group in the inventory database. Requires PLUGIN_GROUP_NAME
+	$(BUILDER) inventory plugin-group activate \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--name $(PLUGIN_GROUP_NAME)
+
+.PHONY: inventory-plugin-group-deactivate
+inventory-plugin-group-deactivate: ## Deactivate plugin-group in the inventory database. Requires PLUGIN_GROUP_NAME
+	$(BUILDER) inventory plugin-group deactivate \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--name $(PLUGIN_GROUP_NAME)
 
 ## --------------------------------------
 ## docker

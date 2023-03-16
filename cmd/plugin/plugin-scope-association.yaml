@@ -1,0 +1,7 @@
+plugins:
+- name: builder
+  target: global
+  scope: Standalone
+- name: test
+  target: global
+  scope: Standalone

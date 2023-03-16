@@ -21,5 +21,7 @@ CREATE TABLE IF NOT EXISTS "PluginGroups" (
 		"PluginName"         TEXT NOT NULL,
 		"Target"             TEXT NOT NULL,
 		"Version"            TEXT NOT NULL,
+		"Mandatory"          TEXT NOT NULL,
+		"Hidden"             TEXT NOT NULL,
 		PRIMARY KEY("Vendor", "Publisher", "GroupName", "PluginName", "Target", "Version")
 );

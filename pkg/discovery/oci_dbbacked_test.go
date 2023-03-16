@@ -346,7 +346,13 @@ func (stub *stubInventory) CreateSchema() error {
 func (stub *stubInventory) InsertPlugin(pluginInventoryEntry *plugininventory.PluginInventoryEntry) error {
 	return nil
 }
+func (stub *stubInventory) InsertPluginGroup(pg *plugininventory.PluginGroup, override bool) error {
+	return nil
+}
 func (stub *stubInventory) UpdatePluginActivationState(pluginInventoryEntry *plugininventory.PluginInventoryEntry) error {
+	return nil
+}
+func (stub *stubInventory) UpdatePluginGroupActivationState(pg *plugininventory.PluginGroup) error {
 	return nil
 }
 

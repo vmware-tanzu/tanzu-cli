@@ -46,7 +46,7 @@ const (
 	pluginOrderClause = "ORDER BY PluginName,Target,Version"
 
 	// groupSelectQuery is the query used to extract plugin groups from the PluginGroups table
-	groupSelectQuery = "SELECT Vendor,Publisher,GroupName,PluginName,Target,Version FROM PluginGroups ORDER by Vendor,Publisher,GroupName,PluginName"
+	groupSelectQuery = "SELECT Vendor,Publisher,GroupName,PluginName,Target,Version,Mandatory,Hidden FROM PluginGroups ORDER by Vendor,Publisher,GroupName,PluginName"
 )
 
 // Structure of each row of the PluginBinaries table within the SQLite database
@@ -73,6 +73,8 @@ type groupDBRow struct {
 	pluginName string
 	target     string
 	version    string
+	mandatory  string
+	hidden     string
 }
 
 // NewSQLiteInventory returns a new PluginInventory connected to the data found at 'inventoryFile'.
@@ -308,6 +310,8 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 			return allGroups, err
 		}
 
+		hidden, _ := strconv.ParseBool(row.hidden)
+		mandatory, _ := strconv.ParseBool(row.mandatory)
 		groupIDFromRow := fmt.Sprintf("%s-%s/%s", row.vendor, row.publisher, row.groupName)
 		if currentGroupID != groupIDFromRow {
 			// Found a new group.
@@ -323,14 +327,16 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 				Vendor:    row.vendor,
 				Publisher: row.publisher,
 				Name:      row.groupName,
+				Hidden:    hidden,
 				Plugins:   nil,
 			}
 		}
 
 		pluginsOfGroup = append(pluginsOfGroup, &PluginIdentifier{
-			Name:    row.pluginName,
-			Target:  convertTargetFromDB(row.target),
-			Version: row.version,
+			Name:      row.pluginName,
+			Target:    configtypes.StringToTarget(row.target),
+			Version:   row.version,
+			Mandatory: mandatory,
 		})
 	}
 	// Don't forget to store the very last group we were building
@@ -375,16 +381,10 @@ func getGroupNextRow(rows *sql.Rows) (*groupDBRow, error) {
 		&row.pluginName,
 		&row.target,
 		&row.version,
+		&row.mandatory,
+		&row.hidden,
 	)
 	return &row, err
-}
-
-func convertTargetFromDB(target string) configtypes.Target {
-	target = strings.ToLower(target)
-	if target == "global" {
-		target = ""
-	}
-	return configtypes.StringToTarget(target)
 }
 
 // appendPlugin appends a PluginInventoryEntry to the specified array.
@@ -458,6 +458,49 @@ func (b *SQLiteInventory) InsertPlugin(pluginInventoryEntry *PluginInventoryEntr
 	return nil
 }
 
+// InsertPluginGroup inserts plugin-group to the inventory
+// specifying override will delete the existing plugin-group and add new one
+func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) error {
+	db, err := sql.Open("sqlite3", b.inventoryFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to open the DB from '%s' file", b.inventoryFile)
+	}
+	defer db.Close()
+
+	if override {
+		_, err = db.Exec("DELETE FROM PluginGroups WHERE GroupName = ? AND Publisher = ? AND Vendor = ? ;", pg.Name, pg.Publisher, pg.Vendor)
+		if err != nil {
+			return errors.Wrapf(err, "unable to delete existing plugin-group")
+		}
+	}
+
+	for _, pi := range pg.Plugins {
+		// Verify that the plugin exists in the database before inserting it to PluginGroup table
+		pie, err := b.GetPlugins(&PluginInventoryFilter{Name: pi.Name, Target: pi.Target, Version: pi.Version})
+		if err != nil {
+			return errors.Wrap(err, "error while verifying existence of the plugin in the database")
+		} else if len(pie) == 0 {
+			return errors.Errorf("specified plugin 'name:%s', 'target:%s', 'version:%s' is not present in the database", pi.Name, pi.Target, pi.Version)
+		}
+
+		row := groupDBRow{
+			vendor:     pg.Vendor,
+			publisher:  pg.Publisher,
+			groupName:  pg.Name,
+			pluginName: pi.Name,
+			target:     string(pi.Target),
+			version:    pi.Version,
+			mandatory:  strconv.FormatBool(pi.Mandatory),
+			hidden:     strconv.FormatBool(pg.Hidden),
+		}
+		_, err = db.Exec("INSERT INTO PluginGroups VALUES(?,?,?,?,?,?,?,?);", row.vendor, row.publisher, row.groupName, row.pluginName, row.target, row.version, row.mandatory, row.hidden)
+		if err != nil {
+			return errors.Wrapf(err, "unable to insert plugin-group row %v", row)
+		}
+	}
+	return nil
+}
+
 // UpdatePluginActivationState updates plugin metadata to activate or deactivate plugin
 func (b *SQLiteInventory) UpdatePluginActivationState(pluginInventoryEntry *PluginInventoryEntry) error {
 	db, err := sql.Open("sqlite3", b.inventoryFile)
@@ -476,5 +519,24 @@ func (b *SQLiteInventory) UpdatePluginActivationState(pluginInventoryEntry *Plug
 			return errors.Errorf("unable to update plugin %v_%v", pluginInventoryEntry.Name, string(pluginInventoryEntry.Target))
 		}
 	}
+	return nil
+}
+
+func (b *SQLiteInventory) UpdatePluginGroupActivationState(pg *PluginGroup) error {
+	db, err := sql.Open("sqlite3", b.inventoryFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to open the DB from '%s' file", b.inventoryFile)
+	}
+	defer db.Close()
+
+	result, err := db.Exec("UPDATE PluginGroups SET hidden = ? WHERE GroupName = ? AND Publisher = ? AND Vendor = ?;", strconv.FormatBool(pg.Hidden), pg.Name, pg.Publisher, pg.Vendor)
+	if err != nil {
+		return errors.Wrapf(err, "unable to update plugin-group %v", pg.Name)
+	}
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return errors.Errorf("unable to update plugin-group '%s'. This might be possible because provided plugin-group doesn't exists", pg.Name)
+	}
+
 	return nil
 }

@@ -23,6 +23,7 @@ func newInventoryCmd() *cobra.Command {
 	inventoryCmd.AddCommand(
 		newInventoryInitCmd(),
 		newInventoryPluginCmd(),
+		newInventoryPluginGroupCmd(),
 	)
 
 	return inventoryCmd
