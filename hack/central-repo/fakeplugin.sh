@@ -25,7 +25,7 @@ EOF
 case "$1" in
     info)  $1 "$@";;
     *) cat << EOF
-Stub plugin "__NAME__" for "__TARGET__".
+Stub plugin "__NAME__" "__VERSION__" for "__TARGET__"
 EOF
        ;;
 esac

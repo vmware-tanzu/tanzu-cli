@@ -39,7 +39,7 @@ func findPluginInfo(pd []cli.PluginInfo, pluginName string, target configtypes.T
 	return nil
 }
 
-func setupLocalDistoForTesting() func() {
+func setupLocalDistroForTesting() func() {
 	tmpDir, err := os.MkdirTemp(os.TempDir(), "")
 	if err != nil {
 		log.Fatal(err, "unable to create temporary directory")

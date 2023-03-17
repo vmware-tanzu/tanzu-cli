@@ -3,10 +3,12 @@
 ## Using the test Central Repo
 
 From the root directory of the tanzu-cli repo, run `make start-test-central-repo`.  This will start an OCI registry
-containing two test central repositories:
+containing different test central repositories:
 
-1. a small repo with a few plugins with names that match real product plugins.  Such a repo can be simpler to test with.  The OCI image for this repo is: localhost:9876/tanzu-cli/plugins/central:small
-1. a large repo with the same plugins as the small repo plus extra stub plugins making the total number of plugins 100. This repo aims to mimic a full Central Repository. The OCI image for this repo is: localhost:9876/tanzu-cli/plugins/central:large
+1. `localhost:9876/tanzu-cli/plugins/central:small` - a small repo with a few plugins with names that match real product plugins.  Such a repo can be simpler to test with.
+1. `localhost:9876/tanzu-cli/plugins/central:large` - a large repo with the same plugins as the small repo plus extra stub plugins making the total number of plugins 100. This repo aims to mimic a full Central Repository.
+1. `localhost:9876/tanzu-cli/plugins/sandbox1:small` - the same plugins as the `central:small` image, but with version `v11.11.11`.  This aims to mimic a sandbox repo that can be added to the CLI through the ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY variable.
+1. `localhost:9876/tanzu-cli/plugins/sandbox2:small` - the same plugins as the `central:small` image, but with version `v22.22.22`.  This aims to mimic a sandbox repo that can be added to the CLI through the ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY variable.
 
 Limitations:
 
@@ -14,6 +16,8 @@ For efficiency in storage and generation, only certain plugins have a binary in 
 and therefore only those can be installed.
 Plugins named `stubXY` cannot be installed.
 Also, only versions `v0.0.1` and `v9.9.9` for the other plugins can be installed.
+For the `sandbox1:small` image, the `v11.11.11` of the plugins can be installed.
+For the `sandbox2:small` image, the `v22.22.22` of the plugins can be installed.
 
 The steps to follow to use the test central repo are:
 
