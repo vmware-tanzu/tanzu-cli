@@ -1,0 +1,67 @@
+apiVersion: cli.tanzu.vmware.com/v1alpha1
+indexByName:
+  cluster_kubernetes:
+  - /Users/test/Library/Application Support/tanzu-cli/cluster/v0.0.1_2ddee7c0a8ecbef610a651bc8d83657fd3438f1038e817b4a7d44f2d0b3bac72_kubernetes
+  iam_mission-control:
+  - /Users/test/Library/Application Support/tanzu-cli/iam/v0.0.1_2de17ef20dfb00dd8bcf5cb61cbce3cbddcd0a71fba858817343188c093cef7c_mission-control
+  isolated-cluster:
+  - /Users/test/Library/Application Support/tanzu-cli/isolated-cluster/v0.29.0_78d8b432ca369a161fca39e777aeb81fe63c2ba8b8dd25b1b8270eeab485a2ca_
+indexByPath:
+  ? /Users/test/Library/Application Support/tanzu-cli/cluster/v0.0.1_2ddee7c0a8ecbef610a651bc8d83657fd3438f1038e817b4a7d44f2d0b3bac72_kubernetes
+  : buildSHA: "01234567"
+    completionType: 0
+    defaultFeatureFlags: null
+    description: cluster functionality
+    digest: ""
+    discoveredRecommendedVersion: v0.0.1
+    discovery: test-mc
+    docURL: ""
+    group: System
+    installationPath: /Users/test/Library/Application Support/tanzu-cli/cluster/v0.0.1_2ddee7c0a8ecbef610a651bc8d83657fd3438f1038e817b4a7d44f2d0b3bac72_kubernetes
+    name: cluster
+    scope: ""
+    status: ""
+    target: kubernetes
+    version: v0.0.1
+  ? /Users/test/Library/Application Support/tanzu-cli/iam/v0.0.1_2de17ef20dfb00dd8bcf5cb61cbce3cbddcd0a71fba858817343188c093cef7c_mission-control
+  : buildSHA: "01234567"
+    completionType: 0
+    defaultFeatureFlags: null
+    description: IAM Policies for tmc resources
+    digest: ""
+    discoveredRecommendedVersion: v0.0.1
+    discovery: test-tmc-context
+    docURL: ""
+    group: Manage
+    installationPath: /Users/test/Library/Application Support/tanzu-cli/iam/v0.0.1_2de17ef20dfb00dd8bcf5cb61cbce3cbddcd0a71fba858817343188c093cef7c_mission-control
+    name: iam
+    scope: ""
+    status: ""
+    target: mission-control
+    version: v0.0.1
+  ? /Users/test/Library/Application Support/tanzu-cli/isolated-cluster/v0.29.0_78d8b432ca369a161fca39e777aeb81fe63c2ba8b8dd25b1b8270eeab485a2ca_
+  : buildSHA: e403941f7
+    completionType: 0
+    defaultFeatureFlags: null
+    description: Prepopulating images/bundle for internet-restricted environments
+    digest: ""
+    discoveredRecommendedVersion: v0.29.0
+    discovery: ""
+    docURL: ""
+    group: Run
+    installationPath: /Users/test/Library/Application Support/tanzu-cli/isolated-cluster/v0.29.0_78d8b432ca369a161fca39e777aeb81fe63c2ba8b8dd25b1b8270eeab485a2ca_
+    name: isolated-cluster
+    scope: ""
+    status: ""
+    target: ""
+    version: v0.29.0
+kind: Catalog
+metadata:
+  creationTimestamp: null
+serverPlugins:
+  test-mc:
+    cluster_kubernetes: /Users/test/Library/Application Support/tanzu-cli/cluster/v0.0.1_2ddee7c0a8ecbef610a651bc8d83657fd3438f1038e817b4a7d44f2d0b3bac72_kubernetes
+  test-tmc-context:
+    iam_mission-control: /Users/test/Library/Application Support/tanzu-cli/iam/v0.0.1_2de17ef20dfb00dd8bcf5cb61cbce3cbddcd0a71fba858817343188c093cef7c_mission-control
+standAlonePlugins:
+  isolated-cluster: /Users/test/Library/Application Support/tanzu-cli/isolated-cluster/v0.29.0_78d8b432ca369a161fca39e777aeb81fe63c2ba8b8dd25b1b8270eeab485a2ca_

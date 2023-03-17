@@ -50,29 +50,29 @@ type PluginInfo struct {
 
 	// InstallationPath is a relative installation path for a plugin binary.
 	// E.g., cluster/v0.3.2@sha256:...
-	InstallationPath string `json:"installationPath"`
+	InstallationPath string `json:"installationPath" yaml:"installationPath"`
 
 	// Discovery is the name of the discovery from where
 	// this plugin is discovered.
-	Discovery string `json:"discovery"`
+	Discovery string `json:"discovery" yaml:"discovery"`
 
 	// Scope is the scope of the plugin. Stand-Alone or Context
-	Scope string `json:"scope"`
+	Scope string `json:"scope" yaml:"scope"`
 
 	// Status is the current plugin installation status
-	Status string `json:"status"`
+	Status string `json:"status" yaml:"status"`
 
 	// DiscoveredRecommendedVersion specifies the recommended version of the plugin that was discovered
-	DiscoveredRecommendedVersion string `json:"discoveredRecommendedVersion"`
+	DiscoveredRecommendedVersion string `json:"discoveredRecommendedVersion" yaml:"discoveredRecommendedVersion"`
 
 	// Target specifies the target of the plugin
-	Target configtypes.Target `json:"target"`
+	Target configtypes.Target `json:"target" yaml:"target"`
 
 	// PostInstallHook is function to be run post install of a plugin.
 	PostInstallHook plugin.Hook `json:"-" yaml:"-"`
 
 	// DefaultFeatureFlags is default featureflags to be configured if missing when invoking plugin
-	DefaultFeatureFlags map[string]bool `json:"defaultFeatureFlags"`
+	DefaultFeatureFlags map[string]bool `json:"defaultFeatureFlags" yaml:"defaultFeatureFlags"`
 }
 
 // PluginInfoSorter sorts PluginInfo objects.
