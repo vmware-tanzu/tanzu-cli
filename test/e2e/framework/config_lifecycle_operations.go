@@ -107,7 +107,8 @@ func (co *configOps) ConfigInit() (err error) {
 
 // ConfigServerList returns the server list
 func (co *configOps) ConfigServerList() ([]Server, error) {
-	stdOut, _, err := co.Exec(ConfigServerList)
+	ConfigServerListWithJSONOutput := ConfigServerList + JSONOutput
+	stdOut, _, err := co.Exec(ConfigServerListWithJSONOutput)
 	if err != nil {
 		log.Errorf("error while executing `config server list`, error:%s", err.Error())
 		return nil, err
