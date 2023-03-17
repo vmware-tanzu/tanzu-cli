@@ -12,6 +12,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -49,7 +50,7 @@ var _ = Describe("GetInstalledStandalonePlugins", func() {
 	})
 	Context("when a standalone plugins installed", func() {
 		BeforeEach(func() {
-			pd1, err = fakeInstallPlugin("", "fake-server-plugin1")
+			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -110,7 +111,7 @@ var _ = Describe("GetInstalledServerPlugins", func() {
 	Context("when a server plugin for k8s target installed", func() {
 		BeforeEach(func() {
 			contextNameFromConfig := k8sContextName
-			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin1")
+			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin1", types.TargetK8s)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -124,7 +125,7 @@ var _ = Describe("GetInstalledServerPlugins", func() {
 	Context("when a server plugin for tmc target installed", func() {
 		BeforeEach(func() {
 			contextNameFromConfig := tmcContextName
-			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2")
+			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetTMC)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -138,11 +139,11 @@ var _ = Describe("GetInstalledServerPlugins", func() {
 	Context("when a server plugin for both tmc and k8s targets installed", func() {
 		BeforeEach(func() {
 			contextNameFromConfig := k8sContextName
-			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin1")
+			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin1", types.TargetTMC)
 			Expect(err).ToNot(HaveOccurred())
 
 			contextNameFromConfig = tmcContextName
-			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2")
+			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetTMC)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -165,6 +166,7 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 		pd1             *cli.PluginInfo
 		pd2             *cli.PluginInfo
 		pd3             *cli.PluginInfo
+		pd4             *cli.PluginInfo
 	)
 	const (
 		tmcContextName = "test-tmc-context"
@@ -205,7 +207,7 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 	})
 	Context("when a standalone plugins installed", func() {
 		BeforeEach(func() {
-			pd1, err = fakeInstallPlugin("", "fake-server-plugin1")
+			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -218,11 +220,11 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 	})
 	Context("when a standalone and server plugin for k8s target installed", func() {
 		BeforeEach(func() {
-			pd1, err = fakeInstallPlugin("", "fake-server-plugin1")
+			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s)
 			Expect(err).ToNot(HaveOccurred())
 
 			contextNameFromConfig := k8sContextName
-			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2")
+			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetK8s)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -237,15 +239,15 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 
 	Context("when a standalone plugin and server plugin for both tmc and k8s targets installed", func() {
 		BeforeEach(func() {
-			pd1, err = fakeInstallPlugin("", "fake-server-plugin1")
+			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s)
 			Expect(err).ToNot(HaveOccurred())
 
 			contextNameFromConfig := k8sContextName
-			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2")
+			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetK8s)
 			Expect(err).ToNot(HaveOccurred())
 
 			contextNameFromConfig = tmcContextName
-			pd3, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin3")
+			pd3, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin3", types.TargetTMC)
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -258,9 +260,64 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 			Expect(installedPlugins).Should(ContainElement(*pd3))
 		})
 	})
+
+	Context("when a standalone plugin and server plugin of the same name and target are installed", func() {
+		BeforeEach(func() {
+			sharedPluginName := "fake-plugin"
+			sharedPluginTarget := types.TargetK8s
+			pd1, err = fakeInstallPlugin("", sharedPluginName, sharedPluginTarget)
+			Expect(err).ToNot(HaveOccurred())
+
+			contextNameFromConfig := k8sContextName
+			pd2, err = fakeInstallPlugin(contextNameFromConfig, sharedPluginName, sharedPluginTarget)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should return the server plugin only", func() {
+			installedPlugins, err := GetInstalledPlugins()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(installedPlugins)).To(Equal(1))
+			Expect(installedPlugins).Should(ContainElement(*pd2))
+		})
+	})
+
+	Context("when multiple standalone plugins and server plugins are installed with some overlap", func() {
+		BeforeEach(func() {
+			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s)
+			Expect(err).ToNot(HaveOccurred())
+
+			contextNameFromConfig := k8sContextName
+			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetK8s)
+			Expect(err).ToNot(HaveOccurred())
+
+			sharedPluginName := "fake-plugin1"
+			sharedPluginTarget := types.TargetK8s
+			_, err = fakeInstallPlugin("", sharedPluginName, sharedPluginTarget)
+			Expect(err).ToNot(HaveOccurred())
+			pd3, err = fakeInstallPlugin(contextNameFromConfig, sharedPluginName, sharedPluginTarget)
+			Expect(err).ToNot(HaveOccurred())
+
+			sharedPluginName = "fake-plugin2"
+			sharedPluginTarget = types.TargetTMC
+			_, err = fakeInstallPlugin("", sharedPluginName, sharedPluginTarget)
+			Expect(err).ToNot(HaveOccurred())
+			pd4, err = fakeInstallPlugin(contextNameFromConfig, sharedPluginName, sharedPluginTarget)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("should not return any standalone plugins that are also server plugins", func() {
+			installedPlugins, err := GetInstalledPlugins()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(installedPlugins)).To(Equal(4))
+			Expect(installedPlugins).Should(ContainElement(*pd1))
+			Expect(installedPlugins).Should(ContainElement(*pd2))
+			Expect(installedPlugins).Should(ContainElement(*pd3))
+			Expect(installedPlugins).Should(ContainElement(*pd4))
+		})
+	})
 })
 
-func fakeInstallPlugin(contextName, pluginName string) (*cli.PluginInfo, error) {
+func fakeInstallPlugin(contextName, pluginName string, target types.Target) (*cli.PluginInfo, error) {
 	cc, err := catalog.NewContextCatalog(contextName)
 	if err != nil {
 		return nil, err
@@ -270,6 +327,7 @@ func fakeInstallPlugin(contextName, pluginName string) (*cli.PluginInfo, error) 
 		InstallationPath: "/path/to/plugin/" + pluginName,
 		Version:          "1.0.0",
 		Hidden:           true,
+		Target:           target,
 		DefaultFeatureFlags: map[string]bool{
 			"test-feature": true,
 		},

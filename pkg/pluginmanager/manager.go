@@ -1000,9 +1000,8 @@ func DeletePlugin(options DeletePluginOptions) error {
 		return err
 	}
 
-	var plugin cli.PluginInfo
-	var matchedPluginCatalog *catalog.ContextCatalog
-	matchedPluginCount := 0
+	var matchedCatalogNames []string
+	var matchedPlugins []cli.PluginInfo
 
 	// Add empty serverName for standalone plugins
 	serverNames = append(serverNames, "")
@@ -1017,34 +1016,58 @@ func DeletePlugin(options DeletePluginOptions) error {
 		for i := range plugins {
 			if plugins[i].Name == options.PluginName &&
 				(options.Target == configtypes.TargetUnknown || options.Target == plugins[i].Target) {
-				plugin = plugins[i]
-				matchedPluginCatalog = c
-				matchedPluginCount++
+				matchedPlugins = append(matchedPlugins, plugins[i])
+				matchedCatalogNames = append(matchedCatalogNames, serverName)
 			}
 		}
 	}
 
-	if matchedPluginCount == 0 {
+	if len(matchedPlugins) == 0 {
 		if options.Target != configtypes.TargetUnknown {
 			return errors.Errorf("unable to find plugin '%v' for target '%s'", options.PluginName, string(options.Target))
 		}
 		return errors.Errorf("unable to find plugin '%v'", options.PluginName)
 	}
-	if matchedPluginCount > 1 {
-		return errors.Errorf("unable to uniquely identify plugin '%v'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag", options.PluginName)
+
+	// It is possible that the catalog contains two entries for a name/target combination:
+	// a context-scope installation and a standalone installation.  We need to delete both in this case.
+	// If all matched plugins are from the same target, this is when we can still delete them all.
+	uniqueTarget := matchedPlugins[0].Target
+	for i := range matchedPlugins {
+		if matchedPlugins[i].Target != uniqueTarget {
+			return errors.Errorf("unable to uniquely identify plugin '%v'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag", options.PluginName)
+		}
 	}
 
 	if !options.ForceDelete {
-		if err := component.AskForConfirmation(fmt.Sprintf("Deleting Plugin '%s'. Are you sure?", options.PluginName)); err != nil {
+		if err := component.AskForConfirmation(
+			fmt.Sprintf("Deleting Plugin '%s' for target '%s'. Are you sure?",
+				options.PluginName, string(uniqueTarget))); err != nil {
 			return err
 		}
 	}
-	err = matchedPluginCatalog.Delete(catalog.PluginNameTarget(plugin.Name, plugin.Target))
-	if err != nil {
-		return fmt.Errorf("plugin %q could not be deleted from cache", options.PluginName)
-	}
+	// Delete all plugins that match since they are all from the same target
+	return doDeletePluginFromCatalog(options.PluginName, uniqueTarget, matchedCatalogNames)
 
 	// TODO: delete the plugin binary if it is not used by any server
+}
+
+func doDeletePluginFromCatalog(pluginName string, target configtypes.Target, catalogNames []string) error {
+	for _, n := range catalogNames {
+		// We must create one catalog at a time to be able to delete a plugin.
+		// If we re-use the catalogs created above, when we delete the plugin
+		// in one catalog, the next catalog will put it back since that catalog
+		// was created before the plugin was deleted.
+		c, err := catalog.NewContextCatalog(n)
+		if err != nil {
+			continue
+		}
+
+		err = c.Delete(catalog.PluginNameTarget(pluginName, target))
+		if err != nil {
+			return fmt.Errorf("plugin %q could not be deleted from cache", pluginName)
+		}
+	}
 
 	return nil
 }
