@@ -21,6 +21,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
@@ -89,7 +90,7 @@ var expectedDiscoveredStandalonePlugins = []discovery.Discovered{
 func Test_DiscoverPlugins(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
@@ -119,7 +120,7 @@ func Test_DiscoverPlugins(t *testing.T) {
 func Test_InstallPlugin_InstalledPlugins_No_Central_Repo(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
@@ -230,7 +231,7 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
@@ -324,7 +325,7 @@ func Test_InstallPluginFromGroup(t *testing.T) {
 	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
@@ -343,7 +344,7 @@ func Test_DiscoverPluginGroups(t *testing.T) {
 	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
@@ -357,7 +358,7 @@ func Test_DiscoverPluginGroups(t *testing.T) {
 func Test_AvailablePlugins(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	// Bypass the environment variable for testing
 	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
@@ -461,7 +462,7 @@ func Test_AvailablePlugins(t *testing.T) {
 func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_One_Installed_Getting_Discovered(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	// Bypass the environment variable for testing
 	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
@@ -517,7 +518,7 @@ func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_One_In
 func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_Plugin_Installed_But_Not_Getting_Discovered(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	// Bypass the environment variable for testing
 	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
@@ -571,7 +572,7 @@ func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_Plugin
 func Test_AvailablePlugins_From_LocalSource(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 
 	currentDirAbsPath, _ := filepath.Abs(".")
 	discoveredPlugins, err := AvailablePluginsFromLocalSource(filepath.Join(currentDirAbsPath, "test", "local"))
@@ -641,7 +642,7 @@ func Test_AvailablePlugins_From_LocalSource(t *testing.T) {
 func Test_InstallPlugin_InstalledPlugins_From_LocalSource(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
@@ -687,7 +688,7 @@ func Test_InstallPlugin_InstalledPlugins_From_LocalSource(t *testing.T) {
 func Test_DescribePlugin(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	// Bypass the environment variable for testing
 	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
@@ -731,7 +732,7 @@ func Test_DescribePlugin(t *testing.T) {
 func Test_DeletePlugin(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	// Bypass the environment variable for testing
 	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
@@ -788,7 +789,7 @@ func Test_ValidatePlugin(t *testing.T) {
 func Test_SyncPlugins_All_Plugins_No_Central_Repo(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistoForTesting()()
+	defer setupLocalDistroForTesting()()
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
@@ -1312,4 +1313,454 @@ func TestHelperProcess(t *testing.T) {
 		os.Exit(2)
 	}
 	fmt.Fprint(os.Stdout, string(bytes))
+}
+
+func TestGetAdditionalTestPluginDiscoveries(t *testing.T) {
+	assertions := assert.New(t)
+
+	// Start with no additional discoveries
+	err := os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, "")
+	assertions.Nil(err)
+
+	discoveries := getAdditionalTestPluginDiscoveries()
+	assertions.Nil(err)
+	assertions.Equal(0, len(discoveries))
+
+	// Set a single additional discovery
+	expectedDiscovery := "localhost:9876/my/discovery/image:v0"
+	err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, expectedDiscovery)
+	assertions.Nil(err)
+
+	discoveries = getAdditionalTestPluginDiscoveries()
+	assertions.Nil(err)
+	assertions.Equal(1, len(discoveries))
+	assertions.Equal(expectedDiscovery, discoveries[0].OCI.Image)
+
+	// Set multiple additional discoveries
+	expectedDiscoveries := []string{
+		"localhost:9876/my/discovery/image:v1",
+		"localhost:9876/my/discovery/image:v3",
+		"localhost:9876/my/discovery/image:v2",
+		"localhost:9876/my/discovery/image:v4",
+	}
+	// Use different spacing between discoveries
+	err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting,
+		expectedDiscoveries[0]+","+expectedDiscoveries[1]+"   ,"+expectedDiscoveries[2]+"  ,  "+expectedDiscoveries[3])
+	assertions.Nil(err)
+
+	discoveries = getAdditionalTestPluginDiscoveries()
+	assertions.Equal(len(expectedDiscoveries), len(discoveries))
+	assertions.Equal(expectedDiscoveries[0], discoveries[0].OCI.Image)
+	assertions.Equal(expectedDiscoveries[1], discoveries[1].OCI.Image)
+	assertions.Equal(expectedDiscoveries[2], discoveries[2].OCI.Image)
+	assertions.Equal(expectedDiscoveries[3], discoveries[3].OCI.Image)
+}
+
+func TestGetPluginDiscoveries(t *testing.T) {
+	assertions := assert.New(t)
+
+	// Setup 2 local discoveries
+	defer setupLocalDistroForTesting()()
+
+	// Start with no additional discoveries
+	err := os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, "")
+	assertions.Nil(err)
+
+	// Bypass the temporary pre-release variable
+	err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage,
+		constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	assertions.Nil(err)
+
+	discoveries, err := getPluginDiscoveries()
+	assertions.Nil(err)
+	assertions.Equal(2, len(discoveries))
+	assertions.Equal("default-local", discoveries[0].Local.Name)
+	assertions.Equal("fake", discoveries[1].Local.Name)
+
+	// Set a single test discovery
+	expectedTestDiscovery := "localhost:9876/my/discovery/image:v10"
+	err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, expectedTestDiscovery)
+	assertions.Nil(err)
+
+	discoveries, err = getPluginDiscoveries()
+	assertions.Nil(err)
+	assertions.Equal(3, len(discoveries))
+	// The test discovery must be last
+	assertions.Equal("default-local", discoveries[0].Local.Name)
+	assertions.Equal("fake", discoveries[1].Local.Name)
+	assertions.Equal(expectedTestDiscovery, discoveries[2].OCI.Image)
+
+	// Set multiple additional discoveries
+	expectedTestDiscoveries := []string{
+		"localhost:9876/my/discovery/image:v11",
+		"localhost:9876/my/discovery/image:v13",
+		"localhost:9876/my/discovery/image:v12",
+		"localhost:9876/my/discovery/image:v14",
+	}
+	// Use different spacing between discoveries
+	err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting,
+		expectedTestDiscoveries[0]+","+expectedTestDiscoveries[1]+"   ,"+expectedTestDiscoveries[2]+"  ,  "+expectedTestDiscoveries[3])
+	assertions.Nil(err)
+
+	discoveries, err = getPluginDiscoveries()
+	assertions.Nil(err)
+	assertions.Equal(len(expectedTestDiscoveries)+2, len(discoveries))
+	// The test discoveries in order but after the configured discoveries
+	assertions.Equal("default-local", discoveries[0].Local.Name)
+	assertions.Equal("fake", discoveries[1].Local.Name)
+	assertions.Equal(expectedTestDiscoveries[0], discoveries[2].OCI.Image)
+	assertions.Equal(expectedTestDiscoveries[1], discoveries[3].OCI.Image)
+	assertions.Equal(expectedTestDiscoveries[2], discoveries[4].OCI.Image)
+	assertions.Equal(expectedTestDiscoveries[3], discoveries[5].OCI.Image)
+
+	// Test with the Central Repo feature disabled
+	featureArray := strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
+	err = configlib.SetFeature(featureArray[1], featureArray[2], "true")
+	assertions.Nil(err)
+
+	discoveries, err = getPluginDiscoveries()
+	assertions.Nil(err)
+	assertions.Equal(2, len(discoveries))
+	assertions.Equal("default-local", discoveries[0].Local.Name)
+	assertions.Equal("fake", discoveries[1].Local.Name)
+}
+
+func TestMergeDuplicatePlugins(t *testing.T) {
+	assertions := assert.New(t)
+
+	preMergePlugins := []discovery.Discovered{
+		{
+			Name:               "myplugin",
+			Target:             configtypes.TargetK8s,
+			Description:        "First description",
+			RecommendedVersion: "v2.2.2",
+			InstalledVersion:   "",
+			SupportedVersions:  []string{"v2.2.2"},
+			Distribution: distribution.Artifacts{
+				"v2.2.2": []distribution.Artifact{
+					{
+						Image:  "localhost:9876/my/discovery/darwin_amd64:v2.2.2",
+						Digest: "digest222damd",
+						OS:     "darwin",
+						Arch:   "amd64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/darwin_arm64:v2.2.2",
+						Digest: "digest222darm",
+						OS:     "darwin",
+						Arch:   "arm64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/linux_amd64:v2.2.2",
+						Digest: "digest222lamd",
+						OS:     "linux",
+						Arch:   "amd64",
+					},
+				},
+			},
+			Optional:      true,
+			Scope:         common.PluginScopeStandalone,
+			Source:        "discovery1",
+			ContextName:   "ctx1",
+			DiscoveryType: common.DiscoveryTypeOCI,
+			Status:        common.PluginStatusNotInstalled,
+		},
+		{
+			Name:               "myplugin",
+			Target:             configtypes.TargetK8s,
+			Description:        "Second description",
+			RecommendedVersion: "v1.1.1",
+			InstalledVersion:   "v1.1.1",
+			SupportedVersions:  []string{"v0.1.0", "v1.1.1"},
+			Distribution: distribution.Artifacts{
+				"v0.1.0": []distribution.Artifact{
+					{
+						Image:  "localhost:9876/my/discovery/darwin_amd64:v0.1.0",
+						Digest: "digest010damd",
+						OS:     "darwin",
+						Arch:   "amd64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/darwin_arm64:v0.1.0",
+						Digest: "digest010damd",
+						OS:     "darwin",
+						Arch:   "arm64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/linux_amd64:v0.1.0",
+						Digest: "digest010lamd",
+						OS:     "linux",
+						Arch:   "amd64",
+					},
+				},
+				"v1.1.1": []distribution.Artifact{
+					{
+						Image:  "localhost:9876/my/discovery/darwin_amd64:v1.1.1",
+						Digest: "digest111damd",
+						OS:     "darwin",
+						Arch:   "amd64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/darwin_arm64:v1.1.1",
+						Digest: "digest111damd",
+						OS:     "darwin",
+						Arch:   "arm64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/linux_amd64:v1.1.1",
+						Digest: "digest111lamd",
+						OS:     "linux",
+						Arch:   "amd64",
+					},
+				},
+			},
+			Optional:      false,
+			Scope:         common.PluginScopeStandalone,
+			Source:        "discovery2",
+			ContextName:   "ctx2",
+			DiscoveryType: common.DiscoveryTypeLocal,
+			Status:        common.PluginStatusInstalled,
+		},
+	}
+
+	expectedPlugin := discovery.Discovered{
+		Name:               "myplugin",
+		Target:             configtypes.TargetK8s,
+		Description:        "First description",
+		RecommendedVersion: "v2.2.2",
+		InstalledVersion:   "v1.1.1",
+		SupportedVersions:  []string{"v0.1.0", "v1.1.1", "v2.2.2"},
+		Distribution: distribution.Artifacts{
+			"v0.1.0": []distribution.Artifact{
+				{
+					Image:  "localhost:9876/my/discovery/darwin_amd64:v0.1.0",
+					Digest: "digest010damd",
+					OS:     "darwin",
+					Arch:   "amd64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/darwin_arm64:v0.1.0",
+					Digest: "digest010damd",
+					OS:     "darwin",
+					Arch:   "arm64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/linux_amd64:v0.1.0",
+					Digest: "digest010lamd",
+					OS:     "linux",
+					Arch:   "amd64",
+				},
+			},
+			"v1.1.1": []distribution.Artifact{
+				{
+					Image:  "localhost:9876/my/discovery/darwin_amd64:v1.1.1",
+					Digest: "digest111damd",
+					OS:     "darwin",
+					Arch:   "amd64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/darwin_arm64:v1.1.1",
+					Digest: "digest111damd",
+					OS:     "darwin",
+					Arch:   "arm64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/linux_amd64:v1.1.1",
+					Digest: "digest111lamd",
+					OS:     "linux",
+					Arch:   "amd64",
+				},
+			},
+			"v2.2.2": []distribution.Artifact{
+				{
+					Image:  "localhost:9876/my/discovery/darwin_amd64:v2.2.2",
+					Digest: "digest222damd",
+					OS:     "darwin",
+					Arch:   "amd64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/darwin_arm64:v2.2.2",
+					Digest: "digest222darm",
+					OS:     "darwin",
+					Arch:   "arm64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/linux_amd64:v2.2.2",
+					Digest: "digest222lamd",
+					OS:     "linux",
+					Arch:   "amd64",
+				},
+			},
+		},
+		Optional:      true,
+		Scope:         common.PluginScopeStandalone,
+		Source:        "discovery1/discovery2",
+		ContextName:   "ctx1",
+		DiscoveryType: "",
+		Status:        common.PluginStatusInstalled,
+	}
+
+	mergedPlugins := mergeDuplicatePlugins(preMergePlugins)
+	assertions.Equal(1, len(mergedPlugins))
+	assertions.Equal(expectedPlugin, mergedPlugins[0])
+}
+
+func TestMergeDuplicatePluginsWithReplacedVersion(t *testing.T) {
+	assertions := assert.New(t)
+
+	preMergePlugins := []discovery.Discovered{
+		{
+			Name:               "myplugin",
+			Target:             configtypes.TargetK8s,
+			Description:        "First description",
+			RecommendedVersion: "v1.1.1",
+			InstalledVersion:   "",
+			SupportedVersions:  []string{"v1.1.1"},
+			Distribution: distribution.Artifacts{
+				"v1.1.1": []distribution.Artifact{
+					{
+						Image:  "localhost:9876/my/discovery/darwin_amd64:v2.2.2",
+						Digest: "digest222damd",
+						OS:     "darwin",
+						Arch:   "amd64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/darwin_arm64:v2.2.2",
+						Digest: "digest222darm",
+						OS:     "darwin",
+						Arch:   "arm64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/linux_amd64:v2.2.2",
+						Digest: "digest222lamd",
+						OS:     "linux",
+						Arch:   "amd64",
+					},
+				},
+			},
+			Optional:      true,
+			Scope:         common.PluginScopeStandalone,
+			Source:        "discovery1",
+			ContextName:   "ctx1",
+			DiscoveryType: common.DiscoveryTypeOCI,
+			Status:        common.PluginStatusNotInstalled,
+		},
+		{
+			Name:               "myplugin",
+			Target:             configtypes.TargetK8s,
+			Description:        "Second description",
+			RecommendedVersion: "v1.1.1",
+			InstalledVersion:   "v1.1.1",
+			SupportedVersions:  []string{"v0.1.0", "v1.1.1"},
+			Distribution: distribution.Artifacts{
+				"v0.1.0": []distribution.Artifact{
+					{
+						Image:  "localhost:9876/my/discovery/darwin_amd64:v0.1.0",
+						Digest: "digest010damd",
+						OS:     "darwin",
+						Arch:   "amd64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/darwin_arm64:v0.1.0",
+						Digest: "digest010damd",
+						OS:     "darwin",
+						Arch:   "arm64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/linux_amd64:v0.1.0",
+						Digest: "digest010lamd",
+						OS:     "linux",
+						Arch:   "amd64",
+					},
+				},
+				"v1.1.1": []distribution.Artifact{
+					{
+						Image:  "localhost:9876/my/discovery/darwin_amd64:v1.1.1",
+						Digest: "digest111damd",
+						OS:     "darwin",
+						Arch:   "amd64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/darwin_arm64:v1.1.1",
+						Digest: "digest111damd",
+						OS:     "darwin",
+						Arch:   "arm64",
+					},
+					{
+						Image:  "localhost:9876/my/discovery/linux_amd64:v1.1.1",
+						Digest: "digest111lamd",
+						OS:     "linux",
+						Arch:   "amd64",
+					},
+				},
+			},
+			Optional:      false,
+			Scope:         common.PluginScopeStandalone,
+			Source:        "discovery2",
+			ContextName:   "ctx2",
+			DiscoveryType: common.DiscoveryTypeLocal,
+			Status:        common.PluginStatusInstalled,
+		},
+	}
+
+	expectedPlugin := discovery.Discovered{
+		Name:               "myplugin",
+		Target:             configtypes.TargetK8s,
+		Description:        "First description",
+		RecommendedVersion: "v1.1.1",
+		InstalledVersion:   "v1.1.1",
+		SupportedVersions:  []string{"v0.1.0", "v1.1.1"},
+		Distribution: distribution.Artifacts{
+			"v0.1.0": []distribution.Artifact{
+				{
+					Image:  "localhost:9876/my/discovery/darwin_amd64:v0.1.0",
+					Digest: "digest010damd",
+					OS:     "darwin",
+					Arch:   "amd64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/darwin_arm64:v0.1.0",
+					Digest: "digest010damd",
+					OS:     "darwin",
+					Arch:   "arm64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/linux_amd64:v0.1.0",
+					Digest: "digest010lamd",
+					OS:     "linux",
+					Arch:   "amd64",
+				},
+			},
+			"v1.1.1": []distribution.Artifact{
+				{
+					Image:  "localhost:9876/my/discovery/darwin_amd64:v2.2.2",
+					Digest: "digest222damd",
+					OS:     "darwin",
+					Arch:   "amd64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/darwin_arm64:v2.2.2",
+					Digest: "digest222darm",
+					OS:     "darwin",
+					Arch:   "arm64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/linux_amd64:v2.2.2",
+					Digest: "digest222lamd",
+					OS:     "linux",
+					Arch:   "amd64",
+				},
+			},
+		},
+		Optional:      true,
+		Scope:         common.PluginScopeStandalone,
+		Source:        "discovery1/discovery2",
+		ContextName:   "ctx1",
+		DiscoveryType: "",
+		Status:        common.PluginStatusInstalled,
+	}
+
+	mergedPlugins := mergeDuplicatePlugins(preMergePlugins)
+	assertions.Equal(1, len(mergedPlugins))
+	assertions.Equal(expectedPlugin, mergedPlugins[0])
 }
