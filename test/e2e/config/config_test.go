@@ -24,7 +24,6 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:config]", func() {
 	)
 	BeforeEach(func() {
 		tf = framework.NewFramework()
-		randomFeatureFlag = "features.global." + "e2e-test-" + framework.RandomString(4)
 	})
 	Context("config feature flag operations", func() {
 		When("new config flag set with value", func() {
@@ -60,6 +59,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:config]", func() {
 			})
 			It("should able to set new feature flag", func() {
 				// set feature flag
+				randomFeatureFlag = "features.global." + "e2e-test-" + framework.RandomString(4)
 				err := tf.Config.ConfigSetFeatureFlag(randomFeatureFlag, TRUE)
 				Expect(err).To(BeNil())
 

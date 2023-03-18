@@ -3,8 +3,8 @@ name: Tanzu CLI Core Tests
 on:
   pull_request:
     branches: [main, release-*]
-    paths:
-      - "*"
+  push:
+    branches: [main, release-*]
 
 jobs:
   build:
