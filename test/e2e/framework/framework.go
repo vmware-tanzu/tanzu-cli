@@ -83,8 +83,7 @@ const (
 	// Error messages
 	UnableToFindPluginForTarget = "unable to find plugin '%s' for target '%s'"
 	UnableToFindPlugin          = "unable to find plugin '%s'"
-	InvalidTargetSpecified      = "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'"
-	InvalidTargetGlobal         = "invalid target for plugin: global"
+	InvalidTargetSpecified      = "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'"
 	UnknownDiscoverySourceType  = "unknown discovery source type"
 	DiscoverySourceNotFound     = "cli discovery source not found"
 )

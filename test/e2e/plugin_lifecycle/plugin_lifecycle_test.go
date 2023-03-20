@@ -150,9 +150,6 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		It("install plugins and describe installed plugins", func() {
 			for _, plugin := range framework.PluginsForLifeCycleTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				Expect(err).To(BeNil(), "should not get any error for plugin install")
 				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
@@ -174,16 +171,6 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		})
 	})
 	Context("plugin use cases: negative test cases for plugin install and plugin delete commands", func() {
-		// Test case: install global plugin with target flag value as 'global'
-		// currently plugin install does not support 'global' for --target flag
-		It("install plugin target as 'global'", func() {
-			for _, plugin := range framework.PluginsForLifeCycleTests {
-				if plugin.Target == framework.GlobalTarget {
-					err := tf.PluginCmd.InstallPlugin(plugin.Name, plugin.Target, plugin.Version)
-					Expect(err.Error()).To(ContainSubstring(framework.InvalidTargetGlobal))
-				}
-			}
-		})
 		// Test case: install plugin with incorrect value target flag
 		It("install plugin with random string for target flag", func() {
 			err := tf.PluginCmd.InstallPlugin(framework.PluginsForLifeCycleTests[0].Name, framework.RandomString(5), framework.PluginsForLifeCycleTests[0].Version)

@@ -157,17 +157,7 @@ func createWhereClause(filter *PluginInventoryFilter) (string, error) {
 			whereClause = fmt.Sprintf("%s PluginName='%s' AND", whereClause, filter.Name)
 		}
 		if filter.Target != "" {
-			var target string
-			switch filter.Target {
-			case configtypes.TargetK8s:
-				target = "k8s"
-			case configtypes.TargetTMC:
-				target = "tmc"
-			default:
-				return whereClause, fmt.Errorf("invalid target for plugin: %s", string(filter.Target))
-			}
-
-			whereClause = fmt.Sprintf("%s Target='%s' AND", whereClause, target)
+			whereClause = fmt.Sprintf("%s Target='%s' AND", whereClause, string(filter.Target))
 		}
 		if filter.Version != "" {
 			if filter.Version == cli.VersionLatest {
