@@ -62,6 +62,10 @@ PLUGIN_BUILD_TARGETS := $(addprefix plugin-build-,${PLUGIN_BUILD_OS_ARCH})
 .PHONY: plugin-build
 plugin-build: $(PLUGIN_BUILD_TARGETS) ## Build all plugin binaries for all supported os-arch
 
+.PHONY: plugin-build-bundle
+plugin-build-bundle: plugin-build ## Build all plugin binaries for all supported os-arch and create tar bundle
+	pushd $(PLUGIN_BINARY_ARTIFACTS_DIR) && tar zcvf ../plugins_bundle.tgz * && popd
+
 plugin-build-local: plugin-build-$(GOHOSTOS)-$(GOHOSTARCH) ## Build all plugin binaries for local platform
 	
 plugin-build-%:
