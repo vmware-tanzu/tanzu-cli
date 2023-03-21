@@ -180,7 +180,7 @@ func setUnstableVersions(cfg *configtypes.ClientConfig, value string) error {
 		configtypes.AlphaUnstableVersions,
 		configtypes.ExperimentalUnstableVersions,
 		configtypes.NoUnstableVersions:
-		cfg.SetUnstableVersionSelector(optionKey)
+		cfg.SetUnstableVersionSelector(optionKey) // nolint:staticcheck // Deprecated
 	default:
 		return fmt.Errorf("unknown unstable-versions setting: %s; should be one of [all, none, alpha, experimental]", optionKey)
 	}
@@ -192,7 +192,7 @@ func setEdition(cfg *configtypes.ClientConfig, edition string) error {
 
 	switch editionOption {
 	case configtypes.EditionCommunity, configtypes.EditionStandard:
-		cfg.SetEditionSelector(editionOption)
+		cfg.SetEditionSelector(editionOption) // nolint:staticcheck // Deprecated
 	default:
 		return fmt.Errorf("unknown edition: %s; should be one of [%s, %s]", editionOption, configtypes.EditionStandard, configtypes.EditionCommunity)
 	}
@@ -258,9 +258,9 @@ var listServersCmd = &cobra.Command{
 		}
 
 		output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "Name", "Type", "Endpoint", "Path", "Context")
-		for _, server := range cfg.KnownServers {
+		for _, server := range cfg.KnownServers { // nolint:staticcheck // Deprecated
 			var endpoint, path, context string
-			if server.IsGlobal() {
+			if server.IsGlobal() { // nolint:staticcheck // Deprecated
 				endpoint = server.GlobalOpts.Endpoint
 			} else {
 				endpoint = server.ManagementClusterOpts.Endpoint
@@ -292,13 +292,13 @@ var deleteServersCmd = &cobra.Command{
 
 		if isAborted == nil {
 			log.Infof("Deleting entry for cluster %s", args[0])
-			serverExists, err := configlib.ServerExists(args[0])
+			serverExists, err := configlib.ServerExists(args[0]) // nolint:staticcheck // Deprecated
 			if err != nil {
 				return err
 			}
 
 			if serverExists {
-				err := configlib.RemoveServer(args[0])
+				err := configlib.RemoveServer(args[0]) // nolint:staticcheck // Deprecated
 				if err != nil {
 					return err
 				}

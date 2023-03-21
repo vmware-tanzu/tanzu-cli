@@ -21,7 +21,7 @@ require (
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.23.0
+	github.com/onsi/gomega v1.27.2
 	github.com/otiai10/copy v1.4.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/afero v1.8.2
@@ -30,10 +30,10 @@ require (
 	github.com/tj/assert v0.0.3
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230130173350-eeda69d80a24
-	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.0-20230306195922-7870c5d3ac6f
+	github.com/vmware-tanzu/tanzu-plugin-runtime v0.0.2-0.20230321210330-330c29284da6
 	go.pinniped.dev v0.20.0
 	go.uber.org/multierr v1.8.0
-	golang.org/x/mod v0.7.0
+	golang.org/x/mod v0.8.0
 	golang.org/x/oauth2 v0.4.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.49.0

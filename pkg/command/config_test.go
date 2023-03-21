@@ -154,7 +154,7 @@ func TestConfigEditionCommunity(t *testing.T) {
 		t.Errorf("Unexpected error returned for cli.edition argument: %s", err.Error())
 	}
 
-	if cfg.ClientOptions.CLI.Edition != configtypes.EditionCommunity { //nolint:staticcheck
+	if cfg.ClientOptions.CLI.Edition != configtypes.EditionCommunity {
 		t.Error("cfg.ClientOptions.CLI.Edition was not assigned the value \"" + value + "\"")
 	}
 }
@@ -167,7 +167,7 @@ func TestConfigEditionStandard(t *testing.T) {
 		t.Errorf("Unexpected error returned for cli.edition argument: %s", err.Error())
 	}
 
-	if cfg.ClientOptions.CLI.Edition != configtypes.EditionStandard { //nolint:staticcheck
+	if cfg.ClientOptions.CLI.Edition != configtypes.EditionStandard {
 		t.Error("cfg.ClientOptions.CLI.Edition was not assigned the value \"" + value + "\"")
 	}
 }

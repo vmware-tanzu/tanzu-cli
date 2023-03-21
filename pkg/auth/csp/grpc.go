@@ -62,11 +62,11 @@ type configSource struct {
 
 // Token fetches the token.
 func (c *configSource) Token() (*oauth2.Token, error) {
-	g, err := c.GetCurrentServer()
+	g, err := c.GetCurrentServer() // nolint:staticcheck // Deprecated
 	if err != nil {
 		return nil, err
 	}
-	if !g.IsGlobal() {
+	if !g.IsGlobal() { // nolint:staticcheck // Deprecated
 		return nil, fmt.Errorf("trying to fetch token for non global server")
 	}
 	if !IsExpired(g.GlobalOpts.Auth.Expiration) {

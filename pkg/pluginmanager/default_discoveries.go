@@ -10,12 +10,12 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
-func defaultDiscoverySourceBasedOnServer(server *configtypes.Server) []configtypes.PluginDiscovery {
+func defaultDiscoverySourceBasedOnServer(server *configtypes.Server) []configtypes.PluginDiscovery { // nolint:staticcheck // Deprecated
 	var defaultDiscoveries []configtypes.PluginDiscovery
 	// If current server type is management-cluster, then add
 	// the default kubernetes discovery endpoint pointing to the
 	// management-cluster kubeconfig
-	if server.Type == configtypes.ManagementClusterServerType && server.ManagementClusterOpts != nil {
+	if server.Type == configtypes.ManagementClusterServerType && server.ManagementClusterOpts != nil { // nolint:staticcheck // Deprecated
 		defaultDiscoveries = append(defaultDiscoveries, defaultDiscoverySourceForK8sTargetedContext(server.Name, server.ManagementClusterOpts.Path, server.ManagementClusterOpts.Context))
 	}
 	return defaultDiscoveries

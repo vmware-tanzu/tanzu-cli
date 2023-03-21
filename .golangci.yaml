@@ -127,6 +127,12 @@ issues:
         - revive
       text: "it will be inferred from"
 
+    # Ignore the deprecated function use (staticcheck, SA1019) for the test files
+    - path: (.+)_test.go
+      linters:
+        - staticcheck
+      text: "SA1019:"
+
   include:
     - EXC0011 # disable excluding of issues about missing package comments from stylecheck
 
