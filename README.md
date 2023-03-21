@@ -1,6 +1,7 @@
 # Tanzu Core CLI
 
-[![Tanzu Core CLI Tests](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml/badge.svg?branch=main&event=push)](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml?query=event:push+branch:main)
+[![Tanzu CLI Core Tests](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml/badge.svg?branch=main&event=push)](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml?query=event:push+branch:main)
+[![Tanzu CLI Coexistence Tests](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli-coexistence_tests.yaml/badge.svg?event=push)](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli-coexistence_tests.yaml)
 
 _NOTE: The first alpha release is available for evaluation, but it still needs
 to be complemented by a plugin repository accessible to the CLI. Please watch

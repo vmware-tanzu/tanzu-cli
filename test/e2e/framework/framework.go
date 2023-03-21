@@ -46,10 +46,18 @@ const (
 	TestPluginsPrefix                   = "test-plugin-"
 	PluginSubCommand                    = "%s %s"
 	PluginKey                           = "%s_%s_%s" // Plugins - Name_Target_Versions
+	LegacyPluginKey                     = "%s_%s"    // Plugins - Name_Target_Versions or Name_Version_Status for legacy cli plugins
 
 	// Central repository
 	TanzuCliE2ETestCentralRepositoryURL      = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
 	TanzuCliE2ETestLocalCentralRepositoryURL = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL"
+
+	// CLI Coexistence
+	CLICoexistenceLegacyTanzuCLIInstallationPath = "TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR"
+	CLICoexistenceNewTanzuCLIInstallationPath    = "TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR"
+	CLICoexistenceLegacyTanzuCLIVersion          = "TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION"
+	CLICoexistenceNewTanzuCLIVersion             = "TANZU_CLI_BUILD_VERSION"
+	CLICoexistenceTanzuCEIPParticipation         = "TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER"
 
 	// General constants
 	True         = "true"
@@ -87,10 +95,12 @@ const (
 	StartDockerUbuntu = "sudo systemctl start docker"
 	StopDockerUbuntu  = "sudo systemctl stop docker"
 
-	TMC          = "tmc"
-	TKG          = "tkg"
-	SourceType   = "oci"
-	GlobalTarget = "global"
+	TMC                  = "tmc"
+	TKG                  = "tkg"
+	SourceType           = "oci"
+	GlobalTarget         = "global"
+	KubernetesTarget     = "kubernetes"
+	MissionControlTarget = "mission-control"
 
 	// log info
 	ExecutingCommand = "Executing command: %s"
@@ -176,7 +186,19 @@ type Framework struct {
 // TanzuCommandPrefix should be set to customize the tanzu command prefix; default is tanzu
 type E2EOptions struct {
 	TanzuCommandPrefix string
+	CLIOptions
 }
+
+// CLIOptions used to configure certain options that are used in CLI lifecycle operations
+// FilePath should be set to customize the installation path for legacy Tanzu CLI or new Tanzu CLI
+// Override is set to determine whether the new Tanzu CLI should override or coexist the installation of legacy Tanzu CLI
+type CLIOptions struct {
+	FilePath string // file path to tanzu installation; Default values for legacy Tanzu CLI is set using TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR and new Tanzu CLI is set using TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR
+	Override bool   // new tanzu cli overrides the installation of legacy tanzu cli; Default value is false
+}
+
+type E2EOption func(*E2EOptions)
+type CLIOption func(*CLIOptions)
 
 func NewE2EOptions(options ...E2EOption) *E2EOptions {
 	e := &E2EOptions{}
@@ -186,12 +208,24 @@ func NewE2EOptions(options ...E2EOption) *E2EOptions {
 	return e
 }
 
-type E2EOption func(*E2EOptions)
-
 // WithTanzuCommandPrefix is to set the tanzu command prefix; default is tanzu
 func WithTanzuCommandPrefix(prefix string) E2EOption {
 	return func(opts *E2EOptions) {
 		opts.TanzuCommandPrefix = prefix
+	}
+}
+
+// WithFilePath is the installation file path location
+func WithFilePath(filePath string) E2EOption {
+	return func(opts *E2EOptions) {
+		opts.FilePath = filePath
+	}
+}
+
+// WithOverride is to provide whether new Tanzu CLI overrides the installation of legacy Tanzu CLI
+func WithOverride(override bool) E2EOption {
+	return func(opts *E2EOptions) {
+		opts.Override = override
 	}
 }
 
@@ -221,13 +255,13 @@ func init() {
 	_ = CreateDir(TestStandalonePluginsPath)
 	// Create a directory (if not exists) $HOME/.tanzu-cli-e2e/test
 	_ = CreateDir(FullPathForTempDir)
+
 	// TODO:cpamuluri: need to move plugins info to configuration file with positive and negative use cases - github issue: https://github.com/vmware-tanzu/tanzu-cli/issues/122
-	PluginsForLifeCycleTests = make([]*PluginInfo, 3)
 	PluginsForLifeCycleTests = []*PluginInfo{{Name: "cluster", Target: "kubernetes", Version: "v9.9.9", Description: "cluster functionality"}, {Name: "cluster", Target: "mission-control", Version: "v9.9.9", Description: "cluster functionality"}, {Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "pinniped-auth functionality"}}
 
 	// TODO:cpamuluri: need to move Plugin Groups to configuration file with positive and negative use cases - github issue: https://github.com/vmware-tanzu/tanzu-cli/issues/122
-	PluginGroupsForLifeCycleTests = make([]*PluginGroup, 2)
 	PluginGroupsForLifeCycleTests = []*PluginGroup{{Group: "vmware-tkg/v9.9.9"}, {Group: "vmware-tmc/v9.9.9"}}
+
 	PluginGroupsLatestToOldVersions = make(map[string]string)
 	PluginGroupsLatestToOldVersions["vmware-tmc/v9.9.9"] = "vmware-tmc/v0.0.1"
 	PluginGroupsLatestToOldVersions["vmware-tkg/v9.9.9"] = "vmware-tkg/v0.0.1"
