@@ -37,17 +37,17 @@ func (pa PluginAssociation) Map() map[string]string {
 // Catalog is the Schema for the plugin catalog data
 type Catalog struct {
 	// PluginInfos is a list of PluginInfo
-	PluginInfos []*cli.PluginInfo `json:"pluginInfos,omitempty" yaml:"pluginInfos"`
+	PluginInfos []*cli.PluginInfo `json:"pluginInfos,omitempty" yaml:"pluginInfos,omitempty"`
 
 	// IndexByPath of PluginInfos for all installed plugins by installation path.
-	IndexByPath map[string]cli.PluginInfo `json:"indexByPath,omitempty"`
+	IndexByPath map[string]cli.PluginInfo `json:"indexByPath,omitempty" yaml:"indexByPath,omitempty"`
 	// IndeByName of all plugin installation paths by name.
-	IndexByName map[string][]string `json:"indexByName,omitempty"`
+	IndexByName map[string][]string `json:"indexByName,omitempty" yaml:"indexByName,omitempty"`
 	// StandAlonePlugins is a set of stand-alone plugin installations aggregated across all context types.
 	// Note: Shall be reduced to only those stand-alone plugins that are common to all context types.
-	StandAlonePlugins PluginAssociation `json:"standAlonePlugins,omitempty"`
+	StandAlonePlugins PluginAssociation `json:"standAlonePlugins,omitempty" yaml:"standAlonePlugins,omitempty"`
 	// ServerPlugins links a server and a set of associated plugin installations.
-	ServerPlugins map[string]PluginAssociation `json:"serverPlugins,omitempty"`
+	ServerPlugins map[string]PluginAssociation `json:"serverPlugins,omitempty" yaml:"serverPlugins,omitempty"`
 }
 
 // CatalogList contains a list of Catalog
