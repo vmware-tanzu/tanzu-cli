@@ -36,6 +36,7 @@ type inventoryPluginAddFlags struct {
 	Publisher         string
 	Vendor            string
 	DeactivatePlugins bool
+	ValidateOnly      bool
 }
 
 func newInventoryPluginAddCmd() *cobra.Command {
@@ -53,6 +54,7 @@ func newInventoryPluginAddCmd() *cobra.Command {
 				Vendor:            ipaFlags.Vendor,
 				Publisher:         ipaFlags.Publisher,
 				DeactivatePlugins: ipaFlags.DeactivatePlugins,
+				ValidateOnly:      ipaFlags.ValidateOnly,
 				ImgpkgOptions:     imgpkg.NewImgpkgCLIWrapper(),
 			}
 			return paOptions.PluginAdd()
@@ -65,6 +67,7 @@ func newInventoryPluginAddCmd() *cobra.Command {
 	pluginAddCmd.Flags().StringVarP(&ipaFlags.Vendor, "vendor", "", "", "name of the vendor")
 	pluginAddCmd.Flags().StringVarP(&ipaFlags.Publisher, "publisher", "", "", "name of the publisher")
 	pluginAddCmd.Flags().BoolVarP(&ipaFlags.DeactivatePlugins, "deactivate", "", false, "mark plugins as deactivated")
+	pluginAddCmd.Flags().BoolVarP(&ipaFlags.ValidateOnly, "validate", "", false, "validate whether plugins already exists in the plugin inventory or not")
 
 	_ = pluginAddCmd.MarkFlagRequired("repository")
 	_ = pluginAddCmd.MarkFlagRequired("vendor")

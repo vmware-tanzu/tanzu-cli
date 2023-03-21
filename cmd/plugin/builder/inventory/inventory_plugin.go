@@ -29,6 +29,7 @@ type InventoryPluginUpdateOptions struct {
 	Publisher         string
 	Vendor            string
 	DeactivatePlugins bool
+	ValidateOnly      bool
 
 	ImgpkgOptions imgpkg.ImgpkgWrapper
 }
@@ -71,7 +72,7 @@ func (ipuo *InventoryPluginUpdateOptions) genericInventoryUpdater(inventoryUpdat
 		return errors.Wrap(err, "unable to create temporary directory")
 	}
 
-	log.Infof("Pulling plugin inventory database from: %q", pluginInventoryDBImage)
+	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
 	err = ipuo.ImgpkgOptions.PullImage(pluginInventoryDBImage, dir)
 	if err != nil {
 		return errors.Wrapf(err, "error while pulling database from the image: %q", pluginInventoryDBImage)
@@ -90,13 +91,18 @@ func (ipuo *InventoryPluginUpdateOptions) genericInventoryUpdater(inventoryUpdat
 		}
 	}
 
+	if ipuo.ValidateOnly {
+		log.Info("plugin insert validation successful")
+		return nil
+	}
+
 	// Publish the database to the remote repository
-	log.Info("Publishing plugin inventory database")
+	log.Info("publishing plugin inventory database")
 	err = ipuo.ImgpkgOptions.PushImage(pluginInventoryDBImage, dbFile)
 	if err != nil {
 		return errors.Wrapf(err, "error while publishing inventory database to the repository as image: %q", pluginInventoryDBImage)
 	}
-	log.Infof("Successfully published plugin inventory database at: %q", pluginInventoryDBImage)
+	log.Infof("successfully published plugin inventory database at: %q", pluginInventoryDBImage)
 
 	return nil
 }
@@ -128,12 +134,12 @@ func (ipuo *InventoryPluginUpdateOptions) preparePluginInventoryEntriesFromManif
 }
 
 func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInventoryEntry *plugininventory.PluginInventoryEntry, plugin cli.Plugin, osArch cli.Arch, version string) (*plugininventory.PluginInventoryEntry, error) {
-	log.Infof("Validating plugin '%s_%s_%s_%s'", plugin.Name, plugin.Target, osArch.String(), version)
+	log.Infof("validating plugin '%s_%s_%s_%s'", plugin.Name, plugin.Target, osArch.String(), version)
 
 	pluginImageBasePath := fmt.Sprintf("%s/%s/%s/%s/%s/%s:%s", ipuo.Vendor, ipuo.Publisher, osArch.OS(), osArch.Arch(), plugin.Target, plugin.Name, version)
 	pluginImage := fmt.Sprintf("%s/%s", ipuo.Repository, pluginImageBasePath)
 	digest, err := ipuo.ImgpkgOptions.GetFileDigestFromImage(pluginImage, cli.MakeArtifactName(plugin.Name, osArch))
-	if err != nil {
+	if err != nil && !ipuo.ValidateOnly {
 		return nil, errors.Wrapf(err, "error while getting plugin binary digest from the image %q", pluginImage)
 	}
 
