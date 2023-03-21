@@ -91,7 +91,7 @@ func Test_DiscoverPlugins(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistroForTesting()()
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	serverPlugins, standalonePlugins := DiscoverPlugins()
@@ -228,7 +228,7 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	assertions := assert.New(t)
 
 	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	defer setupLocalDistroForTesting()()
@@ -322,7 +322,7 @@ func Test_InstallPluginFromGroup(t *testing.T) {
 	assertions := assert.New(t)
 
 	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	defer setupLocalDistroForTesting()()
@@ -341,7 +341,7 @@ func Test_DiscoverPluginGroups(t *testing.T) {
 	assertions := assert.New(t)
 
 	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	defer setupLocalDistroForTesting()()
@@ -360,7 +360,7 @@ func Test_AvailablePlugins(t *testing.T) {
 
 	defer setupLocalDistroForTesting()()
 	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	expectedDiscoveredPlugins := append(expectedDiscoveredContextPlugins, expectedDiscoveredStandalonePlugins...)
@@ -464,7 +464,7 @@ func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_One_In
 
 	defer setupLocalDistroForTesting()()
 	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	expectedDiscoveredPlugins := append(expectedDiscoveredContextPlugins, expectedDiscoveredStandalonePlugins...)
@@ -520,7 +520,7 @@ func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_Plugin
 
 	defer setupLocalDistroForTesting()()
 	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	expectedDiscoveredPlugins := append(expectedDiscoveredContextPlugins, expectedDiscoveredStandalonePlugins...)
@@ -690,7 +690,7 @@ func Test_DescribePlugin(t *testing.T) {
 
 	defer setupLocalDistroForTesting()()
 	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	// Try to describe plugin when plugin is not installed
@@ -734,7 +734,7 @@ func Test_DeletePlugin(t *testing.T) {
 
 	defer setupLocalDistroForTesting()()
 	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	// Try to delete plugin when plugin is not installed
@@ -1368,7 +1368,7 @@ func TestGetPluginDiscoveries(t *testing.T) {
 
 	// Bypass the temporary pre-release variable
 	err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage,
-		constants.ConfigVariablePreReleasePluginRepoImageBypass)
+		PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	discoveries, err := getPluginDiscoveries()

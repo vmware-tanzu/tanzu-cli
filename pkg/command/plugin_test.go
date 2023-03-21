@@ -18,6 +18,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
@@ -356,7 +357,7 @@ func TestInstallPlugin(t *testing.T) {
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 
 	// Bypass the environment variable for testing
-	err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, constants.ConfigVariablePreReleasePluginRepoImageBypass)
+	err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, pluginmanager.PreReleasePluginRepoImageBypass)
 	assert.Nil(err)
 
 	featureArray := strings.Split(constants.FeatureContextCommand, ".")

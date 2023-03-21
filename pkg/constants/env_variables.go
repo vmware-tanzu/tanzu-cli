@@ -9,5 +9,7 @@ const (
 )
 
 const (
-	AllowedRegistries = "ALLOWED_REGISTRY"
+	AllowedRegistries                           = "ALLOWED_REGISTRY"
+	ConfigVariablePreReleasePluginRepoImage     = "TANZU_CLI_PRE_RELEASE_REPO_IMAGE"
+	ConfigVariableAdditionalDiscoveryForTesting = "TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY"
 )
