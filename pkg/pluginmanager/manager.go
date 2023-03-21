@@ -298,7 +298,7 @@ func discoverServerPluginsBasedOnAllCurrentContexts() ([]discovery.Discovered, e
 func discoverServerPluginsBasedOnCurrentServer() ([]discovery.Discovered, error) {
 	var plugins []discovery.Discovered
 
-	server, err := configlib.GetCurrentServer()
+	server, err := configlib.GetCurrentServer() // nolint:staticcheck // Deprecated
 	if err != nil || server == nil {
 		// If servername is not specified than returning empty list
 		// as there are no server plugins that can be discovered
