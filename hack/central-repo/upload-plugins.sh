@@ -151,15 +151,15 @@ for name in ${globalPlugins[*]}; do
 done
 
 for name in ${k8sPlugins[*]}; do
-    addPlugin $name k8s true
-    addGroup vmware tkg v0.0.1 $name k8s v0.0.1
-    addGroup vmware tkg v9.9.9 $name k8s v9.9.9
+    addPlugin $name kubernetes true
+    addGroup vmware tkg v0.0.1 $name kubernetes v0.0.1
+    addGroup vmware tkg v9.9.9 $name kubernetes v9.9.9
 done
 
 for name in ${tmcPlugins[*]}; do
-    addPlugin $name tmc true
-    addGroup vmware tmc v0.0.1 $name tmc v0.0.1
-    addGroup vmware tmc v9.9.9 $name tmc v9.9.9
+    addPlugin $name mission-control true
+    addGroup vmware tmc v0.0.1 $name mission-control v0.0.1
+    addGroup vmware tmc v9.9.9 $name mission-control v9.9.9
 done
 
 # Push small inventory file
@@ -179,9 +179,9 @@ for (( idx=1; idx<=$numPluginsToCreate; idx++ )); do
     case $target_rand in
     0) target=global
        ;;
-    1) target=k8s
+    1) target=kubernetes
        ;;
-    2) target=tmc
+    2) target=mission-control
        ;;
     esac
     addPlugin stub$idx $target false
@@ -202,13 +202,13 @@ cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 
 # Create a new version of the plugins for the sandbox repo
 for name in ${k8sPlugins[*]}; do
-    addPlugin $name k8s true v11.11.11
-    addGroup vmware tkg v11.11.11 $name k8s v11.11.11
+    addPlugin $name kubernetes true v11.11.11
+    addGroup vmware tkg v11.11.11 $name kubernetes v11.11.11
 done
 
 for name in ${tmcPlugins[*]}; do
-    addPlugin $name tmc true v11.11.11
-    addGroup vmware tmc v11.11.11 $name tmc v11.11.11
+    addPlugin $name mission-control true v11.11.11
+    addGroup vmware tmc v11.11.11 $name mission-control v11.11.11
 done
 
 # Push sanbox inventory file
@@ -226,15 +226,15 @@ cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 
 # Create a new version of the plugins for the sandbox repo
 for name in ${k8sPlugins[*]}; do
-    addPlugin $name k8s true v22.22.22
-    addGroup vmware tkg v22.22.22 $name k8s v22.22.22
+    addPlugin $name kubernetes true v22.22.22
+    addGroup vmware tkg v22.22.22 $name kubernetes v22.22.22
     # Redefine a group that exists in the central repo
-    addGroup vmware tkg v9.9.9 $name k8s v22.22.22
+    addGroup vmware tkg v9.9.9 $name kubernetes v22.22.22
 done
 
 for name in ${tmcPlugins[*]}; do
-    addPlugin $name tmc true v22.22.22
-    addGroup vmware tmc v22.22.22 $name tmc v22.22.22
+    addPlugin $name mission-control true v22.22.22
+    addGroup vmware tmc v22.22.22 $name mission-control v22.22.22
 done
 
 # Push sanbox inventory file

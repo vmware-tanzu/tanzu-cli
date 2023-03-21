@@ -14,6 +14,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	. "github.com/onsi/ginkgo"
@@ -25,10 +26,80 @@ func TestClient(t *testing.T) {
 	RunSpecs(t, "Plugin Inventory Suite")
 }
 
+var piEntry1 = PluginInventoryEntry{
+	Name:               "management-cluster",
+	Target:             types.TargetK8s,
+	Description:        "Kubernetes management cluster operations",
+	Publisher:          "tkg",
+	Vendor:             "vmware",
+	RecommendedVersion: "v0.28.0",
+	Hidden:             false,
+	Artifacts: distribution.Artifacts{
+		"v0.28.0": []distribution.Artifact{
+			{
+				OS:     "linux",
+				Arch:   "amd64",
+				Digest: "0000000000",
+				Image:  "vmware/tkg/linux/amd64/k8s/management-cluster:v0.28.0",
+			},
+			{
+				OS:     "darwin",
+				Arch:   "amd64",
+				Digest: "1111111111",
+				Image:  "vmware/tkg/darwin/amd64/k8s/management-cluster:v0.28.0",
+			},
+			{
+				OS:     "windows",
+				Arch:   "amd64",
+				Digest: "2222222222",
+				Image:  "vmware/tkg/windows/amd64/k8s/management-cluster:v0.28.0",
+			},
+		},
+	},
+}
+var piEntry2 = PluginInventoryEntry{
+	Name:               "isolated-cluster",
+	Target:             types.TargetGlobal,
+	Description:        "Isolated cluster plugin",
+	Publisher:          "otherpublisher",
+	Vendor:             "othervendor",
+	RecommendedVersion: "v1.2.3",
+	Hidden:             false,
+	Artifacts: distribution.Artifacts{
+		"v1.2.3": []distribution.Artifact{
+			{
+				OS:     "linux",
+				Arch:   "amd64",
+				Digest: "3333333333",
+				Image:  "othervendor/otherpublisher/linux/amd64/global/isolated-cluster:v1.2.3",
+			},
+		},
+	},
+}
+var piEntry3 = PluginInventoryEntry{
+	Name:               "management-cluster",
+	Target:             types.TargetTMC,
+	Description:        "Mission-control management cluster operations",
+	Publisher:          "tmc",
+	Vendor:             "vmware",
+	RecommendedVersion: "",
+	Hidden:             false,
+	Artifacts: distribution.Artifacts{
+		"v0.0.1": []distribution.Artifact{
+			{
+				OS:     "linux",
+				Arch:   "amd64",
+				Digest: "0000000000",
+				Image:  "vmware/tmc/linux/amd64/tmc/management-cluster:v0.0.1",
+			},
+		},
+	},
+}
+
 const createPluginsStmt = `
 INSERT INTO PluginBinaries VALUES(
 	'management-cluster',
-	'k8s',
+	'kubernetes',
 	'v0.28.0',
 	'v0.28.0',
 	'false',
@@ -41,7 +112,7 @@ INSERT INTO PluginBinaries VALUES(
 	'vmware/tkg/linux/amd64/k8s/management-cluster:v0.28.0');
 INSERT INTO PluginBinaries VALUES(
 	'management-cluster',
-	'k8s',
+	'kubernetes',
 	'v0.28.0',
 	'v0.28.0',
 	'false',
@@ -54,7 +125,7 @@ INSERT INTO PluginBinaries VALUES(
 	'vmware/tkg/darwin/amd64/k8s/management-cluster:v0.28.0');
 INSERT INTO PluginBinaries VALUES(
 	'management-cluster',
-	'k8s',
+	'kubernetes',
 	'v0.28.0',
 	'v0.26.0',
 	'false',
@@ -82,7 +153,7 @@ INSERT INTO PluginBinaries VALUES(
 const createPluginTMCNoRecommendedVersionStmt = `
 INSERT INTO PluginBinaries VALUES(
 	'management-cluster',
-	'tmc',
+	'mission-control',
 	'',
 	'v0.0.1',
 	'false',
@@ -95,7 +166,7 @@ INSERT INTO PluginBinaries VALUES(
 	'vmware/tmc/linux/amd64/tmc/management-cluster:v0.0.1');
 INSERT INTO PluginBinaries VALUES(
 	'management-cluster',
-	'tmc',
+	'mission-control',
 	'',
 	'v0.0.2',
 	'false',
@@ -113,77 +184,77 @@ INSERT INTO PluginGroups VALUES(
 	'tkg',
 	'2.1.0',
 	'management-cluster',
-	'k8s',
+	'kubernetes',
 	'v0.28.0');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'2.1.0',
 	'package',
-	'k8s',
+	'kubernetes',
 	'v0.28.0');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'2.1.0',
 	'feature',
-	'k8s',
+	'kubernetes',
 	'v0.28.0');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'2.1.0',
 	'kubernetes-release',
-	'k8s',
+	'kubernetes',
 	'v0.28.0');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'2.1.0',
 	'isolated-cluster',
-	'k8s',
+	'kubernetes',
 	'v0.28.0');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'1.6.0',
 	'management-cluster',
-	'k8s',
+	'kubernetes',
 	'v0.26.0');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'1.6.0',
 	'package',
-	'k8s',
+	'kubernetes',
 	'v0.26.0');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'1.6.0',
 	'feature',
-	'k8s',
+	'kubernetes',
 	'v0.26.0');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'1.6.0',
 	'kubernetes-release',
-	'k8s',
+	'kubernetes',
 	'v0.26.0');
 INSERT INTO PluginGroups VALUES(
 	'independent',
 	'other',
 	'mygroup',
 	'plugin1',
-	'k8s',
+	'kubernetes',
 	'v0.1.0');
 INSERT INTO PluginGroups VALUES(
 	'independent',
 	'other',
 	'mygroup',
 	'plugin2',
-	'tmc',
+	'mission-control',
 	'v0.2.0');
 `
 
@@ -288,7 +359,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 							artifactList := p.Artifacts["v0.28.0"]
 							Expect(len(artifactList)).To(Equal(2))
 							for _, a := range artifactList {
-								if a.OS == "linux" {
+								if a.OS == "linux" { // nolint: goconst
 									Expect(a.Arch).To(Equal("amd64"))
 									Expect(a.Digest).To(Equal("0000000000"))
 									Expect(a.Image).To(Equal(tmpDir + "/vmware/tkg/linux/amd64/k8s/management-cluster:v0.28.0"))
@@ -656,6 +727,120 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
 					Expect(plugins[j].Version).To(Equal("v0.28.0"))
 				})
+			})
+		})
+	})
+
+	Describe("Inserting plugins to inventory and verifying it with GetPlugins", func() {
+		BeforeEach(func() {
+			tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+			Expect(err).To(BeNil(), "unable to create temporary directory")
+
+			// Create DB file
+			dbFile, err = os.Create(filepath.Join(tmpDir, SQliteDBFileName))
+			Expect(err).To(BeNil())
+
+			inventory = NewSQLiteInventory(dbFile.Name(), tmpDir)
+			err = inventory.CreateSchema()
+			Expect(err).To(BeNil(), "failed to create DB schema for testing")
+		})
+		AfterEach(func() {
+			os.RemoveAll(tmpDir)
+		})
+		Context("When inserting plugins", func() {
+			It("operation should be successful and getplugins should return the correct result of the plugins with no error", func() {
+				err = inventory.InsertPlugin(&piEntry1)
+				Expect(err).To(BeNil(), "failed to insert plugin1")
+				err = inventory.InsertPlugin(&piEntry2)
+				Expect(err).To(BeNil(), "failed to insert plugin2")
+				err = inventory.InsertPlugin(&piEntry3)
+				Expect(err).To(BeNil(), "failed to insert plugin3")
+
+				// Verify that "management-cluster" plugin with "kubernetes" target can be retrieved and all configuration are correct
+				plugins, err := inventory.GetPlugins(&PluginInventoryFilter{Name: "management-cluster", Target: types.TargetK8s})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(plugins)).To(Equal(1))
+				p := plugins[0]
+				Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
+				Expect(string(p.Target)).To(Equal("kubernetes"))
+				Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
+				Expect(p.Vendor).To(Equal("vmware"))
+				Expect(p.Publisher).To(Equal("tkg"))
+				Expect(len(p.Artifacts)).To(Equal(1))
+				artifactList := p.Artifacts["v0.28.0"]
+				Expect(len(artifactList)).To(Equal(3))
+				for _, a := range artifactList {
+					if a.OS == "linux" {
+						Expect(a.Arch).To(Equal("amd64"))
+						Expect(a.Digest).To(Equal("0000000000"))
+						Expect(a.Image).To(Equal(tmpDir + "/vmware/tkg/linux/amd64/k8s/management-cluster:v0.28.0"))
+					} else if a.OS == "darwin" {
+						Expect(a.OS).To(Equal("darwin"))
+						Expect(a.Arch).To(Equal("amd64"))
+						Expect(a.Digest).To(Equal("1111111111"))
+						Expect(a.Image).To(Equal(tmpDir + "/vmware/tkg/darwin/amd64/k8s/management-cluster:v0.28.0"))
+					} else if a.OS == "windows" {
+						Expect(a.OS).To(Equal("windows"))
+						Expect(a.Arch).To(Equal("amd64"))
+						Expect(a.Digest).To(Equal("2222222222"))
+						Expect(a.Image).To(Equal(tmpDir + "/vmware/tkg/windows/amd64/k8s/management-cluster:v0.28.0"))
+					}
+				}
+
+				// Verify that "isolated-cluster" plugin with "global" target can be retrieved and all configuration are correct
+				plugins, err = inventory.GetPlugins(&PluginInventoryFilter{Name: "isolated-cluster", Target: types.TargetGlobal})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(plugins)).To(Equal(1))
+				p = plugins[0]
+				Expect(p.Name).To(Equal("isolated-cluster"))
+				Expect(p.RecommendedVersion).To(Equal("v1.2.3"))
+				Expect(p.Target).To(Equal(types.TargetGlobal))
+				Expect(p.Description).To(Equal("Isolated cluster plugin"))
+				Expect(p.Vendor).To(Equal("othervendor"))
+				Expect(p.Publisher).To(Equal("otherpublisher"))
+				Expect(len(p.Artifacts)).To(Equal(1))
+				a := p.Artifacts["v1.2.3"]
+				Expect(len(a)).To(Equal(1))
+				Expect(a[0].OS).To(Equal("linux"))
+				Expect(a[0].Arch).To(Equal("amd64"))
+				Expect(a[0].Digest).To(Equal("3333333333"))
+				Expect(a[0].Image).To(Equal(tmpDir + "/othervendor/otherpublisher/linux/amd64/global/isolated-cluster:v1.2.3"))
+
+				// Verify that "management-cluster" plugin with "mission-control" target can be retrieved and all configuration are correct
+				plugins, err = inventory.GetPlugins(&PluginInventoryFilter{Name: "management-cluster", Target: types.TargetTMC})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(plugins)).To(Equal(1))
+				p = plugins[0]
+				Expect(p.Name).To(Equal("management-cluster"))
+				Expect(p.RecommendedVersion).To(Equal("v0.0.1"))
+				Expect(p.Target).To(Equal(types.TargetTMC))
+				Expect(p.Description).To(Equal("Mission-control management cluster operations"))
+				Expect(p.Vendor).To(Equal("vmware"))
+				Expect(p.Publisher).To(Equal("tmc"))
+				Expect(len(p.Artifacts)).To(Equal(1))
+				a = p.Artifacts["v0.0.1"]
+				Expect(len(a)).To(Equal(1))
+				Expect(a[0].OS).To(Equal("linux"))
+				Expect(a[0].Arch).To(Equal("amd64"))
+				Expect(a[0].Digest).To(Equal("0000000000"))
+				Expect(a[0].Image).To(Equal(tmpDir + "/vmware/tmc/linux/amd64/tmc/management-cluster:v0.0.1"))
+
+				// Verify that retrieving any plugin that doesn't exist should return empty array
+				plugins, err = inventory.GetPlugins(&PluginInventoryFilter{Name: "unknown", Target: types.TargetTMC})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(plugins)).To(Equal(0))
+			})
+		})
+		Context("When inserting a plugin which already exists in the database", func() {
+			BeforeEach(func() {
+				err = inventory.InsertPlugin(&piEntry1)
+				Expect(err).To(BeNil(), "failed to insert plugin1")
+			})
+			It("should return an error", func() {
+				err = inventory.InsertPlugin(&piEntry1)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("unable to insert plugin row"))
+				Expect(err.Error()).To(ContainSubstring("UNIQUE constraint failed"))
 			})
 		})
 	})

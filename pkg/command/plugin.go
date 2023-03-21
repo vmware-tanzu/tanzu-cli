@@ -185,7 +185,7 @@ func newDescribePluginCmd() *cobra.Command {
 			pluginName := args[0]
 
 			if !configtypes.IsValidTarget(targetStr, true, true) {
-				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
+				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
 			}
 
 			pd, err := pluginmanager.DescribePlugin(pluginName, getTarget())
@@ -215,7 +215,7 @@ func newInstallPluginCmd() *cobra.Command {
 			var pluginName string
 
 			if !configtypes.IsValidTarget(targetStr, true, true) {
-				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
+				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
 			}
 
 			if config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
@@ -349,7 +349,7 @@ func newUpgradePluginCmd() *cobra.Command {
 			pluginName := args[0]
 
 			if !configtypes.IsValidTarget(targetStr, true, true) {
-				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
+				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
 			}
 
 			var pluginVersion string
@@ -387,7 +387,7 @@ func newDeletePluginCmd() *cobra.Command {
 			pluginName := args[0]
 
 			if !configtypes.IsValidTarget(targetStr, true, true) {
-				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
+				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
 			}
 
 			deletePluginOptions := pluginmanager.DeletePluginOptions{
