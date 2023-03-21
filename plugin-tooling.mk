@@ -60,7 +60,7 @@ endif
 PLUGIN_BUILD_TARGETS := $(addprefix plugin-build-,${PLUGIN_BUILD_OS_ARCH})
 
 .PHONY: plugin-build
-plugin-build: $(PLUGIN_BUILD_TARGETS) ## Build all plugin binaries for all supported os-arch
+plugin-build: $(PLUGIN_BUILD_TARGETS) generate-plugin-bundle ## Build all plugin binaries for all supported os-arch
 
 plugin-build-local: plugin-build-$(GOHOSTOS)-$(GOHOSTARCH) ## Build all plugin binaries for local platform
 	
@@ -138,3 +138,10 @@ local-registry: clean-registry ## Starts up a local docker registry for generati
 .PHONY: clean-registry
 clean-registry: ## Stops and removes local docker registry
 	docker stop temp-package-registry && docker rm -v temp-package-registry || true
+
+## --------------------------------------
+## Helpers
+## --------------------------------------
+
+generate-plugin-bundle:
+	cd $(PLUGIN_BINARY_ARTIFACTS_DIR) && tar -czvf ../plugin_bundle.tar.gz .
