@@ -226,16 +226,18 @@ e2e-cli-tmc-test:
 
 .PHONY: start-test-central-repo
 start-test-central-repo: stop-test-central-repo ## Starts up a test central repository locally with docker
-	if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
+	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
 		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
 	fi
-	docker run --rm -d -p 9876:5000 --name central \
+	@docker run --rm -d -p 9876:5000 --name central \
 		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
-		mirror.gcr.io/library/registry:2
+		mirror.gcr.io/library/registry:2 > /dev/null && \
+	    echo "Started docker test central repo with images:" && \
+		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 
 .PHONY: stop-test-central-repo
 stop-test-central-repo: ## Stops and removes the local test central repository
-	docker container stop central 2> /dev/null || true
+	@docker container stop central > /dev/null 2>&1 && echo "Stopped docker test central repo" || true
 
 .PHONY: fmt
 fmt: $(GOIMPORTS) ## Run goimports
