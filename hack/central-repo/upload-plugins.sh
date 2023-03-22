@@ -9,18 +9,33 @@ usage() {
     echo "upload-plugins.sh [-h | -d | --dry-run]"
     echo
     echo "Creates test central repositories:"
-    echo "- localhost:9876/tanzu-cli/plugins/central:small with a small amount of plugins"
-    echo "- localhost:9876/tanzu-cli/plugins/central:large with 100 plugins"
-    echo "- localhost:9876/tanzu-cli/plugins/sandbox1:small with v11.11.11 of the plugins of the small image"
-    echo "- localhost:9876/tanzu-cli/plugins/sandbox2:small with v22.22.22 of the plugins of the small image"
+    echoImages
     echo
     echo "  -h               Print this help"
     echo "  -d, --dry-run    Only print the commands that would be executed"
     exit 0
 }
 
+echoImages() {
+    echo "=> localhost:9876/tanzu-cli/plugins/central:small"
+    echo "    - a small amount of plugins matching product plugin names"
+    echo "    - only versions v0.0.1 and v9.9.9 can be installed"
+    echo "=> localhost:9876/tanzu-cli/plugins/central:large with 100 plugins"
+    echo "    - the same content as the small image with extra plugins for a total of 100"
+    echo "    - none of the 'stubXY' plugins can be installed"
+    echo "    - only versions v0.0.1 and v9.9.9 can be installed"
+    echo "=> localhost:9876/tanzu-cli/plugins/sandbox1:small"
+    echo "    - an extra v11.11.11 version of the plugins of the small image"
+    echo "=> localhost:9876/tanzu-cli/plugins/sandbox2:small"
+    echo "    - an extra v22.22.22 version of the plugins of the small image"
+}
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     usage
+fi
+
+if [ "$1" = "info" ]; then
+    echoImages
+    exit 0
 fi
 
 dry_run=""
