@@ -49,6 +49,8 @@ const (
 	PluginManifestFileName = "plugin_manifest.yaml"
 	// PluginFileName is the file name for the plugin info.
 	PluginFileName = "plugin.yaml"
+
+	PreReleasePluginRepoImageBypass = "TEST_BYPASS"
 )
 
 var execCommand = exec.Command
@@ -208,7 +210,7 @@ func getPreReleasePluginDiscovery() ([]configtypes.PluginDiscovery, error) {
 	if centralRepoTestImage == "" {
 		// Don't set a default value.  This test repo URI is not meant to be public.
 		return nil, fmt.Errorf("you must set the environment variable %s to the URI of the image of the plugin repository.  Please see the documentation", constants.ConfigVariablePreReleasePluginRepoImage)
-	} else if centralRepoTestImage == constants.ConfigVariablePreReleasePluginRepoImageBypass {
+	} else if centralRepoTestImage == PreReleasePluginRepoImageBypass {
 		return nil, nil
 	}
 	return []configtypes.PluginDiscovery{
@@ -223,7 +225,7 @@ func getPreReleasePluginDiscovery() ([]configtypes.PluginDiscovery, error) {
 // getAdditionalTestPluginDiscoveries returns an array of plugin discoveries that
 // are meant to be used for testing new plugin version.  The comma-separated list of
 // such discoveries can be specified through the environment variable
-// "ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY".
+// "TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY".
 // Each entry in the variable should be the URI of an OCI image of the DB of the
 // discovery in question.
 func getAdditionalTestPluginDiscoveries() []configtypes.PluginDiscovery {

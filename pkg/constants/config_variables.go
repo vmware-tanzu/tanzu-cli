@@ -14,7 +14,4 @@ const (
 	ConfigVariableDefaultStandaloneDiscoveryImageTag  = "TKG_DEFAULT_STANDALONE_DISCOVERY_IMAGE_TAG"
 	ConfigVariableDefaultStandaloneDiscoveryType      = "TKG_DEFAULT_STANDALONE_DISCOVERY_TYPE"
 	ConfigVariableDefaultStandaloneDiscoveryLocalPath = "TKG_DEFAULT_STANDALONE_DISCOVERY_LOCAL_PATH"
-	ConfigVariablePreReleasePluginRepoImage           = "TANZU_CLI_PRE_RELEASE_REPO_IMAGE"
-	ConfigVariablePreReleasePluginRepoImageBypass     = "TEST_BYPASS"
-	ConfigVariableAdditionalDiscoveryForTesting       = "ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY"
 )
