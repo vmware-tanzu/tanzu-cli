@@ -115,7 +115,10 @@ func (co *configOps) ConfigServerDelete(serverName string) error {
 	configDelCmd := fmt.Sprintf(ConfigServerDelete, serverName)
 	_, _, err := co.cmdExe.Exec(configDelCmd)
 	if err != nil {
+		log.Infof("failed to delete config server: %s", serverName)
 		log.Error(err, "error while running: "+configDelCmd)
+	} else {
+		log.Infof(ConfigServerDeleted, serverName)
 	}
 	return err
 }
@@ -126,14 +129,14 @@ func (co *configOps) DeleteCLIConfigurationFiles() error {
 	configFile := filepath.Join(homeDir, ConfigFileDir, ConfigFileName)
 	_, err := os.Stat(configFile)
 	if err == nil {
-		if ferr := os.Remove(configFile); ferr != nil {
-			return ferr
+		if fileErr := os.Remove(configFile); fileErr != nil {
+			return fileErr
 		}
 	}
 	configNGFile := filepath.Join(homeDir, ConfigFileDir, ConfigNGFileName)
 	if _, err := os.Stat(configNGFile); err == nil {
-		if ferr := os.Remove(configNGFile); ferr != nil {
-			return ferr
+		if fileErr := os.Remove(configNGFile); fileErr != nil {
+			return fileErr
 		}
 	}
 	return nil

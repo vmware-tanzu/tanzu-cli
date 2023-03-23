@@ -5,6 +5,7 @@
 package tmc
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -17,6 +18,8 @@ import (
 )
 
 const ContextNamePrefix = "context-endpoint-tmc-"
+const ContextShouldNotExists = "the context %s should not exists"
+const ContextShouldExistsAsCreated = "the context %s should exists as its been created"
 
 // Test suite tests the context life cycle use cases for the TMC target
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", func() {
@@ -34,11 +37,25 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 		contextNames = make([]string, 0)
 	})
 	Context("Context lifecycle tests for TMC target", func() {
+		// Test case: list and delete context's if any exists
+		It("delete context command", func() {
+			list, err := tf.ContextCmd.ListContext()
+			Expect(err).To(BeNil(), "list context should not return any error")
+			for _, ctx := range list {
+				err := tf.ContextCmd.DeleteContext(ctx.Name)
+				Expect(context.IsContextExists(tf, ctx.Name)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctx.Name))
+				Expect(err).To(BeNil(), "delete context should delete context without any error")
+			}
+			list, err = tf.ContextCmd.ListContext()
+			Expect(err).To(BeNil(), "list context should not return any error")
+			Expect(len(list)).To(Equal(0), "all contexts should be deleted")
+		})
 		// Test case: Create context for TMC target with TMC cluster URL as endpoint
 		It("create tmc context with endpoint", func() {
 			ctxName := ContextNamePrefix + framework.RandomString(4)
 			err := tf.ContextCmd.CreateConextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
 			Expect(err).To(BeNil(), "context should create without any error")
+			Expect(context.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
 		})
 		// Test case: (negative test) Create context for TMC target with TMC cluster "incorrect" URL as endpoint
@@ -47,20 +64,24 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 			err := tf.ContextCmd.CreateConextWithEndPointStaging(ctxName, framework.RandomString(4))
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
+			Expect(context.IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctxName))
 		})
 		// Test case: (negative test) Create context for TMC target with TMC cluster URL as endpoint when api token set as incorrect
 		It("create tmc context with endpoint and with incorrect api token", func() {
 			os.Setenv(framework.TanzuAPIToken, framework.RandomString(4))
-			err := tf.ContextCmd.CreateConextWithEndPointStaging(framework.RandomString(4), clusterInfo.EndPoint)
+			ctxName := framework.RandomString(4)
+			err := tf.ContextCmd.CreateConextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
 			os.Setenv(framework.TanzuAPIToken, clusterInfo.APIKey)
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
+			Expect(context.IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctxName))
 		})
 		// Test case: Create context for TMC target with TMC cluster URL as endpoint, and validate the active context, should be recently create context
 		It("create tmc context with endpoint and check active context", func() {
 			ctxName := ContextNamePrefix + framework.RandomString(4)
 			err := tf.ContextCmd.CreateConextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
 			Expect(err).To(BeNil(), "context should create without any error")
+			Expect(context.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -88,6 +109,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 		It("delete context command", func() {
 			for _, ctx := range contextNames {
 				err := tf.ContextCmd.DeleteContext(ctx)
+				Expect(context.IsContextExists(tf, ctx)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists+" as been deleted", ctx))
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
 			}
 			list := context.GetAvailableContexts(tf, contextNames)

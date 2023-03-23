@@ -7,6 +7,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // ContextCreateOps helps to run context create command
@@ -32,16 +34,14 @@ func NewContextCreateOps() ContextCreateOps {
 	}
 }
 
-const FailedToCreateContext = "failed to create context"
-const FailedToCreateContextWithStdout = FailedToCreateContext + ", stdout:%s"
-
 func (cc *contextCreateOps) CreateConextWithEndPoint(contextName, endpoint string) error {
 	createContextCmd := fmt.Sprintf(CreateContextWithEndPoint, endpoint, contextName)
 	out, _, err := cc.cmdExe.Exec(createContextCmd)
 	if err != nil {
+		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 	}
-
+	log.Infof(ContextCreated, contextName)
 	return err
 }
 
@@ -49,8 +49,10 @@ func (cc *contextCreateOps) CreateConextWithEndPointStaging(contextName, endpoin
 	createContextCmd := fmt.Sprintf(CreateContextWithEndPointStaging, endpoint, contextName)
 	out, _, err := cc.cmdExe.Exec(createContextCmd)
 	if err != nil {
+		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 	}
+	log.Infof(ContextCreated, contextName)
 	return err
 }
 
@@ -58,8 +60,10 @@ func (cc *contextCreateOps) CreateConextWithKubeconfig(contextName, kubeconfigPa
 	createContextCmd := fmt.Sprintf(CreateContextWithKubeconfigFile, kubeconfigPath, kubeContext, contextName)
 	out, _, err := cc.cmdExe.Exec(createContextCmd)
 	if err != nil {
+		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 	}
+	log.Infof(ContextCreated, contextName)
 	return err
 }
 
@@ -67,7 +71,9 @@ func (cc *contextCreateOps) CreateContextWithDefaultKubeconfig(contextName, kube
 	createContextCmd := fmt.Sprintf(CreateContextWithDefaultKubeconfigFile, kubeContext, contextName)
 	out, _, err := cc.cmdExe.Exec(createContextCmd)
 	if err != nil {
+		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 	}
+	log.Infof(ContextCreated, contextName)
 	return err
 }

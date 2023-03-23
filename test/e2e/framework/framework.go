@@ -96,6 +96,14 @@ const (
 	ErrorLogForCommandWithErrAndStdErr            = "error while executing command:'%s', error:'%s' stdErr:'%s'"
 	FailedToConstructJSONNodeFromOutputAndErrInfo = "failed to construct json node from output:'%s' error:'%s' "
 	FailedToConstructJSONNodeFromOutput           = "failed to construct json node from output:'%s'"
+
+	// config related constants
+	FailedToCreateContext           = "failed to create context"
+	FailedToCreateContextWithStdout = FailedToCreateContext + ", stdout:%s"
+	ContextCreated                  = "context %s created successfully"
+	ContextDeleted                  = "context %s deleted successfully"
+	ConfigServerDeleted             = "config server %s deleted successfully"
+	FailedToDeleteContext           = "failed to delete context"
 )
 
 var (

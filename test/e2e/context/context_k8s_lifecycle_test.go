@@ -5,6 +5,7 @@
 package context
 
 import (
+	"fmt"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -18,25 +19,28 @@ const ContextNameConfigPrefix = "context-config-k8s-"
 
 // Test suite tests the context life cycle use cases for the k8s target
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", func() {
-	var (
-		tf           *framework.Framework
-		clusterInfo  *framework.ClusterInfo
-		contextNames []string
-	)
-
-	BeforeSuite(func() {
-		tf = framework.NewFramework()
-		// Create KIND cluster, which is used in test cases to create context's
-		clusterInfo = CreateKindCluster(tf, "context-e2e-"+framework.RandomNumber(4))
-		contextNames = make([]string, 0)
-	})
 	Context("Context lifecycle tests for k8s target", func() {
+		// Test case: list and delete context's if any exists already, before running test cases.
+		It("list and delete contexts if any exists already", func() {
+			By("list and delete contexts if any exists already before running test cases")
+			list, err := tf.ContextCmd.ListContext()
+			Expect(err).To(BeNil(), "list context should not return any error")
+			for _, ctx := range list {
+				err := tf.ContextCmd.DeleteContext(ctx.Name)
+				Expect(err).To(BeNil(), "delete context should delete context without any error")
+				Expect(IsContextExists(tf, ctx.Name)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctx.Name))
+			}
+			list, err = tf.ContextCmd.ListContext()
+			Expect(err).To(BeNil(), "list context should not return any error")
+			Expect(len(list)).To(Equal(0), "all contexts should be deleted")
+		})
 		// Test case: Create context for k8s target with kubeconfig and its context as input
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
 			err := tf.ContextCmd.CreateConextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterContext)
 			Expect(err).To(BeNil(), "context should create without any error")
+			Expect(IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
 		})
 		// Test case: (negative test) Create context for k8s target with incorrect kubeconfig file path and its context as input
@@ -46,6 +50,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 			err := tf.ContextCmd.CreateConextWithKubeconfig(ctxName, framework.RandomString(4), clusterInfo.ClusterContext)
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
+			Expect(IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctxName))
 		})
 		// Test case: (negative test) Create context for k8s target with kubeconfig file path and incorrect context as input
 		It("create context with kubeconfig and incorrect context", func() {
@@ -54,6 +59,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 			err := tf.ContextCmd.CreateConextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, framework.RandomString(4))
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
+			Expect(IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctxName))
 		})
 		// Test case: Create context for k8s target with "default" kubeconfig and its context only as input value
 		It("create context with kubeconfig and context", func() {
@@ -61,6 +67,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 			ctxName := "context-defaultConfig-" + framework.RandomString(4)
 			err := tf.ContextCmd.CreateContextWithDefaultKubeconfig(ctxName, clusterInfo.ClusterContext)
 			Expect(err).To(BeNil(), "context should create without any error")
+			Expect(IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -91,6 +98,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 			By("delete all contexts created in previous tests")
 			for _, ctx := range contextNames {
 				err := tf.ContextCmd.DeleteContext(ctx)
+				Expect(IsContextExists(tf, ctx)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctx))
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
 			}
 			list := GetAvailableContexts(tf, contextNames)
@@ -103,10 +111,4 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 			Expect(err).ToNot(BeNil())
 		})
 	})
-	AfterSuite(func() {
-		// delete the KIND cluster which was created in the suite setup
-		_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
-		Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
-	})
-
 })
