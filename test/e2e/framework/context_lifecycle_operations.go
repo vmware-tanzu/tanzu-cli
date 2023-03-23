@@ -8,6 +8,8 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // ContextCmdOps helps to run Context lifecycle operations
@@ -38,8 +40,6 @@ func NewContextCmdOps() ContextCmdOps {
 		ContextCreateOps: NewContextCreateOps(),
 	}
 }
-
-const FailedToDeleteContext = "failed to delete context"
 
 func (cc *contextCmdOps) UseContext(contextName string) error {
 	useContextCmd := fmt.Sprintf(UseContext, contextName)
@@ -87,7 +87,9 @@ func (cc *contextCmdOps) DeleteContext(contextName string) error {
 	deleteContextCmd := fmt.Sprintf(DeleteContext, contextName)
 	stdOut, stdErr, err := cc.cmdExe.Exec(deleteContextCmd)
 	if err != nil {
+		log.Infof("failed to delete context:%s", contextName)
 		return errors.Wrapf(err, FailedToDeleteContext+", stderr:%s stdout:%s , ", stdErr.String(), stdOut.String())
 	}
+	log.Infof(ContextCreated, contextName)
 	return err
 }

@@ -19,28 +19,25 @@ const TRUE = "true"
 // tests `tanzu config set` and `tanzu config unset` commands
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:config]", func() {
 	var (
-		tf                *framework.Framework
 		randomFeatureFlag string
 	)
-	BeforeEach(func() {
-		tf = framework.NewFramework()
-	})
 	Context("config feature flag operations", func() {
 		When("new config flag set with value", func() {
 			It("should set flag and unset flag successfully", func() {
 				flagName := "e2e-test-" + framework.RandomString(4)
 				randomFeatureFlagPath := "features.global." + flagName
 				flagVal := TRUE
+				// Set random feature flag
 				err := tf.Config.ConfigSetFeatureFlag(randomFeatureFlagPath, flagVal)
 				Expect(err).To(BeNil())
-
+				// Validate the value of random feature flag set in previous step
 				val, err := tf.Config.ConfigGetFeatureFlag(randomFeatureFlagPath)
 				Expect(err).To(BeNil())
 				Expect(val).Should(Equal(TRUE))
-
+				// Unset random feature flag which was set in previous step
 				err = tf.Config.ConfigUnsetFeature(randomFeatureFlagPath)
 				Expect(err).To(BeNil())
-
+				// Validate the unset random feature flag in previous step
 				val, err = tf.Config.ConfigGetFeatureFlag(randomFeatureFlagPath)
 				Expect(err).To(BeNil())
 				Expect(val).Should(Equal(""))

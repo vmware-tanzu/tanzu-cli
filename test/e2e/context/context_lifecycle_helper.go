@@ -44,6 +44,18 @@ func GetAvailableContexts(tf *framework.Framework, contextNames []string) []stri
 	return available
 }
 
+// IsContextExists checks the given context is exists in the config file by listing the existing contexts in the config file
+func IsContextExists(tf *framework.Framework, contextName string) bool {
+	list, err := tf.ContextCmd.ListContext()
+	gomega.Expect(err).To(gomega.BeNil(), "list context should not return any error")
+	for _, context := range list {
+		if context.Name == contextName {
+			return true
+		}
+	}
+	return false
+}
+
 // GetAvailableServers takes list of servers and returns which are available in the 'tanzu config server list' command
 func GetAvailableServers(tf *framework.Framework, serverNames []string) []string {
 	var available []string

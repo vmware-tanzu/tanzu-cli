@@ -18,25 +18,27 @@ const ContextNameConfigPrefix = "config-k8s-"
 // As part of this suite, create a KIND cluster, and creates context's
 // tests the 'tanzu config server list' and 'tanzu config server delete' commands
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Config-Server]", func() {
-	var (
-		tf           *framework.Framework
-		clusterInfo  *framework.ClusterInfo
-		contextNames []string
-	)
-
-	BeforeSuite(func() {
-		tf = framework.NewFramework()
-		// Create KIND cluster, which is used in test cases to create server's/context's
-		clusterInfo = context.CreateKindCluster(tf, "config-e2e-"+framework.RandomNumber(4))
-		contextNames = make([]string, 0)
-	})
 	Context("tanzu config server command test cases ", func() {
+		// Test case: delete servers if any exists, with command 'tanzu config server delete'
+		It("list and delete servers if any exists before running tests", func() {
+			By("delete servers if any exists before running tests")
+			list, err := tf.Config.ConfigServerList()
+			Expect(err).To(BeNil(), "server list should not return any error")
+			for _, ctx := range list {
+				err := tf.Config.ConfigServerDelete(ctx.Name)
+				Expect(err).To(BeNil(), "delete server should delete server without any error")
+			}
+			list, err = tf.Config.ConfigServerList()
+			Expect(err).To(BeNil(), "server list should not return any error")
+			Expect(len(list)).To(Equal(0), "all servers should be deleted")
+		})
 		// Test case: Create context for k8s target with kubeconfig and its context as input
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
 			err := tf.ContextCmd.CreateConextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterContext)
 			Expect(err).To(BeNil(), "context should create without any error")
+			Expect(context.IsContextExists(tf, ctxName)).To(BeTrue(), "context should be available")
 			contextNames = append(contextNames, ctxName)
 		})
 		// Test case: Create context for k8s target with "default" kubeconfig and its context only as input value
@@ -45,6 +47,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Config-Server]", func() {
 			ctxName := "context-defaultConfig-" + framework.RandomString(4)
 			err := tf.ContextCmd.CreateContextWithDefaultKubeconfig(ctxName, clusterInfo.ClusterContext)
 			Expect(err).To(BeNil(), "context should create without any error")
+			Expect(context.IsContextExists(tf, ctxName)).To(BeTrue(), "context should be available")
 			contextNames = append(contextNames, ctxName)
 		})
 		// Test case: test 'tanzu config server list' command, should list all contexts created as servers
@@ -70,10 +73,5 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Config-Server]", func() {
 			err := tf.Config.ConfigServerDelete(framework.RandomString(4))
 			Expect(err).ToNot(BeNil())
 		})
-	})
-	AfterSuite(func() {
-		// delete the KIND cluster which was created in the suite setup
-		_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
-		Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
 	})
 })
