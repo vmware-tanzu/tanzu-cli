@@ -539,7 +539,7 @@ func (b *SQLiteInventory) UpdatePluginGroupActivationState(pg *PluginGroup) erro
 	}
 	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected == 0 {
-		return errors.Errorf("unable to update plugin-group '%s'. This might be possible because the provided plugin-group doesn't exists", pg.Name)
+		return errors.Errorf("unable to update plugin-group '%s-%s/%s'. This might be possible because the provided plugin-group doesn't exists", pg.Vendor, pg.Publisher, pg.Name)
 	}
 
 	return nil

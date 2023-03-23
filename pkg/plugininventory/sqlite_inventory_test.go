@@ -1031,6 +1031,82 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(plugins[1].Mandatory).To(Equal(pluginGroupUpdated.Plugins[1].Mandatory))
 			})
 		})
+
+	})
+	Describe("Updating plugin-group activation state", func() {
+
+		BeforeEach(func() {
+			tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+			Expect(err).To(BeNil(), "unable to create temporary directory")
+
+			// Create DB file
+			dbFile, err = os.Create(filepath.Join(tmpDir, SQliteDBFileName))
+			Expect(err).To(BeNil())
+
+			inventory = NewSQLiteInventory(dbFile.Name(), tmpDir)
+			err = inventory.CreateSchema()
+			Expect(err).To(BeNil(), "failed to create DB schema for testing")
+			err = inventory.InsertPlugin(&piEntry1)
+			Expect(err).To(BeNil(), "failed to insert plugin1")
+			err = inventory.InsertPlugin(&piEntry2)
+			Expect(err).To(BeNil(), "failed to insert plugin2")
+			err = inventory.InsertPlugin(&piEntry3)
+			Expect(err).To(BeNil(), "failed to insert plugin3")
+		})
+		AfterEach(func() {
+			os.RemoveAll(tmpDir)
+		})
+
+		Context("When updating the activation state of a plugin-group which already exists in the database", func() {
+			BeforeEach(func() {
+				err = inventory.InsertPluginGroup(&pluginGroup1, false)
+				Expect(err).To(BeNil())
+			})
+			It("should not return error when no change has been done to the activation state and the GetAllGroups should reflect the same", func() {
+				err = inventory.UpdatePluginGroupActivationState(&pluginGroup1)
+				Expect(err).To(BeNil())
+
+				// Verify the result using GetAllGroups
+				groups, err := inventory.GetAllGroups()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(1))
+				Expect(groups[0].Name).To(Equal(pluginGroup1.Name))
+				Expect(groups[0].Vendor).To(Equal(pluginGroup1.Vendor))
+				Expect(groups[0].Publisher).To(Equal(pluginGroup1.Publisher))
+				Expect(groups[0].Hidden).To(Equal(pluginGroup1.Hidden))
+				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroup1.Plugins)))
+			})
+			It("should not return error when the activation statue has been updated and the GetAllGroups should reflect the change", func() {
+				pluginGroupUpdated := pluginGroup1
+				pluginGroupUpdated.Hidden = true
+				err = inventory.UpdatePluginGroupActivationState(&pluginGroupUpdated)
+				Expect(err).To(BeNil())
+
+				// Verify the result using GetAllGroups
+				groups, err := inventory.GetAllGroups()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(1))
+				Expect(groups[0].Name).To(Equal(pluginGroupUpdated.Name))
+				Expect(groups[0].Vendor).To(Equal(pluginGroupUpdated.Vendor))
+				Expect(groups[0].Publisher).To(Equal(pluginGroupUpdated.Publisher))
+				Expect(groups[0].Hidden).To(Equal(pluginGroupUpdated.Hidden))
+				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroupUpdated.Plugins)))
+			})
+		})
+
+		Context("When updating the activation state of a plugin-group which does not exist in the database", func() {
+			BeforeEach(func() {
+				err = inventory.InsertPluginGroup(&pluginGroup1, false)
+				Expect(err).To(BeNil())
+			})
+			It("should return error", func() {
+				pluginGroupUpdated := pluginGroup1
+				pluginGroupUpdated.Name = "unknown"
+				err = inventory.UpdatePluginGroupActivationState(&pluginGroupUpdated)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("unable to update plugin-group 'fakevendor-fakepublisher/unknown'. This might be possible because the provided plugin-group doesn't exists"))
+			})
+		})
 	})
 })
 
