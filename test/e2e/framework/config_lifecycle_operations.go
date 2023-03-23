@@ -4,7 +4,6 @@
 package framework
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -37,7 +36,7 @@ type ConfigLifecycleOps interface {
 	// GetConfig gets the tanzu config
 	GetConfig() (*configapi.ClientConfig, error)
 	// ConfigServerList returns the server list
-	ConfigServerList() ([]Server, error)
+	ConfigServerList() ([]*Server, error)
 	// ConfigServerDelete deletes given server from tanzu config
 	ConfigServerDelete(serverName string) error
 	// DeleteCLIConfigurationFiles deletes cli configuration files
@@ -48,18 +47,18 @@ type ConfigLifecycleOps interface {
 
 // configOps is the implementation of ConfOps interface
 type configOps struct {
-	CmdOps
+	cmdExe CmdOps
 }
 
 func NewConfOps() ConfigLifecycleOps {
 	return &configOps{
-		CmdOps: NewCmdOps(),
+		cmdExe: NewCmdOps(),
 	}
 }
 
 // GetConfig gets the tanzu config
 func (co *configOps) GetConfig() (*configapi.ClientConfig, error) {
-	out, _, err := co.Exec(ConfigGet)
+	out, _, err := co.cmdExe.Exec(ConfigGet)
 	var cnf *configapi.ClientConfig
 	if err != nil {
 		return cnf, err
@@ -74,7 +73,7 @@ func (co *configOps) GetConfig() (*configapi.ClientConfig, error) {
 // ConfigSetFeatureFlag sets the given tanzu config feature flag
 func (co *configOps) ConfigSetFeatureFlag(path, value string) (err error) {
 	confSetCmd := ConfigSet + path + " " + value
-	_, _, err = co.Exec(confSetCmd)
+	_, _, err = co.cmdExe.Exec(confSetCmd)
 	return err
 }
 
@@ -95,38 +94,26 @@ func (co *configOps) ConfigGetFeatureFlag(path string) (string, error) {
 // ConfigUnsetFeature un-sets the tanzu config feature flag
 func (co *configOps) ConfigUnsetFeature(path string) (err error) {
 	unsetFeatureCmd := ConfigUnset + path
-	_, _, err = co.Exec(unsetFeatureCmd)
+	_, _, err = co.cmdExe.Exec(unsetFeatureCmd)
 	return
 }
 
 // ConfigInit performs "tanzu config init"
 func (co *configOps) ConfigInit() (err error) {
-	_, _, err = co.Exec(ConfigInit)
+	_, _, err = co.cmdExe.Exec(ConfigInit)
 	return
 }
 
 // ConfigServerList returns the server list
-func (co *configOps) ConfigServerList() ([]Server, error) {
+func (co *configOps) ConfigServerList() ([]*Server, error) {
 	ConfigServerListWithJSONOutput := ConfigServerList + JSONOutput
-	stdOut, _, err := co.Exec(ConfigServerListWithJSONOutput)
-	if err != nil {
-		log.Errorf("error while executing `config server list`, error:%s", err.Error())
-		return nil, err
-	}
-	jsonStr := stdOut.String()
-	var list []Server
-	err = json.Unmarshal([]byte(jsonStr), &list)
-	if err != nil {
-		log.Errorf("failed to construct node from config server list output:'%s' error:'%s' ", jsonStr, err.Error())
-		return nil, errors.Wrapf(err, "failed to construct node from config server list output:'%s'", jsonStr)
-	}
-	return list, nil
+	return ExecuteCmdAndBuildJSONOutput[Server](co.cmdExe, ConfigServerListWithJSONOutput)
 }
 
 // ConfigServerDelete deletes a server from tanzu config
 func (co *configOps) ConfigServerDelete(serverName string) error {
 	configDelCmd := fmt.Sprintf(ConfigServerDelete, serverName)
-	_, _, err := co.Exec(configDelCmd)
+	_, _, err := co.cmdExe.Exec(configDelCmd)
 	if err != nil {
 		log.Error(err, "error while running: "+configDelCmd)
 	}

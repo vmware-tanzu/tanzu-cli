@@ -13,6 +13,7 @@ import (
 
 	context "github.com/vmware-tanzu/tanzu-cli/test/e2e/context"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
+	types "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 const ContextNamePrefix = "context-endpoint-tmc-"
@@ -61,7 +62,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 			err := tf.ContextCmd.CreateConextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
 			Expect(err).To(BeNil(), "context should create without any error")
 			contextNames = append(contextNames, ctxName)
-			active, err := tf.ContextCmd.GetActiveContext(framework.TargetTypeTMC)
+			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(ctxName), "the active context should be recently added context")
 		})
@@ -69,7 +70,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 		It("use context command", func() {
 			err := tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
-			active, err := tf.ContextCmd.GetActiveContext(framework.TargetTypeTMC)
+			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be same as the context set by use context command")
 		})

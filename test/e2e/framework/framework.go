@@ -26,20 +26,23 @@ const (
 	ConfigServerDelete = "tanzu config server delete %s -y"
 
 	// Plugin commands
-	AddPluginSource      = "tanzu plugin source add --name %s --type %s --uri %s"
-	UpdatePluginSource   = "tanzu plugin source update %s --type %s --uri %s"
-	ListPluginSources    = "tanzu plugin source list -o json"
-	DeletePluginSource   = "tanzu plugin source delete %s"
-	ListPluginsCmdInJSON = "tanzu plugin list -o json"
-	SearchPluginsCmd     = "tanzu plugin search"
-	InstallPluginCmd     = "tanzu plugin install %s"
-	DescribePluginCmd    = "tanzu plugin describe %s"
-	UninstallPLuginCmd   = "tanzu plugin delete %s --yes"
-	CleanPluginsCmd      = "tanzu plugin clean"
-	JSONOutput           = " -o json"
-	TestPluginsPrefix    = "test-plugin-"
-	PluginSubCommand     = "tanzu %s"
-	PluginKey            = "%s_%s_%s" // Plugins - Name_Target_Versions
+	AddPluginSource                     = "tanzu plugin source add --name %s --type %s --uri %s"
+	UpdatePluginSource                  = "tanzu plugin source update %s --type %s --uri %s"
+	ListPluginSourcesWithJSONOutputFlag = "tanzu plugin source list -o json"
+	DeletePluginSource                  = "tanzu plugin source delete %s"
+	ListPluginsCmdWithJSONOutputFlag    = "tanzu plugin list -o json"
+	SearchPluginsCmd                    = "tanzu plugin search"
+	SearchPluginGroupsCmd               = "tanzu plugin group search"
+	InstallPluginCmd                    = "tanzu plugin install %s"
+	InstallPluginFromGroupCmd           = "tanzu plugin install %s --group %s"
+	InstallAllPluginsFromGroupCmd       = "tanzu plugin install --group %s"
+	DescribePluginCmd                   = "tanzu plugin describe %s"
+	UninstallPLuginCmd                  = "tanzu plugin delete %s --yes"
+	CleanPluginsCmd                     = "tanzu plugin clean"
+	JSONOutput                          = " -o json"
+	TestPluginsPrefix                   = "test-plugin-"
+	PluginSubCommand                    = "tanzu %s"
+	PluginKey                           = "%s_%s_%s" // Plugins - Name_Target_Versions
 
 	// Central repository
 	CentralRepositoryPreReleaseRepoImage     = "TANZU_CLI_PRE_RELEASE_REPO_IMAGE"
@@ -73,19 +76,26 @@ const (
 	StartDockerUbuntu = "sudo systemctl start docker"
 	StopDockerUbuntu  = "sudo systemctl stop docker"
 
+	TMC            = "tmc"
+	TKG            = "tkg"
 	TestDir        = ".tanzu-cli-e2e"
 	TestPluginsDir = ".e2e-test-plugins"
-	TargetTypeTMC  = "mission-control"
-	TargetTypeK8s  = "kubernetes"
 	SourceType     = "oci"
 	GlobalTarget   = "global"
 
+	// log info
+	ExecutingCommand = "Executing command: %s"
+
 	// Error messages
-	UnableToFindPluginForTarget = "unable to find plugin '%s' for target '%s'"
-	UnableToFindPlugin          = "unable to find plugin '%s'"
-	InvalidTargetSpecified      = "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'"
-	UnknownDiscoverySourceType  = "unknown discovery source type"
-	DiscoverySourceNotFound     = "cli discovery source not found"
+	UnableToFindPluginForTarget                   = "unable to find plugin '%s' for target '%s'"
+	UnableToFindPlugin                            = "unable to find plugin '%s'"
+	InvalidTargetSpecified                        = "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'"
+	InvalidTargetGlobal                           = "invalid target for plugin: global"
+	UnknownDiscoverySourceType                    = "unknown discovery source type"
+	DiscoverySourceNotFound                       = "cli discovery source not found"
+	ErrorLogForCommandWithErrAndStdErr            = "error while executing command:'%s', error:'%s' stdErr:'%s'"
+	FailedToConstructJSONNodeFromOutputAndErrInfo = "failed to construct json node from output:'%s' error:'%s' "
+	FailedToConstructJSONNodeFromOutput           = "failed to construct json node from output:'%s'"
 )
 
 var (
@@ -95,7 +105,10 @@ var (
 )
 
 // PluginsForLifeCycleTests is list of plugins (which are published in local central repo) used in plugin life cycle test cases
-var PluginsForLifeCycleTests []PluginInfo
+var PluginsForLifeCycleTests []*PluginInfo
+
+// PluginGroupsForLifeCycleTests is list of plugin groups (which are published in local central repo) used in plugin group life cycle test cases
+var PluginGroupsForLifeCycleTests []*PluginGroup
 
 // CLICoreDescribe annotates the test with the CLICore label.
 func CLICoreDescribe(text string, body func()) bool {
@@ -130,7 +143,11 @@ func init() {
 	TestPluginsDirPath = filepath.Join(TestDirPath, TestPluginsDir)
 	TestStandalonePluginsPath = filepath.Join(filepath.Join(filepath.Join(filepath.Join(TestDirPath, ".config"), "tanzu-plugins"), "discovery"), "standalone")
 	_ = CreateDir(TestStandalonePluginsPath)
-	// TODO:cpamuluri: need to move plugins info to configuration file with positive and negative use cases
-	PluginsForLifeCycleTests = make([]PluginInfo, 3)
-	PluginsForLifeCycleTests = []PluginInfo{{Name: "cluster", Target: "kubernetes", Version: "v9.9.9", Description: "cluster functionality"}, {Name: "cluster", Target: "mission-control", Version: "v9.9.9", Description: "cluster functionality"}, {Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "pinniped-auth functionality"}}
+	// TODO:cpamuluri: need to move plugins info to configuration file with positive and negative use cases - github issue: https://github.com/vmware-tanzu/tanzu-cli/issues/122
+	PluginsForLifeCycleTests = make([]*PluginInfo, 3)
+	PluginsForLifeCycleTests = []*PluginInfo{{Name: "cluster", Target: "kubernetes", Version: "v9.9.9", Description: "cluster functionality"}, {Name: "cluster", Target: "mission-control", Version: "v9.9.9", Description: "cluster functionality"}, {Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "pinniped-auth functionality"}}
+
+	// TODO:cpamuluri: need to move Plugin Groups to configuration file with positive and negative use cases - github issue: https://github.com/vmware-tanzu/tanzu-cli/issues/122
+	PluginGroupsForLifeCycleTests = make([]*PluginGroup, 2)
+	PluginGroupsForLifeCycleTests = []*PluginGroup{{Group: "vmware-tmc/v9.9.9"}, {Group: "vmware-tkg/v9.9.9"}}
 }

@@ -13,6 +13,10 @@ type PluginInfo struct {
 	Version     string `json:"version"`
 }
 
+type PluginGroup struct {
+	Group string `json:"group"`
+}
+
 type PluginSourceInfo struct {
 	Name  string `json:"name"`
 	Scope string `json:"scope"`

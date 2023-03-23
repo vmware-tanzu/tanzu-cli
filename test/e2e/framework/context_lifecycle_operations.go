@@ -19,7 +19,7 @@ type ContextCmdOps interface {
 	// GetContext helps to run `context get` command
 	GetContext(contextName string) (ContextInfo, error)
 	// ListContext helps to run `context list` command
-	ListContext() ([]ContextListInfo, error)
+	ListContext() ([]*ContextListInfo, error)
 	// DeleteContext helps to run `context delete` command
 	DeleteContext(contextName string) error
 	// GetActiveContext returns current active context
@@ -62,18 +62,8 @@ func (cc *contextCmdOps) GetContext(contextName string) (ContextInfo, error) {
 	return contextInfo, nil
 }
 
-func (cc *contextCmdOps) ListContext() ([]ContextListInfo, error) {
-	out, _, err := cc.cmdExe.Exec(ListContextOutputInJSON)
-	if err != nil {
-		return nil, err
-	}
-	jsonStr := out.String()
-	var list []ContextListInfo
-	err = json.Unmarshal([]byte(jsonStr), &list)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to construct json node from context list output:"+jsonStr)
-	}
-	return list, nil
+func (cc *contextCmdOps) ListContext() ([]*ContextListInfo, error) {
+	return ExecuteCmdAndBuildJSONOutput[ContextListInfo](cc.cmdExe, ListContextOutputInJSON)
 }
 
 func (cc *contextCmdOps) GetActiveContext(targetType string) (string, error) {

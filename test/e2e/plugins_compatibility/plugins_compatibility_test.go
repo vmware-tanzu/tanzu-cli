@@ -24,7 +24,7 @@ import (
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", func() {
 	var (
 		tf      *framework.Framework
-		plugins []framework.PluginInfo
+		plugins []*framework.PluginInfo
 	)
 	// In the BeforeSuite search for the test-plugin-'s from the TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL test central repository
 	BeforeSuite(func() {
