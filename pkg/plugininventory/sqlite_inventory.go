@@ -302,7 +302,7 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 	currentGroupID := ""
 	var currentGroup *PluginGroup
 	var allGroups []*PluginGroup
-	var pluginsOfGroup []*PluginIdentifier
+	var pluginsOfGroup []*PluginGroupPluginEntry
 
 	for rows.Next() {
 		row, err := getGroupNextRow(rows)
@@ -332,12 +332,16 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 			}
 		}
 
-		pluginsOfGroup = append(pluginsOfGroup, &PluginIdentifier{
-			Name:      row.pluginName,
-			Target:    configtypes.StringToTarget(row.target),
-			Version:   row.version,
+		pge := PluginGroupPluginEntry{
+			PluginIdentifier: PluginIdentifier{
+				Name:    row.pluginName,
+				Target:  configtypes.StringToTarget(row.target),
+				Version: row.version,
+			},
 			Mandatory: mandatory,
-		})
+		}
+
+		pluginsOfGroup = append(pluginsOfGroup, &pge)
 	}
 	// Don't forget to store the very last group we were building
 	if currentGroup != nil {

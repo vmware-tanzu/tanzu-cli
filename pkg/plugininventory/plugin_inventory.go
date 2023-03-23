@@ -95,7 +95,14 @@ type PluginIdentifier struct {
 	Target configtypes.Target
 	// Version is the version for the plugin
 	Version string
-	// Mandatory specifies the plugin is required to be installed or not
+}
+
+// PluginGroupPluginEntry represents a plugin entry within a plugin group
+type PluginGroupPluginEntry struct {
+	// The plugin version of this plugin entry
+	PluginIdentifier
+
+	// Mandatory specifies if the plugin is required to be installed or not
 	Mandatory bool
 }
 
@@ -113,5 +120,5 @@ type PluginGroup struct {
 	// Hidden tells whether the plugin-group should be ignored by the CLI.
 	Hidden bool
 	// The list of plugins specified by this group
-	Plugins []*PluginIdentifier
+	Plugins []*PluginGroupPluginEntry
 }

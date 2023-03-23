@@ -109,8 +109,11 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 			Publisher: "fakepublisher",
 			Name:      "v1.0.0",
 			Hidden:    false,
-			Plugins: []*plugininventory.PluginIdentifier{
-				{Name: "foo", Target: "global", Version: "v0.0.2"},
+			Plugins: []*plugininventory.PluginGroupPluginEntry{
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "foo", Target: "global", Version: "v0.0.2"},
+					Mandatory:        false,
+				},
 			},
 		}
 		err = db.InsertPluginGroup(&pgEntry, false)
@@ -270,7 +273,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 			err := ipgu.UpdatePluginGroupActivationState()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error while updating activation state of plugin group"))
-			Expect(err.Error()).To(ContainSubstring("unable to update plugin-group 'v1.0.0'. This might be possible because provided plugin-group doesn't exists"))
+			Expect(err.Error()).To(ContainSubstring("unable to update plugin-group 'v1.0.0'. This might be possible because the provided plugin-group doesn't exists"))
 		})
 
 		var _ = It("when specified plugin-group exists in the inventory database, updating the activation state with 'DeactivatePluginGroup=true' should be successful", func() {

@@ -101,12 +101,10 @@ var pluginGroup1 = PluginGroup{
 	Vendor:    "fakevendor",
 	Publisher: "fakepublisher",
 	Hidden:    false,
-	Plugins: []*PluginIdentifier{
+	Plugins: []*PluginGroupPluginEntry{
 		{
-			Name:      "management-cluster",
-			Target:    types.TargetK8s,
-			Version:   "v0.28.0",
-			Mandatory: false,
+			PluginIdentifier: PluginIdentifier{Name: "management-cluster", Target: types.TargetK8s, Version: "v0.28.0"},
+			Mandatory:        false,
 		},
 	},
 }
@@ -698,7 +696,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					plugins := groups[i].Plugins
 					Expect(len(plugins)).To(Equal(2))
-					sort.Sort(pluginIdentifierSorter(plugins))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j := 0
 					Expect(plugins[j].Name).To(Equal("plugin1"))
 					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
@@ -716,7 +714,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					plugins = groups[i].Plugins
 					Expect(len(plugins)).To(Equal(4))
-					sort.Sort(pluginIdentifierSorter(plugins))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j = 0
 					Expect(plugins[j].Name).To(Equal("feature"))
 					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
@@ -742,7 +740,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					plugins = groups[i].Plugins
 					Expect(len(plugins)).To(Equal(5))
-					sort.Sort(pluginIdentifierSorter(plugins))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j = 0
 					Expect(plugins[j].Name).To(Equal("feature"))
 					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
@@ -911,11 +909,13 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Vendor:    "fakevendor",
 					Publisher: "fakepublisher",
 					Hidden:    false,
-					Plugins: []*PluginIdentifier{
+					Plugins: []*PluginGroupPluginEntry{
 						{
-							Name:      "fake-plugin",
-							Target:    types.TargetGlobal,
-							Version:   "v1.0.0",
+							PluginIdentifier: PluginIdentifier{
+								Name:    "fake-plugin",
+								Target:  types.TargetGlobal,
+								Version: "v1.0.0",
+							},
 							Mandatory: false,
 						},
 					},
@@ -932,11 +932,13 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Vendor:    "fakevendor",
 					Publisher: "fakepublisher",
 					Hidden:    false,
-					Plugins: []*PluginIdentifier{
+					Plugins: []*PluginGroupPluginEntry{
 						{
-							Name:      "mission-control",
-							Target:    types.TargetK8s,
-							Version:   "v1.0.0",
+							PluginIdentifier: PluginIdentifier{
+								Name:    "mission-control",
+								Target:  types.TargetK8s,
+								Version: "v1.0.0",
+							},
 							Mandatory: false,
 						},
 					},
@@ -985,17 +987,21 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			It("should not return error and GetAllGroups should return the updated result", func() {
 				pluginGroupUpdated := pluginGroup1
 				pluginGroupUpdated.Hidden = true
-				pluginGroupUpdated.Plugins = []*PluginIdentifier{
+				pluginGroupUpdated.Plugins = []*PluginGroupPluginEntry{
 					{
-						Name:      "management-cluster",
-						Target:    types.TargetTMC,
-						Version:   "v0.0.1",
+						PluginIdentifier: PluginIdentifier{
+							Name:    "management-cluster",
+							Target:  types.TargetTMC,
+							Version: "v0.0.1",
+						},
 						Mandatory: true,
 					},
 					{
-						Name:      "isolated-cluster",
-						Target:    types.TargetGlobal,
-						Version:   "v1.2.3",
+						PluginIdentifier: PluginIdentifier{
+							Name:    "isolated-cluster",
+							Target:  types.TargetGlobal,
+							Version: "v1.2.3",
+						},
 						Mandatory: false,
 					},
 				}
@@ -1013,8 +1019,8 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(groups[0].Hidden).To(Equal(pluginGroupUpdated.Hidden))
 				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroupUpdated.Plugins)))
 				plugins := groups[0].Plugins
-				sort.Sort(pluginIdentifierSorter(plugins))
-				sort.Sort(pluginIdentifierSorter(pluginGroupUpdated.Plugins))
+				sort.Sort(pluginGroupPluginEntrySorter(plugins))
+				sort.Sort(pluginGroupPluginEntrySorter(pluginGroupUpdated.Plugins))
 				Expect(plugins[0].Name).To(Equal(pluginGroupUpdated.Plugins[0].Name))
 				Expect(plugins[0].Target).To(Equal(pluginGroupUpdated.Plugins[0].Target))
 				Expect(plugins[0].Version).To(Equal(pluginGroupUpdated.Plugins[0].Version))
@@ -1042,11 +1048,11 @@ func (g pluginGroupSorter) Less(i, j int) bool {
 	return g[i].Name < g[j].Name
 }
 
-type pluginIdentifierSorter []*PluginIdentifier
+type pluginGroupPluginEntrySorter []*PluginGroupPluginEntry
 
-func (g pluginIdentifierSorter) Len() int      { return len(g) }
-func (g pluginIdentifierSorter) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
-func (g pluginIdentifierSorter) Less(i, j int) bool {
+func (g pluginGroupPluginEntrySorter) Len() int      { return len(g) }
+func (g pluginGroupPluginEntrySorter) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
+func (g pluginGroupPluginEntrySorter) Less(i, j int) bool {
 	if g[i].Target != g[j].Target {
 		return g[i].Target < g[j].Target
 	}

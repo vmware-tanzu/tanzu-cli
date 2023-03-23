@@ -73,7 +73,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*pl
 		Publisher: ipuo.Publisher,
 		Name:      ipuo.GroupName,
 		Hidden:    ipuo.DeactivatePluginGroup,
-		Plugins:   make([]*plugininventory.PluginIdentifier, 0),
+		Plugins:   make([]*plugininventory.PluginGroupPluginEntry, 0),
 	}
 
 	pluginGroupManifest, err := helpers.ReadPluginGroupManifest(ipuo.PluginGroupManifestFile)
@@ -82,13 +82,15 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*pl
 	}
 
 	for _, plugin := range pluginGroupManifest.Plugins {
-		p := &plugininventory.PluginIdentifier{
-			Name:      plugin.Name,
-			Target:    types.Target(plugin.Target),
-			Version:   plugin.Version,
+		pge := plugininventory.PluginGroupPluginEntry{
+			PluginIdentifier: plugininventory.PluginIdentifier{
+				Name:    plugin.Name,
+				Target:  types.Target(plugin.Target),
+				Version: plugin.Version,
+			},
 			Mandatory: !plugin.IsContextScoped,
 		}
-		pg.Plugins = append(pg.Plugins, p)
+		pg.Plugins = append(pg.Plugins, &pge)
 	}
 
 	return &pg, nil
