@@ -982,7 +982,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				err = inventory.InsertPluginGroup(&pluginGroup1, false)
 				Expect(err).To(BeNil())
 			})
-			It("should return an error", func() {
+			It("should not return error and GetAllGroups should return the updated result", func() {
 				pluginGroupUpdated := pluginGroup1
 				pluginGroupUpdated.Hidden = true
 				pluginGroupUpdated.Plugins = []*PluginIdentifier{

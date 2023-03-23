@@ -621,13 +621,13 @@ func savePluginGroupManifest(plugins []cli.Plugin, artifactsDir, pluginScopeAsso
 		return err
 	}
 
-	getPluginScope := func(name, target string) string {
+	getPluginScope := func(name, target string) bool {
 		for _, p := range psm.Plugins {
 			if p.Name == name && p.Target == target {
-				return p.Scope
+				return p.IsContextScoped
 			}
 		}
-		return ""
+		return false
 	}
 
 	pgManifest := cli.PluginGroupManifest{
@@ -639,7 +639,7 @@ func savePluginGroupManifest(plugins []cli.Plugin, artifactsDir, pluginScopeAsso
 		pluginNTSV := cli.PluginNameTargetScopeVersion{}
 		pluginNTSV.Name = plug.Name
 		pluginNTSV.Target = plug.Target
-		pluginNTSV.Scope = getPluginScope(plug.Name, plug.Target)
+		pluginNTSV.IsContextScoped = getPluginScope(plug.Name, plug.Target)
 		pluginNTSV.Version = plug.Versions[0]
 
 		pgManifest.Plugins = append(pgManifest.Plugins, pluginNTSV)

@@ -47,13 +47,13 @@ VENDOR ?= vmware
 PLUGIN_PUBLISH_REPOSITORY ?= localhost:$(REGISTRY_PORT)/test/v1/tanzu-cli/plugins
 PLUGIN_INVENTORY_IMAGE_TAG ?= latest
 
-PLUGIN_SCOPE_ASSOCIATION_FILE ?= ./cmd/plugin/plugin-scope-association.yaml
+PLUGIN_SCOPE_ASSOCIATION_FILE ?= $(PLUGIN_DIR)/plugin-scope-association.yaml
 PLUGIN_GROUP_NAME ?= 
 
 # Process configuration and setup additional variables
-OVERRIDE ?=
+TANZU_BUILDER_OVERRIDE ?=
 OVERRIDE_FLAG = 
-ifneq ($(strip $(OVERRIDE)),)
+ifneq ($(strip $(TANZU_BUILDER_OVERRIDE)),)
 OVERRIDE_FLAG = --override
 endif
 

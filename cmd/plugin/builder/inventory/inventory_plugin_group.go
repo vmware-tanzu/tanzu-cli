@@ -11,7 +11,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -83,14 +82,11 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*pl
 	}
 
 	for _, plugin := range pluginGroupManifest.Plugins {
-		if !common.IsValidScope(plugin.Scope, false) {
-			return nil, errors.Errorf("invalid scope provided for plugin '%s', target: '%s', scope: '%s'", plugin.Name, plugin.Target, plugin.Scope)
-		}
 		p := &plugininventory.PluginIdentifier{
 			Name:      plugin.Name,
 			Target:    types.Target(plugin.Target),
 			Version:   plugin.Version,
-			Mandatory: plugin.Scope == common.PluginScopeStandalone,
+			Mandatory: !plugin.IsContextScoped,
 		}
 		pg.Plugins = append(pg.Plugins, p)
 	}

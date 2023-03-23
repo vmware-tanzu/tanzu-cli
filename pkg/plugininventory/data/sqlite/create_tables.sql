@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS "PluginBinaries" (
 		"Target"             TEXT NOT NULL,
 		"RecommendedVersion" TEXT NOT NULL,
 		"Version"            TEXT NOT NULL,
-		"Hidden"             INTEGER NOT NULL,
+		"Hidden"             TEXT NOT NULL,
 		"Description"        TEXT NOT NULL,
 		"Publisher"          TEXT NOT NULL,
 		"Vendor"             TEXT NOT NULL,

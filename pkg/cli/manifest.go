@@ -86,6 +86,6 @@ type PluginNameTargetScope struct {
 	// Target is the name of the plugin.
 	Target string `json:"target" yaml:"target"`
 
-	// Scope is the scope of the plugin. `context` or `standalone`
-	Scope string `json:"scope" yaml:"scope"`
+	// IsContextScoped determines if the plugin is context-scoped or standalone
+	IsContextScoped bool `json:"isContextScoped" yaml:"isContextScoped"`
 }
