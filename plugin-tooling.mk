@@ -38,7 +38,7 @@ PLUGIN_GROUP_MANIFEST_FILE := $(PLUGIN_BINARY_ARTIFACTS_DIR)/plugin_group_manife
 
 REGISTRY_PORT ?= 5001
 REGISTRY_ENDPOINT ?= localhost:$(REGISTRY_PORT)
-PLUGIN_NAME ?= "*"
+PLUGIN_NAME ?= *
 
 # Repository specific configuration
 BUILDER ?= $(ROOT_DIR)/bin/builder
@@ -77,7 +77,7 @@ plugin-build-%:
 		--version $(PLUGIN_BUILD_VERSION) \
 		--ldflags "$(PLUGIN_LD_FLAGS)" \
 		--os-arch $(OS)_$(ARCH) \
-		--match $(PLUGIN_NAME) \
+		--match "$(PLUGIN_NAME)" \
 		--plugin-scope-association-file $(PLUGIN_SCOPE_ASSOCIATION_FILE)
 
 .PHONY: plugin-build-packages
