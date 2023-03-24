@@ -1469,9 +1469,9 @@ func TestMergeDuplicatePlugins(t *testing.T) {
 			Name:               "myplugin",
 			Target:             configtypes.TargetK8s,
 			Description:        "Second description",
-			RecommendedVersion: "v1.1.1",
-			InstalledVersion:   "v1.1.1",
-			SupportedVersions:  []string{"v0.1.0", "v1.1.1"},
+			RecommendedVersion: "v3.3.3",
+			InstalledVersion:   "v0.1.0",
+			SupportedVersions:  []string{"v0.1.0", "v3.3.3"},
 			Distribution: distribution.Artifacts{
 				"v0.1.0": []distribution.Artifact{
 					{
@@ -1493,22 +1493,22 @@ func TestMergeDuplicatePlugins(t *testing.T) {
 						Arch:   "amd64",
 					},
 				},
-				"v1.1.1": []distribution.Artifact{
+				"v3.3.3": []distribution.Artifact{
 					{
-						Image:  "localhost:9876/my/discovery/darwin_amd64:v1.1.1",
-						Digest: "digest111damd",
+						Image:  "localhost:9876/my/discovery/darwin_amd64:v3.3.3",
+						Digest: "digest333damd",
 						OS:     "darwin",
 						Arch:   "amd64",
 					},
 					{
-						Image:  "localhost:9876/my/discovery/darwin_arm64:v1.1.1",
-						Digest: "digest111damd",
+						Image:  "localhost:9876/my/discovery/darwin_arm64:v3.3.3",
+						Digest: "digest333darm",
 						OS:     "darwin",
 						Arch:   "arm64",
 					},
 					{
-						Image:  "localhost:9876/my/discovery/linux_amd64:v1.1.1",
-						Digest: "digest111lamd",
+						Image:  "localhost:9876/my/discovery/linux_amd64:v3.3.3",
+						Digest: "digest333lamd",
 						OS:     "linux",
 						Arch:   "amd64",
 					},
@@ -1527,9 +1527,9 @@ func TestMergeDuplicatePlugins(t *testing.T) {
 		Name:               "myplugin",
 		Target:             configtypes.TargetK8s,
 		Description:        "First description",
-		RecommendedVersion: "v2.2.2",
-		InstalledVersion:   "v1.1.1",
-		SupportedVersions:  []string{"v0.1.0", "v1.1.1", "v2.2.2"},
+		RecommendedVersion: "v3.3.3",
+		InstalledVersion:   "v0.1.0",
+		SupportedVersions:  []string{"v0.1.0", "v2.2.2", "v3.3.3"},
 		Distribution: distribution.Artifacts{
 			"v0.1.0": []distribution.Artifact{
 				{
@@ -1551,26 +1551,6 @@ func TestMergeDuplicatePlugins(t *testing.T) {
 					Arch:   "amd64",
 				},
 			},
-			"v1.1.1": []distribution.Artifact{
-				{
-					Image:  "localhost:9876/my/discovery/darwin_amd64:v1.1.1",
-					Digest: "digest111damd",
-					OS:     "darwin",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "localhost:9876/my/discovery/darwin_arm64:v1.1.1",
-					Digest: "digest111damd",
-					OS:     "darwin",
-					Arch:   "arm64",
-				},
-				{
-					Image:  "localhost:9876/my/discovery/linux_amd64:v1.1.1",
-					Digest: "digest111lamd",
-					OS:     "linux",
-					Arch:   "amd64",
-				},
-			},
 			"v2.2.2": []distribution.Artifact{
 				{
 					Image:  "localhost:9876/my/discovery/darwin_amd64:v2.2.2",
@@ -1587,6 +1567,26 @@ func TestMergeDuplicatePlugins(t *testing.T) {
 				{
 					Image:  "localhost:9876/my/discovery/linux_amd64:v2.2.2",
 					Digest: "digest222lamd",
+					OS:     "linux",
+					Arch:   "amd64",
+				},
+			},
+			"v3.3.3": []distribution.Artifact{
+				{
+					Image:  "localhost:9876/my/discovery/darwin_amd64:v3.3.3",
+					Digest: "digest333damd",
+					OS:     "darwin",
+					Arch:   "amd64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/darwin_arm64:v3.3.3",
+					Digest: "digest333darm",
+					OS:     "darwin",
+					Arch:   "arm64",
+				},
+				{
+					Image:  "localhost:9876/my/discovery/linux_amd64:v3.3.3",
+					Digest: "digest333lamd",
 					OS:     "linux",
 					Arch:   "amd64",
 				},

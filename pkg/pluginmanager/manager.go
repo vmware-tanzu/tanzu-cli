@@ -186,7 +186,7 @@ func DiscoverStandalonePlugins() ([]discovery.Discovered, error) {
 		plugins[i].Scope = common.PluginScopeStandalone
 		plugins[i].Status = common.PluginStatusNotInstalled
 	}
-	return plugins, err
+	return mergeDuplicatePlugins(plugins), nil
 }
 
 // DiscoverPluginGroups returns the available plugin groups
@@ -435,6 +435,12 @@ func combineDuplicatePlugins(availablePlugins []discovery.Discovered) []discover
 }
 
 func mergePluginEntries(plugin1, plugin2 *discovery.Discovered) *discovery.Discovered {
+	// Plugins with the same name having `k8s` and `none` targets are also considered the same for
+	// backward compatibility reasons, considering, we are adding `k8s` targeted plugins as root level commands.
+	if plugin1.Target == configtypes.TargetUnknown {
+		plugin1.Target = plugin2.Target
+	}
+
 	// Combine the installation status and installedVersion result when combining plugins
 	if plugin2.Status == common.PluginStatusInstalled {
 		plugin1.Status = common.PluginStatusInstalled
@@ -481,8 +487,12 @@ func mergePluginEntries(plugin1, plugin2 *discovery.Discovered) *discovery.Disco
 	plugin1.Distribution = artifacts1
 	_ = utils.SortVersions(plugin1.SupportedVersions)
 
+	// Set the recommended version to the highest version
+	if len(plugin1.SupportedVersions) > 0 {
+		plugin1.RecommendedVersion = plugin1.SupportedVersions[len(plugin1.SupportedVersions)-1]
+	}
+
 	// Keep the following fields from the first plugin found
-	// - RecommendedVersion
 	// - Optional
 	// - ContextName
 	// - Scope
