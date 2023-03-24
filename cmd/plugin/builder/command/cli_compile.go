@@ -54,16 +54,17 @@ type plugin struct {
 
 // PluginCompileArgs contains the values to use for compiling plugins.
 type PluginCompileArgs struct {
-	Version       string
-	SourcePath    string
-	ArtifactsDir  string
-	LDFlags       string
-	Tags          string
-	Match         string
-	Description   string
-	GoPrivate     string
-	TargetArch    []string
-	GroupByOSArch bool
+	Version                    string
+	SourcePath                 string
+	ArtifactsDir               string
+	LDFlags                    string
+	Tags                       string
+	Match                      string
+	Description                string
+	GoPrivate                  string
+	PluginScopeAssociationFile string
+	TargetArch                 []string
+	GroupByOSArch              bool
 }
 
 const local = "local"
@@ -216,6 +217,11 @@ func Compile(compileArgs *PluginCompileArgs) error {
 	}
 
 	err = savePluginManifest(manifest, compileArgs.ArtifactsDir, compileArgs.GroupByOSArch)
+	if err != nil {
+		return err
+	}
+
+	err = savePluginGroupManifest(manifest.Plugins, compileArgs.ArtifactsDir, compileArgs.PluginScopeAssociationFile, compileArgs.GroupByOSArch)
 	if err != nil {
 		return err
 	}
@@ -594,5 +600,61 @@ func savePluginManifest(manifest cli.Manifest, artifactsDir string, groupByOSArc
 			return err
 		}
 	}
+	return nil
+}
+
+func savePluginGroupManifest(plugins []cli.Plugin, artifactsDir, pluginScopeAssociationFile string, groupByOSArch bool) error {
+	if !groupByOSArch || pluginScopeAssociationFile == "" {
+		return nil
+	}
+
+	log.Info("saving plugin group manifest...")
+
+	b, err := os.ReadFile(pluginScopeAssociationFile)
+	if err != nil {
+		return err
+	}
+
+	psm := &cli.PluginScopeMetadata{}
+	err = yaml.Unmarshal(b, psm)
+	if err != nil {
+		return err
+	}
+
+	getPluginScope := func(name, target string) bool {
+		for _, p := range psm.Plugins {
+			if p.Name == name && p.Target == target {
+				return p.IsContextScoped
+			}
+		}
+		return false
+	}
+
+	pgManifest := cli.PluginGroupManifest{
+		CreatedTime: time.Now(),
+		Plugins:     []cli.PluginNameTargetScopeVersion{},
+	}
+
+	for _, plug := range plugins {
+		pluginNTSV := cli.PluginNameTargetScopeVersion{}
+		pluginNTSV.Name = plug.Name
+		pluginNTSV.Target = plug.Target
+		pluginNTSV.IsContextScoped = getPluginScope(plug.Name, plug.Target)
+		pluginNTSV.Version = plug.Versions[0]
+
+		pgManifest.Plugins = append(pgManifest.Plugins, pluginNTSV)
+	}
+
+	b, err = yaml.Marshal(pgManifest)
+	if err != nil {
+		return err
+	}
+
+	manifestPath := filepath.Join(artifactsDir, cli.PluginGroupManifestFileName)
+	err = os.WriteFile(manifestPath, b, 0644)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

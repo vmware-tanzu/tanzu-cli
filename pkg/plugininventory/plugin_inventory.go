@@ -30,10 +30,18 @@ type PluginInventory interface {
 	CreateSchema() error
 
 	// InsertPlugin inserts plugin to the inventory
-	InsertPlugin(pluginInventoryEntry *PluginInventoryEntry) error
+	InsertPlugin(*PluginInventoryEntry) error
+
+	// InsertPluginGroup inserts plugin-group to the inventory
+	// if override is true, it will update the existing plugin by
+	// updating the metadata and the plugin associated with the plugin-group
+	InsertPluginGroup(pg *PluginGroup, override bool) error
 
 	// UpdatePluginActivationState updates plugin metadata to activate or deactivate plugin
-	UpdatePluginActivationState(pluginInventoryEntry *PluginInventoryEntry) error
+	UpdatePluginActivationState(*PluginInventoryEntry) error
+
+	// UpdatePluginGroupActivationState updates plugin-group metadata to activate or deactivate the plugin-group
+	UpdatePluginGroupActivationState(*PluginGroup) error
 }
 
 // PluginInventoryEntry represents the inventory information
@@ -89,6 +97,15 @@ type PluginIdentifier struct {
 	Version string
 }
 
+// PluginGroupPluginEntry represents a plugin entry within a plugin group
+type PluginGroupPluginEntry struct {
+	// The plugin version of this plugin entry
+	PluginIdentifier
+
+	// Mandatory specifies if the plugin is required to be installed or not
+	Mandatory bool
+}
+
 // PluginGroup represents a list of plugins.
 // The user will specify a group using
 // "<Vendor>-<Publisher>/<Name>
@@ -100,6 +117,8 @@ type PluginGroup struct {
 	Publisher string
 	// Name of the group
 	Name string
+	// Hidden tells whether the plugin-group should be ignored by the CLI.
+	Hidden bool
 	// The list of plugins specified by this group
-	Plugins []*PluginIdentifier
+	Plugins []*PluginGroupPluginEntry
 }

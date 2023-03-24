@@ -96,6 +96,19 @@ var piEntry3 = PluginInventoryEntry{
 	},
 }
 
+var pluginGroup1 = PluginGroup{
+	Name:      "v1.0.0",
+	Vendor:    "fakevendor",
+	Publisher: "fakepublisher",
+	Hidden:    false,
+	Plugins: []*PluginGroupPluginEntry{
+		{
+			PluginIdentifier: PluginIdentifier{Name: "management-cluster", Target: types.TargetK8s, Version: "v0.28.0"},
+			Mandatory:        false,
+		},
+	},
+}
+
 const createPluginsStmt = `
 INSERT INTO PluginBinaries VALUES(
 	'management-cluster',
@@ -185,77 +198,99 @@ INSERT INTO PluginGroups VALUES(
 	'2.1.0',
 	'management-cluster',
 	'kubernetes',
-	'v0.28.0');
+	'v0.28.0',
+	'false',
+	'false');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'2.1.0',
 	'package',
 	'kubernetes',
-	'v0.28.0');
+	'v0.28.0',
+	'false',
+	'false');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'2.1.0',
 	'feature',
 	'kubernetes',
-	'v0.28.0');
+	'v0.28.0',
+	'false',
+	'false');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'2.1.0',
 	'kubernetes-release',
 	'kubernetes',
-	'v0.28.0');
+	'v0.28.0',
+	'false',
+	'false');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'2.1.0',
 	'isolated-cluster',
 	'kubernetes',
-	'v0.28.0');
+	'v0.28.0',
+	'false',
+	'false');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'1.6.0',
 	'management-cluster',
 	'kubernetes',
-	'v0.26.0');
+	'v0.26.0',
+	'false',
+	'false');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'1.6.0',
 	'package',
 	'kubernetes',
-	'v0.26.0');
+	'v0.26.0',
+	'false',
+	'false');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'1.6.0',
 	'feature',
 	'kubernetes',
-	'v0.26.0');
+	'v0.26.0',
+	'false',
+	'false');
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
 	'1.6.0',
 	'kubernetes-release',
 	'kubernetes',
-	'v0.26.0');
+	'v0.26.0',
+	'false',
+	'false');
 INSERT INTO PluginGroups VALUES(
 	'independent',
 	'other',
 	'mygroup',
 	'plugin1',
 	'kubernetes',
-	'v0.1.0');
+	'v0.1.0',
+	'false',
+	'false');
 INSERT INTO PluginGroups VALUES(
 	'independent',
 	'other',
 	'mygroup',
 	'plugin2',
 	'mission-control',
-	'v0.2.0');
+	'v0.2.0',
+	'false',
+	'false');
 `
 
 var _ = Describe("Unit tests for plugin inventory", func() {
@@ -661,7 +696,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					plugins := groups[i].Plugins
 					Expect(len(plugins)).To(Equal(2))
-					sort.Sort(pluginIdentifierSorter(plugins))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j := 0
 					Expect(plugins[j].Name).To(Equal("plugin1"))
 					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
@@ -679,7 +714,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					plugins = groups[i].Plugins
 					Expect(len(plugins)).To(Equal(4))
-					sort.Sort(pluginIdentifierSorter(plugins))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j = 0
 					Expect(plugins[j].Name).To(Equal("feature"))
 					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
@@ -705,7 +740,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					plugins = groups[i].Plugins
 					Expect(len(plugins)).To(Equal(5))
-					sort.Sort(pluginIdentifierSorter(plugins))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j = 0
 					Expect(plugins[j].Name).To(Equal("feature"))
 					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
@@ -844,6 +879,235 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 		})
 	})
+
+	Describe("Inserting plugin-groups to inventory and verifying it with GetAllGroups", func() {
+		BeforeEach(func() {
+			tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+			Expect(err).To(BeNil(), "unable to create temporary directory")
+
+			// Create DB file
+			dbFile, err = os.Create(filepath.Join(tmpDir, SQliteDBFileName))
+			Expect(err).To(BeNil())
+
+			inventory = NewSQLiteInventory(dbFile.Name(), tmpDir)
+			err = inventory.CreateSchema()
+			Expect(err).To(BeNil(), "failed to create DB schema for testing")
+			err = inventory.InsertPlugin(&piEntry1)
+			Expect(err).To(BeNil(), "failed to insert plugin1")
+			err = inventory.InsertPlugin(&piEntry2)
+			Expect(err).To(BeNil(), "failed to insert plugin2")
+			err = inventory.InsertPlugin(&piEntry3)
+			Expect(err).To(BeNil(), "failed to insert plugin3")
+		})
+		AfterEach(func() {
+			os.RemoveAll(tmpDir)
+		})
+		Context("When inserting plugin-group with plugin that doesn't exists in the database", func() {
+			It("should return error", func() {
+				pg := &PluginGroup{
+					Name:      "v1.0.0",
+					Vendor:    "fakevendor",
+					Publisher: "fakepublisher",
+					Hidden:    false,
+					Plugins: []*PluginGroupPluginEntry{
+						{
+							PluginIdentifier: PluginIdentifier{
+								Name:    "fake-plugin",
+								Target:  types.TargetGlobal,
+								Version: "v1.0.0",
+							},
+							Mandatory: false,
+						},
+					},
+				}
+				err = inventory.InsertPluginGroup(pg, false)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("specified plugin 'name:fake-plugin', 'target:global', 'version:v1.0.0' is not present in the database"))
+			})
+		})
+		Context("When inserting plugin-group with plugin which exists but specified version of the plugin doesn't exists in the database", func() {
+			It("should return error", func() {
+				pg := &PluginGroup{
+					Name:      "v1.0.0",
+					Vendor:    "fakevendor",
+					Publisher: "fakepublisher",
+					Hidden:    false,
+					Plugins: []*PluginGroupPluginEntry{
+						{
+							PluginIdentifier: PluginIdentifier{
+								Name:    "mission-control",
+								Target:  types.TargetK8s,
+								Version: "v1.0.0",
+							},
+							Mandatory: false,
+						},
+					},
+				}
+				err = inventory.InsertPluginGroup(pg, false)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("specified plugin 'name:mission-control', 'target:kubernetes', 'version:v1.0.0' is not present in the database"))
+			})
+		})
+		Context("When inserting plugin-group with all specified plugins and their versions exist in the database", func() {
+			It("should not return error and GetAllGroups should return correct result", func() {
+				err = inventory.InsertPluginGroup(&pluginGroup1, false)
+				Expect(err).To(BeNil())
+
+				groups, err := inventory.GetAllGroups()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(1))
+				Expect(groups[0].Name).To(Equal(pluginGroup1.Name))
+				Expect(groups[0].Vendor).To(Equal(pluginGroup1.Vendor))
+				Expect(groups[0].Publisher).To(Equal(pluginGroup1.Publisher))
+				Expect(groups[0].Hidden).To(Equal(pluginGroup1.Hidden))
+				Expect(len(groups[0].Plugins)).To(Equal(1))
+				Expect(groups[0].Plugins[0].Name).To(Equal(pluginGroup1.Plugins[0].Name))
+				Expect(groups[0].Plugins[0].Target).To(Equal(pluginGroup1.Plugins[0].Target))
+				Expect(groups[0].Plugins[0].Version).To(Equal(pluginGroup1.Plugins[0].Version))
+				Expect(groups[0].Plugins[0].Mandatory).To(Equal(pluginGroup1.Plugins[0].Mandatory))
+			})
+		})
+		Context("When inserting a plugin-group which already exists in the database", func() {
+			BeforeEach(func() {
+				err = inventory.InsertPluginGroup(&pluginGroup1, false)
+				Expect(err).To(BeNil())
+			})
+			It("should return an error", func() {
+				err = inventory.InsertPluginGroup(&pluginGroup1, false)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("unable to insert plugin-group row"))
+				Expect(err.Error()).To(ContainSubstring("UNIQUE constraint failed"))
+			})
+		})
+		Context("When inserting a plugin-group which already exists in the database with override flag", func() {
+			BeforeEach(func() {
+				err = inventory.InsertPluginGroup(&pluginGroup1, false)
+				Expect(err).To(BeNil())
+			})
+			It("should not return error and GetAllGroups should return the updated result", func() {
+				pluginGroupUpdated := pluginGroup1
+				pluginGroupUpdated.Hidden = true
+				pluginGroupUpdated.Plugins = []*PluginGroupPluginEntry{
+					{
+						PluginIdentifier: PluginIdentifier{
+							Name:    "management-cluster",
+							Target:  types.TargetTMC,
+							Version: "v0.0.1",
+						},
+						Mandatory: true,
+					},
+					{
+						PluginIdentifier: PluginIdentifier{
+							Name:    "isolated-cluster",
+							Target:  types.TargetGlobal,
+							Version: "v1.2.3",
+						},
+						Mandatory: false,
+					},
+				}
+
+				err = inventory.InsertPluginGroup(&pluginGroupUpdated, true)
+				Expect(err).To(BeNil())
+
+				// Verify the result using GetAllGroups
+				groups, err := inventory.GetAllGroups()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(1))
+				Expect(groups[0].Name).To(Equal(pluginGroupUpdated.Name))
+				Expect(groups[0].Vendor).To(Equal(pluginGroupUpdated.Vendor))
+				Expect(groups[0].Publisher).To(Equal(pluginGroupUpdated.Publisher))
+				Expect(groups[0].Hidden).To(Equal(pluginGroupUpdated.Hidden))
+				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroupUpdated.Plugins)))
+				plugins := groups[0].Plugins
+				sort.Sort(pluginGroupPluginEntrySorter(plugins))
+				sort.Sort(pluginGroupPluginEntrySorter(pluginGroupUpdated.Plugins))
+				Expect(plugins[0].Name).To(Equal(pluginGroupUpdated.Plugins[0].Name))
+				Expect(plugins[0].Target).To(Equal(pluginGroupUpdated.Plugins[0].Target))
+				Expect(plugins[0].Version).To(Equal(pluginGroupUpdated.Plugins[0].Version))
+				Expect(plugins[0].Mandatory).To(Equal(pluginGroupUpdated.Plugins[0].Mandatory))
+				Expect(plugins[1].Name).To(Equal(pluginGroupUpdated.Plugins[1].Name))
+				Expect(plugins[1].Target).To(Equal(pluginGroupUpdated.Plugins[1].Target))
+				Expect(plugins[1].Version).To(Equal(pluginGroupUpdated.Plugins[1].Version))
+				Expect(plugins[1].Mandatory).To(Equal(pluginGroupUpdated.Plugins[1].Mandatory))
+			})
+		})
+
+	})
+	Describe("Updating plugin-group activation state", func() {
+
+		BeforeEach(func() {
+			tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+			Expect(err).To(BeNil(), "unable to create temporary directory")
+
+			// Create DB file
+			dbFile, err = os.Create(filepath.Join(tmpDir, SQliteDBFileName))
+			Expect(err).To(BeNil())
+
+			inventory = NewSQLiteInventory(dbFile.Name(), tmpDir)
+			err = inventory.CreateSchema()
+			Expect(err).To(BeNil(), "failed to create DB schema for testing")
+			err = inventory.InsertPlugin(&piEntry1)
+			Expect(err).To(BeNil(), "failed to insert plugin1")
+			err = inventory.InsertPlugin(&piEntry2)
+			Expect(err).To(BeNil(), "failed to insert plugin2")
+			err = inventory.InsertPlugin(&piEntry3)
+			Expect(err).To(BeNil(), "failed to insert plugin3")
+		})
+		AfterEach(func() {
+			os.RemoveAll(tmpDir)
+		})
+
+		Context("When updating the activation state of a plugin-group which already exists in the database", func() {
+			BeforeEach(func() {
+				err = inventory.InsertPluginGroup(&pluginGroup1, false)
+				Expect(err).To(BeNil())
+			})
+			It("should not return error when no change has been done to the activation state and the GetAllGroups should reflect the same", func() {
+				err = inventory.UpdatePluginGroupActivationState(&pluginGroup1)
+				Expect(err).To(BeNil())
+
+				// Verify the result using GetAllGroups
+				groups, err := inventory.GetAllGroups()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(1))
+				Expect(groups[0].Name).To(Equal(pluginGroup1.Name))
+				Expect(groups[0].Vendor).To(Equal(pluginGroup1.Vendor))
+				Expect(groups[0].Publisher).To(Equal(pluginGroup1.Publisher))
+				Expect(groups[0].Hidden).To(Equal(pluginGroup1.Hidden))
+				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroup1.Plugins)))
+			})
+			It("should not return error when the activation state has been updated and the GetAllGroups should reflect the change", func() {
+				pluginGroupUpdated := pluginGroup1
+				pluginGroupUpdated.Hidden = true
+				err = inventory.UpdatePluginGroupActivationState(&pluginGroupUpdated)
+				Expect(err).To(BeNil())
+
+				// Verify the result using GetAllGroups
+				groups, err := inventory.GetAllGroups()
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(1))
+				Expect(groups[0].Name).To(Equal(pluginGroupUpdated.Name))
+				Expect(groups[0].Vendor).To(Equal(pluginGroupUpdated.Vendor))
+				Expect(groups[0].Publisher).To(Equal(pluginGroupUpdated.Publisher))
+				Expect(groups[0].Hidden).To(Equal(pluginGroupUpdated.Hidden))
+				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroupUpdated.Plugins)))
+			})
+		})
+
+		Context("When updating the activation state of a plugin-group which does not exist in the database", func() {
+			BeforeEach(func() {
+				err = inventory.InsertPluginGroup(&pluginGroup1, false)
+				Expect(err).To(BeNil())
+			})
+			It("should return error", func() {
+				pluginGroupUpdated := pluginGroup1
+				pluginGroupUpdated.Name = "unknown"
+				err = inventory.UpdatePluginGroupActivationState(&pluginGroupUpdated)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("unable to update plugin-group 'fakevendor-fakepublisher/unknown'. This might be possible because the provided plugin-group doesn't exists"))
+			})
+		})
+	})
 })
 
 type pluginGroupSorter []*PluginGroup
@@ -860,11 +1124,11 @@ func (g pluginGroupSorter) Less(i, j int) bool {
 	return g[i].Name < g[j].Name
 }
 
-type pluginIdentifierSorter []*PluginIdentifier
+type pluginGroupPluginEntrySorter []*PluginGroupPluginEntry
 
-func (g pluginIdentifierSorter) Len() int      { return len(g) }
-func (g pluginIdentifierSorter) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
-func (g pluginIdentifierSorter) Less(i, j int) bool {
+func (g pluginGroupPluginEntrySorter) Len() int      { return len(g) }
+func (g pluginGroupPluginEntrySorter) Swap(i, j int) { g[i], g[j] = g[j], g[i] }
+func (g pluginGroupPluginEntrySorter) Less(i, j int) bool {
 	if g[i].Target != g[j].Target {
 		return g[i].Target < g[j].Target
 	}

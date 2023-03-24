@@ -819,7 +819,7 @@ func InstallPluginsFromGroup(pluginName, groupID string) error {
 	numErrors := 0
 	numInstalled := 0
 	for _, plugin := range group.Plugins {
-		if pluginName == cli.AllPlugins || pluginName == plugin.Name {
+		if (pluginName == cli.AllPlugins || pluginName == plugin.Name) && plugin.Mandatory {
 			err = InstallStandalonePlugin(plugin.Name, plugin.Version, plugin.Target)
 			if err != nil {
 				numErrors++

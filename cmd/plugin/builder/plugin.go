@@ -30,12 +30,13 @@ func NewPluginCmd() *cobra.Command {
 }
 
 type pluginBuildFlags struct {
-	PluginDir   string
-	ArtifactDir string
-	LDFlags     string
-	OSArch      []string
-	Version     string
-	Match       string
+	PluginDir                  string
+	ArtifactDir                string
+	LDFlags                    string
+	OSArch                     []string
+	Version                    string
+	Match                      string
+	PluginScopeAssociationFile string
 }
 
 type pluginBuildPackageFlags struct {
@@ -56,8 +57,9 @@ func newPluginBuildCmd() *cobra.Command {
 	var pbFlags = &pluginBuildFlags{}
 
 	var pluginBuildCmd = &cobra.Command{
-		Use:   "build",
-		Short: "Build plugins",
+		Use:          "build",
+		Short:        "Build plugins",
+		SilenceUsage: true,
 		Example: `# Build all plugins under 'cmd/plugin' directory for local host os and arch
   tanzu builder plugin build --path ./cmd/plugin --version v0.0.2 --os-arch local
 
@@ -68,13 +70,14 @@ func newPluginBuildCmd() *cobra.Command {
   tanzu builder plugin build --path ./cmd/plugin --version v0.0.2 --os-arch all --match foo`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compileArgs := &command.PluginCompileArgs{
-				Match:         pbFlags.Match,
-				TargetArch:    pbFlags.OSArch,
-				SourcePath:    pbFlags.PluginDir,
-				ArtifactsDir:  pbFlags.ArtifactDir,
-				LDFlags:       pbFlags.LDFlags,
-				Version:       pbFlags.Version,
-				GroupByOSArch: true,
+				Match:                      pbFlags.Match,
+				TargetArch:                 pbFlags.OSArch,
+				SourcePath:                 pbFlags.PluginDir,
+				ArtifactsDir:               pbFlags.ArtifactDir,
+				LDFlags:                    pbFlags.LDFlags,
+				Version:                    pbFlags.Version,
+				PluginScopeAssociationFile: pbFlags.PluginScopeAssociationFile,
+				GroupByOSArch:              true,
 			}
 
 			return command.Compile(compileArgs)
@@ -87,6 +90,7 @@ func newPluginBuildCmd() *cobra.Command {
 	pluginBuildCmd.Flags().StringArrayVarP(&pbFlags.OSArch, "os-arch", "", []string{"all"}, "compile for specific os-arch, use 'local' for host os, use '<os>_<arch>' for specific")
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.Version, "version", "v", "", "version of the plugins")
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.Match, "match", "", "*", "match a plugin name to build, supports globbing")
+	pluginBuildCmd.Flags().StringVarP(&pbFlags.PluginScopeAssociationFile, "plugin-scope-association-file", "", "", "file specifying plugin scope association")
 
 	_ = pluginBuildCmd.MarkFlagRequired("version")
 
@@ -97,9 +101,10 @@ func newPluginBuildPackageCmd() *cobra.Command {
 	var pbpFlags = &pluginBuildPackageFlags{}
 
 	var pluginBuildPackageCmd = &cobra.Command{
-		Use:   "build-package",
-		Short: "Build plugin packages",
-		Long:  "Build plugin packages OCI image as tar.gz file that can be published to any repository",
+		Use:          "build-package",
+		Short:        "Build plugin packages",
+		Long:         "Build plugin packages OCI image as tar.gz file that can be published to any repository",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			bppArgs := &plugin.BuildPluginPackageOptions{
 				BinaryArtifactDir:  pbpFlags.BinaryArtifactDir,
@@ -122,9 +127,10 @@ func newPluginPublishPackageCmd() *cobra.Command {
 	var pppFlags = &pluginPublishPackageFlags{}
 
 	var pluginBuildPackageCmd = &cobra.Command{
-		Use:   "publish-package",
-		Short: "Publish plugin packages",
-		Long:  "Publish plugin packages as OCI image to specified repository",
+		Use:          "publish-package",
+		Short:        "Publish plugin packages",
+		Long:         "Publish plugin packages as OCI image to specified repository",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			bppArgs := &plugin.PublishPluginPackageOptions{
 				PackageArtifactDir: pppFlags.PackageArtifactDir,

@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS "PluginBinaries" (
 		"Target"             TEXT NOT NULL,
 		"RecommendedVersion" TEXT NOT NULL,
 		"Version"            TEXT NOT NULL,
-		"Hidden"             INTEGER NOT NULL,
+		"Hidden"             TEXT NOT NULL,
 		"Description"        TEXT NOT NULL,
 		"Publisher"          TEXT NOT NULL,
 		"Vendor"             TEXT NOT NULL,
@@ -21,5 +21,7 @@ CREATE TABLE IF NOT EXISTS "PluginGroups" (
 		"PluginName"         TEXT NOT NULL,
 		"Target"             TEXT NOT NULL,
 		"Version"            TEXT NOT NULL,
+		"Mandatory"          TEXT NOT NULL,
+		"Hidden"             TEXT NOT NULL,
 		PRIMARY KEY("Vendor", "Publisher", "GroupName", "PluginName", "Target", "Version")
 );

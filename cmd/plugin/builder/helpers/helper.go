@@ -32,6 +32,21 @@ func ReadPluginManifest(pluginManifestFile string) (*cli.Manifest, error) {
 	return pluginManifest, nil
 }
 
+// ReadPluginGroupManifest reads the PluginGroupManifest file and returns PluginGroupManifest object
+func ReadPluginGroupManifest(pluginGroupManifestFile string) (*cli.PluginGroupManifest, error) {
+	data, err := os.ReadFile(pluginGroupManifestFile)
+	if err != nil {
+		return nil, errors.Wrap(err, "fail to read the plugin-group manifest file")
+	}
+
+	pluginGroupManifest := &cli.PluginGroupManifest{}
+	err = yaml.Unmarshal(data, pluginGroupManifest)
+	if err != nil {
+		return nil, errors.Wrap(err, "fail to read the plugin-group manifest file")
+	}
+	return pluginGroupManifest, nil
+}
+
 // GetPluginArchiveRelativePath creates plugin archive relative path from metadata
 func GetPluginArchiveRelativePath(plugin cli.Plugin, osArch cli.Arch, version string) string {
 	pluginTarFileName := fmt.Sprintf("%s-%s.tar.gz", plugin.Name, osArch.String())

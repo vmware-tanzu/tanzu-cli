@@ -206,31 +206,41 @@ var groupEntries = []*plugininventory.PluginGroup{
 		Vendor:    "vmware",
 		Publisher: "tkg",
 		Name:      "2.1.0",
-		Plugins: []*plugininventory.PluginIdentifier{
+		Plugins: []*plugininventory.PluginGroupPluginEntry{
 			{
-				Name:    "management-cluster",
-				Target:  configtypes.TargetK8s,
-				Version: "v0.28.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "management-cluster",
+					Target:  configtypes.TargetK8s,
+					Version: "v0.28.0",
+				},
 			},
 			{
-				Name:    "package",
-				Target:  configtypes.TargetK8s,
-				Version: "v0.28.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "package",
+					Target:  configtypes.TargetK8s,
+					Version: "v0.28.0",
+				},
 			},
 			{
-				Name:    "feature",
-				Target:  configtypes.TargetK8s,
-				Version: "v0.28.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "feature",
+					Target:  configtypes.TargetK8s,
+					Version: "v0.28.0",
+				},
 			},
 			{
-				Name:    "kubernetes-release",
-				Target:  configtypes.TargetK8s,
-				Version: "v0.28.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "kubernetes-release",
+					Target:  configtypes.TargetK8s,
+					Version: "v0.28.0",
+				},
 			},
 			{
-				Name:    "isolated-cluster",
-				Target:  configtypes.TargetK8s,
-				Version: "v0.28.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "isolated-cluster",
+					Target:  configtypes.TargetK8s,
+					Version: "v0.28.0",
+				},
 			},
 		},
 	},
@@ -238,26 +248,34 @@ var groupEntries = []*plugininventory.PluginGroup{
 		Vendor:    "vmware",
 		Publisher: "tkg",
 		Name:      "1.6.0",
-		Plugins: []*plugininventory.PluginIdentifier{
+		Plugins: []*plugininventory.PluginGroupPluginEntry{
 			{
-				Name:    "management-cluster",
-				Target:  configtypes.TargetK8s,
-				Version: "v0.26.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "management-cluster",
+					Target:  configtypes.TargetK8s,
+					Version: "v0.26.0",
+				},
 			},
 			{
-				Name:    "package",
-				Target:  configtypes.TargetK8s,
-				Version: "v0.26.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "package",
+					Target:  configtypes.TargetK8s,
+					Version: "v0.26.0",
+				},
 			},
 			{
-				Name:    "feature",
-				Target:  configtypes.TargetK8s,
-				Version: "v0.26.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "feature",
+					Target:  configtypes.TargetK8s,
+					Version: "v0.26.0",
+				},
 			},
 			{
-				Name:    "kubernetes-release",
-				Target:  configtypes.TargetK8s,
-				Version: "v0.26.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "kubernetes-release",
+					Target:  configtypes.TargetK8s,
+					Version: "v0.26.0",
+				},
 			},
 		},
 	},
@@ -265,16 +283,20 @@ var groupEntries = []*plugininventory.PluginGroup{
 		Vendor:    "independent",
 		Publisher: "other",
 		Name:      "mygroup",
-		Plugins: []*plugininventory.PluginIdentifier{
+		Plugins: []*plugininventory.PluginGroupPluginEntry{
 			{
-				Name:    "plugin1",
-				Target:  configtypes.TargetK8s,
-				Version: "v0.1.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "plugin1",
+					Target:  configtypes.TargetK8s,
+					Version: "v0.1.0",
+				},
 			},
 			{
-				Name:    "plugin2",
-				Target:  configtypes.TargetTMC,
-				Version: "v0.2.0",
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "plugin2",
+					Target:  configtypes.TargetTMC,
+					Version: "v0.2.0",
+				},
 			},
 		},
 	},
@@ -346,7 +368,13 @@ func (stub *stubInventory) CreateSchema() error {
 func (stub *stubInventory) InsertPlugin(pluginInventoryEntry *plugininventory.PluginInventoryEntry) error {
 	return nil
 }
+func (stub *stubInventory) InsertPluginGroup(pg *plugininventory.PluginGroup, override bool) error {
+	return nil
+}
 func (stub *stubInventory) UpdatePluginActivationState(pluginInventoryEntry *plugininventory.PluginInventoryEntry) error {
+	return nil
+}
+func (stub *stubInventory) UpdatePluginGroupActivationState(pg *plugininventory.PluginGroup) error {
 	return nil
 }
 

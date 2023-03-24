@@ -1,0 +1,7 @@
+plugins:
+- name: builder
+  target: global
+  isContextScoped: false
+- name: test
+  target: global
+  isContextScoped: false

@@ -140,10 +140,12 @@ addGroup() {
     local plugin=$4
     local target=$5
     local version=$6
+    local mandatory='true'
+    local hidden='false'
 
     echo "Adding $plugin/$target version $version to plugin group $vendor-$publisher/$name"
 
-    local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$plugin','$target','$version');"
+    local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$plugin','$target','$version', '$mandatory', '$hidden');"
     if [ "$dry_run" = "echo" ]; then
         echo $sql_cmd 
     else 
