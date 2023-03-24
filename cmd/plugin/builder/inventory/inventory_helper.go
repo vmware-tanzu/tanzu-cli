@@ -4,7 +4,6 @@
 package inventory
 
 import (
-	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -13,17 +12,12 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 )
 
-func inventoryDBDownload(imgpkgOptions imgpkg.ImgpkgWrapper, pluginInventoryDBImage string) (string, error) {
-	dir, err := os.MkdirTemp("", "")
-	if err != nil {
-		return "", errors.Wrap(err, "unable to create temporary directory")
-	}
-
-	err = imgpkgOptions.PullImage(pluginInventoryDBImage, dir)
+func inventoryDBDownload(imgpkgOptions imgpkg.ImgpkgWrapper, pluginInventoryDBImage, tempDir string) (string, error) {
+	err := imgpkgOptions.PullImage(pluginInventoryDBImage, tempDir)
 	if err != nil {
 		return "", errors.Wrapf(err, "error while pulling database from the image: %q", pluginInventoryDBImage)
 	}
-	return filepath.Join(dir, plugininventory.SQliteDBFileName), nil
+	return filepath.Join(tempDir, plugininventory.SQliteDBFileName), nil
 }
 
 func inventoryDBUpload(imgpkgOptions imgpkg.ImgpkgWrapper, pluginInventoryDBImage, dbFile string) error {

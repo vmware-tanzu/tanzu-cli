@@ -6,6 +6,7 @@ package inventory
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/pkg/errors"
 
@@ -37,10 +38,15 @@ func (ipuo *InventoryPluginGroupUpdateOptions) PluginGroupAdd() error {
 	// create plugin inventory database image path
 	pluginInventoryDBImage := fmt.Sprintf("%s/%s:%s", ipuo.Repository, helpers.PluginInventoryDBImageName, ipuo.InventoryImageTag)
 
-	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
-	dbFile, err := inventoryDBDownload(ipuo.ImgpkgOptions, pluginInventoryDBImage)
+	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		return errors.Wrapf(err, "error while publishing inventory database to the repository as image: %q", pluginInventoryDBImage)
+		return errors.Wrap(err, "unable to create temporary directory")
+	}
+
+	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
+	dbFile, err := inventoryDBDownload(ipuo.ImgpkgOptions, pluginInventoryDBImage, tempDir)
+	if err != nil {
+		return errors.Wrapf(err, "error while downloading inventory database from the repository as image: %q", pluginInventoryDBImage)
 	}
 
 	// Get the PluginGroup object from the plugin-group manifest file
@@ -103,10 +109,15 @@ func (ipuo *InventoryPluginGroupUpdateOptions) UpdatePluginGroupActivationState(
 	// create plugin inventory database image path
 	pluginInventoryDBImage := fmt.Sprintf("%s/%s:%s", ipuo.Repository, helpers.PluginInventoryDBImageName, ipuo.InventoryImageTag)
 
-	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
-	dbFile, err := inventoryDBDownload(ipuo.ImgpkgOptions, pluginInventoryDBImage)
+	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		return errors.Wrapf(err, "error while publishing inventory database to the repository as image: %q", pluginInventoryDBImage)
+		return errors.Wrap(err, "unable to create temporary directory")
+	}
+
+	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
+	dbFile, err := inventoryDBDownload(ipuo.ImgpkgOptions, pluginInventoryDBImage, tempDir)
+	if err != nil {
+		return errors.Wrapf(err, "error while downloading inventory database from the repository as image: %q", pluginInventoryDBImage)
 	}
 
 	// Create plugin-group object

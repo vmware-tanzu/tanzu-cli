@@ -41,7 +41,7 @@ type PluginInventory interface {
 	UpdatePluginActivationState(*PluginInventoryEntry) error
 
 	// UpdatePluginGroupActivationState updates plugin-group metadata to activate or deactivate the plugin-group
-	UpdatePluginGroupActivationState(pg *PluginGroup) error
+	UpdatePluginGroupActivationState(*PluginGroup) error
 }
 
 // PluginInventoryEntry represents the inventory information

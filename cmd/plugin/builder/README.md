@@ -78,11 +78,11 @@ Below are the examples:
   tanzu builder plugin build --path ./cmd/plugin --version v0.0.2 --os-arch all --match foo
 ```
 
-The `tanzu builder plugin build` command provides a convenient way to create [plugin-group manifest file](#inventory-plugin-group-add) (`plugin_group_manifest.yaml`) which contains plugin-group metadata by providing `--plugin-scope-association-file` flag. The purpose of the plugin-group is to create a product release specific plugin-group that can be used by the users to easily install plugins for the specific product release. More details are provided in [inventory-plugin-group-add](#inventory-plugin-group-add) section.
+The `tanzu builder plugin build` command provides a convenient way to create a [plugin-group manifest file](#inventory-plugin-group-add) (`plugin_group_manifest.yaml`) containing plugin-group metadata by providing the `--plugin-scope-association-file` flag. The purpose of a plugin-group is to define a product-release-specific set of plugins for users to easily install plugins for the specific product release. More details are provided in the [inventory-plugin-group-add](#inventory-plugin-group-add) section.
 
-This is a convenient way to generate the plugin-group manifest file, however, if any external plugin or different version of the plugin needs to be included in the plugin-group manifest file, user need to manually create this file. When `--plugin-scope-association-file` flag is provided, the tooling will generate `plugin_group_manifest.yaml` file within the same binary artifacts directory.
+Using the `--plugin-scope-association-file` flag is a convenient way to generate a plugin-group manifest file consisting of the plugins built in the `artifacts` directory.  However, if any external plugins or different versions of plugins need to be included in the plugin-group manifest file, the developer will need to manually create this file. When the `--plugin-scope-association-file` flag is provided, the tooling will generate the `plugin_group_manifest.yaml` file within the same binary artifacts directory.
 
-Below is the sample `plugin-scope-association.yaml`:
+Below is a sample `plugin-scope-association.yaml`:
 
 ```yaml
 plugins:
@@ -97,7 +97,7 @@ plugins:
   isContextScoped: true
 ```
 
-Below is the sample `plugin_group_manifest.yaml` that will get generated:
+Below is the `plugin_group_manifest.yaml` that will get generated based on the above `plugin-scope-association.yaml`:
 
 ```yaml
 plugins:
@@ -277,9 +277,9 @@ Below are the examples:
 
 ### Inventory-plugin-group-add
 
-Once the plugins are published and added to the inventory database the next thing would be to add/create plugin-groups. The purpose of the plugin-group is to create a product release specific plugin-group that can be used by the users to easily install plugins for the specific product release. To support this usecase builder plugin implements `tanzu builder inventory plugin-group add` command.
+Once the plugins are published and added to the inventory database the next thing would be to add/create plugin-groups. The purpose of a plugin-group is to define a product-release-specific set of plugins for users to easily install plugins for the specific product release. To support this use-case the `builder` plugin provides a `tanzu builder inventory plugin-group add` command.
 
-Below are the flags available with `tanzu builder inventory plugin-group add` command:
+Below are the flags available with the `tanzu builder inventory plugin-group add` command:
 
 ```txt
       --deactivate                          mark plugin-group as deactivated
@@ -293,7 +293,7 @@ Below are the flags available with `tanzu builder inventory plugin-group add` co
       --vendor string                       name of the vendor
 ```
 
-Below are the examples:
+Below are some examples:
 
 ```shell
   # Add plugin-group entries to the inventory database based on the specified plugin-group manifest file
@@ -302,30 +302,9 @@ Below are the examples:
 
 Here the `--manifest` flag is used to provide metadata about the plugin-group including which plugins to associate with the plugin-group.
 
-Sample `plugin-group-manifest.yaml` file looks like below:
-
-```yaml
-created: 2023-03-17T17:12:35.519419-07:00
-plugins:
-    - name: foo
-      target: global
-      isContextScoped: false
-      version: v0.2.0
-    - name: bar
-      target: kubernetes
-      isContextScoped: true
-      version: v0.2.0
-    - name: baz
-      target: mission-control
-      isContextScoped: true
-      version: v0.3.0
-```
-
-This manifest file can be manually created based on the product needs. The `tanzu builder plugin build` command provides a convenient way to create this file when building the plugins by providing `--plugin-scope-association-file` flag. This is a convenient way to generate the manifest file however, if any external plugin or different version of the plugin needs to be included in the manifest file, user need to manually create this file.
-
 ### Inventory-plugin-group-activate-deactivate
 
-Once the plugin-group is created and added to the inventory database, there might be a scenario where publisher need to mark the plugin-group as hidden or in deactive state so that users do not discover the plugin-group from the central repository. To support this scenario builder plugin implements `tanzu builder inventory plugin-group activate` and `tanzu builder inventory plugin-group deactivate` commands.
+In some scenarios, such as preparing for a new product release, a plugin-group may need to be created and added to the inventory database but kept "deactivated".  A "deactivated" plugin-group is not visible to the Tanzu CLI and therefore will not be discovered by users before the official product release, however testers can configure the CLI to discover "deactivated" plugins. To support this scenario the `builder` plugin implements the `tanzu builder inventory plugin-group activate` and `tanzu builder inventory plugin-group deactivate` commands.
 
 Below are the flags available with `tanzu builder inventory plugin-group activate` and `tanzu builder inventory plugin-group deactivate` commands:
 
@@ -338,7 +317,7 @@ Below are the flags available with `tanzu builder inventory plugin-group activat
       --vendor string                       name of the vendor
 ```
 
-Below are the examples:
+Below are some examples:
 
 ```shell
   # Activate plugin-group in the inventory database

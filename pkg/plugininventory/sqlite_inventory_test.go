@@ -1076,7 +1076,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(groups[0].Hidden).To(Equal(pluginGroup1.Hidden))
 				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroup1.Plugins)))
 			})
-			It("should not return error when the activation statue has been updated and the GetAllGroups should reflect the change", func() {
+			It("should not return error when the activation state has been updated and the GetAllGroups should reflect the change", func() {
 				pluginGroupUpdated := pluginGroup1
 				pluginGroupUpdated.Hidden = true
 				err = inventory.UpdatePluginGroupActivationState(&pluginGroupUpdated)
