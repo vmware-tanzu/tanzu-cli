@@ -41,10 +41,10 @@ func NewRootCmd() (*cobra.Command, error) {
 		initCmd,
 		completionCmd,
 		configCmd,
-		genAllDocsCmd,
 		// Note(TODO:prkalle): The below ceip-participation command(experimental) added may be removed in the next release,
 		//       If we decide to fold this functionality into existing 'tanzu telemetry' plugin
 		newCEIPParticipationCmd(),
+		newGenAllDocsCmd(),
 	)
 
 	// If the context and target feature is enabled, add the corresponding commands under root.
@@ -103,6 +103,9 @@ func NewRootCmd() (*cobra.Command, error) {
 	}
 
 	duplicateAliasWarning(rootCmd)
+
+	// Disable footers in docs generated for core commands
+	rootCmd.DisableAutoGenTag = true
 
 	return rootCmd, nil
 }

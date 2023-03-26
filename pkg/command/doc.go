@@ -27,44 +27,43 @@ var (
 	docsDir string
 )
 
-func init() {
+func newGenAllDocsCmd() *cobra.Command {
+	var genAllDocsCmd = &cobra.Command{
+		Use:    "generate-all-docs",
+		Short:  "Generate Cobra CLI docs for all plugins installed",
+		Hidden: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if docsDir == "" {
+				docsDir = DefaultDocsDir
+			}
+			if dir, err := os.Stat(docsDir); err != nil || !dir.IsDir() {
+				return errors.Wrap(err, fmt.Sprintf(ErrorDocsOutputFolderNotExists, docsDir))
+			}
+			// Generate standard tanzu.md command file
+			if err := genCoreCMD(cmd); err != nil {
+				return fmt.Errorf("error generate core tanzu cmd markdown %q", err)
+			}
+
+			var err error
+
+			plugins, err := pluginsupplier.GetInstalledPlugins()
+			if err != nil {
+				return fmt.Errorf("error while getting installed plugins Info: %q", err)
+			}
+
+			if err := genREADME(plugins); err != nil {
+				return fmt.Errorf("error generate core tanzu README markdown %q", err)
+			}
+
+			if err := genMarkdownTreePlugins(plugins); err != nil {
+				return fmt.Errorf("error generating plugin docs %q", err)
+			}
+
+			return nil
+		},
+	}
 	genAllDocsCmd.Flags().StringVarP(&docsDir, "docs-dir", "d", DefaultDocsDir, "destination for docs output")
-}
-
-var genAllDocsCmd = &cobra.Command{
-	Use:    "generate-all-docs",
-	Short:  "Generate Cobra CLI docs for all plugins installed",
-	Hidden: true,
-	RunE: func(cmd *cobra.Command, args []string) error {
-
-		if docsDir == "" {
-			docsDir = DefaultDocsDir
-		}
-		if dir, err := os.Stat(docsDir); err != nil || !dir.IsDir() {
-			return errors.Wrap(err, fmt.Sprintf(ErrorDocsOutputFolderNotExists, docsDir))
-		}
-		// Generate standard tanzu.md command file
-		if err := genCoreCMD(cmd); err != nil {
-			return fmt.Errorf("error generate core tanzu cmd markdown %q", err)
-		}
-
-		var err error
-
-		plugins, err := pluginsupplier.GetInstalledPlugins()
-		if err != nil {
-			return fmt.Errorf("error while getting installed plugins Info: %q", err)
-		}
-
-		if err := genREADME(plugins); err != nil {
-			return fmt.Errorf("error generate core tanzu README markdown %q", err)
-		}
-
-		if err := genMarkdownTreePlugins(plugins); err != nil {
-			return fmt.Errorf("error generating plugin docs %q", err)
-		}
-
-		return nil
-	},
+	return genAllDocsCmd
 }
 
 func genCoreCMD(cmd *cobra.Command) error {
