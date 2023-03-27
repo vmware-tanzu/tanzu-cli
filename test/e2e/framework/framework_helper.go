@@ -86,7 +86,7 @@ func GetHomeDir() string {
 }
 
 // ExecuteCmdAndBuildJSONOutput is generic function to execute given command and build JSON output and return
-func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginGroup | PluginSourceInfo | configapi.ClientConfig | Server | ContextListInfo](cmdExe CmdOps, cmd string) ([]*T, error) {
+func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | PluginSourceInfo | configapi.ClientConfig | Server | ContextListInfo](cmdExe CmdOps, cmd string) ([]*T, error) {
 	out, stdErr, err := cmdExe.Exec(cmd)
 
 	if err != nil {

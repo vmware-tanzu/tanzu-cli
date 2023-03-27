@@ -13,6 +13,13 @@ type PluginInfo struct {
 	Version     string `json:"version"`
 }
 
+type PluginSearch struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Target      string `json:"target"`
+	Latest      string `json:"latest"`
+}
+
 type PluginGroup struct {
 	Group string `json:"group"`
 }
