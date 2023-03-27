@@ -17,4 +17,5 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 # the root of the repo.
 docker run --rm -v "$(pwd)":/build \
   gcr.io/cluster-api-provider-vsphere/extra/mdlint:0.23.2 /md/lint \
+  -i docs/cli/commands \
   -i **/CHANGELOG.md .
