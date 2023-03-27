@@ -1,0 +1,29 @@
+## tanzu builder init
+
+Initialize a new plugin repository
+
+### Synopsis
+
+Initialize a new plugin repository with scaffolding for:
+
+* Tanzu Framework CLI integration
+* GolangCI linting config
+* GitHub or GitLab CI config
+* A Makefile
+
+```
+tanzu builder init PLUGIN_NAME [flags]
+```
+
+### Options
+
+```
+      --dry-run            Print generated files to stdout
+  -h, --help               help for init
+      --repo-type string   Type of repository: github or gitlab
+```
+
+### SEE ALSO
+
+* [tanzu builder](tanzu_builder.md)	 - Build Tanzu components
+
