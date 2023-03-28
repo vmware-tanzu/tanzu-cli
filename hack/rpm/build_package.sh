@@ -27,7 +27,7 @@ fi
 VERSION=${VERSION#v}
 
 BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
-OUTPUT_DIR=${BASE_DIR}/_output/rpm
+OUTPUT_DIR=${BASE_DIR}/_output/rpm/tanzu-cli
 
 # Install build dependencies
 $DNF install -y rpmdevtools rpmlint createrepo
@@ -40,9 +40,12 @@ mkdir -p ${HOME}/rpmbuild/SOURCES
 # Create the .rpm packages
 rm -rf ${OUTPUT_DIR}
 mkdir -p ${OUTPUT_DIR}
-rpmbuild --define "cli_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target amd64
+# RPM does not like - in the its package version
+PACKAGE_VERSION=${VERSION//-/_}
+rpmbuild --define "package_version ${PACKAGE_VERSION}" --define "release_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target amd64
 mv ${HOME}/rpmbuild/RPMS/amd64/* ${OUTPUT_DIR}/
-rpmbuild --define "cli_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target aarch64
+
+rpmbuild --define "package_version ${PACKAGE_VERSION}" --define "release_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target aarch64
 mv ${HOME}/rpmbuild/RPMS/aarch64/* ${OUTPUT_DIR}/
 
 # Create the repository metadata

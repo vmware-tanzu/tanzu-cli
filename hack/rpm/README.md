@@ -32,7 +32,7 @@ docker run --rm -it -v $(pwd)/hack/rpm/_output/rpm:/tmp/rpm fedora
 cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
 [tanzu-cli]
 name=Tanzu CLI
-baseurl=file:///tmp/rpm
+baseurl=file:///tmp/rpm/tanzu-cli
 enabled=1
 gpgcheck=0
 EOF
@@ -61,7 +61,7 @@ docker run --rm -it fedora
 cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
 [tanzu-cli]
 name=Tanzu CLI
-baseurl=https://storage.googleapis.com/tanzu-cli-os-packages/rpm
+baseurl=https://storage.googleapis.com/tanzu-cli-os-packages/rpm/tanzu-cli
 enabled=1
 gpgcheck=0
 EOF
