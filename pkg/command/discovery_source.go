@@ -28,9 +28,11 @@ var (
 
 func newDiscoverySourceCmd() *cobra.Command {
 	var discoverySourceCmd = &cobra.Command{
-		Use:   "source",
-		Short: "Manage plugin discovery sources",
-		Long:  "Manage plugin discovery sources. Discovery source provides metadata about the list of available plugins, their supported versions and how to download them.",
+		Use: "source",
+		// TODO(khouzam): not to be used for the alpha.0 release, but will be re-added after
+		Hidden: true,
+		Short:  "Manage plugin discovery sources",
+		Long:   "Manage plugin discovery sources. Discovery source provides metadata about the list of available plugins, their supported versions and how to download them.",
 	}
 	discoverySourceCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 
