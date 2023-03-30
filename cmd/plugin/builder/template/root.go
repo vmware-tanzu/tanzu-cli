@@ -52,6 +52,12 @@ var Makefile = Target{
 	Template: plugintemplates.Makefile,
 }
 
+// PluginToolingMK target
+var PluginToolingMK = Target{
+	Filepath: "plugin-tooling.mk",
+	Template: plugintemplates.PluginToolingMK,
+}
+
 // Codeowners target
 // TODO (pbarker): replace with the CLI reviewers group
 var Codeowners = Target{

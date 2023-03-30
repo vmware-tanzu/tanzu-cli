@@ -35,6 +35,11 @@ var Makefile string
 //go:embed common.mk.tmpl
 var CommonMK string
 
+// PluginToolingMK contains the plugin tooling
+//
+//go:embed plugin-tooling.mk.tmpl
+var PluginToolingMK string
+
 // MainGo contains the plugin main.go template
 //
 //go:embed main.go.tmpl
