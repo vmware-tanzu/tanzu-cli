@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/command"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -39,6 +40,7 @@ func init() {
 	)
 	serversCmd.AddCommand(listServersCmd)
 	addDeleteServersCmd()
+	command.DeprecateCommandWithAlternative(serversCmd, "1.2.0", "context")
 }
 
 var unattended bool
