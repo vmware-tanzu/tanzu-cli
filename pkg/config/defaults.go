@@ -133,6 +133,11 @@ func GetTrustedRegistries() []string {
 		}
 	}
 
+	// Add default central plugin discovery image to trusted registries
+	if u, err := url.ParseRequestURI("https://" + constants.TanzuCLIDefaultCentralPluginDiscoveryImage); err == nil {
+		trustedRegistries = append(trustedRegistries, u.Hostname())
+	}
+
 	// If ALLOWED_REGISTRY environment variable is specified, allow those registries as well
 	if allowedRegistry := os.Getenv(constants.AllowedRegistries); allowedRegistry != "" {
 		for _, r := range strings.Split(allowedRegistry, ",") {
