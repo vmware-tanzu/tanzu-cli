@@ -11,7 +11,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
@@ -55,12 +54,13 @@ func newSearchPluginCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				allPlugins, err = pluginmanager.AvailablePluginsFromLocalSource(local)
+				allPlugins, err = pluginmanager.DiscoverPluginsFromLocalSource(local)
 				if err != nil {
 					return err
 				}
 			} else {
-				allPlugins, err = pluginmanager.AvailablePlugins()
+				// Show plugins found in the central repos
+				allPlugins, err = pluginmanager.DiscoverStandalonePlugins()
 				if err != nil {
 					return err
 				}
@@ -82,32 +82,14 @@ func newSearchPluginCmd() *cobra.Command {
 }
 
 func displayPluginsFound(plugins []discovery.Discovered, writer io.Writer) {
-	outputWriter := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status", "Context")
+	outputWriter := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Latest")
 
 	for i := range plugins {
-		context := ""
-		if plugins[i].Scope == common.PluginScopeContext {
-			context = plugins[i].ContextName
-		}
-
-		version := plugins[i].RecommendedVersion
-		status := common.PluginStatusNotInstalled
-		if plugins[i].Status == common.PluginStatusInstalled ||
-			plugins[i].Status == common.PluginStatusUpdateAvailable {
-			version = plugins[i].InstalledVersion
-
-			// TODO(khouzam): For the moment, only show the plugin as installed.
-			// Please see https://github.com/vmware-tanzu/tanzu-cli/issues/65
-			status = common.PluginStatusInstalled
-		}
-
 		outputWriter.AddRow(
 			plugins[i].Name,
 			plugins[i].Description,
 			string(plugins[i].Target),
-			version,
-			status,
-			context)
+			plugins[i].RecommendedVersion)
 	}
 
 	outputWriter.Render()
