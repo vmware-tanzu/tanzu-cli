@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	// Import the sqlite3 driver
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 
 	"github.com/pkg/errors"
 
@@ -125,7 +125,7 @@ func (b *SQLiteInventory) GetAllGroups() ([]*PluginGroup, error) {
 
 // getPluginsFromDB returns the plugins found in the DB 'inventoryFile' that match the filter
 func (b *SQLiteInventory) getPluginsFromDB(filter *PluginInventoryFilter) ([]*PluginInventoryEntry, error) {
-	db, err := sql.Open("sqlite3", b.inventoryFile)
+	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open the DB at '%s'", b.inventoryFile)
 	}
@@ -281,7 +281,7 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 
 // getGroupsFromDB returns all the plugin groups found in the DB 'inventoryFile'
 func (b *SQLiteInventory) getGroupsFromDB() ([]*PluginGroup, error) {
-	db, err := sql.Open("sqlite3", b.inventoryFile)
+	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open the DB at '%s' for groups", b.inventoryFile)
 	}
@@ -414,7 +414,7 @@ func appendPlugin(allPlugins []*PluginInventoryEntry, plugin *PluginInventoryEnt
 // CreateSchema creates table schemas to the provided database.
 // returns error if table creation fails for any reason
 func (b *SQLiteInventory) CreateSchema() error {
-	db, err := sql.Open("sqlite3", b.inventoryFile)
+	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return errors.Wrapf(err, "failed to open the DB at '%s'", b.inventoryFile)
 	}
@@ -430,7 +430,7 @@ func (b *SQLiteInventory) CreateSchema() error {
 
 // InsertPlugin inserts plugin to the inventory
 func (b *SQLiteInventory) InsertPlugin(pluginInventoryEntry *PluginInventoryEntry) error {
-	db, err := sql.Open("sqlite3", b.inventoryFile)
+	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return errors.Wrapf(err, "failed to open the DB from '%s' file", b.inventoryFile)
 	}
@@ -465,7 +465,7 @@ func (b *SQLiteInventory) InsertPlugin(pluginInventoryEntry *PluginInventoryEntr
 // InsertPluginGroup inserts plugin-group to the inventory
 // specifying override will delete the existing plugin-group and add new one
 func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) error {
-	db, err := sql.Open("sqlite3", b.inventoryFile)
+	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return errors.Wrapf(err, "failed to open the DB from '%s' file", b.inventoryFile)
 	}
@@ -507,7 +507,7 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 
 // UpdatePluginActivationState updates plugin metadata to activate or deactivate plugin
 func (b *SQLiteInventory) UpdatePluginActivationState(pluginInventoryEntry *PluginInventoryEntry) error {
-	db, err := sql.Open("sqlite3", b.inventoryFile)
+	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return errors.Wrapf(err, "failed to open the DB from '%s' file", b.inventoryFile)
 	}
@@ -527,7 +527,7 @@ func (b *SQLiteInventory) UpdatePluginActivationState(pluginInventoryEntry *Plug
 }
 
 func (b *SQLiteInventory) UpdatePluginGroupActivationState(pg *PluginGroup) error {
-	db, err := sql.Open("sqlite3", b.inventoryFile)
+	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return errors.Wrapf(err, "failed to open the DB from '%s' file", b.inventoryFile)
 	}
