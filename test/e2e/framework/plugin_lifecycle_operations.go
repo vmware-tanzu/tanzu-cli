@@ -114,7 +114,21 @@ func (po *pluginCmdOps) SearchPlugins(filter string) ([]*PluginInfo, error) {
 	if len(strings.TrimSpace(filter)) > 0 {
 		searchPluginCmdWithOptions = searchPluginCmdWithOptions + " " + strings.TrimSpace(filter)
 	}
-	return ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, searchPluginCmdWithOptions+JSONOutput)
+	result, err := ExecuteCmdAndBuildJSONOutput[PluginSearch](po.cmdExe, searchPluginCmdWithOptions+JSONOutput)
+	if err != nil {
+		return nil, err
+	}
+	// Convert from PluginSearch to PluginInfo
+	var plugins []*PluginInfo
+	for _, p := range result {
+		plugins = append(plugins, &PluginInfo{
+			Name:        p.Name,
+			Description: p.Description,
+			Target:      p.Target,
+			Version:     p.Latest,
+		})
+	}
+	return plugins, nil
 }
 
 func (po *pluginCmdOps) SearchPluginGroups(flagsWithValues string) ([]*PluginGroup, error) {
