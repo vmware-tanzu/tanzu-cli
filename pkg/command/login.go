@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/command"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -54,8 +55,8 @@ func init() {
 	loginCmd.Flags().MarkHidden("force-csp")   // nolint
 	loginCmd.Flags().MarkHidden("staging")     // nolint
 	loginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
-	msg := fmt.Sprintf("will be removed in version %q. Use the %q command instead.", "1.2.0", "context")
-	loginCmd.Deprecated = msg
+	command.DeprecateCommandWithAlternative(loginCmd, "1.2.0", "context")
+
 	loginCmd.Example = `
 	# Login to TKG management cluster using endpoint
 	tanzu login --endpoint "https://login.example.com"  --name mgmt-cluster
