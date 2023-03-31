@@ -534,7 +534,7 @@ Make it easy to submit bug reports and feedback
 
 ### Plugins
 
-For information about developing plugins, see the [Plugin Development Guide](../plugindev/main.md)
+For information about developing plugins, see the [Plugin Development Guide](../plugindev/README.md)
 
 ### Contributions to the Style Guide
 
