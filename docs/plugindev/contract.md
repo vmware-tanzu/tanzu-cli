@@ -79,4 +79,4 @@ plugin-specific functionality.
 By integrating the the tanzu-plugin-runtime library, the plugin contract can be
 satisfied with minimal effort. This is accomplished via instantiating a new
 Plugin object and supplying some plugin-specific metadata along with it. For
-more details, see the "bootstrapping a plugin project" section of the [plugin developer guide](main.md)
+more details, see the "bootstrapping a plugin project" section of the [plugin developer guide](README.md)
