@@ -33,8 +33,18 @@ func NewRootCmd() (*cobra.Command, error) {
 		SilenceUsage: true,
 		// Flag parsing must be deactivated because the root plugin won't know about all flags.
 		DisableFlagParsing: true,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Name() != cobra.ShellCompRequestCmd && cmd.Name() != completionCmd.Name() {
+				// Configure CEIP setting but not if we are doing shell completion stuff.
+				// The shell completion setup is not interactive, so it should not trigger
+				// the ceip prompt.
+				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
 	}
-
 	uFunc := cli.NewMainUsage().UsageFunc()
 	rootCmd.SetUsageFunc(uFunc)
 
@@ -49,6 +59,9 @@ func NewRootCmd() (*cobra.Command, error) {
 		completionCmd,
 		configCmd,
 		genAllDocsCmd,
+		// Note(TODO:prkalle): The below ceip-participation command(experimental) added may be removed in the next release,
+		//       If we decide to fold this functionality into existing 'tanzu telemetry' plugin
+		newCEIPParticipationCmd(),
 	)
 
 	// If the context and target feature is enabled, add the corresponding commands under root.

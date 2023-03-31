@@ -195,6 +195,7 @@ test: fmt ## Run Tests
 
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
 e2e-cli-core: e2e-cli-plugin-compatibility-test e2e-cli-tmc-test e2e-cli-plugin-lifecycle-test
+	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
 	${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc | grep -v test/e2e/plugins_compatibility | grep -v test/e2e/plugin_lifecycle` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
 
 .PHONY: e2e-cli-plugin-compatibility-test ## Execute CLI Core Plugin Compatibility E2E test cases
@@ -204,6 +205,7 @@ e2e-cli-plugin-compatibility-test:
 	else \
 		export TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
 		export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
+		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
 		${GO} test ./test/e2e/plugins_compatibility -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
 	fi 
 
@@ -215,6 +217,7 @@ e2e-cli-plugin-lifecycle-test:
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
 		export TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
 		export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
+		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
 		${GO} test ./test/e2e/plugin_lifecycle -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
 	fi
 
@@ -223,6 +226,7 @@ e2e-cli-tmc-test:
 	@if [ "${TANZU_API_TOKEN}" = "" ] && [ "$(TANZU_CLI_TMC_UNSTABLE_URL)" = "" ]; then \
 		echo "***Skipping TMC specific e2e tests cases because environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL are not set***" ; \
 	else \
+	    export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
 		${GO} test ./test/e2e/context/tmc -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
 	fi
 
