@@ -148,6 +148,7 @@ func TestPluginList(t *testing.T) {
 		assert.Nil(t, err)
 		defer os.RemoveAll(dir)
 		os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
+		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 
 		// Always turn on the context feature
 		featureArray := strings.Split(constants.FeatureContextCommand, ".")
@@ -209,6 +210,7 @@ func TestPluginList(t *testing.T) {
 		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
 		os.Unsetenv("TANZU_CONFIG")
 		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
 	}
 }
 
@@ -245,7 +247,7 @@ func TestDeletePlugin(t *testing.T) {
 		assert.Nil(t, err)
 		defer os.RemoveAll(dir)
 		os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
-
+		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 		var completionType uint8
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
@@ -284,6 +286,7 @@ func TestDeletePlugin(t *testing.T) {
 			}
 		})
 		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
+		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
 	}
 }
 
@@ -355,6 +358,7 @@ func TestInstallPlugin(t *testing.T) {
 	tkgConfigFileNG, err := os.CreateTemp("", "config_ng")
 	assert.Nil(err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 
 	// Bypass the environment variable for testing
 	err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, pluginmanager.PreReleasePluginRepoImageBypass)
@@ -367,6 +371,7 @@ func TestInstallPlugin(t *testing.T) {
 	defer func() {
 		os.Unsetenv("TANZU_CONFIG")
 		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
 		os.RemoveAll(tkgConfigFile.Name())
 		os.RemoveAll(tkgConfigFileNG.Name())
 	}()
@@ -415,6 +420,7 @@ func TestUpgradePlugin(t *testing.T) {
 	tkgConfigFileNG, err := os.CreateTemp("", "config_ng")
 	assert.Nil(err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 
 	featureArray := strings.Split(constants.FeatureContextCommand, ".")
 	err = config.SetFeature(featureArray[1], featureArray[2], "true")
@@ -423,6 +429,7 @@ func TestUpgradePlugin(t *testing.T) {
 	defer func() {
 		os.Unsetenv("TANZU_CONFIG")
 		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
 		os.RemoveAll(tkgConfigFile.Name())
 		os.RemoveAll(tkgConfigFileNG.Name())
 	}()
