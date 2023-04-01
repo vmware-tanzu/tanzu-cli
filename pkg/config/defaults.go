@@ -133,9 +133,17 @@ func GetTrustedRegistries() []string {
 		}
 	}
 
-	// Add default central plugin discovery image to trusted registries
+	// Add default central plugin discovery image to the trusted registries
 	if u, err := url.ParseRequestURI("https://" + constants.TanzuCLIDefaultCentralPluginDiscoveryImage); err == nil {
 		trustedRegistries = append(trustedRegistries, u.Hostname())
+	}
+
+	// Add any additional test central plugin discovery images to the trusted registries
+	testDiscoveryImages := GetAdditionalTestDiscoveryImages()
+	for _, image := range testDiscoveryImages {
+		if u, err := url.ParseRequestURI("https://" + image); err == nil {
+			trustedRegistries = append(trustedRegistries, u.Hostname())
+		}
 	}
 
 	// If ALLOWED_REGISTRY environment variable is specified, allow those registries as well
@@ -146,6 +154,18 @@ func GetTrustedRegistries() []string {
 	}
 
 	return trustedRegistries
+}
+
+func GetAdditionalTestDiscoveryImages() []string {
+	var additionalImages []string
+	testDiscoveryImages := strings.Split(os.Getenv(constants.ConfigVariableAdditionalDiscoveryForTesting), ",")
+	for _, image := range testDiscoveryImages {
+		image = strings.TrimSpace(image)
+		if image != "" {
+			additionalImages = append(additionalImages, image)
+		}
+	}
+	return additionalImages
 }
 
 func getHTTPURIForGCPPluginRepository(repo configtypes.GCPPluginRepository) string { // nolint:staticcheck // Deprecated

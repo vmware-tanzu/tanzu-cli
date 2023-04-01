@@ -4,6 +4,7 @@
 package config
 
 import (
+	"net/url"
 	"os"
 
 	. "github.com/onsi/ginkgo"
@@ -36,6 +37,31 @@ var _ = Describe("defaults test cases", func() {
 
 			err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, oldValue)
 			Expect(err).To(BeNil())
+		})
+		It("trusted registries should include hostname of additional discoveries", func() {
+			testHost1 := "registry1.vmware.com"
+			testHost2 := "registry2.vmware.com"
+			oldValue := os.Getenv(constants.ConfigVariableAdditionalDiscoveryForTesting)
+			err := os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting,
+				testHost1+"/test/path, "+testHost2+"/another/test/image")
+			Expect(err).To(BeNil())
+
+			trustedRegis := GetTrustedRegistries()
+			Expect(trustedRegis).NotTo(BeNil())
+			Expect(trustedRegis).Should(ContainElement(testHost1))
+			Expect(trustedRegis).Should(ContainElement(testHost2))
+
+			err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, oldValue)
+			Expect(err).To(BeNil())
+		})
+		It("trusted registries should include hostname of default central discovery", func() {
+			u, err := url.ParseRequestURI("https://" + constants.TanzuCLIDefaultCentralPluginDiscoveryImage)
+			Expect(err).To(BeNil())
+			Expect(u).NotTo(BeNil())
+
+			trustedRegis := GetTrustedRegistries()
+			Expect(trustedRegis).NotTo(BeNil())
+			Expect(trustedRegis).Should(ContainElement(u.Hostname()))
 		})
 	})
 })
