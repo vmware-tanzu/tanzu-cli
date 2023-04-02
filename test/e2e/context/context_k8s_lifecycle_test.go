@@ -38,7 +38,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-			err := tf.ContextCmd.CreateConextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterContext)
+			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			Expect(IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
@@ -47,7 +47,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 		It("create context with incorrect kubeconfig and context", func() {
 			By("create context with incorrect kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-			err := tf.ContextCmd.CreateConextWithKubeconfig(ctxName, framework.RandomString(4), clusterInfo.ClusterContext)
+			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, framework.RandomString(4), clusterInfo.ClusterContext)
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
 			Expect(IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctxName))
@@ -56,7 +56,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 		It("create context with kubeconfig and incorrect context", func() {
 			By("create context with kubeconfig and incorrect context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-			err := tf.ContextCmd.CreateConextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, framework.RandomString(4))
+			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, framework.RandomString(4))
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
 			Expect(IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctxName))

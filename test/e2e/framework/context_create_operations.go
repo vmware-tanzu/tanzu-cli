@@ -13,12 +13,12 @@ import (
 
 // ContextCreateOps helps to run context create command
 type ContextCreateOps interface {
-	// CreateConextWithEndPoint creates a context with a given endpoint URL
-	CreateConextWithEndPoint(contextName, endpoint string) error
-	// CreateConextWithEndPointStaging creates a context with a given endpoint URL for staging
-	CreateConextWithEndPointStaging(contextName, endpoint string) error
-	// CreateConextWithKubeconfig creates a context with the given kubeconfig file path and a context from the kubeconfig file
-	CreateConextWithKubeconfig(contextName, kubeconfigPath, kubeContext string) error
+	// CreateContextWithEndPoint creates a context with a given endpoint URL
+	CreateContextWithEndPoint(contextName, endpoint string) error
+	// CreateContextWithEndPointStaging creates a context with a given endpoint URL for staging
+	CreateContextWithEndPointStaging(contextName, endpoint string) error
+	// CreateContextWithKubeconfig creates a context with the given kubeconfig file path and a context from the kubeconfig file
+	CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string) error
 	// CreateContextWithDefaultKubeconfig creates a context with the default kubeconfig file and a given input context name if it exists in the default kubeconfig file
 	CreateContextWithDefaultKubeconfig(contextName, kubeContext string) error
 }
@@ -34,7 +34,7 @@ func NewContextCreateOps() ContextCreateOps {
 	}
 }
 
-func (cc *contextCreateOps) CreateConextWithEndPoint(contextName, endpoint string) error {
+func (cc *contextCreateOps) CreateContextWithEndPoint(contextName, endpoint string) error {
 	createContextCmd := fmt.Sprintf(CreateContextWithEndPoint, endpoint, contextName)
 	out, _, err := cc.cmdExe.Exec(createContextCmd)
 	if err != nil {
@@ -45,7 +45,7 @@ func (cc *contextCreateOps) CreateConextWithEndPoint(contextName, endpoint strin
 	return err
 }
 
-func (cc *contextCreateOps) CreateConextWithEndPointStaging(contextName, endpoint string) error {
+func (cc *contextCreateOps) CreateContextWithEndPointStaging(contextName, endpoint string) error {
 	createContextCmd := fmt.Sprintf(CreateContextWithEndPointStaging, endpoint, contextName)
 	out, _, err := cc.cmdExe.Exec(createContextCmd)
 	if err != nil {
@@ -56,7 +56,7 @@ func (cc *contextCreateOps) CreateConextWithEndPointStaging(contextName, endpoin
 	return err
 }
 
-func (cc *contextCreateOps) CreateConextWithKubeconfig(contextName, kubeconfigPath, kubeContext string) error {
+func (cc *contextCreateOps) CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string) error {
 	createContextCmd := fmt.Sprintf(CreateContextWithKubeconfigFile, kubeconfigPath, kubeContext, contextName)
 	out, _, err := cc.cmdExe.Exec(createContextCmd)
 	if err != nil {
