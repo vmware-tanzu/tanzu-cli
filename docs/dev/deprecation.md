@@ -1,9 +1,16 @@
-# Tanzu CLI deprecation policy
+# Tanzu CLI deprecation
 
 ## How to deprecate CLI functionality
 
-See [file](https://github.com/vmware-tanzu/tanzu-plugin-runtime/blob/main/command/deprecation.go)
-for the helper functions that can be useful when adhering to the [deprecation policy](../full/deprecation.md) laid out for deprecating any aspect of the CLI command.
+To deprecate a particular piece of CLI functionality,
+
+1. Deprecated CLI elements must display warnings when used.
+1. The warning message should include a functional alternative to the
+   deprecated command or flag if they exist.
+1. The warning message should include the release for when the command/flag
+   will be removed.
+1. The deprecation should be documented in the Release notes to make users
+   aware of the changes.
 
 Example usage to deprecate a command `foo`:
 
@@ -26,3 +33,7 @@ import "github.com/vmware-tanzu/tanzu-plugin-runtime/command"
 //...
 command.DeprecateFlagWithAlternative(describeCmd, "use-grouping", "1.6.0", "--show-group-members")
 ```
+
+## Tanzu CLI deprecation policy
+
+Any deprecation must adhere to the [deprecation policy](../full/policy.md#tanzu-cli-deprecation) laid out for deprecating any aspect of the CLI command.
