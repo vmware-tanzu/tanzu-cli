@@ -232,19 +232,14 @@ func getPreReleasePluginDiscovery() ([]configtypes.PluginDiscovery, error) {
 // discovery in question.
 func getAdditionalTestPluginDiscoveries() []configtypes.PluginDiscovery {
 	var testDiscoveries []configtypes.PluginDiscovery
-	testDiscoveryImages := strings.Split(os.Getenv(constants.ConfigVariableAdditionalDiscoveryForTesting), ",")
-	count := 0
-	for _, image := range testDiscoveryImages {
-		image = strings.TrimSpace(image)
-		if image != "" {
-			testDiscoveries = append(testDiscoveries, configtypes.PluginDiscovery{
-				OCI: &configtypes.OCIDiscovery{
-					Name:  fmt.Sprintf("test_%d", count),
-					Image: image,
-				},
-			})
-			count++
-		}
+	testDiscoveryImages := config.GetAdditionalTestDiscoveryImages()
+	for idx, image := range testDiscoveryImages {
+		testDiscoveries = append(testDiscoveries, configtypes.PluginDiscovery{
+			OCI: &configtypes.OCIDiscovery{
+				Name:  fmt.Sprintf("test_%d", idx),
+				Image: image,
+			},
+		})
 	}
 	return testDiscoveries
 }
