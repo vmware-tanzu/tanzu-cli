@@ -16,7 +16,7 @@ endif
 
 PLUGIN_BUILD_SHA ?= $(shell git describe --match=$(git rev-parse --short HEAD) --always --dirty)
 PLUGIN_BUILD_DATE ?= $(shell date -u +"%Y-%m-%d")
-PLUGIN_BUILD_VERSION ?= $(shell git describe --tags 2>$(NUL))
+PLUGIN_BUILD_VERSION ?= $(shell git describe --tags --abbrev=0 2>$(NUL))
 
 ifeq ($(strip $(PLUGIN_BUILD_VERSION)),)
 PLUGIN_BUILD_VERSION = v0.0.0
@@ -45,7 +45,7 @@ PLUGIN_NAME ?= *
 BUILDER_PLUGIN ?= $(ROOT_DIR)/bin/builder
 PUBLISHER ?= tzcli
 VENDOR ?= vmware
-PLUGIN_PUBLISH_REPOSITORY ?= localhost:$(REGISTRY_PORT)/test/v1/tanzu-cli/plugins
+PLUGIN_PUBLISH_REPOSITORY ?= $(REGISTRY_ENDPOINT)/test/v1/tanzu-cli/plugins
 PLUGIN_INVENTORY_IMAGE_TAG ?= latest
 
 PLUGIN_SCOPE_ASSOCIATION_FILE ?= $(PLUGIN_DIR)/plugin-scope-association.yaml

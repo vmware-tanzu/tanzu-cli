@@ -59,10 +59,9 @@ var PluginToolingMK = Target{
 }
 
 // Codeowners target
-// TODO (pbarker): replace with the CLI reviewers group
 var Codeowners = Target{
 	Filepath: "CODEOWNERS",
-	Template: `* @vuil`,
+	Template: `* # edit as appropriate`,
 }
 
 // Tools target.
