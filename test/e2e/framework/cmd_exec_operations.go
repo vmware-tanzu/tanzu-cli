@@ -43,7 +43,7 @@ func (co *cmdOps) Exec(command string) (stdOut, stdErr *bytes.Buffer, err error)
 	cmd.Stderr = &stderr
 	err = cmd.Run()
 	if err != nil {
-		return &stdout, &stderr, fmt.Errorf(fmt.Sprintf("error while running '%s', stdOut: %s, stdErr: %s", command, stdout.String(), stderr.String()), err)
+		return &stdout, &stderr, fmt.Errorf("error while running '%s', stdOut: %s, stdErr: %s, err: %s", command, stdout.String(), stderr.String(), err.Error())
 	}
 	return &stdout, &stderr, err
 }
