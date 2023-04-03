@@ -103,13 +103,12 @@ import (
 )
 
 var descriptor = plugin.PluginDescriptor{
-    Name:            "helloworld",
-    Target:          types.TargetGlobal,
-    Description:     "Hello world plugin",
-    Group:           plugin.AdminCmdGroup,
-    Version:         buildinfo.Version,
-    BuildSHA:        buildinfo.SHA,
-    PostInstallHook: postInstallHook,
+    Name:         "helloworld",
+    Description:  "Hello world plugin",
+    Target:       "FIXME<<<", // set the Target of the plugin to types.(one of {TargetGlobal,TargetK8s,TargetTMC})
+    Version:      buildinfo.Version,
+    BuildSHA:     buildinfo.SHA,
+    Group:        plugin.ManageCmdGroup, // set group
 }
 
 func main() {
