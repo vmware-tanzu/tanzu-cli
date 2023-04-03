@@ -1,7 +1,7 @@
 # Tanzu Core CLI
 
 :warning: NOTE: This repository is still under early development. We plan to
-make releases available for evaluation in the second quarter of 2023.  Please
+make releases available for evaluation in the second quarter of 2023. Please
 watch this page for further updates.
 
 ## Overview
@@ -45,6 +45,14 @@ To learn more about how to develop a Tanzu CLI plugin, see the
 Details about how to get started with development for this project can be found
 in the [Development Guide](docs/dev/README.md).
 
+## Testing
+
+Unit and Integration tests implementation is part of CLI Core development.
+CLI core does have end-to-end test case implementation.
+More details found in the [End-to-End framework and test case implementation](test/e2e/README.md).
+Plugin developers can use End-to-End framework to implement end-to-end tests
+to their plugin functionality on CLI Core installed environment.
+
 ## Contributing
 
 Thanks for taking the time to join our community and start contributing! We
@@ -53,4 +61,4 @@ welcome pull requests. Feel free to dig through the
 
 ### Before you begin
 
-* Check out the [contribution guidelines](CONTRIBUTING.md) to learn more about how to contribute.
+- Check out the [contribution guidelines](CONTRIBUTING.md) to learn more about how to contribute.
