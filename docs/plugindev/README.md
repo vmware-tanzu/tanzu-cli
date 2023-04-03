@@ -10,7 +10,7 @@ Before embarking on developing a plugin, the develop should be familiar with
 the following materials:
 
 1. The key concepts related to the the Tanzu CLI
-2. The CLI plugin architecture
+2. The [CLI plugin architecture](../full/cli-architecture.md#plugins)
 3. The [Tanzu CLI Styleguide](style_guide.md), which describes the user
 interaction best practices to be followed. It is highly recommended that anyone
 interested in developing a Tanzu CLI plugin be familiarized with the
@@ -29,12 +29,13 @@ details.
 
 ## Environment
 
-The Tanzu Plugin Runtime (also referred to as "runtime library" or simply
-"runtime") is a library the plugin implementation should integrate with to
+The [Tanzu Plugin Runtime](https://github.com/vmware-tanzu/tanzu-plugin-runtime)
+(also referred to as "runtime library" or simply "runtime")
+is a library the plugin implementation should integrate with to
 implement the [plugin contract](contract.md).
 
 The Tanzu Core CLI and runtime library are written in the Go programming
-language. While the plugin architecture tecnically does not prevent the
+language. While the plugin architecture technically does not prevent the
 development of plugins using other programming languages, at the moment the
 only supported means of plugin development is that which integrates with a
 released version of the runtime library.
@@ -62,38 +63,19 @@ code. Use one of the following methods to install the builder plugin.
 #### Installing official release of admin plugins
 
 ```console
-VVV update once a working repo is available
-tanzu plugin install --group tzcli/admin:latest
+tanzu plugin install --group vmware-tzcli/admin:v0.0.1
 OR
-VVV update once a working repo is available
 tanzu plugin install builder
-```console
-
-VVV test link
-
-For more details on the builder plugin, see the [command reference](../cli/commands/tanzu_builderx.md)
-
-#### Installing local build of admin plugins
-
-```console
-#check out the [tanzu-cli](https://github.com/vmware-tanzu/tanzu-cli) repository.
-
-#ensure all the tooling dependencies
-make tools
-
-make plugin-build-and-publish-packages
-OVERRIDE_INVENTORY_IMAGE=1 make inventory-init && make inventory-plugin-insert
-tanzu plugin install builder
-
-tanzu builder --help
 ```
+
+For more details on the builder plugin, see the [command reference](../cli/commands/tanzu_builder.md)
 
 ### Bootstrapping a plugin project
 
 #### 1) create a new plugin repository
 
 ```shell
-`tanzu builder init <repo-name>`
+tanzu builder init <repo-name>
 ```
 
 either specify the --repo-type or be prompted to choose between GitLab or
@@ -116,6 +98,7 @@ You will notice in the generated `main.go` file, that CLI plugins have to instan
 
 ```go
 import (
+  "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo"
   "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
@@ -124,7 +107,7 @@ var descriptor = plugin.PluginDescriptor{
     Target:          types.TargetGlobal,
     Description:     "Hello world plugin",
     Group:           plugin.AdminCmdGroup,
-    Version:         "v0.0.1",
+    Version:         buildinfo.Version,
     BuildSHA:        buildinfo.SHA,
     PostInstallHook: postInstallHook,
 }
@@ -137,17 +120,29 @@ func main() {
 
 #### 4) commit the changes to repository
 
-Initialize go module.
-
-```shell
-make init
-```
-
 Create an initial commit.
 
 ```shell
 git add -A
 git commit -m "Initialize plugin repository"
+
+git tag v0.0.1 # TAG the repository if it has no tag.
+```
+
+#### 5) Setting up the go modules
+
+Configure the go modules
+
+```shell
+# Configure the go module for tanzu-plugin-runtime to point to `main` branch
+# This step should not required once we have `v0.90.0-alpha.0` is tagged for the repository
+go get github.com/vmware-tanzu/tanzu-plugin-runtime@main
+
+# Download and configure modules and update the go.mod and go.sum files
+make gomod
+
+git add -A
+git commit -m "Configure go.mod and go.sum"
 ```
 
 ### Building a Plugin
@@ -158,28 +153,36 @@ commands included) should already be buildable.
 
 The `builder` plugin also provides functionality to build, install or publish
 the plugins. These capabilities are most easily accessed through Makefile
-targets already set up for the same purposes.
-
-#### Add your plugin name(s) to the `Makefile`
-
-Add your plugin name to the `PLUGINS` variable in the `Makefile`. This is the
-name you used with the `tanzu builder cli add-plugin <plugin-name>` command.
-
-```shell
-# Add list of plugins separated by space
-PLUGINS ?= "<plugin-name>"
-```
+targets already set up for the same purposes. All plugin related tooling has been
+added using `plugin-tooling.mk` file.
 
 #### Build the plugin binary
 
 ```sh
+# Building all plugins within the repository
 make plugin-build-local
+
+# Building only single plugin
+make plugin-build-local PLUGIN_NAME="<plugin-name>"
+
+# Building multiple plugins at a time
+make plugin-build-local PLUGIN_NAME="{plugin-name-1,plugin-name-2}"
 ```
 
 This will build plugin artifacts under `./artifacts` with plugins organized under: `artifacts/plugins/<OS>/<ARCH>/<TARGET>`
 
 ```sh
-tanzu plugin install --local ./artifacts/plugins/${HOSTOS}/${HOSTARCH}/<TARGET> [pluginname|all]
+# Installing all plugins from local source using make target
+make plugin-install-local
+# Installing plugins from local source using the tanzu-cli command
+tanzu plugin install --local ./artifacts/plugins/${HOSTOS}/${HOSTARCH} [pluginname|all]
+```
+
+User can also use below make target to build and install plugins at once.
+
+```sh
+# Combined Build and Install target is also available
+make plugin-build-install-local
 ```
 
 Your plugin is now available for you through the Tanzu CLI. You can confirm
@@ -204,7 +207,7 @@ CLI.
 
 #### Docs
 
-Since every plugin is required a README.md document that explains its basic
+Since every plugin is required a `README.md` document that explains its basic
 usage, a basic one is generated in the top-level directory of the repository as
 well.
 
@@ -232,7 +235,9 @@ make plugin-build-and-publish-packages
 VVV worth considering providing a single step to e2e build/publish?
 
 ```sh
+# Initialize empty sqlite database
 make inventory-init
+# Add plugin entry to the sqlite database
 make inventory-plugin-add
 ```
 
@@ -251,7 +256,7 @@ tanzu config set env.TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY loca
 Once set, plugin lifecycle commands like `tanzu plugin search` will be interact with the test repository as well.
 
 Note: as the configuration variable implies, the
-TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY setting is meant for
+`TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` setting is meant for
 plugin development and testing only. Use of this setting in production setting
 is not supported.
 
@@ -303,7 +308,7 @@ For more details on the APIs available to retrieve or set various CLI configurat
 
 ### Other state kept on the CLI machine
 
-Besides XDG_DATA_HOME/.config/tanzu, the following directories are also used
+Besides `XDG_DATA_HOME/.config/tanzu`, the following directories are also used
 to exclusively store data and artifacts specific to Tanzu CLI:
 
 - [XDG](https://github.com/adrg/xdg/blob/master/README.md)_DATA_HOME/tanzu_cli: where plugins are installed
