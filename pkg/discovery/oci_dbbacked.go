@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -138,31 +139,77 @@ func (od *DBBackedOCIDiscovery) listGroupsFromInventory() ([]*plugininventory.Pl
 // fetchInventoryImage downloads the OCI image containing the information about the
 // inventory of this discovery and stores it in the cache directory.
 func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
-	// TODO(khouzam): Improve by checking if we really need to download again or if we can use the cache
+	newCacheHashFile := od.checkImageCache()
+	if newCacheHashFile == "" {
+		// The cache can be re-used.  We are done.
+		return nil
+	}
+
+	// The DB has changed and needs to be updated in the cache.
+	log.Infof("Updating plugin database cache for %s, this will take a few seconds.", od.image)
 
 	// Get the custom public key path and prepare cosign verifier, if empty, cosign verifier would use embedded public key for verification
 	customPublicKeyPath := os.Getenv(constants.PublicKeyPathForPluginDiscoveryImageSignature)
 	cosignVerifier := cosignhelper.NewCosignVerifier(customPublicKeyPath)
 	if sigVerifyErr := od.verifyInventoryImageSignature(cosignVerifier); sigVerifyErr != nil {
-		// Check if the error is due to invalid image repository URL or due to actual signature verification failure and throw the appropriate error message
-		var errMsg string
-		_, _, ImgResolveErr := carvelhelpers.GetImageDigest(od.image)
-		if ImgResolveErr != nil {
-			log.Warningf("Unable to resolve the plugin discovery image: %v", ImgResolveErr)
-			errMsg = fmt.Sprintf("Fatal, plugins discovery image resolution failed. Please check the repository image URL %q is correct ", od.image)
-		} else {
-			log.Warningf("Unable to verify the plugins discovery image signature: %v", sigVerifyErr)
-			// TODO(pkalle): Update the message to convey user to check if they could use the latest public key after we get details of the well known location of the public key
-			errMsg = fmt.Sprintf("Fatal, plugins discovery image signature verification failed. The `tanzu` CLI can not ensure the integrity of the plugins to be installed. To ignore this validation please append %q to the comma-separated list in the environment variable %q.  This is NOT RECOMMENDED and could put your environment at risk!",
-				od.image, constants.PluginDiscoveryImageSignatureVerificationSkipList)
-		}
+		log.Warningf("Unable to verify the plugins discovery image signature: %v", sigVerifyErr)
+		// TODO(pkalle): Update the message to convey user to check if they could use the latest public key after we get details of the well known location of the public key
+		errMsg := fmt.Sprintf("Fatal, plugins discovery image signature verification failed. The `tanzu` CLI can not ensure the integrity of the plugins to be installed. To ignore this validation please append %q to the comma-separated list in the environment variable %q.  This is NOT RECOMMENDED and could put your environment at risk!",
+			od.image, constants.PluginDiscoveryImageSignatureVerificationSkipList)
 		log.Fatal(nil, errMsg)
 	}
 
 	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, od.pluginDataDir); err != nil {
 		return errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
 	}
+
+	// Now that everything is ready, create the digest hash file
+	_, _ = os.Create(newCacheHashFile)
+
 	return nil
+}
+
+// checkImageCache will get the image digest of this discovery
+// and check if the cache already contains the up-to-date image.
+// It returns an empty string if the cache can be used.  Otherwise
+// it returns the name of the digest file that must be created once
+// the new DB image has been downloaded.
+func (od *DBBackedOCIDiscovery) checkImageCache() string {
+	// Get the latest digest of the discovery image.
+	// If the cache already contains the image with this digest
+	// we do not need to verify its signature nor to download it again.
+	_, hashHexVal, err := carvelhelpers.GetImageDigest(od.image)
+	if err != nil {
+		// This will happen when the user has configured an invalid image discovery URI
+		log.Warningf("Unable to resolve the plugin discovery image: %v", err)
+		// We force abort execution here to make sure a stale image left in the cache is not used by mistake.
+		log.Fatal(nil, fmt.Sprintf("Fatal: plugins discovery image resolution failed. Please check that the repository image URL %q is correct ", od.image))
+	}
+
+	// We store the digest hash of the cached DB as a file named "digest.<hash>.
+	// If this file exists, we are done.  If not, we remove the current digest file
+	// as we are about to download a new DB and create a new digest file.
+	// First check any existing "digest.*" file; there should only be one, but
+	// to protect ourselves, we check first and if there are more then one due
+	// to some bug, we clean them up and invalidate the cache.
+	correctHashFile := filepath.Join(od.pluginDataDir, "digest."+hashHexVal)
+	matches, _ := filepath.Glob(filepath.Join(od.pluginDataDir, "digest.*"))
+	if len(matches) > 1 {
+		// Too many digest files.  This is a bug!  Cleanup the cache.
+		log.V(4).Warningf("Too many digest files in the cache!  Invalidating the cache.")
+		for _, filePath := range matches {
+			os.Remove(filePath)
+		}
+	} else if len(matches) == 1 {
+		if matches[0] == correctHashFile {
+			// The hash file exists which means the DB is up-to-date.  We are done.
+			return ""
+		}
+		// The hash file indicates a different digest hash. Remove this old hash file
+		// as we will download the new DB.
+		os.Remove(matches[0])
+	}
+	return correctHashFile
 }
 
 func (od *DBBackedOCIDiscovery) verifyInventoryImageSignature(verifier cosignhelper.Cosignhelper) error {
