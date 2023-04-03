@@ -68,54 +68,61 @@ type CmdOps interface {
 }
 ```
 
-To generate plugins and publish plugin binaries and bundles to a local OCI
-repository and TMC (yet to implement)
-
-```go
-// GeneratePluginOps helps to generate script-based plugin binaries, and plugin binaries can be used to perform plugin testing
-// like, add plugin source, list, and install plugins. And call sub-commands such as info and version.
-type GeneratePluginOps interface {
-    // GeneratePluginBinaries generates plugin binaries for given plugin metadata and return generated plugin binary file paths
-    GeneratePluginBinaries(pluginsMeta []*PluginMeta) ([]string, []error)
-}
-
-// PublishPluginOps helps to publish plugin binaries and plugin bundles
-type PublishPluginOps interface {
-    // PublishPluginBinary publishes the plugin binaries to given registry bucket and returns the plugin distribution urls
-    PublishPluginBinary(pluginsInfo []*PluginMeta) (distributionUrls []string, errs []error)
-    // GeneratePluginBundle generates plugin bundle in local file system for given plugin metadata
-    GeneratePluginBundle(pluginsMeta []*PluginMeta) ([]string, []error)
-    // PublishPluginBundle publishes the plugin bundles to given registry bucket and returns the plugins discovery urls
-    PublishPluginBundle(pluginsInfo []*PluginMeta) (discoveryUrls []string, errs []error)
-}
-
-// PluginHelperOps helps to generate and publish plugins
-type PluginHelperOps interface {
-    GeneratePluginOps
-    PublishPluginOps
-}
-```
-
 To perform tanzu plugin command operations:
 
 ```go
+type PluginCmdOps interface {
+	PluginBasicOps
+	PluginSourceOps
+	PluginGroupOps
+}
+
 // PluginBasicOps helps to perform the plugin command operations
 type PluginBasicOps interface {
-    // ListPlugins lists all plugins by running 'tanzu plugin list' command
-    ListPlugins() ([]PluginListInfo, error)
-    // TODO: more plugin command operations will be added, such as clean, delete, describe, install, sync and upgrade
+	// ListPlugins lists all plugins by running 'tanzu plugin list' command
+	ListPlugins() ([]*PluginInfo, error)
+	// ListInstalledPlugins lists all installed plugins
+	ListInstalledPlugins() ([]*PluginInfo, error)
+	// ListPluginsForGivenContext lists all plugins for a given context and either installed only or all
+	ListPluginsForGivenContext(context string, installedOnly bool) ([]*PluginInfo, error)
+	// SearchPlugins searches all plugins for given filter (keyword|regex) by running 'tanzu plugin search' command
+	SearchPlugins(filter string) ([]*PluginInfo, error)
+	// InstallPlugin installs given plugin and flags
+	InstallPlugin(pluginName, target, versions string) error
+	// Sync performs sync operation
+	Sync() (string, error)
+	// DescribePlugin describes given plugin and flags
+	DescribePlugin(pluginName, target string) (string, error)
+	// UninstallPlugin uninstalls/deletes given plugin
+	UninstallPlugin(pluginName, target string) error
+	// DeletePlugin deletes/uninstalls given plugin
+	DeletePlugin(pluginName, target string) error
+	// ExecuteSubCommand executes specific plugin sub-command
+	ExecuteSubCommand(pluginWithSubCommand string) (string, error)
+	// CleanPlugins executes the plugin clean command to delete all existing plugins
+	CleanPlugins() error
 }
-
 // PluginSourceOps helps 'plugin source' commands
 type PluginSourceOps interface {
-    // AddPluginDiscoverySource adds plugin discovery source
-    AddPluginDiscoverySource(discoveryOpts *DiscoveryOptions) error
-}
+	// AddPluginDiscoverySource adds plugin discovery source, and returns stdOut and error info
+	AddPluginDiscoverySource(discoveryOpts *DiscoveryOptions) (string, error)
 
-// PluginCmdOps helps to perform the plugin and its sub-commands lifecycle operations
-type PluginCmdOps interface {
-    PluginBasicOps
-    PluginSourceOps
+	// UpdatePluginDiscoverySource updates plugin discovery source, and returns stdOut and error info
+	UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOptions) (string, error)
+
+	// DeletePluginDiscoverySource removes the plugin discovery source, and returns stdOut and error info
+	DeletePluginDiscoverySource(pluginSourceName string) (string, error)
+
+	// ListPluginSources returns all available plugin discovery sources
+	ListPluginSources() ([]*PluginSourceInfo, error)
+}
+type PluginGroupOps interface {
+	// SearchPluginGroups performs plugin group search
+	// input: flagsWithValues - flags and values if any
+	SearchPluginGroups(flagsWithValues string) ([]*PluginGroup, error)
+
+	// InstallPluginsFromGroup a plugin or all plugins from the given plugin group
+	InstallPluginsFromGroup(pluginNameORAll, groupName string) error
 }
 ```
 
@@ -166,10 +173,10 @@ type CliOps interface {
 E2E tests are written to validate all CLI Core functionalities from the end-user perspective. They cover all CLI Core commands lifecycle operations. Below is the list of CLI Core commands or use cases covered by the E2E tests:
 
 - CLI lifecycle operations, like build and install the CLI in all possible ways and on all platforms (TODO)
-- CLI Config command lifecycle operations, like init, get, set, unset and server related operations (In-progress)
-- CLI Plugin command lifecycle operations, like install, upgrade, list, delete and discovery source operations (In-progress)
-- CLI Context command lifecycle operations, like create, get, list, delete and use context operations, including target (k8s and TMC) specific use cases (In-progress)
-- Other CLI commands lifecycle operations, like update, version, completion and init (TODO)
+- CLI Config command lifecycle operations, like init, get, set, unset and server related operations
+- CLI Plugin command lifecycle operations, like install, upgrade, list, delete and discovery source operations
+- CLI Context command lifecycle operations, like create, get, list, delete and use context operations, including target (k8s and TMC) specific use cases
+- Other CLI commands lifecycle operations, like update (TODO), version, completion and init
 
 ### plugin compatibility/coexistence tests
 
