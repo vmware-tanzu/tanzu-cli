@@ -10,8 +10,8 @@ import (
 	"sort"
 	"testing"
 
-	// Import the sqlite3 driver
-	_ "github.com/mattn/go-sqlite3"
+	// Import the sqlite driver
+	_ "modernc.org/sqlite"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
@@ -331,7 +331,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				dbFile, err = os.Create(filepath.Join(tmpDir, SQliteDBFileName))
 				Expect(err).To(BeNil())
 				// Open DB with the sqlite driver
-				db, err := sql.Open("sqlite3", dbFile.Name())
+				db, err := sql.Open("sqlite", dbFile.Name())
 				Expect(err).To(BeNil(), "failed to open the DB for testing")
 				defer db.Close()
 
@@ -359,7 +359,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				dbFile, err = os.Create(filepath.Join(tmpDir, SQliteDBFileName))
 				Expect(err).To(BeNil())
 				// Open DB with the sqlite driver
-				db, err := sql.Open("sqlite3", dbFile.Name())
+				db, err := sql.Open("sqlite", dbFile.Name())
 				Expect(err).To(BeNil(), "failed to open the DB for testing")
 				defer db.Close()
 
@@ -547,7 +547,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				dbFile, err = os.Create(filepath.Join(tmpDir, SQliteDBFileName))
 				Expect(err).To(BeNil())
 				// Open DB with the sqlite driver
-				db, err := sql.Open("sqlite3", dbFile.Name())
+				db, err := sql.Open("sqlite", dbFile.Name())
 				Expect(err).To(BeNil(), "failed to open the DB for testing")
 				defer db.Close()
 
@@ -636,7 +636,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				dbFile, err = os.Create(filepath.Join(tmpDir, SQliteDBFileName))
 				Expect(err).To(BeNil())
 				// Open DB with the sqlite driver
-				db, err := sql.Open("sqlite3", dbFile.Name())
+				db, err := sql.Open("sqlite", dbFile.Name())
 				Expect(err).To(BeNil(), "failed to open the DB for testing")
 				defer db.Close()
 
@@ -664,7 +664,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				dbFile, err = os.Create(filepath.Join(tmpDir, SQliteDBFileName))
 				Expect(err).To(BeNil())
 				// Open DB with the sqlite driver
-				db, err := sql.Open("sqlite3", dbFile.Name())
+				db, err := sql.Open("sqlite", dbFile.Name())
 				Expect(err).To(BeNil(), "failed to open the DB for testing")
 				defer db.Close()
 
