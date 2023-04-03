@@ -28,7 +28,7 @@ or using a docker container. For example:
 ```bash
 $ cd tanzu-cli
 $ docker run --rm -it -v $(pwd)/hack/apt/_output/apt:/tmp/apt ubuntu
-echo "deb file:///tmp/apt jessie main" | tee /etc/apt/sources.list.d/tanzu.list
+echo "deb file:///tmp/apt tanzu-cli-jessie main" | tee /etc/apt/sources.list.d/tanzu.list
 apt-get update --allow-insecure-repositories
 apt install -y tanzu-cli --allow-unauthenticated
 tanzu
@@ -54,7 +54,7 @@ To install from an insecure repo:
 $ docker run --rm -it ubuntu
 apt update
 apt install -y ca-certificates
-echo "deb https://storage.googleapis.com/tanzu-cli-os-packages/apt jessie main" | tee /etc/apt/sources.list.d/tanzu.list
+echo "deb https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | tee /etc/apt/sources.list.d/tanzu.list
 apt update --allow-insecure-repositories
 apt install -y tanzu-cli --allow-unauthenticated
 ```

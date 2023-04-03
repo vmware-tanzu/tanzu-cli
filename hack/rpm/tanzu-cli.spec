@@ -1,12 +1,12 @@
 Name:       tanzu-cli
-Version:    %{cli_version}
+Version:    %{package_version}
 Release:    1
 License:    Apache 2.0
-URL:        https://github.com/vmware-tanzu/tanzu-cli/
+URL:        https://github.com/vmware-tanzu/tanzu-cli
 Vendor:     VMware
-Summary:    The Tanzu CLI
+Summary:    The core Tanzu CLI
 Provides:   tanzu-cli
-Obsoletes:  tanzu-cli  < %{cli_version}
+Obsoletes:  tanzu-cli  < %{package_version}
 
 %ifarch amd64
 %define arch amd64
@@ -18,7 +18,7 @@ Obsoletes:  tanzu-cli  < %{cli_version}
 %endif
 
 %undefine _disable_source_fetch
-Source0:    https://github.com/vmware-tanzu/tanzu-framework/releases/download/v%{version}/tanzu-cli-linux-%{arch}.tar.gz
+Source0:    https://github.com/vmware-tanzu/tanzu-cli/releases/download/v%{release_version}/tanzu-cli-linux-%{arch}.tar.gz
 
 %description
 VMware Tanzu is a modular, cloud native application platform that enables vital DevSecOps outcomes
@@ -32,7 +32,7 @@ in a multi-cloud world.  The Tanzu CLI allows you to control VMware Tanzu from t
 %define debug_package %nil
 
 %prep
-%setup -q -n v%{cli_version}
+%setup -q -n v%{release_version}
 
 %build
 # Nothing to build
@@ -40,7 +40,7 @@ in a multi-cloud world.  The Tanzu CLI allows you to control VMware Tanzu from t
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_bindir}
-mv tanzu-core-linux_%{arch} $RPM_BUILD_ROOT/%{_bindir}/tanzu
+mv tanzu-cli-linux_%{arch} $RPM_BUILD_ROOT/%{_bindir}/tanzu
 
 %files
 %{_bindir}/tanzu
