@@ -71,7 +71,17 @@ func newPluginCmd() *cobra.Command {
 		}
 		installPluginCmd.Flags().StringVar(&group, "group", "", "install the plugins specified in a plugin group")
 	}
+
 	installPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local discovery/distribution source")
+	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
+		// The --local flag for installing plugins is only used in development testing,
+		// and should not be used in production.  We mark it as hidden to help convey this reality.
+		if err := installPluginCmd.Flags().MarkHidden("local"); err != nil {
+			// Will only fail if the flag does not exist, which would indicate a coding error,
+			// so let's panic so we notice immediately.
+			panic(err)
+		}
+	}
 	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
 	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "delete the plugin without asking for confirmation")
 
