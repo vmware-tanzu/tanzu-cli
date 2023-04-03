@@ -40,11 +40,12 @@ commands lifecycle operations and access helper functions.
 ```go
 // Framework has all CLI Core commands lifecycle operations and helper functions to write CLI e2e test cases
 type Framework struct {
-    CliOps
-    Config ConfigLifecycleOps
-    ClusterOps
-    PluginCmd    PluginCmdOps // performs plugin command operations
-    PluginHelper PluginHelperOps // helper (pre-setup) for plugin cmd operations
+	CliOps
+	Config       ConfigLifecycleOps
+	KindCluster  ClusterOps      // performs KIND cluster operations
+	PluginCmd    PluginCmdOps    // performs plugin command operations
+	PluginHelper PluginHelperOps // helper (pre-setup) for plugin cmd operations
+	ContextCmd   ContextCmdOps
 }
 ```
 

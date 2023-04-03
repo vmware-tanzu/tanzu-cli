@@ -127,7 +127,7 @@ func CLICoreDescribe(text string, body func()) bool {
 type Framework struct {
 	CliOps
 	Config       ConfigLifecycleOps
-	KindCluster  ClusterOps
+	KindCluster  ClusterOps      // performs KIND cluster operations
 	PluginCmd    PluginCmdOps    // performs plugin command operations
 	PluginHelper PluginHelperOps // helper (pre-setup) for plugin cmd operations
 	ContextCmd   ContextCmdOps
