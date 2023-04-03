@@ -66,6 +66,7 @@ var DefaultInitTargets = []Target{
 	GolangCIConfig,
 	Tools,
 	CommonMK,
+	PluginToolingMK,
 }
 
 // DefaultPluginTargets are the default plugin targets.

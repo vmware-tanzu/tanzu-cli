@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
     "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
     "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo"
@@ -11,6 +12,7 @@ import (
 var descriptor = plugin.PluginDescriptor{
 	Name:        "{{ .PluginName | ToLower }}",
 	Description: "{{ .Description | ToLower }}",
+	Target:      "FIXME<<<", // set the Target of the plugin to types.(one of {TargetGlobal,TargetK8s,TargetTMC})
 	Version:     buildinfo.Version,
 	BuildSHA:    buildinfo.SHA,
 	Group:       plugin.ManageCmdGroup, // set group

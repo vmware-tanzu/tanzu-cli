@@ -25,7 +25,7 @@ var (
 // NewInitCmd initializes a repository.
 func NewInitCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "init PLUGIN_NAME",
+		Use:   "init REPO_NAME",
 		Short: "Initialize a new plugin repository",
 		Long:  desc,
 		RunE: func(cmd *cobra.Command, args []string) error {
