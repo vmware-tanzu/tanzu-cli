@@ -1,5 +1,7 @@
 # Tanzu Core CLI
 
+[![Tanzu CLI Core Tests](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml/badge.svg?branch=main&event=push)](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml?query=event:push+branch:main)
+
 :warning: NOTE: This repository is still under early development. We plan to
 make releases available for evaluation in the second quarter of 2023. Please
 watch this page for further updates.
