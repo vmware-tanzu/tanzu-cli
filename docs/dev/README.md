@@ -16,9 +16,8 @@ make all
 ### Default Directory Locations
 
 The names of the directories for the plugins, catalog cache and local
-plugin discovery (`<XDG_DATA_HOME>/_tanzu-cli, $HOME/.cache/_tanzu,
-$HOME/.config/_tanzu-plugins`) are all directories prefixed with '_' for
-now, so as not to conflict with their nonprefixed counterparts.
+plugin discovery (`<XDG_DATA_HOME>/_tanzu-cli, $HOME/.cache/_tanzu,$HOME/.config/_tanzu-plugins`)
+are all directories prefixed with '_' for now, so as not to conflict with their nonprefixed counterparts.
 
 This setup is temporary. We intend to unify the locations of various
 directories with those used by existing CLI installations once the new CLI
@@ -53,4 +52,4 @@ make test
 Any changes aimed to remove functionality in the CLI (e.g. commands, command
 flags) have to follow the deprecation policy, For more details on the
 deprecation policy and process please refer to the [Deprecation
-document](../full/deprecation.md).
+document](../dev/deprecation.md).

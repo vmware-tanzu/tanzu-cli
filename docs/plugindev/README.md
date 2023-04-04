@@ -322,4 +322,4 @@ the Core CLI to announce and implement deprecation of specific plugin
 functionality .
 
 For more details on the deprecation policy and process please refer to the
-[Deprecation document](../full/deprecation.md).
+[Deprecation document](../dev/deprecation.md).

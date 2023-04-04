@@ -73,7 +73,7 @@ most, if not all, plugin commands, hence care has to be taken when any changes
 to them are made. Any request to add or remove a flag has to be preceded with
 the filing of a [feature request](https://github.com/vmware-tanzu/tanzu-cli/issues/new?assignees=&labels=needs-triage%2C+kind%2Ffeature&template=feature_request.md)
 explaining the rationale. The change, should it be implemented, will be
-accompanied by a clear [deprecation notice](../full/deprecation.md).
+accompanied by a clear [deprecation notice](../dev/deprecation.md).
 
 ### Nouns
 
