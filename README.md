@@ -8,7 +8,7 @@ watch this page for further updates.
 
 ## Overview
 
-VVV: diagram maybe?
+<!-- VVV: diagram maybe? -->
 
 The Tanzu CLI provides integrated and unified command-line access to a broad
 array of [products and solutions](https://tanzu.vmware.com/get-started) in the
