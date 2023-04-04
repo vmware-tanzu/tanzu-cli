@@ -146,7 +146,7 @@ func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 	}
 
 	// The DB has changed and needs to be updated in the cache.
-	log.Infof("Updating plugin database cache for %s, this will take a few seconds.", od.image)
+	log.Infof("Reading plugin inventory for %q, this will take a few seconds.", od.image)
 
 	// Get the custom public key path and prepare cosign verifier, if empty, cosign verifier would use embedded public key for verification
 	customPublicKeyPath := os.Getenv(constants.PublicKeyPathForPluginDiscoveryImageSignature)
