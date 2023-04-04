@@ -1,27 +1,18 @@
 # Plugin Contract
 
-plugin auto-completion integration
-
-- plugin expected to provide autocompletion support for its commands
-
-The Tanzu Core CLI will capture and passthrough the arguments it receives plugin post-install
-
---------------------------
-
-More than any arbitrary executable binary, the plugin binary has to satisfy a set of requirements for
-use as a Tanzu CLI plugin. These requirements are also referred to as the
-plugin contract.
+For the plugin binary to be usable as a Tanzu CLI plugin, it must meet a set of
+requirements. These requirements are also referred to as the plugin contract.
 
 Since the primary means through which the CLI interacts with plugins is via
 plugin command invocation. The contract that each plugin has to satisfy can be
-summarized as a set of commands it is expected to implement:
+summarized as a set of commands it is expected to implement.
 
-## Commands to implement
+## Plugin Contract Commands
 
 ### `version`
 
-This command provides basic version information about the plugin, likely the
-only common command of broad use to the CLI user.
+This command provides version information about the plugin. The CLI user may
+use this command to obtain the plugin's version as well.
 
 ### `info`
 
@@ -36,23 +27,24 @@ The output of the command is a JSON structure, like this:
   "name": "builder",
   "description": "Build Tanzu components",
   "target": "global",
-  "version": "v0.1.0-dev-18-g3531c92c",
+  "version": "v0.90.0",
   "buildSHA": "3531c92c",
   "digest": "",
   "group": "Admin",
   "docURL": "",
   "completionType": 0,
-  "pluginRuntimeVersion": "v0.0.2-0.20230321210330-330c29284da6"
+  "pluginRuntimeVersion": "v0.82.0"
 }
 ```
 
 ### `post-install`
 
-This command provides a means for a plugin to optionally implement some logic
+This command provides a means for a plugin to _optionally_ implement some logic
 to be invoked right after a plugin is installed. To provide a customized
 post-install behavior, plugin developers should provide a PostInstallHook as
 part of the PluginDescriptor. Said function will be called when the
-post-install command is invoked (every time a plugin is installed).
+post-install command is invoked (which happens every time a plugin is
+installed).
 
 ### `generate-docs`
 
@@ -75,7 +67,8 @@ plugin-specific functionality.
 
 ## Satisfying the contract
 
-By integrating the tanzu-plugin-runtime library, the plugin contract can be
-satisfied with minimal effort. This is accomplished by instantiating a new
+The plugin contract can be met with minimal effort by integrating with the
+tanzu-plugin-runtime library. This is accomplished by instantiating a new
 Plugin object and supply some plugin-specific metadata along with it. For
-more details, see the "bootstrapping a plugin project" section of the [plugin developer guide](README.md)
+more details, see the "bootstrapping a plugin project" section of the
+[plugin developer guide](README.md)
