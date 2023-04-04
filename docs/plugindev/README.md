@@ -2,27 +2,27 @@
 
 ## Introduction
 
-The Tanzu CLI was built to be extensible across teams and be cohesive across
+The Tanzu CLI was built to be extensible across teams and cohesive across
 SKUs. To this end, the Tanzu CLI provides tools to make creating and compiling
 new plugins straightforward.
 
-Before embarking on developing a plugin, the develop should be familiar with
+Before embarking on developing a plugin, the developer should be familiar with
 the following materials:
 
-1. The key concepts related to the the Tanzu CLI
+1. The key concepts related to the Tanzu CLI
 2. The [CLI plugin architecture](../full/cli-architecture.md#plugins)
 3. The [Tanzu CLI Styleguide](style_guide.md), which describes the user
 interaction best practices to be followed. It is highly recommended that anyone
 interested in developing a Tanzu CLI plugin be familiarized with the
 recommendations.
-4. The [build stage](build_stage_styleguide_checklist.md) and [design stage](design_stage_styleguide_checklist.md) style guide checklist are useful resources to refer to so as to maximize UX consistency in the plugin being deveoped.
+4. The [build stage](build_stage_styleguide_checklist.md) and [design stage](design_stage_styleguide_checklist.md) style guide checklists are useful resources to refer to maximize UX consistency in the plugin being developed.
 
 This document will primarily focus on setting up a development environment to
 build and publish plugins.
 
 ### Note to developers with existing plugin projects
 
-For plugin projects implemented based on legacy Tanzu CLI codebase, some minor
+For plugin projects implemented based on the legacy Tanzu CLI codebase, some minor
 adjustments will have to be made to account for the new code dependencies and
 plugin publishing process. See the [transition guide](migrate.md) for more
 details.
@@ -36,9 +36,8 @@ implement the [plugin contract](contract.md).
 
 The Tanzu Core CLI and runtime library are written in the Go programming
 language. While the plugin architecture technically does not prevent the
-development of plugins using other programming languages, at the moment the
-only supported means of plugin development is that which integrates with a
-released version of the runtime library.
+development of plugins using other programming languages, at the moment the only supported means of plugin development is that which integrates with 
+the released version of the runtime library.
 
 The minimum supported Go version is 1.18.
 
@@ -46,7 +45,7 @@ You will need Docker to be installed on your development system.
 
 Note for Mac developers on Apple Silicon machines: Tanzu CLI does not yet
 officially support arm64-based binaries.  To develop on these machines ensure
-that amd64 versions of the Go toolchain is installed.
+that the amd64 version of the Go toolchain is installed.
 
 ------------------------------
 
@@ -57,13 +56,13 @@ CLI plugins. These are termed "admin plugins" for the rest of the document.
 
 The easiest way to bootstrap a new plugin project is to make use of the
 `builder` admin plugin. This plugin provides commands to construct scaffolding
-for plugins and commands, and remove much of the need to write boilerplate
+for plugins and plugin commands along with removing the need to write boilerplate
 code. Use one of the following methods to install the builder plugin.
 
-#### Installing official release of admin plugins
+#### Installing the official release of admin plugins
 
 ```console
-tanzu plugin install --group vmware-tzcli/admin:v0.0.1
+tanzu plugin install --group vmware-tzcli/admin:v0.90.0-alpha.0
 OR
 tanzu plugin install builder
 ```
@@ -78,11 +77,11 @@ For more details on the builder plugin, see the [command reference](../cli/comma
 tanzu builder init <repo-name>
 ```
 
-either specify the --repo-type or be prompted to choose between GitLab or
+either specify the `--repo-type` or be prompted to choose between GitLab or
 GitHub type repository. The choice will determine the type of skeleton CI
 configuration file generated.
 
-#### 2) add main package
+#### 2) add the main package
 
 ```shell
 cd <repo-name> && tanzu builder cli add-plugin <plugin-name>
@@ -117,7 +116,7 @@ func main() {
 }
 ```
 
-#### 4) commit the changes to repository
+#### 4) commit the changes to the repository
 
 Create an initial commit.
 
@@ -133,7 +132,7 @@ git tag v0.0.1 # TAG the repository if it has no tag.
 Configure the go modules
 
 ```shell
-# Configure the go module for tanzu-plugin-runtime to point to `main` branch
+# Configure the go module for tanzu-plugin-runtime to point to the `main` branch
 # This step should not required once we have `v0.90.0-alpha.0` is tagged for the repository
 go get github.com/vmware-tanzu/tanzu-plugin-runtime@main
 
@@ -146,14 +145,14 @@ git commit -m "Configure go.mod and go.sum"
 
 ### Building a Plugin
 
-At this point the source repository does not yet have any specific commands
-implemented, but yet a fully functional plugin should (with some common
+At this point, the source repository does not yet have any specific commands
+implemented, but yet a fully functional plugin (with some common
 commands included) should already be buildable.
 
 The `builder` plugin also provides functionality to build, install or publish
 the plugins. These capabilities are most easily accessed through Makefile
-targets already set up for the same purposes. All plugin related tooling has been
-added using `plugin-tooling.mk` file.
+targets already set up for the same purposes. All plugin-related tooling has been
+added using the `plugin-tooling.mk` file.
 
 #### Build the plugin binary
 
@@ -161,7 +160,7 @@ added using `plugin-tooling.mk` file.
 # Building all plugins within the repository
 make plugin-build-local
 
-# Building only single plugin
+# Building only a single plugin
 make plugin-build-local PLUGIN_NAME="<plugin-name>"
 
 # Building multiple plugins at a time
@@ -171,13 +170,13 @@ make plugin-build-local PLUGIN_NAME="{plugin-name-1,plugin-name-2}"
 This will build plugin artifacts under `./artifacts` with plugins organized under: `artifacts/plugins/<OS>/<ARCH>/<TARGET>`
 
 ```sh
-# Installing all plugins from local source using make target
+# Installing all plugins from a local source using the makefile target
 make plugin-install-local
 # Installing plugins from local source using the tanzu-cli command
 tanzu plugin install --local ./artifacts/plugins/${HOSTOS}/${HOSTARCH} [pluginname|all]
 ```
 
-User can also use below make target to build and install plugins at once.
+Users can also use the below make target to build and install plugins at once.
 
 ```sh
 # Combined Build and Install target is also available
@@ -193,7 +192,7 @@ The next steps are to write the plugin code to implement what the plugin is mean
 
 #### Adding plugin commands
 
-The scaffolded code creates a Plugin object to which additional sub [cobra.Command's](https://pkg.go.dev/github.com/spf13/cobra#Command) can be added to.
+The scaffolded code creates a Plugin object to which additional sub [cobra.Command](https://pkg.go.dev/github.com/spf13/cobra#Command) can be added.
 
 #### Tests
 
@@ -231,12 +230,12 @@ make plugin-build-and-publish-packages
 
 ### Updating the plugin inventory of the plugin repository
 
-VVV worth considering providing a single step to e2e build/publish?
+<!-- VVV worth considering providing a single step to e2e build/publish? -->
 
 ```sh
-# Initialize empty sqlite database
+# Initialize empty SQLite database
 make inventory-init
-# Add plugin entry to the sqlite database
+# Add plugin entry to the SQLite database
 make inventory-plugin-add
 ```
 
@@ -252,11 +251,11 @@ The following CLI configuration can be set to instruct the CLI to query it
 tanzu config set env.TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY localhost:5001/test/v1/tanzu-cli/plugins/plugin-inventory:latest
 ```
 
-Once set, plugin lifecycle commands like `tanzu plugin search` will be interact with the test repository as well.
+Once set, plugin lifecycle commands like `tanzu plugin search` will interact with the test repository as well.
 
 Note: as the configuration variable implies, the
 `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` setting is meant for
-plugin development and testing only. Use of this setting in production setting
+plugin development and testing only. The use of this setting in the production setting
 is not supported.
 
 ------------------------------
@@ -278,14 +277,14 @@ declarative commands, the command should return immediately with an exit code
 indicating the server's response.
 
 The completion notice should include an example of the `get` command the user
-would need in order to poll the resource to check the state/status of the
+would need to poll the resource to check the state/status of the
 operation.
 
 ### Shell Completion
 
 Shell completion (or "command-completion" or "tab completion") is the ability
-for the program to automatically fill-in partially typed commands, arguments,
-flags and flag values. The Tanzu CLI provides an integrated solution for shell
+for the program to automatically fill in partially typed commands, arguments,
+flags, and flag values. The Tanzu CLI provides an integrated solution for shell
 completion which will automatically take care of completing commands and flags
 for your plugin. To make the completions richer, a plugin can add logic to
 also provide shell completion for its arguments and flag values; these are
@@ -305,7 +304,7 @@ XDG_DATA_HOME/.config/tanzu, which will typically be `~/.config/tanzu/` on most 
 For more details on the APIs available to retrieve or set various CLI configuration settings, refer to
 [Plugin UX component library](https://github.com/vmware-tanzu/tanzu-plugin-runtime/tree/main/docs/config.md)
 
-### Other state kept on the CLI machine
+### Other states kept on the CLI machine
 
 Besides `XDG_DATA_HOME/.config/tanzu`, the following directories are also used
 to exclusively store data and artifacts specific to Tanzu CLI:
@@ -319,7 +318,7 @@ Cleaning out the above-mentioned directories should restore the CLI to a pristin
 
 It is highly recommended that plugin authors follow the same process used by
 the Core CLI to announce and implement deprecation of specific plugin
-functionality .
+functionality.
 
 For more details on the deprecation policy and process please refer to the
 [Deprecation document](../dev/deprecation.md).

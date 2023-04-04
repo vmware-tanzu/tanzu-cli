@@ -1,16 +1,15 @@
 # Plugin Contract
 
-plugin autocompletion integration
+plugin auto-completion integration
 
-- plugin expected to provide autocompletion support for its own commands
+- plugin expected to provide autocompletion support for its commands
 
-main cli will capture and passthrough the arguments it receives
-plugin post-install
+The Tanzu Core CLI will capture and passthrough the arguments it receives plugin post-install
 
 --------------------------
 
-More than any arbitrary executable binary, the plugin binary has to satisfy a set of for
-usable as a Tanzu CLI plugin. These requirements are also referred to as the
+More than any arbitrary executable binary, the plugin binary has to satisfy a set of requirements for
+use as a Tanzu CLI plugin. These requirements are also referred to as the
 plugin contract.
 
 Since the primary means through which the CLI interacts with plugins is via
@@ -30,7 +29,7 @@ This command  provides metadata about the plugin that the CLI will use when
 presenting information about plugins or when performing lifecycle operations on
 them.
 
-The output of the command is a json structure, like this:
+The output of the command is a JSON structure, like this:
 
 ```json
 {
@@ -71,12 +70,12 @@ possible to minimize violations flagged by this command.
 ### Notes
 
 It should be apparent that the above-mentioned command names are reserved for
-the purpose of the plugin contract and are thus unevailable for implementing
+the purpose of the plugin contract and are thus unavailable for implementing
 plugin-specific functionality.
 
 ## Satisfying the contract
 
-By integrating the the tanzu-plugin-runtime library, the plugin contract can be
-satisfied with minimal effort. This is accomplished via instantiating a new
-Plugin object and supplying some plugin-specific metadata along with it. For
+By integrating the tanzu-plugin-runtime library, the plugin contract can be
+satisfied with minimal effort. This is accomplished by instantiating a new
+Plugin object and supply some plugin-specific metadata along with it. For
 more details, see the "bootstrapping a plugin project" section of the [plugin developer guide](README.md)
