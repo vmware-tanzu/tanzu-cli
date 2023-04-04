@@ -25,7 +25,7 @@ Any pull request with user-visible changes is required to add release notes. Thi
 * API changes
 * CLI Changes
 * Configuration schema change
-* Fix of a vulnerability (CVE)
+* Fix a vulnerability (CVE)
 
 No release notes are required for changes to:
 
@@ -37,8 +37,8 @@ No release notes are required for changes to:
 A release note needs a clear, concise description of the change in simple plain language.
 This includes:
 
-* An indicator if the pull request Added, Changed, Fixed, Removed, Deprecated functionality or changed enhancement.
-* The name of the affected API or configuration fields, CLI commands/flags.
+* An indicator if the pull request Added, Changed, Fixed, Removed, Deprecated functionality, or changed enhancement.
+* The name of the affected API or configuration fields, and CLI commands/flags.
 * A link to relevant user documentation about the enhancement/feature.
 
 Your release note should be written in clear and straightforward sentences.
@@ -53,13 +53,13 @@ Write the release note like you are in the future like:
 
 Some examples of release notes:
 
-* The command foo has been deprecated, will be removed in version "1.5.0".
+* The command foo has been deprecated, and will be removed in version "1.5.0".
   Users of this command should use "bar" instead.
 * Fixed a bug that prevents CLI from initializing.
 
 ## Applying a Release Note
 
-Any pull request with user visible changes should include a release-note block in the pull request description.
+Any pull request with user-visible changes should include a release-note block in the pull request description.
 
 For pull requests with a release note:
 

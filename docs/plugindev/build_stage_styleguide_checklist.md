@@ -35,7 +35,7 @@ Each item in the checklist below has a high, medium, or low importance rating to
 
 * [ ] **Does interaction deactivate when not using a tty interface?** (importance: high)
 * [ ] **Is there helpful behavior if no required arg or flags are specified?** (importance: medium)
-  * For example: show help, show error, or provide interactive prompt
+  * For example: show help, show error, or provide an interactive prompt
 
 ### Execution
 
@@ -53,11 +53,11 @@ Each item in the checklist below has a high, medium, or low importance rating to
 ### Outputs
 
 * [ ] **Is the default output format human friendly?** (importance: high)
-  * For example tables, key/value pairs etc... (not JSON/YAML etc...)
+  * For example tables, key/value pairs, etc... (not JSON/YAML, etc...)
 * [ ] **Do all [date/times](style_guide.md#time-format) follow the ISO 8601 standard?** (importance: high)
   * For example: `2021-03-02T15:43:12.41-0700`
 * [ ] **Do [table styles](style_guide.md#tables) align with the styledguide?** (importance: medium)
-* [ ] **Does [key:value pair styling](style_guide.md#keyvalue-pairs) align with the styleguide?** (importance: medium)
+* [ ] **Does [key:value pair styling](style_guide.md#keyvalue-pairs) align with the style guide?** (importance: medium)
 
 ### Help text
 
@@ -65,7 +65,7 @@ Each item in the checklist below has a high, medium, or low importance rating to
 * [ ] **For complex commands, are there examples?** (importance: medium)
 * [ ] **Does the help text include URL for docs?** (importance: low)
 
-### Errors / warnings
+### Errors/warnings
 
 * [ ] **If there are experimental commands, do they include a warning notice in the confirmation feedback when run?** (importance: high)
-* [ ] **Are there tailored error messeges for known / common error cases?** (importance: medium)
+* [ ] **Are there tailored error messages for known/common error cases?** (importance: medium)
