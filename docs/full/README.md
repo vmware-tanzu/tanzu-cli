@@ -12,7 +12,7 @@ be delivered through independently developed plugin binaries.
 
 While the CLI provides some core functionality like CLI configuration, a
 unified command tree and plugin management, much of its power comes from the
-plugins that integrates with it.
+plugins that integrate with it.
 
 ## Command Groups and Targets
 
