@@ -139,14 +139,55 @@ There is a small set of commands that every plugin provides. These commands are
 typically not invoked directly by CLI users; some are in fact hidden for that
 reason. Below is a brief summary of these commands
 
-`version`: provides basic version information about the plugin, likely the only common command of broad use to the CLI user.
+`version`: provides basic version information about the plugin, likely the only
+common command of broad use to the CLI user.
 
-`info`: provides metadata about the plugin that the CLI will use when presenting information about plugins or when performing lifecycle operations on them.
+`info`: provides metadata about the plugin that the CLI will use when presenting
+information about plugins or when performing lifecycle operations on them.
 
-`post-install`: provide a means for a plugin to optionally implement some logic to be invoked right after a plugin is installed.
+`post-install`: provide a means for a plugin to optionally implement some logic
+to be invoked right after a plugin is installed.
 
-`generate-docs`: generate a tree of documentation markdown files for the commands the plugin provides, typically used by the CLI's hidden `generate-all-docs` command to produce command documentation for all installed plugins.
+`generate-docs`: generate a tree of documentation markdown files for the
+commands the plugin provides, typically used by the CLI's hidden
+`generate-all-docs` command to produce command documentation for all installed
+plugins.
 
 `lint`: validate the command name and arguments to flag any new terms unaccounted for in the CLI taxonomy document.
 
 More information about these commands are available in the [plugin contract](../plugindev/contract.md) section of the plugin development guide.
+
+## Secure plugin installation
+
+CLI verifies the identity and integrity of the plugin while installing the plugin
+from the repository. You can find more details in
+the [secure plugin installation proposal document](../proposals/secure-plugin-installation-design.md)
+
+### User experience
+
+CLI verifies cosign signature of the plugin inventory image present in the
+repository. If the signature verification is successful, it would download the
+plugin inventory image on the user's machine and caches the verified plugin
+inventory image to improve the latency on subsequent plugin installation/search
+commands. If the signature verification fails, CLI would throw an error and
+stops continuing.
+Signature verification could fail in the scenarios below:
+
+1. Unplanned key rotation: In this case, user either can update to the latest
+   CLI version release with the new key, or users should download the new
+   public key posted in a well known secure location[TBD] to their local file
+   system and export the path of the public key by setting the environment
+   variable `TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH`.
+2. Repositories without a signature: If users/developers wants to use their own
+   repository without the signature for testing, they can skip the
+   validation (not recommended in production) by appending the repository URL to
+   the comma-separated list in the environment
+   variable `TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST`
+   . (e.g. to skip signature validation for 2 plugin test repositories:
+   `tanzu config set env.TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST
+   "test-registry1.harbor.vmware.com/plugins/plugin-inventory:latest,test-registry2.harbor.vmware.com/plugins/plugin-inventory:latest"`)
+   .
+   After the repository URL is added to skip list, CLI would show warning message
+   that signature verification is skipped for the repository. Users can choose to
+   suppress this warning by setting the environment variable `TANZU_CLI_SUPPRESS_SKIP_SIGNATURE_VERIFICATION_WARNING`
+   to `true`.
