@@ -169,6 +169,8 @@ Plugins from Context:  tkg-mgmt-vc
   kubernetes-release  Kubernetes release operations         kubernetes  v0.28.0  installed
 ```
 
+To learn more about the plugins from context, please check [context-scoped plugin installation](../full/context-scoped-plugins.md).
+
 ## Notes to users of previous versions of the Tanzu CLI
 
 The Tanzu CLI provided by this project is independently installable successor
@@ -196,8 +198,3 @@ instead.
 
 Given that these recommended  plugins are synched automatically, the `sync`
 command will not normally need to be used manually by CLI users.
-
-VVV remove?
-However, in the case the user were to uninstall plugins, or install other
-versions and then want to revert to the state provided by the context, this
-command can be used.
