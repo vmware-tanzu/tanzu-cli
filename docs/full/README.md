@@ -107,7 +107,7 @@ features.global.FEATURE | true or false | This path activates or deactivates glo
 
 ### Features
 
-#### To activate a CLI feature:
+#### To activate a CLI feature
 
 To activate a global feature, run:
 
@@ -120,7 +120,7 @@ To activate a plugin feature, run:
 Where PLUGIN is the name of the CLI plugin. For example, cluster or
 management-cluster. FEATURE is the name of the feature that you want to activate.
 
-#### To deactivate a CLI feature:
+#### To deactivate a CLI feature
 
 To deactivate a global feature, run:
 

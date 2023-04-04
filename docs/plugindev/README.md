@@ -36,7 +36,8 @@ implement the [plugin contract](contract.md).
 
 The Tanzu Core CLI and runtime library are written in the Go programming
 language. While the plugin architecture technically does not prevent the
-development of plugins using other programming languages, at the moment the only supported means of plugin development is that which integrates with
+development of plugins using other programming languages, at the moment
+the only supported means of plugin development is that which integrates with
 the released version of the runtime library.
 
 The minimum supported Go version is 1.18.
