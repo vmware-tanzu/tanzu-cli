@@ -60,7 +60,7 @@ var _ = BeforeSuite(func() {
 		framework.CopyPluginsBetweenPluginGroupsAndUpdatePluginsVersion(pluginGroupToPluginListMap, pluginGroupLatest, framework.PluginGroupsLatestToOldVersions[pluginGroupLatest], strings.Split(framework.PluginGroupsLatestToOldVersions[pluginGroupLatest], "/")[1])
 	}
 
-	// check for every plugin group (in framework.PluginGroupsForLifeCycleTests) there should be plugin's available
+	// check for every plugin group (in framework.PluginGroupsForLifeCycleTests) there should be plugins available
 	for pg := range pluginGroupToPluginListMap {
 		Expect(len(pluginGroupToPluginListMap[pg])).Should(BeNumerically(">", 0), "there should be at least one plugin available for each plugin group in plugin group life cycle list")
 	}

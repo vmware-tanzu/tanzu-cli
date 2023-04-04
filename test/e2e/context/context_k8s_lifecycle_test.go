@@ -49,7 +49,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterContext)
+			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
@@ -58,7 +58,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 		It("create context with incorrect kubeconfig and context", func() {
 			By("create context with incorrect kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, framework.RandomString(4), clusterInfo.ClusterContext)
+			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, framework.RandomString(4), clusterInfo.ClusterKubeContext)
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, ctxName))

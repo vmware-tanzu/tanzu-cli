@@ -238,21 +238,6 @@ func IsPluginSourceExists(list []*PluginSourceInfo, sourceName string) bool {
 	return false
 }
 
-/*
-// CheckAllPluginsAvailable checks requiredPlugins are exists in the allPlugins
-func CheckAllPluginsAvailable(allPlugins, requiredPlugins []*PluginInfo) bool {
-	set := PluginListToSet(requiredPlugins)
-	for _, plugin := range allPlugins {
-		key := fmt.Sprintf(PluginKey, plugin.Name, plugin.Target, plugin.Version)
-		_, ok := set[key]
-		if ok {
-			delete(set, key)
-		}
-	}
-	return len(set) == 0
-}
-*/
-
 // CheckAllPluginsExists checks all PluginInfo's in subList are available in superList
 // superList is the super set, subList is sub set
 func CheckAllPluginsExists(superList, subList []*PluginInfo) bool {
@@ -271,4 +256,24 @@ func CheckAllPluginsExists(superList, subList []*PluginInfo) bool {
 		}
 	}
 	return true
+}
+
+// GetInstalledPlugins takes list of plugins and returns installed only list of plugins
+func GetInstalledPlugins(pluginList []*PluginInfo) []*PluginInfo {
+	installedPlugin := make([]*PluginInfo, 0)
+	for i := range pluginList {
+		if pluginList[i].Status == Installed {
+			installedPlugin = append(installedPlugin, pluginList[i])
+		}
+	}
+	return installedPlugin
+}
+
+// IsPluginExists validates the given plugin (with plugin status) is exists in the plugins list or not
+func IsPluginExists(pluginList []*PluginInfo, plugin *PluginInfo, pluginInstallationStatus string) bool {
+	isExist := CheckAllPluginsExists(pluginList, append(make([]*PluginInfo, 0), plugin))
+	if isExist {
+		return plugin.Status == pluginInstallationStatus
+	}
+	return isExist
 }

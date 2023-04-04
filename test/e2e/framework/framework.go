@@ -51,8 +51,9 @@ const (
 	TanzuCliE2ETestLocalCentralRepositoryURL = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL"
 
 	// General constants
-	True      = "true"
-	Installed = "installed"
+	True         = "true"
+	Installed    = "installed"
+	NotInstalled = "not installed"
 
 	// Context commands
 	CreateContextWithEndPoint              = "tanzu context create --endpoint %s --name %s"
@@ -140,7 +141,7 @@ var PluginGroupsForLifeCycleTests []*PluginGroup
 
 // PluginGroupsLatestToOldVersions is plugin group names mapping latest version to old version, of same target,
 // we are mapping because the 'tanzu plugin search' is not displaying plugins for old versions, showing only latest version of plugins
-// we need this mapping for plugin sync test cases, we want to install same plugin's but for different versions
+// we need this mapping for plugin sync test cases, we want to install same plugins but for different versions
 var PluginGroupsLatestToOldVersions map[string]string
 
 // CLICoreDescribe annotates the test with the CLICore label.

@@ -20,7 +20,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 	// a. create k8s context for the KIND cluster
 	// b. create context and validate current active context
 	// c. list plugins and make sure no plugins installed
-	// d. delete KIND cluster
+	// d. delete current context and KIND cluster
 	Context("plugin install from group: install a plugin from a specific plugin group", func() {
 		var clusterInfo *framework.ClusterInfo
 		var contextName string
@@ -35,7 +35,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextName = "sync-e2e-" + framework.RandomString(4)
-			err := tf.ContextCmd.CreateConextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			err := tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -47,8 +47,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(Equal(0), "there should not be any context specific plugins")
 		})
-		// Test case: d. delete KIND cluster
-		It("delete the KIND cluster", func() {
+		// Test case: d. delete current context and KIND cluster
+		It("delete current context and the KIND cluster", func() {
 			err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), "context should be deleted without error")
 			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
@@ -64,11 +64,11 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 	// d. list plugins and validate plugins info, make sure all plugins installed for which CR's has applied to KIND cluster
 	// e. uninstall one of the installed plugin, make sure plugin is uninstalled,
 	//		run plugin sync, make sure the uninstalled plugin has installed again.
-	// f. delete the KIND cluster
+	// f. delete current context and KIND cluster
 	Context("Use case: Install KIND Cluster, Apply CRD, Apply specific plugin CRs, create context and validate plugin sync", func() {
 		var clusterInfo *framework.ClusterInfo
 		var pluginCRFilePaths []string
-		var pluginsInfoForCRsApplied, pluginsList []*framework.PluginInfo
+		var pluginsInfoForCRsApplied, installedPluginsList []*framework.PluginInfo
 		var contextName string
 		var err error
 		// Test case: a. create KIND cluster, apply CRD
@@ -93,18 +93,18 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextName = "sync-e2e-" + framework.RandomString(4)
-			err := tf.ContextCmd.CreateConextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			err := tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextName), "the active context should be recently added context")
 		})
-		// Test case: d. list plugins and validate plugins info, make sure all plugins installed for which CR's has applied to KIND cluster
+		// Test case: d. list plugins and validate plugins info, make sure all plugins are installed for which CRs were present on the cluster
 		It("list plugins and validate plugins being installed after context being created", func() {
-			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			installedPluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(Equal(len(pluginsInfoForCRsApplied)), "number of plugins should be same as number of plugins CRs applied")
-			Expect(framework.CheckAllPluginsExists(pluginsList, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
+			Expect(len(installedPluginsList)).Should(Equal(len(pluginsInfoForCRsApplied)), "number of plugins should be same as number of plugins CRs applied")
+			Expect(framework.CheckAllPluginsExists(installedPluginsList, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 		})
 
 		// Test case: e. uninstall one of the installed plugin, make sure plugin is uninstalled,
@@ -115,21 +115,23 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 			Expect(err).To(BeNil(), "should not get any error for plugin uninstall")
 
 			latestPluginsInstalledList := pluginsInfoForCRsApplied[1:]
-			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			allPluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextName, false)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(Equal(len(latestPluginsInstalledList)), "number of plugins should be same as number of plugins CRs applied")
-			Expect(framework.CheckAllPluginsExists(pluginsList, latestPluginsInstalledList)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
+			installedPluginsList = framework.GetInstalledPlugins(allPluginsList)
+			Expect(framework.IsPluginExists(allPluginsList, pluginToUninstall, framework.NotInstalled)).To(BeTrue(), "uninstalled plugin should be listed as not installed")
+			Expect(len(installedPluginsList)).Should(Equal(len(latestPluginsInstalledList)), "number of plugins should be same as number of plugins CRs applied")
+			Expect(framework.CheckAllPluginsExists(installedPluginsList, latestPluginsInstalledList)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 
 			_, err = tf.PluginCmd.Sync()
 			Expect(err).To(BeNil(), "should not get any error for plugin sync")
 
-			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			installedPluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(Equal(len(pluginsInfoForCRsApplied)), "number of plugins should be same as number of plugins CRs applied")
-			Expect(framework.CheckAllPluginsExists(pluginsList, pluginsInfoForCRsApplied)).Should(BeTrue(), "plugins being installed and plugins info for which CRs applied should be same")
+			Expect(len(installedPluginsList)).Should(Equal(len(pluginsInfoForCRsApplied)), "number of plugins should be same as number of plugins CRs applied")
+			Expect(framework.CheckAllPluginsExists(installedPluginsList, pluginsInfoForCRsApplied)).Should(BeTrue(), "plugins being installed and plugins info for which CRs applied should be same")
 		})
-		// f. delete the KIND cluster
-		It("delete the KIND cluster", func() {
+		// f. delete current context and the KIND cluster
+		It("delete current context and the KIND cluster", func() {
 			err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), "context should be deleted without error")
 			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
@@ -139,11 +141,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 	// Use case 3: Test plugin sync when central repo does not have all plugin CRs being applied in KIND cluster
 	// Steps:
 	// a. create KIND cluster
-	// b. apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins which are available in centra repo and CR's for plugins which are not available in central repo
-	// c. create context and make sure context has created
-	// d. list plugins and validate plugins info, make sure all plugins installed for which CR's has applied to KIND cluster and available in central repo
-	// e. uninstall one of the installed plugin, make sure plugin is uninstalled,
-	//		run plugin sync, make sure the uninstalled plugin has installed again.
+	// b. apply CRD (cluster resource definition) and CRs (cluster resource) for a few plugins which are available in the central repo and CRs for plugins which are not available in the central repo
+	// c. create context and make sure context has been created
+	// d. list plugins and validate plugins info, make sure all plugins installed for which CRs have applied to the KIND cluster and are available in the central repo
+	// e. run plugin sync and validate the plugin list
 	// f. delete the KIND cluster
 	Context("Use case: Install KIND Cluster, Apply CRD, Apply specific plugin CRs, create context and validate plugin sync", func() {
 		var clusterInfo *framework.ClusterInfo
@@ -180,7 +181,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextName = "sync-e2e-" + framework.RandomString(4)
-			err := tf.ContextCmd.CreateConextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			err := tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -194,7 +195,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 			Expect(framework.CheckAllPluginsExists(pluginsList, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 		})
 
-		// Test case: e. run plugin sync
+		// Test case: e. run plugin sync and validate the plugin list
 		It("Uninstall one of the installed plugin", func() {
 			_, err = tf.PluginCmd.Sync()
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.UnableToFindPluginForTarget, pluginsWithIncorrectVer[0].Name, pluginsWithIncorrectVer[0].Target)))
@@ -216,8 +217,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 	// Use case 4: test delete context use case, it should uninstall plugins installed for the context
 	// Steps:
 	// a. create KIND cluster
-	// b. apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins
-	// c. create context and make sure context has created, list plugins, make sure all plugins installed for which CR's are applied in KIND cluster
+	// b. apply CRD (cluster resource definition) and CRs (cluster resource) for few plugins
+	// c. create context and make sure context gets created, list plugins, make sure all
+	//    plugins installed for which CRs are applied in KIND cluster
 	// d. delete the context, make sure all context specific plugins are uninstalled
 	// e. delete the KIND cluster
 	Context("Use case: Install KIND Cluster, Apply CRD, Apply specific plugin CRs, create context and validate plugin sync", func() {
@@ -248,7 +250,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("create context and validate installed plugins list, should installed all plugins for which CRs has applied in KIND cluster", func() {
 			By("create context with kubeconfig and context")
 			contextName = "sync-e2e-" + framework.RandomString(4)
-			err = tf.ContextCmd.CreateConextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
@@ -318,7 +320,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("create context and validate installed plugins list, should installed all plugins for which CRs has applied in KIND cluster", func() {
 			By("create context with kubeconfig and context")
 			contextNameClusterOne = "sync-e2e-" + framework.RandomString(4)
-			err = tf.ContextCmd.CreateConextWithKubeconfig(contextNameClusterOne, clusterOne.KubeConfigPath, clusterOne.ClusterKubeContext)
+			err = tf.ContextCmd.CreateContextWithKubeconfig(contextNameClusterOne, clusterOne.KubeConfigPath, clusterOne.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			pluginsListClusterOne, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameClusterOne, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
@@ -330,7 +332,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("create context and validate installed plugins list, should installed all plugins for which CRs has applied in KIND cluster", func() {
 			By("create context with kubeconfig and context")
 			contextNameClusterTwo = "sync-e2e-" + framework.RandomString(4)
-			err = tf.ContextCmd.CreateConextWithKubeconfig(contextNameClusterTwo, clusterTwo.KubeConfigPath, clusterTwo.ClusterKubeContext)
+			err = tf.ContextCmd.CreateContextWithKubeconfig(contextNameClusterTwo, clusterTwo.KubeConfigPath, clusterTwo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			pluginsListClusterTwo, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameClusterTwo, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")

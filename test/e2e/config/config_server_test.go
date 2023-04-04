@@ -47,7 +47,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Config-Server]", func() {
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterContext)
+			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), "context should be available")
 			contextNames = append(contextNames, ctxName)
