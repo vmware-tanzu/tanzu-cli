@@ -77,7 +77,7 @@ Commands producing meaningful output consistently provide alternative output suc
 
 The CLI is configured to use a default plugin repository. Through various commands like `tanzu plugin search`, `tanzu plugin install`, `tanzu plugin group install`, the CLI provides various means to discover, then securely install or update plugins to serve specific needs of the user.
 
-Certain context endpoints will require that a specific set of plugins be installed so as enable proper interaction with said endpoints. For these, establish a connection with these endpoints will lead to the discovery and automatic installation of the additional plugins. Plugins installed through this mean of discovery are referred to as "context-scoped" plugins.
+Certain context endpoints will require that a specific set of plugins be installed so as enable proper interaction with said endpoints. For these, establish a connection with these endpoints will lead to the discovery and automatic installation of the additional plugins. Plugins installed through this mean of discovery are referred to as "context-scoped" plugins. To learn more about the context-scoped plugins, please check [context-scoped plugin installation](../full/context-scoped-plugins.md).
 
 For an overview on some of these plugin lifecycle commands, see the [Quickstart Guide](../quickstart/quickstart.md)
 For more details on these commands, see the [command reference](../cli/commands/tanzu_plugin.md)
@@ -111,113 +111,27 @@ To activate a CLI feature:
 
 To activate a global feature, run:
 
-tanzu config set features.global.FEATURE true
+`tanzu config set features.global.FEATURE true`
 Where FEATURE is the name of the feature that you want to activate.
 
 To activate a plugin feature, run:
 
-tanzu config set features.PLUGIN.FEATURE true
-Where:
+`tanzu config set features.PLUGIN.FEATURE true`
+Where PLUGIN is the name of the CLI plugin. For example, cluster or
+management-cluster. FEATURE is the name of the feature that you want to activate.
 
-PLUGIN is the name of the CLI plugin. For example, cluster or
-management-cluster.
-FEATURE is the name of the feature that you want to activate.
 To deactivate a CLI feature:
 
 To deactivate a global feature, run:
 
-tanzu config set features.global.FEATURE false
+`tanzu config set features.global.FEATURE false`
 Where FEATURE is the name of the feature that you want to deactivate.
 
 To deactivate a plugin feature, run:
 
-tanzu config set features.PLUGIN.FEATURE false
-Where:
-
-PLUGIN is the name of the CLI plugin. For example, cluster or
-management-cluster.
-
-FEATURE is the name of the feature that you want to deactivate.
-
-### Plugin Discovery Source
-
-VVV This section is mostly incorrect or irrelevant for the user guide.
-VVV how much to include, if at all.
-
-Discovery is the interface to fetch the list of available plugins, their
-supported versions and how to download them either standalone or scoped to a
-context(server). E.g., the CLIPlugin resource in a management cluster, OCI
-based plugin discovery for standalone plugins, a similar REST API etc. provides
-the list of available plugins and details about the supported versions. Having
-a separate interface for discovery helps to decouple discovery (which is
-usually tied to a server or user identity) from distribution (which can be
-shared).
-
-Plugins can be of two different types:
-
-  1. Standalone plugins: independent of the CLI context and are discovered using standalone discovery source
-
-      This type of plugins are not associated with the `tanzu login` workflow and are available to the Tanzu CLI independent of the CLI context.
-
-  2. Context(server) scoped plugins: scoped to one or more contexts and are discovered using kubernetes or other server associated discovery source
-
-      This type of plugins are associated with the `tanzu login` workflow and are discovered from the management-cluster or global server endpoint.
-      In terms of management-clusters, this type of plugins are mostly associated with the installed packages.
-
-      Example:
-
-      As a developer of a `velero` package, I would like to create a Tanzu CLI
-plugin that can be used to configure and manage installed `velero` package
-configuration.
-
-      This usecase can be handled with context scoped plugins by installing
-`CLIPlugin` CR related to `velero` plugin on the management-cluster as part of
-`velero` package installation.
-
-      ```sh
-      # Login to a management-cluster
-      $ tanzu login
-
-      # Installs velero package to the management-cluster along with `velero` CLIPlugin resource
-      $ tanzu package install velero-pkg --package-name velero.tanzu.vmware.com
-
-      # Plugin list should show a new `velero` plugin available
-      $ tanzu plugin list
-        NAME     DESCRIPTION                    SCOPE       DISCOVERY          VERSION    STATUS
-        velero   Backup and restore operations  Context     cluster-default    v0.1.0     not installed
-
-      # Install velero plugin
-      $ tanzu plugin install velero
-      ```
-
-The default standalone plugins discovery source automatically gets added to the tanzu config files and plugins from this discovery source are automatically discovered.
-
-```sh
-$ tanzu plugin list
-  NAME                DESCRIPTION                                 SCOPE       DISCOVERY             VERSION      STATUS
-  login               Login to the platform                       Standalone  default               v0.11.0-dev  not installed
-  management-cluster  Kubernetes management-cluster operations    Standalone  default               v0.11.0-dev  not installed
-```
-
-To add a plugin discovery source the command `tanzu plugin source add` should
-be used. For example, assuming the admin plugin's manifests are released as a
-carvel-package at OCI image
-`projects.registry.vmware.com/tkg/tanzu-plugins/admin-plugins:v0.11.0-dev` then
-we use the following command to add that discovery source to the tanzu
-configuration.
-
-```sh
- tanzu plugin source add --name admin --type oci --uri projects.registry.vmware.com/tkg/tanzu-plugins/admin-plugins:v0.11.0-dev
-```
-
-We can check the newly added discovery source with
-
-```sh
-$ tanzu plugin source list
-  NAME     TYPE  SCOPE
-  default  oci   Standalone
-  admin    oci   Standalone
-```
+`tanzu config set features.PLUGIN.FEATURE false`
+Where PLUGIN is the name of the CLI plugin. For example, cluster or
+management-cluster. FEATURE is the name of the feature that you want to deactivate.
 
 ## Common plugin commands
 

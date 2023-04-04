@@ -9,21 +9,16 @@ project and this repository.
 
 ## Updating the plugin code and dependencies
 
-Include [plugin-tooling.mk](https://github.com/vmware-tanzu/tanzu-cli/blob/main/plugin-tooling.mk) in your make file. It will provide make targets that are useful during the plugin build, test, and publishing process
+Include [plugin-tooling.mk](https://github.com/vmware-tanzu/tanzu-cli/blob/main/cmd/plugin/builder/template/plugintemplates/plugin-tooling.mk.tmpl) in your make file. It will provide make targets that are useful during the plugin build, test, and publishing process
 
-Using tanzu-plugin-runtime as a `go.mod` dependency
-github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.0
-
-VVV: let's give more concrete steps on how we want developers to update this dep (now, then later)
-
-(until we have the v0.90.0-alpha.0 release out developers can point to this tag: v0.0.2-0.20230324033521-a110e57a60b9)
+Using tanzu-plugin-runtime as a `go.mod` dependency `github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.0`
 
 Updating the import references to use `tanzu-plugin-runtime`
 
-1. The main change is to update the import references: "github.com/vmware-tanzu/tanzu-framework/cli/runtime" => "github.com/vmware-tanzu/tanzu-plugin-runtime"
+1. The main change is to update the import references: `"github.com/vmware-tanzu/tanzu-framework/cli/runtime" => "github.com/vmware-tanzu/tanzu-plugin-runtime"`
 1. Additional required changes are based on the following things:
-    - PluginDescriptor has moved from "github.com/vmware-tanzu/tanzu-framework/cli/runtime/apis/cli/v1alpha1" => "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
-"github.com/vmware-tanzu/tanzu-framework/cli/runtime/buildinfo" => "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo"
+    - PluginDescriptor has moved from `"github.com/vmware-tanzu/tanzu-framework/cli/runtime/apis/cli/v1alpha1" => "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"`
+    - `buildinfo` package has been moved from `"github.com/vmware-tanzu/tanzu-framework/cli/runtime/buildinfo" => "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo"`
     - Plugins are required to provide Target information with the PluginDescriptor.
 
 Here is the [sample change](https://github.com/anujc25/tanzu-framework/commit/cdd1239b863ef3e0e00ad5868b17966a28cacfa0)

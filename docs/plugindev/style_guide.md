@@ -416,8 +416,6 @@ Interactive prompting: user input is colorized, as is the preceding question mar
 
 * Available for plugins written in golang
 
-VVV point to plugindev components page
-
 CLI commands should utilize the [plugin runtime component library](https://github.com/vmware-tanzu/tanzu-plugin-runtime/tree/main/component) for output functionality like table printing.
 
 Available output components:
