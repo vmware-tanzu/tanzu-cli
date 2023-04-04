@@ -16,12 +16,12 @@ var (
 	// compatibility is achieved.
 
 	// DefaultPluginRoot is the default plugin root.
-	DefaultPluginRoot = filepath.Join(xdg.DataHome, "_tanzu-cli")
+	DefaultPluginRoot = filepath.Join(xdg.DataHome, "tanzu-cli")
 
 	// DefaultCacheDir is the default cache directory
-	DefaultCacheDir = filepath.Join(xdg.Home, ".cache", "_tanzu")
+	DefaultCacheDir = filepath.Join(xdg.Home, ".cache", "tanzu")
 
 	// DefaultLocalPluginDistroDir is the default Local plugin distribution root directory
 	// This directory will be used for local discovery and local distribute of plugins
-	DefaultLocalPluginDistroDir = filepath.Join(xdg.Home, ".config", "_tanzu-plugins")
+	DefaultLocalPluginDistroDir = filepath.Join(xdg.Home, ".config", "tanzu-plugins")
 )
