@@ -12,7 +12,7 @@ be delivered through independently developed plugin binaries.
 
 While the CLI provides some core functionality like CLI configuration, a
 unified command tree and plugin management, much of its power comes from the
-plugins that integrates with it.
+plugins that integrate with it.
 
 ## Command Groups and Targets
 
@@ -21,13 +21,13 @@ groups, run `tanzu`.
 
 In this example, several command groups are shown, such as cluster, builder, package, etc
 Commands within a command group can be explored via `tanzu <command group>`,
-and invocable via the tanzu command, e.g.  `tanzu cluster create ....`
+and invocable via the tanzu commands part of the command group, e.g. `tanzu cluster create ....`
 
 The list of available command groups differs based on what Tanzu CLI plugins
-are installed on your machine, and on what endpoints the CLI is currently
+are installed on your machine, and on what endpoints/contexts the CLI is currently
 configured to connect to.
 
-While not always the case, commands falling with a single command group are
+While not always the case, commands falling within a single command group are
 typically delivered by a single plugin.
 
 ## Plugin
@@ -51,7 +51,7 @@ contexts for the same combination of `(user, server)`.
 
 ## Target
 
-A Target refers to a category or tier of control planes that the CLI can interact with. There are currently two supported targets : kuberbetes (or k8s) and mission-control (or tmc) which corresponds to Kubernetes cluster endpoint type and Tanzu Mission Control endpoint types. A context is associated with one of the supported targets. Plugins are not necessarily and can often be associated with one of the targets as well. The see plugins that apply to a particular Target and not any others, run `tanzu <target>'.
+A Target refers to a category or tier of control planes that the CLI can interact with. There are currently two supported targets : kubernetes (or k8s) and mission-control (or tmc) which corresponds to the Kubernetes cluster endpoint type and Tanzu Mission Control endpoint type. A context is associated with one of the two supported targets. Plugins are not necessarily but can often be associated with one of the targets as well. To see plugins that apply to a particular Target and not the other, run the command `tanzu <target>'.
 
 Similarly, commands from plugins that are associated with a target are unambiguously invoked by prefixing the command group with the target, like so:
 
@@ -61,26 +61,26 @@ or
 tanzu k8s management-cluster ...
 ```
 
-Note that today, the CLI supports omitting the target for historical reasons, but such omission only applies command for the k8s target.  (So `tanzu management-cluster ...` variant of the above example is valid, but not `tanzu data-protection ...`). The CLI team is exploring making the 'assumed target' configurable.
+Note that today, the CLI supports omitting the target for historical reasons, but this omission only applies to commands for the k8s target.  (So `tanzu management-cluster ...` is a valid variant of the above example, but not `tanzu data-protection ...`). The CLI team is exploring making the 'assumed target' configurable.
 
 ## Interaction between CLI and its plugins
 
-The Core CLI plays several roles in plug architecture:
+The Core CLI plays several roles in the plugin architecture:
 
 ### Central, consistent point of interaction
 
-All commands provided by the CLI are invocable via the tanzu binary, which in turn dispatches the command to the appropriate plugin, capturing output and errors from the latter in the process to return back to the user.
+All commands provided by the CLI are invocable via the `tanzu` binary, which in turn dispatches the command to the appropriate plugin, capturing output and errors from the latter to return back to the user.
 
 Commands producing meaningful output consistently provide alternative output such as JSON, YAML or tabular formats using the `-o {json|yaml}` flag.
 
 ### Plugin discovery and lifecycle management
 
-The CLI is configured to use a default plugin repository. Through various commands like `tanzu plugin search`, `tanzu plugin install`, `tanzu plugin group install`, the CLI provides various means to discover, then securely install or update plugins to serve specific needs of the user.
+The CLI is configured to use a default plugin repository. Through various commands like `tanzu plugin search`, `tanzu plugin install`, `tanzu plugin install --group <groupName>`, the CLI provides various means to discover, then securely install or update plugins to serve specific needs of the user.
 
-Certain context endpoints will require that a specific set of plugins be installed so as enable proper interaction with said endpoints. For these, establish a connection with these endpoints will lead to the discovery and automatic installation of the additional plugins. Plugins installed through this mean of discovery are referred to as "context-scoped" plugins. To learn more about the context-scoped plugins, please check [context-scoped plugin installation](../full/context-scoped-plugins.md).
+Certain context endpoints will require that a specific set of plugins be installed so as to enable proper interaction with said endpoints. For these, establishing a connection with these endpoints may lead to the discovery and automatic installation of additional plugins. Plugins installed through this mean of discovery are referred to as "context-scoped" plugins. To learn more about the context-scoped plugins, please check the [context-scoped plugin installation](../full/context-scoped-plugins.md) documentation.
 
-For an overview on some of these plugin lifecycle commands, see the [Quickstart Guide](../quickstart/quickstart.md)
-For more details on these commands, see the [command reference](../cli/commands/tanzu_plugin.md)
+For an overview on some of these plugin lifecycle commands, see the [Quickstart Guide](../quickstart/quickstart.md).
+For more details on these commands, see the [command reference](../cli/commands/tanzu_plugin.md).
 
 ### Context management
 
@@ -88,13 +88,13 @@ The CLI maintains a list of Contexts and an active Context for each Target type.
 
 ## CLI Configuration
 
-The Tanzu CLI configuration, stored in .config/tanzu/ of your home directory,
+The Tanzu CLI configuration is stored in `.config/tanzu/` of your home directory.  It contains:
 
-* Names, contexts, and kubeconfig locations for the servers that the CLI knows about, and which contexts are the active ones
-* Global and plugin-specific configuration options, or features
+* Names, target, and kubeconfig locations for the contexts that the CLI knows about, and which context is currently the active one for each target type
+* Global and plugin-specific configuration options, or feature flags
 * Sources for CLI plugin discovery
 
-You can use the tanzu config set PATH VALUE and tanzu config unset PATH
+You can use the `tanzu config set PATH VALUE` and `tanzu config unset PATH`
 commands to customize your CLI configuration, as described in the table below.
 
 Running these commands updates the ~/.config/tanzu/config.yaml file.
@@ -105,9 +105,9 @@ Running these commands updates the ~/.config/tanzu/config.yaml file.
 features.global.FEATURE | true or false | This path activates or deactivates global features in your CLI configuration. Use only if you want to change or restore the defaults. For example, tanzu config set features.global.context-aware-cli-for-plugins true. |
 | features.PLUGIN.FEATURE | true or false | This path activates or deactivates plugin-specific features in your CLI configuration. Use only if you want to change or restore the defaults; some of these features are experimental and intended for evaluation and test purposes only. For example, running tanzu config set features.cluster.dual-stack-ipv4-primary true sets the dual-stack-ipv4-primary feature of the cluster CLI plugin to true. By default, only production-ready plugin features are set to true in the CLI. |
 
-Features
+### Features
 
-To activate a CLI feature:
+#### To activate a CLI feature:
 
 To activate a global feature, run:
 
@@ -120,7 +120,7 @@ To activate a plugin feature, run:
 Where PLUGIN is the name of the CLI plugin. For example, cluster or
 management-cluster. FEATURE is the name of the feature that you want to activate.
 
-To deactivate a CLI feature:
+#### To deactivate a CLI feature:
 
 To deactivate a global feature, run:
 
@@ -145,8 +145,8 @@ reason. Below is a brief summary of these commands
 
 `post-install`: provide a means for a plugin to optionally implement some logic to be invoked right after a plugin is installed.
 
-`generate-docs`: generate a tree of documentation markdown files for the commands the plugin provides, typically used by the CLI's generate-all-docs command to produce command documentation for all installed plugins
+`generate-docs`: generate a tree of documentation markdown files for the commands the plugin provides, typically used by the CLI's hidden `generate-all-docs` command to produce command documentation for all installed plugins.
 
-`lint`: validate the command name and arguments to flag any new terms unaccounted for in the CLI taxonomy document
+`lint`: validate the command name and arguments to flag any new terms unaccounted for in the CLI taxonomy document.
 
 More information about these commands are available in the [plugin contract](../plugindev/contract.md) section of the plugin development guide.

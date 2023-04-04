@@ -1,6 +1,6 @@
 # The Tanzu CLI Plugin Shared Taxonomy
 
-To encourage consistency among CLI commands across all plugins. The Tanzu CLI
+To encourage consistency among CLI commands across all plugins, the Tanzu CLI
 project strives to main a taxonomy of nouns, verbs, and flag names used through
 the commands implemented thus far.
 
