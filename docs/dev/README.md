@@ -5,7 +5,7 @@ tanzu-cli project.
 
 ## Building
 
-default target to update dependencies, build test and lint the CLI:
+default target to update dependencies, build test, and lint the CLI:
 
 ```sh
 make all
@@ -15,7 +15,7 @@ make all
 
 ### Default Directory Locations
 
-The names of the directories for the plugins, catalog cache and local
+The names of the directories for the plugins, catalog cache, and local
 plugin discovery (`<XDG_DATA_HOME>/_tanzu-cli, $HOME/.cache/_tanzu,$HOME/.config/_tanzu-plugins`)
 are all directories prefixed with '_' for now, so as not to conflict with their nonprefixed counterparts.
 
@@ -25,26 +25,34 @@ releases can serve as drop-in replacements for the existing ones.
 
 ## Source Code Structure
 
-cmd/plugin/ : code location for various plugins
+`cmd/plugin/`: code location for various plugins
 
-`make build-all` will build the CLI and any plugins in this directory
+Run the `make build-all` will build the CLI and any plugins in this directory
 unlike `make build` which only builds the CLI
 
-cmd/plugin/builder : code location for builder plugin
+`cmd/plugin/builder`: code location for the builder plugin
 
 Note on `builder init`:
 The generated project's Makefile expects the TZBIN to be set to the name
 of the CLI binary located in the user's path. Its default value is
 currently set to 'tz'. This convention will allow the CLI under
-development to coexist with the released tanzu CLI typically name 'tanzu'.
+development to coexist with the released tanzu CLI typically named 'tanzu'.
 We should continue to adopt said convention until the CLI under
 development is released as a backward-compatible replacement of the
 existing CLI.
 
 ### Tests
 
+To run unit tests within the repository:
+
 ```sh
 make test
+```
+
+To run e2e tests for the repository:
+
+```sh
+make e2e-cli-core
 ```
 
 ## Deprecation of existing functionality
