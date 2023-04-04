@@ -51,7 +51,7 @@ contexts for the same combination of `(user, server)`.
 
 ## Target
 
-A Target refers to a category or tier of control planes that the CLI can interact with. There are currently two supported targets : kubernetes (or k8s) and mission-control (or tmc) which corresponds to the Kubernetes cluster endpoint type and Tanzu Mission Control endpoint type. A context is associated with one of the two supported targets. Plugins are not necessarily but can often be associated with one of the targets as well. To see plugins that apply to a particular Target and not the other, run the command `tanzu <target>'.
+A Target refers to a category or tier of control planes that the CLI can interact with. There are currently two supported targets : `kubernetes` (or k8s) and `mission-control` (or tmc) which corresponds to the Kubernetes cluster endpoint type and Tanzu Mission Control endpoint type respectively. A context is associated with one of the two supported targets. Plugins are generally associated with one of the above mentioned targets but if a plugin doesn't fall into any of the above categories developer can create a plugin with 'global' target. A plugin using a `global` target is available as a root Tanzu CLI command. To see plugins that apply to a particular Target and not the other, run the command `tanzu <target>'.
 
 Similarly, commands from plugins that are associated with a target are unambiguously invoked by prefixing the command group with the target, like so:
 
@@ -84,7 +84,7 @@ For more details on these commands, see the [command reference](../cli/commands/
 
 ### Context management
 
-The CLI maintains a list of Contexts and an active Context for each Target type. A command from a plugin for use with a particular Target type will always be able to access the Context information necessary to interacted with the endpoint associated with the Context.
+The CLI maintains a list of Contexts and an active Context for each Target type. A plugin command with a particular Target type will always be able to access the active context information by using the APIs exposed by the `tanzu-plugin-runtime` library. This will allow plugins to interact with the endpoint associated with the Context.
 
 ## CLI Configuration
 
