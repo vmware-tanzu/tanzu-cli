@@ -149,11 +149,16 @@ associated with this plugin's entry found in the plugin repository.
 tanzu context create --kubeconfig cluster.kubeconfig --kubecontext tkg-mgmt-vc-admin@tkg-mgmt-vc --name tkg-mgmt-vc
 ```
 
-This command will create and associate a Context with some endpoint that the CLI can target. There are various ways
-to create Contexts, such as providing an endpoint to the Tanzu Mission Control service, or providing a kubeconfig to
+This command will create and associate a Context with some endpoint that the
+CLI can target. There are various ways to create Contexts, such as providing an
+endpoint to the Tanzu Mission Control service, or providing a kubeconfig to
 an existing Tanzu Cluster as shown above.
 
-Other plugins, such as the Tanzu `management-cluster` plugin, can create a context as part of creating a Tanzu cluster.
+See the [tanzu context create](../cli/commands/tanzu_context_create.md)
+reference for more detail.
+
+Other plugins, such as the Tanzu `management-cluster` plugin, can create a
+context as part of creating a Tanzu cluster.
 
 ### Plugins can also be discovered and installed when connecting to a Context
 
@@ -184,7 +189,8 @@ Plugins from Context:  tkg-mgmt-vc
   kubernetes-release  Kubernetes release operations         kubernetes  v0.28.0  installed
 ```
 
-To learn more about the plugins installed from context, please refer to [context-scoped plugin installation](../full/context-scoped-plugins.md).
+To learn more about the plugins installed from context, please refer to
+[context-scoped plugin installation](../full/context-scoped-plugins.md).
 
 ## Notes to users of previous versions of the Tanzu CLI
 
@@ -213,3 +219,14 @@ instead.
 
 Given that these recommended plugin versions are synched automatically, the
 `plugin sync` command will normally not need to be used manually by CLI users.
+
+### tanzu plugin list
+
+`tanzu plugin list` will no longer list all available plugins, but only
+installed ones. To find other plugins available for installation, use
+`tanzu plugin search` instead.
+
+### discovery sources
+
+Existing discovery sources configured using previous versions of the CLI will be
+ignored since the default plugin repository will be consulted.
