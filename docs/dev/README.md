@@ -55,9 +55,17 @@ To run e2e tests for the repository:
 make e2e-cli-core
 ```
 
+## Centralized Discovery of Plugins
+
+The Tanzu CLI uses a system of plugins to provide functionality to interact
+with different Tanzu products. To install a plugin, the CLI uses an OCI
+discovery source, which contains the inventory of plugins. For the
+implementation details of the OCI discovery solution, please refer to the
+[Centralized Discovery](centralized_plugin_discovery.md) document.
+
 ## Deprecation of existing functionality
 
 Any changes aimed to remove functionality in the CLI (e.g. commands, command
 flags) have to follow the deprecation policy, For more details on the
 deprecation policy and process please refer to the [Deprecation
-document](../dev/deprecation.md).
+document](deprecation.md).
