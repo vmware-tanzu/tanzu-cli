@@ -27,7 +27,7 @@ through the following package managers:
 
 ```console
 brew update
-brew install wmware-tanzu/tanzu/tanzu-cli
+brew install vmware-tanzu/tanzu/tanzu-cli
 ```
 
 ### Chocolatey (Windows)
