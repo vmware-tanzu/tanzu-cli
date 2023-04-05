@@ -25,6 +25,8 @@ through the following package managers:
 
 ### Homebrew (MacOS)
 
+(Available at the first alpha release)
+
 ```console
 brew update
 brew install vmware-tanzu/tanzu/tanzu-cli
@@ -40,7 +42,9 @@ choco install tanzu-cli
 
 ### Apt (Debian/Ubuntu)
 
-The current APT package is not signed and will cause security warnings.
+(Available at the first alpha release)
+
+Note: The current APT package is not signed and will cause security warnings.
 This will be fixed very soon.
 
 ```console
@@ -53,7 +57,9 @@ sudo apt-get install tanzu-cli
 
 ### From yum/dnf (RHEL)
 
-The current yum/dnf package is not signed and will cause security warnings.
+(Available at the first alpha release)
+
+Note: The current yum/dnf package is not signed and will cause security warnings.
 This will be fixed very soon.
 
 ```console

@@ -4,8 +4,6 @@ Follow this checklist to design commands that are consistent with the [CLI Style
 
 Follow the [Build-Stage Checklist](build_stage_styleguide_checklist.md) when implementing in code.
 
-<!-- VVV -->
-
 ## Command Structure
 
 - [ ] **Do the commands follow the pattern described in the [CLI Style Guide](style_guide.md#designing-commands)?**  (importance: high)

@@ -101,7 +101,7 @@ Running these commands updates the ~/.config/tanzu/config.yaml file.
 
 | Path|Value|Description |
 |:---------------------:|:------:|:-------:|
-| env.VARIABLE | Your variable value; for example, Standard_D2s_v3|This path sets or unsets global environment variables for the Tanzu CLI. For example, tanzu config set env.AZURE_NODE_MACHINE_TYPE Standard_D2s_v3. Variables set by running tanzu config set persist until you unset them with tanzu config unset.  For a list of variables that you can set, see Configuration File Variable Reference.
+| env.VARIABLE | Your variable value; for example, Standard_D2s_v3|This path sets or unsets global environment variables for the Tanzu CLI. For example, `tanzu config set env.AZURE_NODE_MACHINE_TYPE Standard_D2s_v3`. Variables set by running tanzu config set persist until you unset them with `tanzu config unset`; they will be available as regular environment variables to the CLI and plugins that wish to read them.
 features.global.FEATURE | true or false | This path activates or deactivates global features in your CLI configuration. Use only if you want to change or restore the defaults. For example, tanzu config set features.global.context-aware-cli-for-plugins true. |
 | features.PLUGIN.FEATURE | true or false | This path activates or deactivates plugin-specific features in your CLI configuration. Use only if you want to change or restore the defaults; some of these features are experimental and intended for evaluation and test purposes only. For example, running tanzu config set features.cluster.dual-stack-ipv4-primary true sets the dual-stack-ipv4-primary feature of the cluster CLI plugin to true. By default, only production-ready plugin features are set to true in the CLI. |
 
@@ -160,17 +160,18 @@ More information about these commands are available in the [plugin contract](../
 ## Secure plugin installation
 
 CLI verifies the identity and integrity of the plugin while installing the plugin
-from the repository. You can find more details in
-the [secure plugin installation proposal document](../proposals/secure-plugin-installation-design.md)
+from the repository. You can find more details in the
+[secure plugin installation proposal document](../proposals/secure-plugin-installation-design.md)
 
 ### User experience
 
-CLI verifies cosign signature of the plugin inventory image present in the
-repository. If the signature verification is successful, it would download the
-plugin inventory image on the user's machine and caches the verified plugin
-inventory image to improve the latency on subsequent plugin installation/search
-commands. If the signature verification fails, CLI would throw an error and
-stops continuing.
+CLI verifies [cosign](https://docs.sigstore.dev/cosign/overview/) signature of
+the plugin inventory image present in the repository. If the signature
+verification is successful, it would download the plugin inventory image on the
+user's machine and caches the verified plugin inventory image to improve the
+latency on subsequent plugin installation/search commands. If the signature
+verification fails, CLI would throw an error and stops continuing.
+
 Signature verification could fail in the scenarios below:
 
 1. Unplanned key rotation: In this case, user either can update to the latest
