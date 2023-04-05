@@ -202,6 +202,35 @@ updated.
 
 Below is the summary of the changes to expect:
 
+### tanzu login
+
+Two important changes apply to the `tanzu login` command.
+
+First, this command used to be provided by the `login` plugin.  The
+`tanzu plugin list` command would therefore show the `login` plugin, if it was
+installed.  This is no longer the case as the `tanzu login` command is now a
+core CLI command.  The `tanzu plugin list` command will therefore no longer
+show the `login` plugin.  An exception to the last statement is if the `login`
+plugin was previously installed through a legacy version of the CLI; in such
+cases, the new CLI will show the `login` plugin in `tanzu plugin list`
+but it will also show the following warning when running any command:
+"Warning, Masking commands for plugins “login” because a core command or other
+plugin with that name already exists.”
+
+To remove this warning, the user can run `tanzu plugin delete login`.
+Note however that deleting the `login` plugin will prevent any legacy CLIs
+that may still be in use to provide the `tanzu login` command.
+
+The second change to the `tanzu login` command is that it is now deprecated
+and therefore no longer shown in the help text when running `tanzu -h`.
+The `tanzu context create` or `tanzu context use` commands should be used
+instead of the deprecated `tanzu login` command.
+
+### tanzu config server
+
+The `tanzu config server` group of commands has been deprecated in favor of
+`tanzu context list` and `tanzu context delete`.
+
 ### tanzu plugin sync
 
 Given the every-growing number of discoverable plugins in the default plugin
