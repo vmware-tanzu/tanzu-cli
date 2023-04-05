@@ -11,7 +11,7 @@ Changes to each of these versions have a very specific meaning:
 - minor: indicates functional changes (primary feature delivery)
 - patch: indicates minimal risk changes (critical security vulnerabilities and bug fixes)
 
-Given this scheme, the primary vehicle for changes is minor releases.  The deprecation policy assumes that all modifications and removals happen as part of minor releases (possibly rolled up into a major release).
+Given this scheme, the primary vehicle for changes is minor releases. The deprecation policy assumes that all modifications and removals happen as part of minor releases (possibly rolled up into a major release).
 
 This section specifies the version, support, and deprecation policies for Alpha, Beta, and GA releases.
 
@@ -19,11 +19,25 @@ This section specifies the version, support, and deprecation policies for Alpha,
 
 - Each Tanzu Core CLI release should be compatible with all the existing plugins at the time of release and also with plugins developed with any future patch of the existing minor releases of Tanzu Plugin Runtime.
   - For example, the below table shows the compatible plugin version with different releases of Tanzu CLI.
-  - Note: In the below table v0.X.Y versions are `legacy` library versions from Tanzu-Framework
+  - ***Note***: In the below table pre-v1.0 (v0.11, 0.25, 0.28) versions are `legacy` library versions from Tanzu-Framework and `x` is any existing or future patch version.
 
-- Important: Based on this compatibility policy, the User can always upgrade the Tanzu CLI to the latest version without worrying about existing plugin compatibility. The latest minor or patch release of  Tanzu CLI under the v1 major release will always be compatible with all existing plugins.
+      | Tanzu CLI Version | Available Tanzu Plugin Runtime Versions at the time of Tanzu CLI Release (example only) | Plugin will be compatible if it is developed using one of the following Tanzu Plugin Runtime Versions |
+      |-------------------|-----------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+      | v1.0.0            | v0.11.0, v0.11.1, v0.11.2                                                               | v0.11.x                                                                                               |
+      |                   | v0.25.0, v0.25.2, v0.25.3, v0.25.4                                                      | v0.25.x                                                                                               |
+      |                   | v0.28.0, v0.28.1                                                                        | v0.28.x                                                                                               |
+      |                   | v1.0.0                                                                                  | v1.0.x                                                                                                |
+      |                   |                                                                                         |                                                                                                       |
+      | v1.1.0            | v0.11.0, v0.11.1, v0.11.2                                                               | v0.11.x                                                                                               |
+      |                   | v0.25.0, v0.25.2, v0.25.3, v0.25.4                                                      | v0.25.x                                                                                               |
+      |                   | v0.28.0, v0.28.1                                                                        | v0.28.x                                                                                               |
+      |                   | v1.0.0, v1.0.1                                                                          | v1.0.x                                                                                                |
+      |                   | v1.1.0, v1.1.1, v1.1.2                                                                  | v1.1.x                                                                                                |
+      |                   | v1.2.0                                                                                  | v1.2.x                                                                                                |
+
+- ***Important***: Based on this compatibility policy, the user can always upgrade the Tanzu CLI to the latest version without worrying about existing plugin compatibility. The latest minor or patch release of  Tanzu CLI under the v1 major release will always be compatible with all existing plugins.
 - This means any change in the contract between Tanzu CLI and Tanzu Plugin Runtime must be done in a backward-compatible manner.
-- FAQ:
+- ***FAQ***:
   - What happens if I upgrade to a newer version of CLI v1.2.0 and use a plugin developed with Plugin Runtime v1.0.5?
     - As CLI is always compatible with all existing plugins, plugins developed with Plugin Runtime v1.0.5 should continue to work.
   - If I have developed a plugin with pre-v1.0 (v0.11, 0.25, 0.28) of Tanzu Plugin Runtime (from Tanzu-Framework repository), Will my plugins be compatible with v1.0 Tanzu CLI?
@@ -32,15 +46,15 @@ This section specifies the version, support, and deprecation policies for Alpha,
     - We are still working on the design and the possible changes required when consuming v1.0 of Tanzu Plugin Runtime but high-level changes are mentioned in the Impact on Plugin Developers section below.
   - When will my plugin be incompatible with the CLI?
     - The user may be using a CLI version that is old and some new functionality implemented in a plugin with newer Plugin Runtime is not compatible with the old CLI. However, the old CLI will still be able to invoke the plugin with all the compatible features. Also, upgrading CLI to a newer version should resolve this new feature incompatibility issue.
-    - Example: If a plugin is developed with v1.3.1 Tanzu Plugin Runtime which introduced a new feature X which works in combination with a newer version of Tanzu CLI then if the user is using old v1.2.0 Tanzu CLI (which doesn’t support this new feature X  introduced in Plugin Runtime v1.3.1) while invoking a plugin, that new functionality might not work when using old CLI. However, other functionalities of that plugin will continue to work as expected with the old CLI. This will make the new feature in the plugin incompatible with the installed CLI. However, the user can upgrade the CLI to the latest v1.3.0 version to make the new feature compatible again.
+    - Example: If a plugin is developed with Tanzu Plugin Runtime v1.3.1 which introduced a new feature X which works in combination with a newer version of Tanzu CLI then if the user is using old Tanzu CLI v1.2.0 (which doesn’t support this new feature X introduced in Plugin Runtime v1.3.1) while invoking a plugin, that new functionality might not work when using old CLI. However, other functionalities of that plugin will continue to work as expected with the old CLI. This will make the new feature in the plugin incompatible with the installed CLI. However, the user can upgrade the CLI to the latest v1.3.0 version to make the new feature compatible again.
 
 ## Tanzu CLI Support policy
 
 Tanzu Core CLI and Tanzu Plugin Runtime are bound to provide security fixes and bug fixes as soon as possible.
 
-Starting with v1.0 releases of Tanzu Core CLI and Tanzu Plugin Runtime, only the latest available minor release will be supported.
+Starting with v1.0 releases of Tanzu Core CLI and Tanzu Plugin Runtime, only the latest available minor release will be supported. This means that
 
-- Means any bug fixes and security fixes will be done as a patch release of the latest minor release.
+- Any bug fixes and security fixes will be done as a patch release of the latest minor release.
 - Once the new minor version gets released, the previous minor version goes out of support.
 
 Important: Based on the backward compatibility guarantees and deprecation policy listed above, supporting only the latest minor version makes sense because of the below reasons:
@@ -53,7 +67,7 @@ Example:
 - If the latest available version of Tanzu Plugin Runtime is v1.1.0, and if any security issues are encountered, it will be fixed and released as v1.1.1
 - Once the v1.2.0 release is out. v1.1 goes out of support and any new security fixes or bug fixes will be done as part of the v1.2 release cadence as v1.2.1, v1.2.2, etc until v1.3.0 is out.
 
-FAQ:
+***FAQ***:
 
 - As a plugin developer, If a bug is encountered in Tanzu Plugin Runtime, what will it take to get that bug fixed as part of my plugin?
   - A new minor or patch release will be done for Tanzu Plugin Runtime with the bug fixed. As a plugin developer, you can use this newly released version of Tanzu Plugin Runtime to build the plugin.
@@ -78,7 +92,7 @@ Any CLI feature or API can be marked as deprecated as part of a minor release bu
 
 - Deprecation window: 12 months
 
-- FAQ:
+- ***FAQ***:
 
   - What happens to the existing plugins that are using the deprecated API during the deprecation window?
     - If the existing plugin is using the deprecated functionality, that plugin should continue to work without any issues
@@ -99,7 +113,7 @@ Any CLI feature or API can be marked as deprecated as part of a minor release bu
 
 - Deprecation window: 6 months
 
-- FAQ:
+- ***FAQ***:
   - What happens if the user uses a deprecated feature during the deprecation window?
     - The deprecated feature should continue to work as expected with a potential warning message about deprecated feature usage
     - At this time, the user is encouraged to update any scripts or automation to not use deprecated features and use any alternatives if available.
