@@ -30,7 +30,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	github.com/tj/assert v0.0.3
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
-	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230130173350-eeda69d80a24
+	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230404144256-731e6d4c5a66
 	github.com/vmware-tanzu/tanzu-plugin-runtime v0.80.0
 	go.pinniped.dev v0.20.0
 	go.uber.org/multierr v1.8.0
@@ -85,7 +85,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/cli v20.10.20+incompatible // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v20.10.20+incompatible // indirect
+	github.com/docker/docker v20.10.24+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
@@ -229,10 +229,10 @@ require (
 	go.uber.org/zap v1.23.0 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
 	golang.org/x/exp v0.0.0-20220823124025-807a23277127 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
