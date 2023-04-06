@@ -253,6 +253,8 @@ Execute the test plugin:
 tanzu test plugin <name>
 ```
 
+For more details go to  [Plugin Development Guide](../plugindev/README.md).
+
 ## Docs
 
 Every plugin requires a README.md file at the top level of its directory which is enforced by the compiler. This file should serve as a guide for how the plugin is to be used.
