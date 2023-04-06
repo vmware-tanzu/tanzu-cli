@@ -106,7 +106,10 @@ func NewRootCmd() (*cobra.Command, error) {
 				maskedPlugins = append(maskedPlugins, matchedCmd.Name())
 				rootCmd.RemoveCommand(matchedCmd)
 				rootCmd.AddCommand(cmd)
-			} else {
+			} else if plugins[i].Name != "login" {
+				// As the `login` plugin is now part of the core Tanzu CLI command and not a plugin
+				// anymore, skip the `login` plugin from adding it to the maskedPlugins array to avoid
+				// the warning message from getting shown to the user on each command invocation.
 				maskedPlugins = append(maskedPlugins, plugins[i].Name)
 			}
 		}
