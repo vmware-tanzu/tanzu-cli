@@ -27,9 +27,10 @@ const (
 
 func newCEIPParticipationCmd() *cobra.Command {
 	var ceipParticipationCmd = &cobra.Command{
-		Use:     "ceip-participation",
-		Short:   "Manage CEIP Participation",
-		Long:    "Manage CEIP Participation",
+		Use:   "ceip-participation",
+		Short: "Manage VMware's Customer Experience Improvement Program (CEIP) Participation",
+		Long: "Manage VMware's Customer Experience Improvement Program (CEIP) participation which provides VMware with " +
+			"information that enables VMware to improve its products and services and fix problems",
 		Aliases: []string{"ceip"},
 		Annotations: map[string]string{
 			"group": string(plugin.SystemCmdGroup),
