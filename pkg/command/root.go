@@ -22,29 +22,11 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
+const cmdNameSet = "set"
+
 // NewRootCmd creates a root command.
 func NewRootCmd() (*cobra.Command, error) {
-	var rootCmd = &cobra.Command{
-		Use: "tanzu",
-		// Don't have Cobra print the error message, the CLI will
-		// print it itself in a nicer format.
-		SilenceErrors: true,
-		// silencing usage for now as we are getting double usage from plugins on errors
-		SilenceUsage: true,
-		// Flag parsing must be deactivated because the root plugin won't know about all flags.
-		DisableFlagParsing: true,
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if cmd.Name() != cobra.ShellCompRequestCmd && cmd.Name() != completionCmd.Name() {
-				// Configure CEIP setting but not if we are doing shell completion stuff.
-				// The shell completion setup is not interactive, so it should not trigger
-				// the ceip prompt.
-				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
-					return err
-				}
-			}
-			return nil
-		},
-	}
+	var rootCmd = newRootCmd()
 	uFunc := cli.NewMainUsage().UsageFunc()
 	rootCmd.SetUsageFunc(uFunc)
 
@@ -119,6 +101,38 @@ func NewRootCmd() (*cobra.Command, error) {
 	duplicateAliasWarning(rootCmd)
 
 	return rootCmd, nil
+}
+
+func newRootCmd() *cobra.Command {
+	var rootCmd = &cobra.Command{
+		Use: "tanzu",
+		// Don't have Cobra print the error message, the CLI will
+		// print it itself in a nicer format.
+		SilenceErrors: true,
+		// silencing usage for now as we are getting double usage from plugins on errors
+		SilenceUsage: true,
+		// Flag parsing must be deactivated because the root plugin won't know about all flags.
+		DisableFlagParsing: true,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Name() != cobra.ShellCompRequestCmd && cmd.Name() != completionCmd.Name() &&
+				cmd.Name() != newVersionCmd().Name() &&
+				!(cmd.Name() == cmdNameSet && cmd.Parent().Name() == configCmd.Name()) &&
+				!(cmd.Name() == cmdNameSet && cmd.Parent().Name() == newCEIPParticipationCmd().Name()) {
+				//  Configure CEIP setting but skip the CEIP setting for below commands:
+				//      - shell completion (The shell completion setup is not interactive,
+				//        so it should not trigger the ceipt prompt)
+				//      - 'tanzu version'(common first command to run),
+				//      - 'ceip set' (not a good UX to prompt user who is trying to set the CEIP configuration)
+				//      - 'config set' (would be a chicken and egg issue if user tries to set CEIP configuration
+				//         using "tanzu config set env.TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER yes")
+				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	}
+	return rootCmd
 }
 
 var k8sCmd = &cobra.Command{
