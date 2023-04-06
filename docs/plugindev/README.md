@@ -105,7 +105,7 @@ import (
 var descriptor = plugin.PluginDescriptor{
     Name:         "helloworld",
     Description:  "Hello world plugin",
-    Target:       "FIXME<<<", // set the Target of the plugin to types.(one of {TargetGlobal,TargetK8s,TargetTMC})
+    Target:       types.TargetUnknown, // <<<FIXME! set the Target of the plugin to one of {TargetGlobal,TargetK8s,TargetTMC}
     Version:      buildinfo.Version,
     BuildSHA:     buildinfo.SHA,
     Group:        plugin.ManageCmdGroup, // set group
