@@ -825,24 +825,43 @@ func InstallPluginsFromGroup(pluginName, groupID string) error {
 
 	numErrors := 0
 	numInstalled := 0
+	mandatoryPluginsExist := false
+	pluginExist := false
 	for _, plugin := range group.Plugins {
-		if (pluginName == cli.AllPlugins || pluginName == plugin.Name) && plugin.Mandatory {
-			err = InstallStandalonePlugin(plugin.Name, plugin.Version, plugin.Target)
-			if err != nil {
-				numErrors++
-				log.Warningf("unable to install plugin '%s': %v", plugin.Name, err.Error())
-			} else {
-				numInstalled++
+		if pluginName == cli.AllPlugins || pluginName == plugin.Name {
+			pluginExist = true
+			if plugin.Mandatory {
+				mandatoryPluginsExist = true
+				err := InstallStandalonePlugin(plugin.Name, plugin.Version, plugin.Target)
+				if err != nil {
+					numErrors++
+					fmt.Printf("unable to install plugin '%s': %v", plugin.Name, err.Error())
+				} else {
+					numInstalled++
+				}
 			}
 		}
+	}
+
+	if !pluginExist {
+		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupID)
+	}
+
+	if !mandatoryPluginsExist {
+		if pluginName == cli.AllPlugins {
+			return fmt.Errorf("plugin group '%s' has no mandatory plugins to install", groupID)
+		}
+		return fmt.Errorf("plugin '%s' from group '%s' is not mandatory to install", pluginName, groupID)
 	}
 
 	if numErrors > 0 {
 		return fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupID)
 	}
+
 	if numInstalled == 0 {
 		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupID)
 	}
+
 	return nil
 }
 
