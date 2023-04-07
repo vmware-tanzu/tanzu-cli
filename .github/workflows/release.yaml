@@ -6,7 +6,7 @@ on:
       - "!not_activated_on_branches!*"
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+"
-      - "!*-*"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
 
 jobs:
 
@@ -45,7 +45,7 @@ jobs:
         RELEASE_VERSION=${GITHUB_REF#refs/*/}
         major=$(echo "$RELEASE_VERSION"  | sed 's/^v\(.*\)/\1/' | cut -d. -f1)
         minor=$(echo "$RELEASE_VERSION" | cut -d. -f2)
-        revision=$(echo "$RELEASE_VERSION" | cut -d. -f3)
+        revision=$(echo "$RELEASE_VERSION" | cut -d. -f3 | cut -d- -f1)
         if [ "$revision" -gt 0 ];then
           revision=$(($revision-1))
           RELEASE_BRANCH="release-${major}.${minor}"
