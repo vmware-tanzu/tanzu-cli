@@ -37,6 +37,10 @@ To get a quick start on how to use Tanzu CLI, visit the
 [Quick Start guide](docs/quickstart/quickstart.md) or visit the
 [Full Documentation](docs/full/README.md) for more details.
 
+_For users of previous version of the CLI, see
+[this section](docs/quickstart/quickstart.md#notes-to-users-of-previous-versions-of-the-tanzu-cli)
+of the Quick Start guide for changes to be aware of._
+
 ## Plugin Development
 
 To learn more about how to develop a Tanzu CLI plugin, see the

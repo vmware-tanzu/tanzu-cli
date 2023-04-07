@@ -196,7 +196,8 @@ To learn more about the plugins installed from context, please refer to
 
 The Tanzu CLI provided by this project is independently installable as a successor
 to the legacy versions of the Tanzu CLI. It can be used to run any version of
-CLI plugins that have been released along with those legacy CLI versions thus far.
+CLI plugins that have been released along with those legacy CLI versions thus far,
+and thus should be usable as a drop-in replacement of the legacy CLI.
 However there are some changes to how plugins are discovered, installed and
 updated.
 
@@ -256,3 +257,23 @@ installed ones. To find other plugins available for installation, use
 
 Existing discovery sources configured using previous versions of the CLI will be
 ignored since the default plugin repository will be consulted.
+
+### using the legacy version of the CLI alongside the new Tanzu CLI
+
+If the user wishes to retain the use of the legacy CLI for whatever reason, it
+is the user's responsibility to ensure that the new CLI installation does not
+overwrite the existing one, and ensure that the correct binary is used as
+needed.
+
+If an existing, older version of the Tanzu CLI is already installed on the
+system, existing plugins from previous installation will continue to
+be visible to and usable by the new CLI.
+
+However, reinstallation of these plugins using the new CLI will result in plugins
+being securely pulled from new default plugin repository.
+
+Should the legacy CLI need to be used for any reason, note that all
+functionality available to the legacy CLI will function as before.
+
+Note that running `tanzu plugin sync` with the legacy CLI may undo certain
+plugin installation actions performed with the new CLI
