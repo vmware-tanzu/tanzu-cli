@@ -23,6 +23,8 @@ var (
 	err          error
 )
 
+const ContextCreateLimit = 100
+
 // BeforeSuite created KIND cluster
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
