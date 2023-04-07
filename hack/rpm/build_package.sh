@@ -42,8 +42,8 @@ rm -rf ${OUTPUT_DIR}
 mkdir -p ${OUTPUT_DIR}
 # RPM does not like - in the its package version
 PACKAGE_VERSION=${VERSION//-/_}
-rpmbuild --define "package_version ${PACKAGE_VERSION}" --define "release_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target amd64
-mv ${HOME}/rpmbuild/RPMS/amd64/* ${OUTPUT_DIR}/
+rpmbuild --define "package_version ${PACKAGE_VERSION}" --define "release_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target x86_64
+mv ${HOME}/rpmbuild/RPMS/x86_64/* ${OUTPUT_DIR}/
 
 rpmbuild --define "package_version ${PACKAGE_VERSION}" --define "release_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target aarch64
 mv ${HOME}/rpmbuild/RPMS/aarch64/* ${OUTPUT_DIR}/

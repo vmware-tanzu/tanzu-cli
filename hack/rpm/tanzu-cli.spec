@@ -8,7 +8,7 @@ Summary:    The core Tanzu CLI
 Provides:   tanzu-cli
 Obsoletes:  tanzu-cli  < %{package_version}
 
-%ifarch amd64
+%ifarch x86_64
 %define arch amd64
 %endif
 
