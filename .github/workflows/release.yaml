@@ -59,7 +59,7 @@ jobs:
         fi
         git log -3 --format=oneline
         LAST_TAG="v${major}.${minor}.${revision}"
-        LAST_TAG="v0.0.1-initgo"
+        LAST_TAG="v0.0.1-init-go"
         echo "Last release tag - $LAST_TAG"
         START_SHA=$(git rev-list -n 1 $LAST_TAG)
         echo "Release note generator start SHA - $START_SHA"
