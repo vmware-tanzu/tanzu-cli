@@ -118,7 +118,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 			allPluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextName, false)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			installedPluginsList = framework.GetInstalledPlugins(allPluginsList)
-			Expect(framework.IsPluginExists(allPluginsList, pluginToUninstall, framework.NotInstalled)).To(BeTrue(), "uninstalled plugin should be listed as not installed")
+			Expect(framework.IsPluginExists(allPluginsList, framework.GetGivenPluginFromTheGivenPluginList(allPluginsList, pluginToUninstall), framework.NotInstalled)).To(BeTrue(), "uninstalled plugin should be listed as not installed")
 			Expect(len(installedPluginsList)).Should(Equal(len(latestPluginsInstalledList)), "number of plugins should be same as number of plugins CRs applied")
 			Expect(framework.CheckAllPluginsExists(installedPluginsList, latestPluginsInstalledList)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 

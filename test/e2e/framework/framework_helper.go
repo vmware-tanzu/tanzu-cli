@@ -43,9 +43,14 @@ func PluginListToSet(pluginsToInstall []*PluginInfo) map[string]struct{} {
 func PluginListToMap(pluginsList []*PluginInfo) map[string]*PluginInfo {
 	m := make(map[string]*PluginInfo)
 	for i := range pluginsList {
-		m[fmt.Sprintf(PluginKey, (pluginsList)[i].Name, (pluginsList)[i].Target, (pluginsList)[i].Version)] = pluginsList[i]
+		m[GetMapKeyForPlugin((pluginsList)[i])] = pluginsList[i]
 	}
 	return m
+}
+
+// GetMapKeyForPlugin takes the plugin and returns the map key for the plugin
+func GetMapKeyForPlugin(pluginsList *PluginInfo) string {
+	return fmt.Sprintf(PluginKey, pluginsList.Name, pluginsList.Target, pluginsList.Version)
 }
 
 // PluginGroupToMap converts the given slice of PluginGroups to map (PluginGroup name is the key) and PluginGroup is the value
@@ -276,4 +281,12 @@ func IsPluginExists(pluginList []*PluginInfo, plugin *PluginInfo, pluginInstalla
 		return plugin.Status == pluginInstallationStatus
 	}
 	return isExist
+}
+
+// GetGivenPluginFromTheGivenPluginList takes the plugin list and a plugin
+// checks the given plugin exists in the plugin list, if exists then returns the plugin
+// otherwise returns nil
+func GetGivenPluginFromTheGivenPluginList(pluginList []*PluginInfo, requiredPlugin *PluginInfo) *PluginInfo {
+	superSet := PluginListToMap(pluginList)
+	return superSet[GetMapKeyForPlugin(requiredPlugin)]
 }
