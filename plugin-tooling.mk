@@ -49,7 +49,7 @@ PLUGIN_PUBLISH_REPOSITORY ?= $(REGISTRY_ENDPOINT)/test/v1/tanzu-cli/plugins
 PLUGIN_INVENTORY_IMAGE_TAG ?= latest
 
 PLUGIN_SCOPE_ASSOCIATION_FILE ?= $(PLUGIN_DIR)/plugin-scope-association.yaml
-PLUGIN_GROUP_NAME ?= 
+PLUGIN_GROUP_NAME_VERSION ?= # e.g. default:v1.0.0, app-developer:v0.1.0
 
 # Process configuration and setup additional variables
 TANZU_BUILDER_OVERRIDE ?=
@@ -141,33 +141,33 @@ inventory-plugin-deactivate: ## Deactivate plugins in the inventory database
 		--manifest $(PLUGIN_MANIFEST_FILE)
 
 .PHONY: inventory-plugin-group-add
-inventory-plugin-group-add: ## Add plugin-group to the inventory database. Requires PLUGIN_GROUP_NAME
+inventory-plugin-group-add: ## Add plugin-group to the inventory database. Requires PLUGIN_GROUP_NAME_VERSION
 	$(BUILDER_PLUGIN) inventory plugin-group add \
 		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
 		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
 		--publisher $(PUBLISHER) \
 		--vendor $(VENDOR) \
 		--manifest $(PLUGIN_GROUP_MANIFEST_FILE) \
-		--name $(PLUGIN_GROUP_NAME) \
+		--name $(PLUGIN_GROUP_NAME_VERSION) \
 		$(OVERRIDE_FLAG)
 
 .PHONY: inventory-plugin-group-activate
-inventory-plugin-group-activate: ## Activate plugin-group in the inventory database. Requires PLUGIN_GROUP_NAME
+inventory-plugin-group-activate: ## Activate plugin-group in the inventory database. Requires PLUGIN_GROUP_NAME_VERSION
 	$(BUILDER_PLUGIN) inventory plugin-group activate \
 		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
 		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
 		--publisher $(PUBLISHER) \
 		--vendor $(VENDOR) \
-		--name $(PLUGIN_GROUP_NAME)
+		--name $(PLUGIN_GROUP_NAME_VERSION)
 
 .PHONY: inventory-plugin-group-deactivate
-inventory-plugin-group-deactivate: ## Deactivate plugin-group in the inventory database. Requires PLUGIN_GROUP_NAME
+inventory-plugin-group-deactivate: ## Deactivate plugin-group in the inventory database. Requires PLUGIN_GROUP_NAME_VERSION
 	$(BUILDER_PLUGIN) inventory plugin-group deactivate \
 		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
 		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
 		--publisher $(PUBLISHER) \
 		--vendor $(VENDOR) \
-		--name $(PLUGIN_GROUP_NAME)
+		--name $(PLUGIN_GROUP_NAME_VERSION)
 
 ## --------------------------------------
 ## docker

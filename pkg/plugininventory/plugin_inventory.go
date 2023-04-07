@@ -108,8 +108,8 @@ type PluginGroupPluginEntry struct {
 
 // PluginGroup represents a list of plugins.
 // The user will specify a group using
-// "<Vendor>-<Publisher>/<Name>
-// e.g., "vmware-tkg/v2.1.0"
+// "<Vendor>-<Publisher>/<Name>:<Version>
+// e.g., "vmware-tkg/default:v2.1.0"
 type PluginGroup struct {
 	// Vendor of the group
 	Vendor string

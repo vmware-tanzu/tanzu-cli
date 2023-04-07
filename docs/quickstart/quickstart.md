@@ -61,27 +61,27 @@ To find out more about how to set up autocompletion for your specific shell, run
 ```console
 $ tanzu plugin group search
   GROUP
-  vmware-tap/v1.4.0
-  vmware-tkg/v2.1.0
-  vmware-tmc/v0.0.1
+  vmware-tap/default:v1.4.0
+  vmware-tkg/default:v2.1.0
+  vmware-tmc/default:v0.0.1
   vmware-tzcli/admin:v0.90.0
 ```
 
 ### Install all plugins in a group
 
 ```console
-$ tanzu plugin install all --group vmware-tkg/v2.1.0
+$ tanzu plugin install all --group vmware-tkg/default:v2.1.0
 [i] Installing plugin 'isolated-cluster:v0.28.0' with target 'global'
 [i] Installing plugin 'management-cluster:v0.28.0' with target 'kubernetes'
 [i] Installing plugin 'package:v0.28.0' with target 'kubernetes'
 [i] Installing plugin 'pinniped-auth:v0.28.0' with target 'global'
 [i] Installing plugin 'secret:v0.28.0' with target 'kubernetes'
 [i] Installing plugin 'telemetry:v0.28.0' with target 'kubernetes'
-[ok] successfully installed all plugins from group 'vmware-tkg/v2.1.0'
+[ok] successfully installed all plugins from group 'vmware-tkg/default:v2.1.0'
 ```
 
 The above command fetches, validates and installs a set of plugins defined by
-the `vmware-tkg/v2.1.0` group, which in turn is required for using the TKG 2.1.0
+the `vmware-tkg/default:v2.1.0` group, which in turn is required for using the TKG 2.1.0
 product.
 
 ### Plugins are now installed and available for use
