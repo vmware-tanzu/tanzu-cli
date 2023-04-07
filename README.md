@@ -54,6 +54,10 @@ Thanks for taking the time to join our community and start contributing! We
 welcome pull requests. Feel free to dig through the
 [issues](https://github.com/vmware-tanzu/tanzu-cli/issues) and jump in.
 
+### Before you begin
+
+- Check out the [contribution guidelines](CONTRIBUTING.md) to learn more about how to contribute.
+
 ### Development
 
 Details about how to get started with development for this project can be found
@@ -64,7 +68,3 @@ in the [Development Guide](docs/dev/README.md).
 Unit and Integration tests implementation is part of CLI Core development.
 CLI core does have end-to-end test case implementation.
 More details found in the [End-to-End framework and test case implementation](test/e2e/README.md).
-
-### Before you begin
-
-- Check out the [contribution guidelines](CONTRIBUTING.md) to learn more about how to contribute.
