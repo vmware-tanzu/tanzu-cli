@@ -71,25 +71,29 @@ func (c *ContextCatalog) Upsert(plugin *cli.PluginInfo) error {
 		c.sharedCatalog.IndexByName[pluginNameTarget] = append(c.sharedCatalog.IndexByName[pluginNameTarget], plugin.InstallationPath)
 	}
 
-	// The "unknown" target was previously used to represent the global target.
-	// Depending on how old the plugin is, it may still use the "unknown" target.
-	// When inserting the "global" target we should remove any similar plugin using
+	// The "unknown" target was previously used in two scenarios:
+	// 1- to represent the global target (>= v0.28)
+	// 2- to represent either the global or kubernetes target (< v0.28)
+	// When inserting the "global" or "k8s" target we should remove any similar plugin using
 	// the "unknown" target and vice versa.
-	if plugin.Target == configtypes.TargetGlobal || plugin.Target == configtypes.TargetUnknown {
-		var pluginNameOppositeTarget string
-		if plugin.Target == configtypes.TargetGlobal {
-			pluginNameOppositeTarget = PluginNameTarget(plugin.Name, configtypes.TargetUnknown)
-		} else {
-			pluginNameOppositeTarget = PluginNameTarget(plugin.Name, configtypes.TargetGlobal)
-		}
-		if oldInstallationPath, exists := c.plugins[pluginNameOppositeTarget]; exists {
-			delete(c.sharedCatalog.IndexByPath, oldInstallationPath)
-			delete(c.plugins, pluginNameOppositeTarget)
-			delete(c.sharedCatalog.IndexByName, pluginNameOppositeTarget)
-		}
+	if plugin.Target == configtypes.TargetGlobal || plugin.Target == configtypes.TargetK8s {
+		c.deleteOldTargetEntries(PluginNameTarget(plugin.Name, configtypes.TargetUnknown))
+	} else if plugin.Target == configtypes.TargetUnknown {
+		// This could be a global plugin or a k8s plugin (but not both), so let's
+		// delete either pre-existing entry from the catalog
+		c.deleteOldTargetEntries(PluginNameTarget(plugin.Name, configtypes.TargetGlobal))
+		c.deleteOldTargetEntries(PluginNameTarget(plugin.Name, configtypes.TargetK8s))
 	}
 
 	return saveCatalogCache(c.sharedCatalog)
+}
+
+func (c *ContextCatalog) deleteOldTargetEntries(key string) {
+	if oldInstallationPath, exists := c.plugins[key]; exists {
+		delete(c.sharedCatalog.IndexByPath, oldInstallationPath)
+		delete(c.plugins, key)
+		delete(c.sharedCatalog.IndexByName, key)
+	}
 }
 
 // Get looks up the descriptor of a plugin given its name.
