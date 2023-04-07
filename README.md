@@ -61,6 +61,7 @@ welcome pull requests. Feel free to dig through the
 ### Before you begin
 
 - Check out the [contribution guidelines](CONTRIBUTING.md) to learn more about how to contribute.
+- Check out the document [here](docs/community/support.md) about the project's support process.
 
 ### Development
 
