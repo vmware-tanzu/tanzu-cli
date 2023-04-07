@@ -20,6 +20,11 @@ We welcome many different types of contributions and not all of them need a Pull
 * Helping to onboard new contributors
 * Other related activities
 
+## Roadmap
+
+The near-term and mid-term roadmap for the work planned for the project is
+documented in the [Tanzu CLI Project Roadmap](ROADMAP.md).
+
 ## Getting started
 
 Details about how to get started with the project can be found in the development [guide](docs/dev/README.md).
