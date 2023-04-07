@@ -37,13 +37,9 @@ roadblocks encountered, community contributions, etc. If you depend on a
 specific item, we encourage you to help us deliver that feature by contributing
 to Tanzu CLI.
 
-
-|     Theme                                   | Description                               |        Timeline                     | 
+|     Theme                                   | Description                               |        Timeline                     |
 |:-------------------------------------------:|:-----------------------------------------:|:-----------------------------------:|
 | Improving developer and customer experience | Enabling independent releases of CLI      | July 2023                           |
 | Improving developer and customer experience | Centralized repo for CLI plug ins         | July 2023                           |
 | Improved Developer experience  | Improving orchestration tooling for plugin development | Investigating/Exploring - Dec 2023  |
 | Improved customer experience   | Enabling plugin marketplaces for CLI plugins           | Investigating/Exploring - June 2024 |
-
-
-
