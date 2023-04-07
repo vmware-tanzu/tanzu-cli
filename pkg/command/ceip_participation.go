@@ -28,9 +28,9 @@ const (
 func newCEIPParticipationCmd() *cobra.Command {
 	var ceipParticipationCmd = &cobra.Command{
 		Use:   "ceip-participation",
-		Short: "Manage VMware's Customer Experience Improvement Program (CEIP) Participation",
+		Short: "Manage VMware's Customer Experience Improvement Program (CEIP) Participation (subject to change)",
 		Long: "Manage VMware's Customer Experience Improvement Program (CEIP) participation which provides VMware with " +
-			"information that enables VMware to improve its products and services and fix problems",
+			"information that enables VMware to improve its products and services and fix problems (subject to change)",
 		Aliases: []string{"ceip"},
 		Annotations: map[string]string{
 			"group": string(plugin.SystemCmdGroup),
@@ -49,8 +49,8 @@ func newCEIPParticipationCmd() *cobra.Command {
 func newCEIPParticipationSetCmd() *cobra.Command {
 	var setCmd = &cobra.Command{
 		Use:   "set OPT_IN_BOOL",
-		Short: "Set the opt-in preference for CEIP",
-		Long:  "Set the opt-in preference for CEIP",
+		Short: "Set the opt-in preference for CEIP (subject to change)",
+		Long:  "Set the opt-in preference for CEIP (subject to change)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !strings.EqualFold(args[0], "true") && !strings.EqualFold(args[0], "false") {
@@ -70,8 +70,8 @@ func newCEIPParticipationSetCmd() *cobra.Command {
 func newCEIPParticipationGetCmd() *cobra.Command {
 	var getCmd = &cobra.Command{
 		Use:   "get",
-		Short: "Get the current CEIP opt-in status",
-		Long:  "Get the current CEIP opt-in status",
+		Short: "Get the current CEIP opt-in status (subject to change)",
+		Long:  "Get the current CEIP opt-in status (subject to change)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			optInVal, err := configlib.GetCEIPOptIn()
 			if err != nil {
