@@ -96,7 +96,7 @@ newly created `main` package to implement the functionality of your new plugin.
 You will notice in the generated `main.go` file, that CLI plugins have to instantiate a
 [Plugin Descriptor](https://github.com/vmware-tanzu/tanzu-plugin-runtime/blob/main/plugin/types.go#L60)
 
-```go
+``` go
 import (
   "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo"
   "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
@@ -258,6 +258,42 @@ Note: as the configuration variable implies, the
 `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` setting is meant for
 plugin development and testing only. The use of this setting in the production setting
 is not supported.
+
+### Testing the plugins
+
+Plugin tests can be run by installing the admin `test` plugin.
+Currently, we only support testing plugins built locally.
+
+**Note:** The `test` admin functionality has been deprecated and no future enhancements are planned for this plugin.
+
+Steps to test plugin :-
+
+1. Bootstrap a new plugin
+2. Build a plugin binary
+3. Run below command
+
+``` go
+tanzu test fetch -l ~/${PLUGIN_NAME}/artifacts/plugins/${HOSTOS}/${HOSTARCH}
+tanzu test plugin PLUGIN_NAME
+```
+
+Example: `helloworld` plugin
+
+``` go
+tanzu test fetch -l ~/helloworld/artifacts/plugins/darwin/amd64
+
+[i] Installing plugin 'helloworld:v0.0.1' with target 'global'
+[i] Installing test plugin for 'helloworld:v0.0.1'
+
+❯ tanzu test plugin helloworld
+---
+[i] testing helloworld
+
+
+[i] cleaning up
+
+[ok] ok: successfully tested helloworld
+```
 
 ------------------------------
 
