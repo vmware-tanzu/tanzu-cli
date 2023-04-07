@@ -211,15 +211,12 @@ First, this command used to be provided by the `login` plugin. The
 installed. This is no longer the case as the `tanzu login` command is now a
 core CLI command. The `tanzu plugin list` command will therefore no longer
 show the `login` plugin. An exception to the last statement is if the `login`
-plugin was previously installed through a legacy version of the CLI; in such
-cases, the new CLI will show the `login` plugin in `tanzu plugin list`
-but it will also show the following warning when running any command:
-"Warning, Masking commands for plugins “login” because a core command or other
-plugin with that name already exists.”
+plugin was previously installed through a legacy version of the CLI.
 
-To remove this warning, the user can run `tanzu plugin delete login`.
-Note however that deleting the `login` plugin will prevent any legacy CLIs
-that may still be in use to provide the `tanzu login` command.
+If the user needs to continue using any legacy Tanzu CLI for a while,
+it is preferable to keep the `login` plugin installed, as it is needed
+for such CLIs.  Once the user no longer needs any legacy CLI, they
+can run `tanzu plugin delete login` to remove this plugin for the new CLI.
 
 The second change to the `tanzu login` command is that it is now deprecated
 and therefore no longer shown in the help text when running `tanzu -h`.
