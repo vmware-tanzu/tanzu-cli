@@ -72,7 +72,7 @@ func (c *ContextCatalog) Upsert(plugin *cli.PluginInfo) error {
 	}
 
 	// The "unknown" target was previously used in two scenarios:
-	// 1- to represent the global target (>= v0.28)
+	// 1- to represent the global target (>= v0.28 and < v0.90)
 	// 2- to represent either the global or kubernetes target (< v0.28)
 	// When inserting the "global" or "k8s" target we should remove any similar plugin using
 	// the "unknown" target and vice versa.
