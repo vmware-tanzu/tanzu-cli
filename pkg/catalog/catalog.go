@@ -71,6 +71,24 @@ func (c *ContextCatalog) Upsert(plugin *cli.PluginInfo) error {
 		c.sharedCatalog.IndexByName[pluginNameTarget] = append(c.sharedCatalog.IndexByName[pluginNameTarget], plugin.InstallationPath)
 	}
 
+	// The "unknown" target was previously used to represent the global target.
+	// Depending on how old the plugin is, it may still use the "unknown" target.
+	// When inserting the "global" target we should remove any similar plugin using
+	// the "unknown" target and vice versa.
+	if plugin.Target == configtypes.TargetGlobal || plugin.Target == configtypes.TargetUnknown {
+		var pluginNameOppositeTarget string
+		if plugin.Target == configtypes.TargetGlobal {
+			pluginNameOppositeTarget = PluginNameTarget(plugin.Name, configtypes.TargetUnknown)
+		} else {
+			pluginNameOppositeTarget = PluginNameTarget(plugin.Name, configtypes.TargetGlobal)
+		}
+		if oldInstallationPath, exists := c.plugins[pluginNameOppositeTarget]; exists {
+			delete(c.sharedCatalog.IndexByPath, oldInstallationPath)
+			delete(c.plugins, pluginNameOppositeTarget)
+			delete(c.sharedCatalog.IndexByName, pluginNameOppositeTarget)
+		}
+	}
+
 	return saveCatalogCache(c.sharedCatalog)
 }
 
