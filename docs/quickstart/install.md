@@ -3,6 +3,16 @@
 The Tanzu CLI can be installed either from pre-built binary releases from
 its GitHub project, or via popular package managers like Homebrew, apt and yum/dnf.
 
+_Note: The following instructions assume the user does not have any legacy
+version of the Tanzu CLI installed. The use of package managers for
+installation typically means they would manage the installation of the CLI
+binary to a path specific to the package managers. There is a chance in some
+cases that the path of the binary could conflict with an already installed
+legacy `tanzu` binary of the same name. Hence, should the user wish to retain
+the use of the legacy CLI, the user should take the necessary steps to maintain
+a separate copy of the binary and adjust the paths to these multiple binaries
+accordingly._
+
 ## From the Binary Releases in the GitHub project
 
 Every [release](https://github.com/vmware-tanzu/tanzu-cli/releases) of the
