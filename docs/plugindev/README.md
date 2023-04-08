@@ -58,13 +58,11 @@ CLI plugins. These are termed "admin plugins" for the rest of the document.
 The easiest way to bootstrap a new plugin project is to make use of the
 `builder` admin plugin. This plugin provides commands to construct scaffolding
 for plugins and plugin commands along with removing the need to write boilerplate
-code. Use one of the following methods to install the builder plugin.
+code. Use one of the following method to install the builder plugin.
 
-#### Installing the official release of admin plugins
+#### Installing the official release of the builder plugin
 
 ```console
-tanzu plugin install --group vmware-tzcli/admin:v0.90.0-alpha.0
-OR
 tanzu plugin install builder
 ```
 
