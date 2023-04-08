@@ -64,7 +64,6 @@ $ tanzu plugin group search
   vmware-tap/default:v1.4.0
   vmware-tkg/default:v2.1.0
   vmware-tmc/default:v0.0.1
-  vmware-tzcli/admin:v0.90.0
 ```
 
 ### Install all plugins in a group
