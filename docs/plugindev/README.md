@@ -229,8 +229,6 @@ make plugin-build-and-publish-packages
 
 ### Updating the plugin inventory of the plugin repository
 
-<!-- VVV worth considering providing a single step to e2e build/publish? -->
-
 ```sh
 # Initialize empty SQLite database
 make inventory-init
