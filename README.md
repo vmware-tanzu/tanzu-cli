@@ -1,14 +1,12 @@
 # Tanzu Core CLI
 
-[![Tanzu CLI Core Tests](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml/badge.svg?branch=main&event=push)](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml?query=event:push+branch:main)
+[![Tanzu Core CLI Tests](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml/badge.svg?branch=main&event=push)](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml?query=event:push+branch:main)
 
 :warning: NOTE: This repository is still under early development. We plan to
 make releases available for evaluation in the second quarter of 2023. Please
 watch this page for further updates.
 
 ## Overview
-
-<!-- VVV: diagram maybe? -->
 
 The Tanzu CLI provides integrated and unified command-line access to a broad
 array of [products and solutions](https://tanzu.vmware.com/get-started) in the
@@ -48,9 +46,10 @@ To learn more about how to develop a Tanzu CLI plugin, see the
 
 ### Testing
 
-Plugin developers can use End-to-End framework to implement end-to-end tests
-to their plugin functionality on CLI Core installed environment.
-More details found in the [End-to-End framework and test case implementation](test/e2e/README.md).
+Plugin developers can use the End-to-End test framework to implement
+tests for the functionality of their plugins under a Tanzu CLI installation.
+More details found in the
+[End-to-End framework and test case implementation](test/e2e/README.md).
 
 ## Contributing
 
@@ -63,12 +62,12 @@ welcome pull requests. Feel free to dig through the
 - Check out the [contribution guidelines](CONTRIBUTING.md) to learn more about how to contribute.
 - Check out the document [here](docs/community/support.md) about the project's support process.
 
-### Development
+## Development
 
 Details about how to get started with development for this project can be found
 in the [Development Guide](docs/dev/README.md).
 
-### Testing
+## Testing
 
 Unit and Integration tests implementation is part of CLI Core development.
 CLI core does have end-to-end test case implementation.
