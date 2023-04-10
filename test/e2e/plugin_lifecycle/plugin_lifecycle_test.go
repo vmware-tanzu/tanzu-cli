@@ -1,8 +1,8 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// plugin provides plugin command specific E2E test cases
-package plugin
+// pluginlifecyclee2e provides plugin command specific E2E test cases
+package pluginlifecyclee2e
 
 import (
 	"fmt"
@@ -34,7 +34,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		It("list plugin source and validate previously created plugin source available", func() {
 			list, err := tf.PluginCmd.ListPluginSources()
 			Expect(err).To(BeNil(), "should not get any error for plugin source list")
-			Expect(IsPluginSourceExists(list, pluginSourceName)).To(BeTrue())
+			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeTrue())
 		})
 		// Test case: update plugin source URL
 		It("update previously created plugin source URL", func() {
@@ -57,7 +57,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "should not get any error for plugin source delete")
 			list, err := tf.PluginCmd.ListPluginSources()
 			Expect(err).To(BeNil(), "should not get any error for plugin source list")
-			Expect(IsPluginSourceExists(list, pluginSourceName)).To(BeFalse())
+			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeFalse())
 		})
 	})
 	Context("plugin use cases: tanzu plugin clean, install and describe, list, delete", func() {
@@ -101,7 +101,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			pluginsList, err := tf.PluginCmd.ListPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(Equal(len(framework.PluginsForLifeCycleTests)), "plugins list should return all installed plugins")
-			Expect(CheckAllPluginsExists(pluginsList, framework.PluginsForLifeCycleTests)).Should(BeTrue(), "the plugin list output is not same as the plugins being installed")
+			Expect(framework.CheckAllPluginsExists(pluginsList, framework.PluginsForLifeCycleTests)).Should(BeTrue(), "the plugin list output is not same as the plugins being installed")
 		})
 		// Test case: delete all plugins which are installed, and validate by running list plugin command
 		It("delete all plugins and verify with plugin list", func() {

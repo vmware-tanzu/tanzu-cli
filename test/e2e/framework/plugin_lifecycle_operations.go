@@ -16,10 +16,16 @@ import (
 type PluginBasicOps interface {
 	// ListPlugins lists all plugins by running 'tanzu plugin list' command
 	ListPlugins() ([]*PluginInfo, error)
+	// ListInstalledPlugins lists all installed plugins
+	ListInstalledPlugins() ([]*PluginInfo, error)
+	// ListPluginsForGivenContext lists all plugins for a given context and either installed only or all
+	ListPluginsForGivenContext(context string, installedOnly bool) ([]*PluginInfo, error)
 	// SearchPlugins searches all plugins for given filter (keyword|regex) by running 'tanzu plugin search' command
 	SearchPlugins(filter string) ([]*PluginInfo, error)
 	// InstallPlugin installs given plugin and flags
 	InstallPlugin(pluginName, target, versions string) error
+	// Sync performs sync operation
+	Sync() (string, error)
 	// DescribePlugin describes given plugin and flags
 	DescribePlugin(pluginName, target string) (string, error)
 	// UninstallPlugin uninstalls/deletes given plugin
@@ -100,13 +106,49 @@ func (po *pluginCmdOps) DeletePluginDiscoverySource(pluginSourceName string) (st
 	deleteCmd := fmt.Sprintf(DeletePluginSource, pluginSourceName)
 	out, stdErr, err := po.cmdExe.Exec(deleteCmd)
 	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrAndStdErr, deleteCmd, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, deleteCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return out.String(), err
 }
 
 func (po *pluginCmdOps) ListPlugins() ([]*PluginInfo, error) {
 	return ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag)
+}
+
+func (po *pluginCmdOps) ListInstalledPlugins() ([]*PluginInfo, error) {
+	plugins, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag)
+	installedPlugins := make([]*PluginInfo, 0)
+	for i := range plugins {
+		if plugins[i].Status == Installed {
+			installedPlugins = append(installedPlugins, plugins[i])
+		}
+	}
+	return installedPlugins, err
+}
+
+func (po *pluginCmdOps) ListPluginsForGivenContext(context string, installedOnly bool) ([]*PluginInfo, error) {
+	plugins, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag)
+	contextSpecificPlugins := make([]*PluginInfo, 0)
+	for i := range plugins {
+		if plugins[i].Context == context {
+			if installedOnly {
+				if plugins[i].Status == Installed {
+					contextSpecificPlugins = append(contextSpecificPlugins, plugins[i])
+				}
+			} else {
+				contextSpecificPlugins = append(contextSpecificPlugins, plugins[i])
+			}
+		}
+	}
+	return contextSpecificPlugins, err
+}
+
+func (po *pluginCmdOps) Sync() (string, error) {
+	out, stdErr, err := po.cmdExe.Exec(pluginSyncCmd)
+	if err != nil {
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, pluginSyncCmd, err.Error(), stdErr.String(), out.String())
+	}
+	return out.String(), err
 }
 
 func (po *pluginCmdOps) SearchPlugins(filter string) ([]*PluginInfo, error) {
@@ -147,9 +189,9 @@ func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string) error
 	if len(strings.TrimSpace(versions)) > 0 {
 		installPluginCmd += " --version " + versions
 	}
-	_, stdErr, err := po.cmdExe.Exec(installPluginCmd)
+	out, stdErr, err := po.cmdExe.Exec(installPluginCmd)
 	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrAndStdErr, installPluginCmd, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return err
 }
@@ -161,9 +203,9 @@ func (po *pluginCmdOps) InstallPluginsFromGroup(pluginNameORAll, groupName strin
 	} else {
 		installPluginCmd = fmt.Sprintf(InstallAllPluginsFromGroupCmd, groupName)
 	}
-	_, stdErr, err := po.cmdExe.Exec(installPluginCmd)
+	out, stdErr, err := po.cmdExe.Exec(installPluginCmd)
 	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrAndStdErr, installPluginCmd, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return err
 }
@@ -176,7 +218,7 @@ func (po *pluginCmdOps) DescribePlugin(pluginName, target string) (string, error
 
 	stdOut, stdErr, err := po.cmdExe.Exec(installPluginCmd)
 	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrAndStdErr, installPluginCmd, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), stdOut.String())
 	}
 	return stdOut.String(), err
 }
@@ -190,9 +232,9 @@ func (po *pluginCmdOps) UninstallPlugin(pluginName, target string) error {
 	if len(strings.TrimSpace(target)) > 0 {
 		uninstallPluginCmd += " --target " + target
 	}
-	_, stdErr, err := po.cmdExe.Exec(uninstallPluginCmd)
+	out, stdErr, err := po.cmdExe.Exec(uninstallPluginCmd)
 	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrAndStdErr, uninstallPluginCmd, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, uninstallPluginCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return err
 }
@@ -201,16 +243,16 @@ func (po *pluginCmdOps) ExecuteSubCommand(pluginWithSubCommand string) (string, 
 	pluginCmdWithSubCommand := fmt.Sprintf(PluginSubCommand, pluginWithSubCommand)
 	stdOut, stdErr, err := po.cmdExe.Exec(pluginCmdWithSubCommand)
 	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrAndStdErr, pluginCmdWithSubCommand, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, pluginCmdWithSubCommand, err.Error(), stdErr.String(), stdOut.String())
 		return stdOut.String(), errors.Wrap(err, stdErr.String())
 	}
 	return stdOut.String(), nil
 }
 
 func (po *pluginCmdOps) CleanPlugins() error {
-	_, stdErr, err := po.cmdExe.Exec(CleanPluginsCmd)
+	out, stdErr, err := po.cmdExe.Exec(CleanPluginsCmd)
 	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrAndStdErr, CleanPluginsCmd, err.Error(), stdErr.String())
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, CleanPluginsCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return err
 }
