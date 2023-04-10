@@ -17,13 +17,15 @@ type ClusterOps interface {
 	GetClusterContext(clusterName string) string
 	// GetKubeconfigPath returns the default kubeconfig path
 	GetKubeconfigPath() string
+	// ApplyConfig applies the given configFilePath on to the given contextName cluster context
+	ApplyConfig(contextName, configFilePath string) error
 }
 
 // ClusterInfo holds the general cluster details
 type ClusterInfo struct {
-	Name           string
-	ClusterContext string
-	EndPoint       string
-	KubeConfigPath string
-	APIKey         string
+	Name               string
+	ClusterKubeContext string
+	EndPoint           string
+	KubeConfigPath     string
+	APIKey             string
 }

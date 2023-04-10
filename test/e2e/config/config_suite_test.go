@@ -10,7 +10,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/vmware-tanzu/tanzu-cli/test/e2e/context"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 )
 
@@ -23,6 +22,7 @@ var (
 	tf           *framework.Framework
 	clusterInfo  *framework.ClusterInfo
 	contextNames []string
+	err          error
 )
 
 // BeforeSuite creates KIND cluster needed to test 'tanzu config server' use cases
@@ -30,7 +30,9 @@ var (
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
 	// Create KIND cluster, which is used in test cases to create server's/context's
-	clusterInfo = context.CreateKindCluster(tf, "config-e2e-"+framework.RandomNumber(4))
+	clusterInfo, err = framework.CreateKindCluster(tf, "config-e2e-"+framework.RandomNumber(4))
+	Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
+
 	contextNames = make([]string, 0)
 })
 

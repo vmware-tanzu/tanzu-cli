@@ -54,3 +54,13 @@ const GeneratedValuesTemplate = `#@data/values
 #@overlay/match-child-defaults missing_ok=True
 
 ---`
+
+const CRTemplate = `apiVersion: cli.tanzu.vmware.com/v1alpha1
+kind: CLIPlugin
+metadata:
+  annotations:
+  name: %s
+  namespace: default
+spec:
+  description: Kubernetes cluster operations
+  recommendedVersion: %s`

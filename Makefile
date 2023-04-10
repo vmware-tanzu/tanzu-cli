@@ -190,7 +190,7 @@ test: fmt ## Run Tests
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
 e2e-cli-core: e2e-cli-plugin-compatibility-test e2e-cli-tmc-test e2e-cli-plugin-lifecycle-test
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
-	${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc | grep -v test/e2e/plugins_compatibility | grep -v test/e2e/plugin_lifecycle` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
+	${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc | grep -v test/e2e/plugins_compatibility | grep -v test/e2e/plugin_lifecycle | grep -v test/e2e/plugin_sync` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
 
 .PHONY: e2e-cli-plugin-compatibility-test ## Execute CLI Core Plugin Compatibility E2E test cases
 e2e-cli-plugin-compatibility-test:
@@ -213,6 +213,7 @@ e2e-cli-plugin-lifecycle-test:
 		export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
 		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
 		${GO} test ./test/e2e/plugin_lifecycle -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
+		${GO} test ./test/e2e/plugin_sync -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
 	fi
 
 .PHONY: e2e-cli-tmc-test ## Execute CLI Core TMC Specific E2E test cases
