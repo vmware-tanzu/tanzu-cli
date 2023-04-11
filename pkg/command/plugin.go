@@ -101,6 +101,8 @@ func newPluginCmd() *cobra.Command {
 		cleanPluginCmd,
 		syncPluginCmd,
 		discoverySourceCmd,
+		newDownloadBundlePluginCmd(),
+		newUploadBundlePluginCmd(),
 	)
 
 	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
