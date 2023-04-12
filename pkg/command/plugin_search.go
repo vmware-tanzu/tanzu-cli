@@ -9,15 +9,18 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 var (
-	listVersions bool
+	showDetails bool
+	pluginName  string
 )
 
 const searchLongDesc = `Search provides the ability to search for plugins that can be installed.
@@ -35,15 +38,13 @@ func newSearchPluginCmd() *cobra.Command {
 		Args:              cobra.MaximumNArgs(1),
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO(khouzam): Implement the below flags
+			// TODO(khouzam): Implement the filter arg
 			if len(args) == 1 {
 				return fmt.Errorf("the filter argument is not yet implemented")
 			}
-			if len(targetStr) > 0 {
-				return fmt.Errorf("filtering by target is not yet implemented")
-			}
-			if listVersions {
-				return fmt.Errorf("listing versions is not yet implemented")
+
+			if !configtypes.IsValidTarget(targetStr, true, true) {
+				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
 			}
 
 			var err error
@@ -60,23 +61,35 @@ func newSearchPluginCmd() *cobra.Command {
 				}
 			} else {
 				// Show plugins found in the central repos
-				allPlugins, err = pluginmanager.DiscoverStandalonePlugins()
+				allPlugins, err = pluginmanager.DiscoverStandalonePlugins(&discovery.PluginDiscoveryCriteria{
+					Name:   pluginName,
+					Target: configtypes.StringToTarget(targetStr)})
 				if err != nil {
 					return err
 				}
 			}
 			sort.Sort(discovery.DiscoveredSorter(allPlugins))
-			displayPluginsFound(allPlugins, cmd.OutOrStdout())
+
+			if !showDetails {
+				displayPluginsFound(allPlugins, cmd.OutOrStdout())
+			} else {
+				displayPluginDetails(allPlugins, cmd.OutOrStdout())
+			}
 
 			return nil
 		},
 	}
 
 	f := searchCmd.Flags()
-	f.BoolVar(&listVersions, "list-versions", false, "show the long listing, with each available version of plugins")
-	f.StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
+	f.BoolVar(&showDetails, "show-details", false, "show the details of the specified plugin, including all available versions")
+	f.StringVarP(&pluginName, "name", "n", "", "limit the search to plugins with the specified name")
+	f.StringVarP(&outputFormat, "output", "o", "", "output format (yaml|json|table)")
 	f.StringVarP(&local, "local", "l", "", "path to local plugin source")
 	f.StringVarP(&targetStr, "target", "t", "", "list plugins for the specified target (kubernetes[k8s]/mission-control[tmc])")
+
+	searchCmd.MarkFlagsMutuallyExclusive("local", "name")
+	searchCmd.MarkFlagsMutuallyExclusive("local", "target")
+	searchCmd.MarkFlagsMutuallyExclusive("local", "show-details")
 
 	return searchCmd
 }
@@ -93,4 +106,48 @@ func displayPluginsFound(plugins []discovery.Discovered, writer io.Writer) {
 	}
 
 	outputWriter.Render()
+}
+
+func displayPluginDetails(plugins []discovery.Discovered, writer io.Writer) {
+	// Create a specific object format so it gets printed properly in yaml or json
+	type detailedObject struct {
+		Name        string
+		Description string
+		Target      string
+		Latest      string
+		Versions    []string
+	}
+
+	// For the table format, we will use individual yaml output for each plugin
+	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
+		for i := range plugins {
+			if i > 0 {
+				fmt.Println()
+			}
+			details := detailedObject{
+				Name:        plugins[i].Name,
+				Description: plugins[i].Description,
+				Target:      string(plugins[i].Target),
+				Latest:      plugins[i].RecommendedVersion,
+				Versions:    plugins[i].SupportedVersions,
+			}
+			component.NewObjectWriter(writer, string(component.YAMLOutputType), details).Render()
+		}
+		return
+	}
+
+	// Non-table format.
+	// Here we use an objectWriter so that the array of versions is printed as an array
+	// and not a long string.
+	var details []detailedObject
+	for i := range plugins {
+		details = append(details, detailedObject{
+			Name:        plugins[i].Name,
+			Description: plugins[i].Description,
+			Target:      string(plugins[i].Target),
+			Latest:      plugins[i].RecommendedVersion,
+			Versions:    plugins[i].SupportedVersions,
+		})
+	}
+	component.NewObjectWriter(writer, outputFormat, details).Render()
 }
