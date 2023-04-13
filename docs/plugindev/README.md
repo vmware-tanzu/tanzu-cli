@@ -246,6 +246,7 @@ The following CLI configuration can be set to instruct the CLI to query it
 
 ```sh
 tanzu config set env.TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY localhost:5001/test/v1/tanzu-cli/plugins/plugin-inventory:latest
+tanzu config set env.TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST localhost:5001/test/v1/tanzu-cli/plugins/plugin-inventory:latest
 ```
 
 Once set, plugin lifecycle commands like `tanzu plugin search` will interact with the test repository as well.
@@ -254,6 +255,12 @@ Note: as the configuration variable implies, the
 `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` setting is meant for
 plugin development and testing only. The use of this setting in the production setting
 is not supported.
+
+Note: the `TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST` configuration
+variable instructs the CLI to skip the inventory database signature verification. This is
+needed because the inventory database image in the local registry is not signed since it is
+only used for testing. The signature verification should not be skipped for remote registries
+as it would introduce a security risk.
 
 ### Testing the plugins
 
