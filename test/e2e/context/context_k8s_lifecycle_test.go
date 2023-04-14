@@ -13,12 +13,14 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 const ContextNameConfigPrefix = "context-config-k8s-"
 
 // Test suite tests the context life cycle use cases for the k8s target
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", func() {
+	var active string
 	Context("Context lifecycle tests for k8s target", func() {
 		// Test case: delete config files and initialize config
 		It("should initialize configuration successfully", func() {
@@ -36,10 +38,11 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 			By("list and delete contexts if any exists already before running test cases")
 			list, err := tf.ContextCmd.ListContext()
 			Expect(err).To(BeNil(), "list context should not return any error")
-			for _, ctx := range list {
-				err := tf.ContextCmd.DeleteContext(ctx.Name)
+			for i := 0; i < len(list); i++ {
+				err = tf.ContextCmd.DeleteContext(list[i].Name)
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
-				Expect(framework.IsContextExists(tf, ctx.Name)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, ctx.Name))
+				log.Infof("context: %s deleted", list[i].Name)
+				Expect(framework.IsContextExists(tf, list[i].Name)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, list[i].Name))
 			}
 			list, err = tf.ContextCmd.ListContext()
 			Expect(err).To(BeNil(), "list context should not return any error")
@@ -51,6 +54,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
 			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
+			log.Infof("context: %s added", ctxName)
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
 		})
@@ -78,18 +82,19 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-k8s]", 
 			ctxName := "context-defaultConfig-" + framework.RandomString(4)
 			err := tf.ContextCmd.CreateContextWithDefaultKubeconfig(ctxName, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
+			log.Infof("context: %s added", ctxName)
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
+			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(ctxName), "the active context should be recently added context")
 		})
 		// Test case: test 'tanzu context use' command with the specific context name (not the recently created one)
 		It("use context command", func() {
 			By("use context command")
-			err := tf.ContextCmd.UseContext(contextNames[0])
+			err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
+			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
 		})

@@ -93,6 +93,7 @@ const (
 
 	// log info
 	ExecutingCommand = "Executing command: %s"
+	FileContent      = "file: %s , content: %s"
 
 	// Error messages
 	UnableToFindPluginForTarget                   = "unable to find plugin '%s' for target '%s'"
@@ -124,6 +125,12 @@ const TestPluginsDir = ".e2e-test-plugins"
 // TempDirInTestDirPath is the directory under $HOME/$TestDir, to create temporary files (if any) for E2E test execution
 const TempDirInTestDirPath = "temp"
 
+const ConfigFolder = ".config"
+const TanzuFolder = "tanzu"
+const TanzuPluginsFolder = "tanzu-plugins"
+const ConfigFile = "config.yaml"
+const ConfigNGFile = "config-ng.yaml"
+
 var (
 	// TestDirPath is the absolute directory path for the E2E test execution uses to create all Tanzu CLI specific files (config, local plugins etc)
 	TestDirPath               string
@@ -131,6 +138,12 @@ var (
 	TestStandalonePluginsPath string
 	// FullPathForTempDir is the absolute path for the temp directory under $TestDir
 	FullPathForTempDir string
+
+	// ConfigFilePath represents config.yaml file path which under $HOME/.tanzu-cli-e2e/.config/tanzu
+	ConfigFilePath string
+	// ConfigFilePath represents config-ng.yaml file path which under $HOME/.tanzu-cli-e2e/.config/tanzu
+	ConfigNGFilePath string
+	TanzuFolderPath  string
 )
 
 // PluginsForLifeCycleTests is list of plugins (which are published in local central repo) used in plugin life cycle test cases
@@ -177,8 +190,11 @@ func init() {
 	// Update $HOME as $HOME/.tanzu-cli-e2e
 	os.Setenv("HOME", TestDirPath)
 	TestPluginsDirPath = filepath.Join(TestDirPath, TestPluginsDir)
+	TanzuFolderPath = filepath.Join(filepath.Join(TestDirPath, ConfigFolder), TanzuFolder)
+	ConfigFilePath = filepath.Join(TanzuFolderPath, ConfigFile)
+	ConfigNGFilePath = filepath.Join(TanzuFolderPath, ConfigNGFile)
 	// Create a directory (if not exists) $HOME/.tanzu-cli-e2e/.config/tanzu-plugins/discovery/standalone
-	TestStandalonePluginsPath = filepath.Join(filepath.Join(filepath.Join(filepath.Join(TestDirPath, ".config"), "tanzu-plugins"), "discovery"), "standalone")
+	TestStandalonePluginsPath = filepath.Join(filepath.Join(filepath.Join(filepath.Join(TestDirPath, ConfigFolder), TanzuPluginsFolder), "discovery"), "standalone")
 	_ = CreateDir(TestStandalonePluginsPath)
 	// Create a directory (if not exists) $HOME/.tanzu-cli-e2e/test
 	_ = CreateDir(FullPathForTempDir)

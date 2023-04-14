@@ -23,6 +23,13 @@ import (
 // 1. plugin search, install, delete, describe, list (with negative use cases)
 // 2. plugin source add/update/list/delete (with negative use cases)
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func() {
+	// use case: tanzu plugin source add, list, update, delete
+	// add plugin source
+	// a. list plugin sources and validate plugin source created in previous step
+	// b. update plugin source URL
+	// c. (negative test) update plugin source URL with incorrect type (--type)
+	// d. (negative test) delete plugin source which is not exists
+	// e. delete plugin source which was created in previous test case
 	Context("plugin source use cases: tanzu plugin source add, list, update, delete", func() {
 		// Test case: add plugin source
 		It("add plugin source", func() {
@@ -60,6 +67,13 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeFalse())
 		})
 	})
+	// use case: tanzu plugin clean, install and describe, list, delete
+	// a. clean plugins if any installed already
+	// b. install all plugins from framework.PluginsForLifeCycleTests, and validate the installation by running describe command on each plugin
+	// c. (negative) describe plugin with incorrect target type
+	// d. (negative) describe plugin with incorrect plugin name
+	// e. list plugins and validate the list plugins output has all plugins which are installed in previous steps
+	// f. delete all plugins which are installed, and validate by running list plugin command
 	Context("plugin use cases: tanzu plugin clean, install and describe, list, delete", func() {
 		// Test case: clean plugins if any installed already
 		It("clean plugins if any installed already", func() {
@@ -115,6 +129,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
 		})
 	})
+	// use case: tanzu plugin clean, install, clean and list
+	// a. clean plugins if any installed already
+	// b. install all plugin
+	// c. run clean plugin command and validate with list plugin command
 	Context("plugin use cases: tanzu plugin clean, install, clean and list", func() {
 		// Test case: clean plugins if any installed already
 		It("clean plugins", func() {
@@ -148,19 +166,23 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
 		})
 	})
+	// use case: negative test cases for plugin install and plugin delete commands
+	// a. install plugin with incorrect value target flag
+	// b. install plugin with incorrect plugin name
+	// c. install plugin with incorrect value for flag --version
 	Context("plugin use cases: negative test cases for plugin install and plugin delete commands", func() {
-		// Test case: install plugin with incorrect value target flag
+		// Test case: a. install plugin with incorrect value target flag
 		It("install plugin with random string for target flag", func() {
 			err := tf.PluginCmd.InstallPlugin(framework.PluginsForLifeCycleTests[0].Name, framework.RandomString(5), framework.PluginsForLifeCycleTests[0].Version)
 			Expect(err.Error()).To(ContainSubstring(framework.InvalidTargetSpecified))
 		})
-		// Test case: install plugin with incorrect plugin name
+		// Test case: b. install plugin with incorrect plugin name
 		It("install plugin with random string for target flag", func() {
 			name := framework.RandomString(5)
 			err := tf.PluginCmd.InstallPlugin(name, "", "")
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.UnableToFindPlugin, name)))
 		})
-		// Test case: install plugin with incorrect value for flag --version
+		// Test case: c. install plugin with incorrect value for flag --version
 		It("install plugin with incorrect version", func() {
 			for _, plugin := range framework.PluginsForLifeCycleTests {
 				if !(plugin.Target == framework.GlobalTarget) {

@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 include ./plugin-tooling.mk
+include ./test/e2e/Makefile
 
 # Ensure Make is run with bash shell as some syntax below is bash-specific
 SHELL := /usr/bin/env bash
@@ -64,22 +65,6 @@ LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Version=$(BUILD_
 ENVS ?= linux-amd64 windows-amd64 darwin-amd64
 
 CLI_TARGETS := $(addprefix build-cli-,${ENVS})
- 
-ifndef TANZU_API_TOKEN
-TANZU_API_TOKEN = ""
-endif
-
-ifndef TANZU_CLI_TMC_UNSTABLE_URL
-TANZU_CLI_TMC_UNSTABLE_URL = ""
-endif
-
-ifndef TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL
-TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL = gcr.io/eminent-nation-87317/tanzu-cli/test/v1/plugins/plugin-inventory:latest
-endif
-
-ifndef TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL
-TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL = localhost:9876/tanzu-cli/plugins/central:small
-endif
 
 ## --------------------------------------
 ## Help
@@ -188,42 +173,7 @@ test: fmt ## Run Tests
 	${GO} test `go list ./... | grep -v test/e2e` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
 
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
-e2e-cli-core: e2e-cli-plugin-compatibility-test e2e-cli-tmc-test e2e-cli-plugin-lifecycle-test
-	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
-	${GO} test `go list ./test/e2e/... | grep -v test/e2e/context/tmc | grep -v test/e2e/plugins_compatibility | grep -v test/e2e/plugin_lifecycle | grep -v test/e2e/plugin_sync` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
-
-.PHONY: e2e-cli-plugin-compatibility-test ## Execute CLI Core Plugin Compatibility E2E test cases
-e2e-cli-plugin-compatibility-test:
-	@if [ "${TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL}" = "" ]; then \
-		echo "***Skipping Plugin Compatibility test cases because environment variables TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL is not set***" ; \
-	else \
-		export TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
-		export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
-		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
-		${GO} test ./test/e2e/plugins_compatibility -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
-	fi 
-
-.PHONY: e2e-cli-plugin-lifecycle-test ## Execute CLI Core Plugin life cycle E2E test cases
-e2e-cli-plugin-lifecycle-test:
-	@if [ "${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL}" = "" ]; then \
-		echo "***Skipping Plugin life cycle test cases because environment variables TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL is not set***" ; \
-	else \
-		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
-		export TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
-		export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
-		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
-		${GO} test ./test/e2e/plugin_lifecycle -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
-		${GO} test ./test/e2e/plugin_sync -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
-	fi
-
-.PHONY: e2e-cli-tmc-test ## Execute CLI Core TMC Specific E2E test cases
-e2e-cli-tmc-test:
-	@if [ "${TANZU_API_TOKEN}" = "" ] && [ "$(TANZU_CLI_TMC_UNSTABLE_URL)" = "" ]; then \
-		echo "***Skipping TMC specific e2e tests cases because environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL are not set***" ; \
-	else \
-	    export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
-		${GO} test ./test/e2e/context/tmc -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE} ; \
-	fi
+e2e-cli-core: start-test-central-repo e2e-cli-core-all ## Execute all CLI Core E2E Tests
 
 .PHONY: start-test-central-repo
 start-test-central-repo: stop-test-central-repo ## Starts up a test central repository locally with docker
