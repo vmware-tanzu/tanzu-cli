@@ -171,13 +171,13 @@ func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupID string) (*plu
 }
 
 // DiscoverStandalonePlugins returns the available standalone plugins
-func DiscoverStandalonePlugins() ([]discovery.Discovered, error) {
+func DiscoverStandalonePlugins(criteria *discovery.PluginDiscoveryCriteria) ([]discovery.Discovered, error) {
 	discoveries, err := getPluginDiscoveries()
 	if err != nil {
 		return nil, err
 	}
 
-	plugins, err := discoverPlugins(discoveries)
+	plugins, err := discoverSpecificPlugins(discoveries, criteria)
 	if err != nil {
 		return plugins, err
 	}
@@ -326,7 +326,7 @@ func DiscoverPlugins() ([]discovery.Discovered, []discovery.Discovered) {
 		log.Warningf("unable to discover server plugins, %v", err.Error())
 	}
 
-	standalonePlugins, err := DiscoverStandalonePlugins()
+	standalonePlugins, err := DiscoverStandalonePlugins(nil)
 	if err != nil {
 		log.Warningf("unable to discover standalone plugins, %v", err.Error())
 	}
