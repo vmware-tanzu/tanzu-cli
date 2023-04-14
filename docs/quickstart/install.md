@@ -83,3 +83,11 @@ EOF
 
 sudo yum install tanzu-cli # dnf install can also be used
 ```
+
+## Continuous Integration
+
+****Customer Experience Improvement Program (CEIP) Prompt**** :
+The Tanzu CLI prompts the user for CEIP participation on their first use of any `tanzu` command
+except for `tanzu version`, `tanzu ceip-participation set` and `tanzu config set` commands.
+Users installing/using the CLI through CI or by any automation means should be able to skip the prompt by
+calling `tanzu ceip-participation set <true/false>` as their first command to set the CEIP participation status.
