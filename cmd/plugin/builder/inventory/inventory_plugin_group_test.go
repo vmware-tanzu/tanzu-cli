@@ -182,7 +182,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 
 			// verify that the local db file was updated correctly before publishing the database to remote repository
 			db := plugininventory.NewSQLiteInventory(referencedDBFile, "")
-			pgEntries, err := db.GetAllGroups()
+			pgEntries, err := db.GetPluginGroups(plugininventory.PluginGroupFilter{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pgEntries).NotTo(BeNil())
 			Expect(len(pgEntries)).To(Equal(1))
@@ -211,13 +211,13 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 			fakeImgpkgWrapper.PullImageCalls(pullDBImageStubWithPluginGroups)
 
 			ipgu.Override = true
-			ipgu.DeactivatePluginGroup = true
+			ipgu.DeactivatePluginGroup = false
 			err := ipgu.PluginGroupAdd()
 			Expect(err).NotTo(HaveOccurred())
 
 			// verify that the local db file was updated correctly before publishing the database to remote repository
 			db := plugininventory.NewSQLiteInventory(referencedDBFile, "")
-			pgEntries, err := db.GetAllGroups()
+			pgEntries, err := db.GetPluginGroups(plugininventory.PluginGroupFilter{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pgEntries).NotTo(BeNil())
 			Expect(len(pgEntries)).To(Equal(1))
@@ -287,7 +287,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 
 			// verify that the local db file was updated correctly before publishing the database to remote repository
 			db := plugininventory.NewSQLiteInventory(referencedDBFile, "")
-			pgEntries, err := db.GetAllGroups()
+			pgEntries, err := db.GetPluginGroups(plugininventory.PluginGroupFilter{IncludeHidden: true})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pgEntries).NotTo(BeNil())
 			Expect(len(pgEntries)).To(Equal(1))
@@ -309,7 +309,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 
 			// verify that the local db file was updated correctly before publishing the database to remote repository
 			db := plugininventory.NewSQLiteInventory(referencedDBFile, "")
-			pgEntries, err := db.GetAllGroups()
+			pgEntries, err := db.GetPluginGroups(plugininventory.PluginGroupFilter{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pgEntries).NotTo(BeNil())
 			Expect(len(pgEntries)).To(Equal(1))

@@ -41,12 +41,17 @@ const (
 	pluginSelectClause = "SELECT PluginName,Target,RecommendedVersion,Version,Hidden,Description,Publisher,Vendor,OS,Architecture,Digest,URI FROM PluginBinaries"
 
 	// pluginOrderClause is the ORDER section of the SQL query to be used when querying the inventory DB.
-	// It MUST be used as the order of the results is required by the functions processing the results.
-	// The column order must also match the order used in getNextRow().
+	// It MUST be used, as the order of the results is required by the functions processing the results.
+	// The column order must also match the order used in getPluginNextRow().
 	pluginOrderClause = "ORDER BY PluginName,Target,Version"
 
-	// groupSelectQuery is the query used to extract plugin groups from the PluginGroups table
-	groupSelectQuery = "SELECT Vendor,Publisher,GroupName,PluginName,Target,Version,Mandatory,Hidden FROM PluginGroups ORDER by Vendor,Publisher,GroupName,PluginName"
+	// groupSelectClause is the SELECT section of the query used to extract plugin groups from the PluginGroups table
+	groupSelectClause = "SELECT Vendor,Publisher,GroupName,PluginName,Target,Version,Mandatory,Hidden FROM PluginGroups"
+
+	// groupOrderClause is the ORDER section of the SQL query to be used when querying the inventory DB for groups.
+	// It MUST be used, as the order of the results is required by the functions processing the results.
+	// The column order must also match the order used in getGroupNextRow().
+	groupOrderClause = "ORDER by Vendor,Publisher,GroupName,PluginName"
 )
 
 // Structure of each row of the PluginBinaries table within the SQLite database
@@ -119,8 +124,8 @@ func (b *SQLiteInventory) GetPlugins(filter *PluginInventoryFilter) ([]*PluginIn
 	return b.getPluginsFromDB(filter)
 }
 
-func (b *SQLiteInventory) GetAllGroups() ([]*PluginGroup, error) {
-	return b.getGroupsFromDB()
+func (b *SQLiteInventory) GetPluginGroups(filter PluginGroupFilter) ([]*PluginGroup, error) {
+	return b.getGroupsFromDB(filter)
 }
 
 // getPluginsFromDB returns the plugins found in the DB 'inventoryFile' that match the filter
@@ -131,7 +136,7 @@ func (b *SQLiteInventory) getPluginsFromDB(filter *PluginInventoryFilter) ([]*Pl
 	}
 	defer db.Close()
 
-	whereClause, err := createWhereClause(filter)
+	whereClause, err := createPluginWhereClause(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -149,8 +154,8 @@ func (b *SQLiteInventory) getPluginsFromDB(filter *PluginInventoryFilter) ([]*Pl
 	return b.extractPluginsFromRows(rows)
 }
 
-// createWhereClause parses the filter and creates the WHERE clause for the DB query.
-func createWhereClause(filter *PluginInventoryFilter) (string, error) {
+// createPluginWhereClause parses the filter and creates the WHERE clause for the DB query.
+func createPluginWhereClause(filter *PluginInventoryFilter) (string, error) {
 	var whereClause string
 
 	// If there is a filter, create a WHERE clause for the query.
@@ -279,21 +284,59 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 	return allPlugins, rows.Err()
 }
 
-// getGroupsFromDB returns all the plugin groups found in the DB 'inventoryFile'
-func (b *SQLiteInventory) getGroupsFromDB() ([]*PluginGroup, error) {
+// getGroupsFromDB returns all the plugin groups found in the DB 'inventoryFile' that match the filter
+func (b *SQLiteInventory) getGroupsFromDB(filter PluginGroupFilter) ([]*PluginGroup, error) {
 	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open the DB at '%s' for groups", b.inventoryFile)
 	}
 	defer db.Close()
 
-	rows, err := db.Query(groupSelectQuery)
+	whereClause, err := createGroupWhereClause(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build the final query with the SELECT, WHERE and ORDER clauses.
+	// The ORDER clause is essential because the parsing algorithm of extractGroupsFromRows()
+	// assumes that ordering.
+	dbQuery := fmt.Sprintf("%s %s %s", groupSelectClause, whereClause, groupOrderClause)
+	rows, err := db.Query(dbQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to setup DB query for DB at '%s' for groups", b.inventoryFile)
 	}
 	defer rows.Close()
 
 	return b.extractGroupsFromRows(rows)
+}
+
+// createGroupWhereClause parses the filter and creates the WHERE clause for the DB query for groups.
+func createGroupWhereClause(filter PluginGroupFilter) (string, error) {
+	var whereClause string
+
+	// If there is a filter, create a WHERE clause for the query.
+	if filter.Name != "" {
+		whereClause = fmt.Sprintf("%s GroupName='%s' AND", whereClause, filter.Name)
+	}
+	if !filter.IncludeHidden {
+		// Unless we want to also get the hidden plugins, we only request the ones that are not hidden
+		whereClause = fmt.Sprintf("%s Hidden='false' AND", whereClause)
+	}
+	if filter.Publisher != "" {
+		whereClause = fmt.Sprintf("%s Publisher='%s' AND", whereClause, filter.Publisher)
+	}
+	if filter.Vendor != "" {
+		whereClause = fmt.Sprintf("%s Vendor='%s' AND", whereClause, filter.Vendor)
+	}
+
+	if whereClause != "" {
+		// Remove the last added "AND"
+		whereClause = strings.TrimSuffix(whereClause, "AND")
+		// Add the "WHERE" keyword
+		whereClause = fmt.Sprintf("WHERE %s", whereClause)
+	}
+
+	return whereClause, nil
 }
 
 // extractGroupsFromRows loops through all DB rows and builds an array

@@ -362,7 +362,7 @@ func (stub *stubInventory) GetPlugins(filter *plugininventory.PluginInventoryFil
 	return matchingEntries, nil
 }
 
-func (stub *stubInventory) GetAllGroups() ([]*plugininventory.PluginGroup, error) {
+func (stub *stubInventory) GetPluginGroups(plugininventory.PluginGroupFilter) ([]*plugininventory.PluginGroup, error) {
 	return groupEntries, nil
 }
 func (stub *stubInventory) CreateSchema() error {
