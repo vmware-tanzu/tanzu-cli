@@ -1,15 +1,16 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// plugincompatibility provides plugins compatibility E2E test cases
-package plugincompatibility
+// plugincompatibility_test provides plugins compatibility E2E test cases
+package plugincompatibility_test
 
 import (
 	"fmt"
-	"os"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	plugincompatibility "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugins_compatibility"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
@@ -30,22 +31,12 @@ import (
 // f. uninstall all installed compatibility test-plugins
 // g. list all plugins and make sure all above uninstalled test plugins should not be listed in the output
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", func() {
-	var (
-		tf      *framework.Framework
-		plugins []*framework.PluginInfo
-	)
-	// In the BeforeSuite search for the test-plugin-'s from the TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL test central repository
-	BeforeSuite(func() {
-		tf = framework.NewFramework()
-		// get all plugins with name prefix "test-plugin-"
-		plugins = PluginsForCompatibilityTesting(tf)
-		Expect(len(plugins)).NotTo(BeZero(), fmt.Sprintf("there are no test-plugin-'s in test central repo:%s , make sure its valid test central repo with test-plugins", os.Getenv(framework.TanzuCliE2ETestCentralRepositoryURL)))
-	})
+
 	Context("Uninstall test plugins and verify status using plugin list", func() {
 		// Test case: a. Before installing test plugins, uninstall test plugins (if any installed already) and verify status using plugin list
 		It("Uninstall test plugins (if any test plugin installed already) and verify status using plugin list", func() {
-			UninstallPlugins(tf, plugins)
-			ok := IsAllPluginsUnInstalled(tf, plugins)
+			plugincompatibility.UninstallPlugins(tf, plugins)
+			ok := plugincompatibility.IsAllPluginsUnInstalled(tf, plugins)
 			Expect(ok).To(BeTrue(), "All test plugins should be uninstalled")
 		})
 	})
@@ -60,7 +51,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", f
 		})
 		// Test case: c. list all plugins and make sure all above installed test plugins are listed with status "installed"
 		It("List plugins and make sure installed plugins are listed", func() {
-			ok := IsAllPluginsInstalled(tf, plugins)
+			ok := plugincompatibility.IsAllPluginsInstalled(tf, plugins)
 			Expect(ok).To(BeTrue(), "All test plugins should be installed and listed in plugin list output as installed")
 		})
 	})
@@ -95,7 +86,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", f
 		})
 		// Test case: g. list all plugins and make sure all above uninstalled test plugins should not be listed in the output
 		It("List plugins and check uninstalled plugins exists", func() {
-			ok := IsAllPluginsUnInstalled(tf, plugins)
+			ok := plugincompatibility.IsAllPluginsUnInstalled(tf, plugins)
 			Expect(ok).To(BeTrue(), "All test plugins should be uninstalled")
 		})
 	})
