@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	plugincompatibility "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugins_compatibility"
 
 	plugincompatibility "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugins_compatibility"
 
