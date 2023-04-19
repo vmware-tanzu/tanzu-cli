@@ -133,7 +133,7 @@ func (od *DBBackedOCIDiscovery) listPluginsFromInventory() ([]Discovered, error)
 }
 
 func (od *DBBackedOCIDiscovery) listGroupsFromInventory() ([]*plugininventory.PluginGroup, error) {
-	return od.getInventory().GetAllGroups()
+	return od.getInventory().GetPluginGroups(plugininventory.PluginGroupFilter{})
 }
 
 // fetchInventoryImage downloads the OCI image containing the information about the

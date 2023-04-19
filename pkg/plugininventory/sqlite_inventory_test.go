@@ -291,6 +291,15 @@ INSERT INTO PluginGroups VALUES(
 	'v0.2.0',
 	'false',
 	'false');
+INSERT INTO PluginGroups VALUES(
+    'independent',
+    'other',
+    'hidden',
+    'plugin2',
+    'mission-control',
+    'v0.3.0',
+    'false',
+    'true');
 `
 
 var _ = Describe("Unit tests for plugin inventory", func() {
@@ -367,7 +376,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				_, err = db.Exec(CreateTablesSchema)
 				Expect(err).To(BeNil(), "failed to create DB table for testing")
 
-				// Add a plugin entry to the DB
+				// Add plugin entries to the DB
 				_, err = db.Exec(createPluginsStmt)
 				Expect(err).To(BeNil(), "failed to create plugin for testing")
 
@@ -622,7 +631,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				os.RemoveAll(tmpDir)
 			})
 			It("should return an error", func() {
-				_, err = inventory.GetAllGroups()
+				_, err = inventory.GetPluginGroups(PluginGroupFilter{})
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("unable to setup DB"))
 			})
@@ -650,7 +659,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				os.RemoveAll(tmpDir)
 			})
 			It("should return an empty list of plugin groups with no error", func() {
-				groups, err := inventory.GetAllGroups()
+				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(groups)).To(Equal(0))
 			})
@@ -683,7 +692,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 			Context("When getting all groups", func() {
 				It("should return a list of three groups with no error", func() {
-					groups, err := inventory.GetAllGroups()
+					groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
 					Expect(err).ToNot(HaveOccurred())
 					Expect(len(groups)).To(Equal(3))
 
@@ -761,6 +770,209 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(plugins[j].Name).To(Equal("package"))
 					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
 					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+				})
+			})
+			Context("When getting a group with a specific vendor-publisher/name", func() {
+				It("should return a list of one group with no error", func() {
+					groups, err := inventory.GetPluginGroups(PluginGroupFilter{
+						Vendor:    "vmware",
+						Publisher: "tkg",
+						Name:      "1.6.0",
+					})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(groups)).To(Equal(1))
+
+					sort.Sort(pluginGroupSorter(groups))
+
+					i := 0
+					Expect(groups[i].Vendor).To(Equal("vmware"))
+					Expect(groups[i].Publisher).To(Equal("tkg"))
+					Expect(groups[i].Name).To(Equal("1.6.0"))
+					Expect(len(groups[i].Plugins)).To(Equal(4))
+
+					plugins := groups[i].Plugins
+					Expect(len(plugins)).To(Equal(4))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
+					j := 0
+					Expect(plugins[j].Name).To(Equal("feature"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("kubernetes-release"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("management-cluster"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("package"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+				})
+			})
+			Context("When getting groups for a vendor", func() {
+				It("should return a list of three groups with no error", func() {
+					groups, err := inventory.GetPluginGroups(PluginGroupFilter{Vendor: "independent"})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(groups)).To(Equal(1))
+
+					sort.Sort(pluginGroupSorter(groups))
+
+					i := 0
+					Expect(groups[i].Vendor).To(Equal("independent"))
+					Expect(groups[i].Publisher).To(Equal("other"))
+					Expect(groups[i].Name).To(Equal("mygroup"))
+
+					plugins := groups[i].Plugins
+					Expect(len(plugins)).To(Equal(2))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
+					j := 0
+					Expect(plugins[j].Name).To(Equal("plugin1"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.1.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("plugin2"))
+					Expect(plugins[j].Target).To(Equal(types.TargetTMC))
+					Expect(plugins[j].Version).To(Equal("v0.2.0"))
+				})
+			})
+			Context("When getting all groups including hidden ones", func() {
+				It("should return a list of four groups with no error", func() {
+					groups, err := inventory.GetPluginGroups(PluginGroupFilter{IncludeHidden: true})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(groups)).To(Equal(4))
+
+					sort.Sort(pluginGroupSorter(groups))
+
+					i := 0
+					Expect(groups[i].Vendor).To(Equal("independent"))
+					Expect(groups[i].Publisher).To(Equal("other"))
+					Expect(groups[i].Name).To(Equal("hidden"))
+
+					plugins := groups[i].Plugins
+					Expect(len(plugins)).To(Equal(1))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
+					j := 0
+					Expect(plugins[j].Name).To(Equal("plugin2"))
+					Expect(plugins[j].Target).To(Equal(types.TargetTMC))
+					Expect(plugins[j].Version).To(Equal("v0.3.0"))
+
+					i++
+					Expect(groups[i].Vendor).To(Equal("independent"))
+					Expect(groups[i].Publisher).To(Equal("other"))
+					Expect(groups[i].Name).To(Equal("mygroup"))
+
+					plugins = groups[i].Plugins
+					Expect(len(plugins)).To(Equal(2))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
+					j = 0
+					Expect(plugins[j].Name).To(Equal("plugin1"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.1.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("plugin2"))
+					Expect(plugins[j].Target).To(Equal(types.TargetTMC))
+					Expect(plugins[j].Version).To(Equal("v0.2.0"))
+
+					i++
+					Expect(groups[i].Vendor).To(Equal("vmware"))
+					Expect(groups[i].Publisher).To(Equal("tkg"))
+					Expect(groups[i].Name).To(Equal("1.6.0"))
+					Expect(len(groups[i].Plugins)).To(Equal(4))
+
+					plugins = groups[i].Plugins
+					Expect(len(plugins)).To(Equal(4))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
+					j = 0
+					Expect(plugins[j].Name).To(Equal("feature"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("kubernetes-release"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("management-cluster"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("package"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.26.0"))
+
+					i++
+					Expect(groups[i].Vendor).To(Equal("vmware"))
+					Expect(groups[i].Publisher).To(Equal("tkg"))
+					Expect(groups[i].Name).To(Equal("2.1.0"))
+					Expect(len(groups[i].Plugins)).To(Equal(5))
+
+					plugins = groups[i].Plugins
+					Expect(len(plugins)).To(Equal(5))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
+					j = 0
+					Expect(plugins[j].Name).To(Equal("feature"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("isolated-cluster"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("kubernetes-release"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("management-cluster"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("package"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.28.0"))
+				})
+			})
+			Context("When getting groups for a publisher including hidden ones", func() {
+				It("should return a list of four groups with no error", func() {
+					groups, err := inventory.GetPluginGroups(PluginGroupFilter{
+						Publisher:     "other",
+						IncludeHidden: true,
+					})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(groups)).To(Equal(2))
+
+					sort.Sort(pluginGroupSorter(groups))
+
+					i := 0
+					Expect(groups[i].Vendor).To(Equal("independent"))
+					Expect(groups[i].Publisher).To(Equal("other"))
+					Expect(groups[i].Name).To(Equal("hidden"))
+
+					plugins := groups[i].Plugins
+					Expect(len(plugins)).To(Equal(1))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
+					j := 0
+					Expect(plugins[j].Name).To(Equal("plugin2"))
+					Expect(plugins[j].Target).To(Equal(types.TargetTMC))
+					Expect(plugins[j].Version).To(Equal("v0.3.0"))
+
+					i++
+					Expect(groups[i].Vendor).To(Equal("independent"))
+					Expect(groups[i].Publisher).To(Equal("other"))
+					Expect(groups[i].Name).To(Equal("mygroup"))
+
+					plugins = groups[i].Plugins
+					Expect(len(plugins)).To(Equal(2))
+					sort.Sort(pluginGroupPluginEntrySorter(plugins))
+					j = 0
+					Expect(plugins[j].Name).To(Equal("plugin1"))
+					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
+					Expect(plugins[j].Version).To(Equal("v0.1.0"))
+					j++
+					Expect(plugins[j].Name).To(Equal("plugin2"))
+					Expect(plugins[j].Target).To(Equal(types.TargetTMC))
+					Expect(plugins[j].Version).To(Equal("v0.2.0"))
+
 				})
 			})
 		})
@@ -880,7 +1092,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 		})
 	})
 
-	Describe("Inserting plugin-groups to inventory and verifying it with GetAllGroups", func() {
+	Describe("Inserting plugin-groups to inventory and verifying it with GetPluginGroups", func() {
 		BeforeEach(func() {
 			tmpDir, err = os.MkdirTemp(os.TempDir(), "")
 			Expect(err).To(BeNil(), "unable to create temporary directory")
@@ -949,11 +1161,11 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			})
 		})
 		Context("When inserting plugin-group with all specified plugins and their versions exist in the database", func() {
-			It("should not return error and GetAllGroups should return correct result", func() {
+			It("should not return error and GetPluginGroups should return correct result", func() {
 				err = inventory.InsertPluginGroup(&pluginGroup1, false)
 				Expect(err).To(BeNil())
 
-				groups, err := inventory.GetAllGroups()
+				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(groups)).To(Equal(1))
 				Expect(groups[0].Name).To(Equal(pluginGroup1.Name))
@@ -984,9 +1196,9 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				err = inventory.InsertPluginGroup(&pluginGroup1, false)
 				Expect(err).To(BeNil())
 			})
-			It("should not return error and GetAllGroups should return the updated result", func() {
+			It("should not return error and GetPluginGroups should return the updated result", func() {
 				pluginGroupUpdated := pluginGroup1
-				pluginGroupUpdated.Hidden = true
+				pluginGroupUpdated.Hidden = false
 				pluginGroupUpdated.Plugins = []*PluginGroupPluginEntry{
 					{
 						PluginIdentifier: PluginIdentifier{
@@ -1009,8 +1221,8 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				err = inventory.InsertPluginGroup(&pluginGroupUpdated, true)
 				Expect(err).To(BeNil())
 
-				// Verify the result using GetAllGroups
-				groups, err := inventory.GetAllGroups()
+				// Verify the result using GetPluginGroups
+				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(groups)).To(Equal(1))
 				Expect(groups[0].Name).To(Equal(pluginGroupUpdated.Name))
@@ -1062,12 +1274,12 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				err = inventory.InsertPluginGroup(&pluginGroup1, false)
 				Expect(err).To(BeNil())
 			})
-			It("should not return error when no change has been done to the activation state and the GetAllGroups should reflect the same", func() {
+			It("should not return error when no change has been done to the activation state and the GetPluginGroups should reflect the same", func() {
 				err = inventory.UpdatePluginGroupActivationState(&pluginGroup1)
 				Expect(err).To(BeNil())
 
-				// Verify the result using GetAllGroups
-				groups, err := inventory.GetAllGroups()
+				// Verify the result using GetPluginGroups
+				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(groups)).To(Equal(1))
 				Expect(groups[0].Name).To(Equal(pluginGroup1.Name))
@@ -1076,14 +1288,14 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(groups[0].Hidden).To(Equal(pluginGroup1.Hidden))
 				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroup1.Plugins)))
 			})
-			It("should not return error when the activation state has been updated and the GetAllGroups should reflect the change", func() {
+			It("should not return error when the activation state has been updated and the GetPluginGroups should reflect the change", func() {
 				pluginGroupUpdated := pluginGroup1
-				pluginGroupUpdated.Hidden = true
+				pluginGroupUpdated.Hidden = false
 				err = inventory.UpdatePluginGroupActivationState(&pluginGroupUpdated)
 				Expect(err).To(BeNil())
 
-				// Verify the result using GetAllGroups
-				groups, err := inventory.GetAllGroups()
+				// Verify the result using GetPluginGroups
+				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(groups)).To(Equal(1))
 				Expect(groups[0].Name).To(Equal(pluginGroupUpdated.Name))

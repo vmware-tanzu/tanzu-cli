@@ -22,8 +22,8 @@ type PluginInventory interface {
 	// GetPlugins returns the plugins found in the inventory that match the provided filter.
 	GetPlugins(*PluginInventoryFilter) ([]*PluginInventoryEntry, error)
 
-	// GetAllGroups returns all plugin groups found in the inventory.
-	GetAllGroups() ([]*PluginGroup, error)
+	// GetPluginGroups returns the plugin groups found in the inventory that match the provided filter.
+	GetPluginGroups(PluginGroupFilter) ([]*PluginGroup, error)
 
 	// CreateSchema creates table schemas to the provided database.
 	// returns error if table creation fails for any reason
@@ -121,4 +121,17 @@ type PluginGroup struct {
 	Hidden bool
 	// The list of plugins specified by this group
 	Plugins []*PluginGroupPluginEntry
+}
+
+// PluginGroupFilter allows to specify different criteria for
+// looking up plugin group entries.
+type PluginGroupFilter struct {
+	// Vendor of the group to look for
+	Vendor string
+	// Publisher of the group to look for
+	Publisher string
+	// Name of the group to look for
+	Name string
+	// IncludeHidden indicates if hidden plugin groups should be included
+	IncludeHidden bool
 }
