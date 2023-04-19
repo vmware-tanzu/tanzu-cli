@@ -30,10 +30,10 @@ echoImages() {
     echo "    - an extra v22.22.22 version of the plugins of the small image"
     echo "=> localhost:9876/tanzu-cli/plugins/airgapped:small"
     echo "    - a small amount of plugins matching product plugin names"
-    echo "    - contails only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
+    echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
     echo "=> localhost:9876/tanzu-cli/plugins/airgapped:large"
     echo "    - all plugins matching product plugin names"
-    echo "    - contails only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
+    echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
 }
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     usage
@@ -96,11 +96,9 @@ addPlugin() {
 
     # If the version is not specified, we create 10 of them
     # We include version v0.0.1 to match the real TMC plugin versions
+    recommended=""
     if [ -z "$versions" ]; then
         versions="v0.0.1 v1.1.1 v2.2.2 v3.3.3 v4.4.4 v5.5.5 v6.6.6 v7.7.7 v8.8.8 v9.9.9"
-        recommended="v9.9.9"
-    else
-        recommended=$versions
     fi
 
     for version in $versions; do
@@ -262,7 +260,7 @@ for name in ${tmcPlugins[*]}; do
     addGroup vmware tmc v22.22.22 $name mission-control v22.22.22
 done
 
-# Push airgapped inventory file
+# Push sandbox inventory file
 ${dry_run} imgpkg push -i $repoBasePath/$sanboxImage2 -f $database --registry-insecure
 
 echo "======================================"

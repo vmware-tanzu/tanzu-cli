@@ -101,8 +101,6 @@ func newPluginCmd() *cobra.Command {
 		cleanPluginCmd,
 		syncPluginCmd,
 		discoverySourceCmd,
-		newDownloadBundlePluginCmd(),
-		newUploadBundlePluginCmd(),
 	)
 
 	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
@@ -113,7 +111,10 @@ func newPluginCmd() *cobra.Command {
 		}
 		pluginCmd.AddCommand(
 			newSearchPluginCmd(),
-			newPluginGroupCmd())
+			newPluginGroupCmd(),
+			newDownloadBundlePluginCmd(),
+			newUploadBundlePluginCmd(),
+		)
 	}
 
 	return pluginCmd

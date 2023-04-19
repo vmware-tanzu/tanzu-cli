@@ -121,6 +121,14 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 
 	var _ = Context("Tests for downloading plugin bundle", func() {
 
+		var _ = It("when invalid tar file path is provided, it should return an error", func() {
+			dpbo.ToTar = filepath.Join("/tmp", "doesnotexist", "plugin_bundle.tar.gz")
+
+			err := dpbo.DownloadPluginBundle()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("invalid path for"))
+		})
+
 		var _ = It("when downloading plugin inventory image fail with error, it should return an error", func() {
 			fakeImageOperations.DownloadImageAndSaveFilesToDirReturns(errors.New("fake error"))
 			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)

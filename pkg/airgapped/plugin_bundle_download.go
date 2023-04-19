@@ -30,6 +30,11 @@ type DownloadPluginBundleOptions struct {
 // DownloadPluginBundle download the plugin bundle based on provided plugin inventory image
 // and save it as tar file
 func (o *DownloadPluginBundleOptions) DownloadPluginBundle() error {
+	err := o.validateInput()
+	if err != nil {
+		return err
+	}
+
 	// Create temp download directory
 	tempBaseDir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -106,6 +111,14 @@ func (o *DownloadPluginBundleOptions) downloadAllPluginImages(pluginEntries []*p
 		}
 	}
 	return allImages, nil
+}
+
+func (o *DownloadPluginBundleOptions) validateInput() error {
+	_, err := os.Stat(filepath.Dir(o.ToTar))
+	if err != nil {
+		return errors.Wrapf(err, "invalid path for %q", o.ToTar)
+	}
+	return nil
 }
 
 func getImageRelativePath(image, imagePrefix string) string {
