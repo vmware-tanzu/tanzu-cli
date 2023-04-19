@@ -5,8 +5,8 @@ package framework
 
 // CliOps performs basic cli operations
 type CliOps interface {
-	CliInit() error
-	CliVersion() (string, error)
+	CliInit(opts ...E2EOption) error
+	CliVersion(opts ...E2EOption) (string, error)
 	InstallCLI(version string) error
 	UninstallCLI(version string) error
 }
@@ -22,14 +22,14 @@ func NewCliOps() CliOps {
 }
 
 // Init() initializes the CLI
-func (co *cliOps) CliInit() error {
-	_, _, err := co.Exec(TanzuInit)
+func (co *cliOps) CliInit(opts ...E2EOption) error {
+	_, _, err := co.Exec(TanzuInit, opts...)
 	return err
 }
 
 // Version returns the CLI version info
-func (co *cliOps) CliVersion() (string, error) {
-	stdOut, _, err := co.Exec(TanzuVersion)
+func (co *cliOps) CliVersion(opts ...E2EOption) (string, error) {
+	stdOut, _, err := co.Exec(TanzuVersion, opts...)
 	return stdOut.String(), err
 }
 

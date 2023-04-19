@@ -15,51 +15,51 @@ import (
 // PluginBasicOps helps to perform the plugin command operations
 type PluginBasicOps interface {
 	// ListPlugins lists all plugins by running 'tanzu plugin list' command
-	ListPlugins() ([]*PluginInfo, error)
+	ListPlugins(opts ...E2EOption) ([]*PluginInfo, error)
 	// ListInstalledPlugins lists all installed plugins
-	ListInstalledPlugins() ([]*PluginInfo, error)
+	ListInstalledPlugins(opts ...E2EOption) ([]*PluginInfo, error)
 	// ListPluginsForGivenContext lists all plugins for a given context and either installed only or all
-	ListPluginsForGivenContext(context string, installedOnly bool) ([]*PluginInfo, error)
+	ListPluginsForGivenContext(context string, installedOnly bool, opts ...E2EOption) ([]*PluginInfo, error)
 	// SearchPlugins searches all plugins for given filter (keyword|regex) by running 'tanzu plugin search' command
-	SearchPlugins(filter string) ([]*PluginInfo, error)
+	SearchPlugins(filter string, opts ...E2EOption) ([]*PluginInfo, error)
 	// InstallPlugin installs given plugin and flags
-	InstallPlugin(pluginName, target, versions string) error
+	InstallPlugin(pluginName, target, versions string, opts ...E2EOption) error
 	// Sync performs sync operation
-	Sync() (string, error)
+	Sync(opts ...E2EOption) (string, error)
 	// DescribePlugin describes given plugin and flags
-	DescribePlugin(pluginName, target string) (string, error)
+	DescribePlugin(pluginName, target string, opts ...E2EOption) (string, error)
 	// UninstallPlugin uninstalls/deletes given plugin
-	UninstallPlugin(pluginName, target string) error
+	UninstallPlugin(pluginName, target string, opts ...E2EOption) error
 	// DeletePlugin deletes/uninstalls given plugin
-	DeletePlugin(pluginName, target string) error
+	DeletePlugin(pluginName, target string, opts ...E2EOption) error
 	// ExecuteSubCommand executes specific plugin sub-command
-	ExecuteSubCommand(pluginWithSubCommand string) (string, error)
+	ExecuteSubCommand(pluginWithSubCommand string, opts ...E2EOption) (string, error)
 	// CleanPlugins executes the plugin clean command to delete all existing plugins
-	CleanPlugins() error
+	CleanPlugins(opts ...E2EOption) error
 }
 
 // PluginSourceOps helps 'plugin source' commands
 type PluginSourceOps interface {
 	// AddPluginDiscoverySource adds plugin discovery source, and returns stdOut and error info
-	AddPluginDiscoverySource(discoveryOpts *DiscoveryOptions) (string, error)
+	AddPluginDiscoverySource(discoveryOpts *DiscoveryOptions, opts ...E2EOption) (string, error)
 
 	// UpdatePluginDiscoverySource updates plugin discovery source, and returns stdOut and error info
-	UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOptions) (string, error)
+	UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOptions, opts ...E2EOption) (string, error)
 
 	// DeletePluginDiscoverySource removes the plugin discovery source, and returns stdOut and error info
-	DeletePluginDiscoverySource(pluginSourceName string) (string, error)
+	DeletePluginDiscoverySource(pluginSourceName string, opts ...E2EOption) (string, error)
 
 	// ListPluginSources returns all available plugin discovery sources
-	ListPluginSources() ([]*PluginSourceInfo, error)
+	ListPluginSources(opts ...E2EOption) ([]*PluginSourceInfo, error)
 }
 
 type PluginGroupOps interface {
 	// SearchPluginGroups performs plugin group search
 	// input: flagsWithValues - flags and values if any
-	SearchPluginGroups(flagsWithValues string) ([]*PluginGroup, error)
+	SearchPluginGroups(flagsWithValues string, opts ...E2EOption) ([]*PluginGroup, error)
 
 	// InstallPluginsFromGroup a plugin or all plugins from the given plugin group
-	InstallPluginsFromGroup(pluginNameORAll, groupName string) error
+	InstallPluginsFromGroup(pluginNameORAll, groupName string, opts ...E2EOption) error
 }
 
 // PluginCmdOps helps to perform the plugin and its sub-commands lifecycle operations
@@ -86,37 +86,37 @@ func NewPluginLifecycleOps() PluginCmdOps {
 	}
 }
 
-func (po *pluginCmdOps) AddPluginDiscoverySource(discoveryOpts *DiscoveryOptions) (string, error) {
-	addCmd := fmt.Sprintf(AddPluginSource, discoveryOpts.Name, discoveryOpts.SourceType, discoveryOpts.URI)
-	out, _, err := po.cmdExe.Exec(addCmd)
+func (po *pluginCmdOps) AddPluginDiscoverySource(discoveryOpts *DiscoveryOptions, opts ...E2EOption) (string, error) {
+	addCmd := fmt.Sprintf(AddPluginSource, "%s", discoveryOpts.Name, discoveryOpts.SourceType, discoveryOpts.URI)
+	out, _, err := po.cmdExe.Exec(addCmd, opts...)
 	return out.String(), err
 }
 
-func (po *pluginCmdOps) UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOptions) (string, error) {
-	addCmd := fmt.Sprintf(UpdatePluginSource, discoveryOpts.Name, discoveryOpts.SourceType, discoveryOpts.URI)
-	out, _, err := po.cmdExe.Exec(addCmd)
+func (po *pluginCmdOps) UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOptions, opts ...E2EOption) (string, error) {
+	addCmd := fmt.Sprintf(UpdatePluginSource, "%s", discoveryOpts.Name, discoveryOpts.SourceType, discoveryOpts.URI)
+	out, _, err := po.cmdExe.Exec(addCmd, opts...)
 	return out.String(), err
 }
 
-func (po *pluginCmdOps) ListPluginSources() ([]*PluginSourceInfo, error) {
-	return ExecuteCmdAndBuildJSONOutput[PluginSourceInfo](po.cmdExe, ListPluginSourcesWithJSONOutputFlag)
+func (po *pluginCmdOps) ListPluginSources(opts ...E2EOption) ([]*PluginSourceInfo, error) {
+	return ExecuteCmdAndBuildJSONOutput[PluginSourceInfo](po.cmdExe, ListPluginSourcesWithJSONOutputFlag, opts...)
 }
 
-func (po *pluginCmdOps) DeletePluginDiscoverySource(pluginSourceName string) (string, error) {
-	deleteCmd := fmt.Sprintf(DeletePluginSource, pluginSourceName)
-	out, stdErr, err := po.cmdExe.Exec(deleteCmd)
+func (po *pluginCmdOps) DeletePluginDiscoverySource(pluginSourceName string, opts ...E2EOption) (string, error) {
+	deleteCmd := fmt.Sprintf(DeletePluginSource, "%s", pluginSourceName)
+	out, stdErr, err := po.cmdExe.Exec(deleteCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, deleteCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return out.String(), err
 }
 
-func (po *pluginCmdOps) ListPlugins() ([]*PluginInfo, error) {
-	return ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag)
+func (po *pluginCmdOps) ListPlugins(opts ...E2EOption) ([]*PluginInfo, error) {
+	return ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
 }
 
-func (po *pluginCmdOps) ListInstalledPlugins() ([]*PluginInfo, error) {
-	plugins, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag)
+func (po *pluginCmdOps) ListInstalledPlugins(opts ...E2EOption) ([]*PluginInfo, error) {
+	plugins, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
 	installedPlugins := make([]*PluginInfo, 0)
 	for i := range plugins {
 		if plugins[i].Status == Installed {
@@ -126,8 +126,8 @@ func (po *pluginCmdOps) ListInstalledPlugins() ([]*PluginInfo, error) {
 	return installedPlugins, err
 }
 
-func (po *pluginCmdOps) ListPluginsForGivenContext(context string, installedOnly bool) ([]*PluginInfo, error) {
-	plugins, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag)
+func (po *pluginCmdOps) ListPluginsForGivenContext(context string, installedOnly bool, opts ...E2EOption) ([]*PluginInfo, error) {
+	plugins, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
 	contextSpecificPlugins := make([]*PluginInfo, 0)
 	for i := range plugins {
 		if plugins[i].Context == context {
@@ -143,20 +143,20 @@ func (po *pluginCmdOps) ListPluginsForGivenContext(context string, installedOnly
 	return contextSpecificPlugins, err
 }
 
-func (po *pluginCmdOps) Sync() (string, error) {
-	out, stdErr, err := po.cmdExe.Exec(pluginSyncCmd)
+func (po *pluginCmdOps) Sync(opts ...E2EOption) (string, error) {
+	out, stdErr, err := po.cmdExe.Exec(pluginSyncCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, pluginSyncCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return out.String(), err
 }
 
-func (po *pluginCmdOps) SearchPlugins(filter string) ([]*PluginInfo, error) {
+func (po *pluginCmdOps) SearchPlugins(filter string, opts ...E2EOption) ([]*PluginInfo, error) {
 	searchPluginCmdWithOptions := SearchPluginsCmd
 	if len(strings.TrimSpace(filter)) > 0 {
 		searchPluginCmdWithOptions = searchPluginCmdWithOptions + " " + strings.TrimSpace(filter)
 	}
-	result, err := ExecuteCmdAndBuildJSONOutput[PluginSearch](po.cmdExe, searchPluginCmdWithOptions+JSONOutput)
+	result, err := ExecuteCmdAndBuildJSONOutput[PluginSearch](po.cmdExe, searchPluginCmdWithOptions+JSONOutput, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -173,75 +173,75 @@ func (po *pluginCmdOps) SearchPlugins(filter string) ([]*PluginInfo, error) {
 	return plugins, nil
 }
 
-func (po *pluginCmdOps) SearchPluginGroups(flagsWithValues string) ([]*PluginGroup, error) {
+func (po *pluginCmdOps) SearchPluginGroups(flagsWithValues string, opts ...E2EOption) ([]*PluginGroup, error) {
 	searchPluginGroupCmdWithOptions := SearchPluginGroupsCmd
 	if len(strings.TrimSpace(flagsWithValues)) > 0 {
 		searchPluginGroupCmdWithOptions = searchPluginGroupCmdWithOptions + " " + strings.TrimSpace(flagsWithValues)
 	}
-	return ExecuteCmdAndBuildJSONOutput[PluginGroup](po.cmdExe, searchPluginGroupCmdWithOptions+JSONOutput)
+	return ExecuteCmdAndBuildJSONOutput[PluginGroup](po.cmdExe, searchPluginGroupCmdWithOptions+JSONOutput, opts...)
 }
 
-func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string) error {
-	installPluginCmd := fmt.Sprintf(InstallPluginCmd, pluginName)
+func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string, opts ...E2EOption) error {
+	installPluginCmd := fmt.Sprintf(InstallPluginCmd, "%s", pluginName)
 	if len(strings.TrimSpace(target)) > 0 {
 		installPluginCmd += " --target " + target
 	}
 	if len(strings.TrimSpace(versions)) > 0 {
 		installPluginCmd += " --version " + versions
 	}
-	out, stdErr, err := po.cmdExe.Exec(installPluginCmd)
+	out, stdErr, err := po.cmdExe.Exec(installPluginCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return err
 }
 
-func (po *pluginCmdOps) InstallPluginsFromGroup(pluginNameORAll, groupName string) error {
+func (po *pluginCmdOps) InstallPluginsFromGroup(pluginNameORAll, groupName string, opts ...E2EOption) error {
 	var installPluginCmd string
 	if len(pluginNameORAll) > 0 {
-		installPluginCmd = fmt.Sprintf(InstallPluginFromGroupCmd, pluginNameORAll, groupName)
+		installPluginCmd = fmt.Sprintf(InstallPluginFromGroupCmd, "%s", pluginNameORAll, groupName)
 	} else {
-		installPluginCmd = fmt.Sprintf(InstallAllPluginsFromGroupCmd, groupName)
+		installPluginCmd = fmt.Sprintf(InstallAllPluginsFromGroupCmd, "%s", groupName)
 	}
-	out, stdErr, err := po.cmdExe.Exec(installPluginCmd)
+	out, stdErr, err := po.cmdExe.Exec(installPluginCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return err
 }
 
-func (po *pluginCmdOps) DescribePlugin(pluginName, target string) (string, error) {
-	installPluginCmd := fmt.Sprintf(DescribePluginCmd, pluginName)
+func (po *pluginCmdOps) DescribePlugin(pluginName, target string, opts ...E2EOption) (string, error) {
+	installPluginCmd := fmt.Sprintf(DescribePluginCmd, "%s", pluginName)
 	if len(strings.TrimSpace(target)) > 0 {
 		installPluginCmd += " --target " + target
 	}
 
-	stdOut, stdErr, err := po.cmdExe.Exec(installPluginCmd)
+	stdOut, stdErr, err := po.cmdExe.Exec(installPluginCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), stdOut.String())
 	}
 	return stdOut.String(), err
 }
 
-func (po *pluginCmdOps) DeletePlugin(pluginName, target string) error {
-	return po.UninstallPlugin(pluginName, target)
+func (po *pluginCmdOps) DeletePlugin(pluginName, target string, opts ...E2EOption) error {
+	return po.UninstallPlugin(pluginName, target, opts...)
 }
 
-func (po *pluginCmdOps) UninstallPlugin(pluginName, target string) error {
-	uninstallPluginCmd := fmt.Sprintf(UninstallPLuginCmd, pluginName)
+func (po *pluginCmdOps) UninstallPlugin(pluginName, target string, opts ...E2EOption) error {
+	uninstallPluginCmd := fmt.Sprintf(UninstallPLuginCmd, "%s", pluginName)
 	if len(strings.TrimSpace(target)) > 0 {
 		uninstallPluginCmd += " --target " + target
 	}
-	out, stdErr, err := po.cmdExe.Exec(uninstallPluginCmd)
+	out, stdErr, err := po.cmdExe.Exec(uninstallPluginCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, uninstallPluginCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return err
 }
 
-func (po *pluginCmdOps) ExecuteSubCommand(pluginWithSubCommand string) (string, error) {
-	pluginCmdWithSubCommand := fmt.Sprintf(PluginSubCommand, pluginWithSubCommand)
-	stdOut, stdErr, err := po.cmdExe.Exec(pluginCmdWithSubCommand)
+func (po *pluginCmdOps) ExecuteSubCommand(pluginWithSubCommand string, opts ...E2EOption) (string, error) {
+	pluginCmdWithSubCommand := fmt.Sprintf(PluginSubCommand, "%s", pluginWithSubCommand)
+	stdOut, stdErr, err := po.cmdExe.Exec(pluginCmdWithSubCommand, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, pluginCmdWithSubCommand, err.Error(), stdErr.String(), stdOut.String())
 		return stdOut.String(), errors.Wrap(err, stdErr.String())
@@ -249,8 +249,8 @@ func (po *pluginCmdOps) ExecuteSubCommand(pluginWithSubCommand string) (string, 
 	return stdOut.String(), nil
 }
 
-func (po *pluginCmdOps) CleanPlugins() error {
-	out, stdErr, err := po.cmdExe.Exec(CleanPluginsCmd)
+func (po *pluginCmdOps) CleanPlugins(opts ...E2EOption) error {
+	out, stdErr, err := po.cmdExe.Exec(CleanPluginsCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, CleanPluginsCmd, err.Error(), stdErr.String(), out.String())
 	}

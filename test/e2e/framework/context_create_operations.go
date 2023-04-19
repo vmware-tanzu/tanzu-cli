@@ -14,13 +14,13 @@ import (
 // ContextCreateOps helps to run context create command
 type ContextCreateOps interface {
 	// CreateContextWithEndPoint creates a context with a given endpoint URL
-	CreateContextWithEndPoint(contextName, endpoint string) error
+	CreateContextWithEndPoint(contextName, endpoint string, opts ...E2EOption) error
 	// CreateContextWithEndPointStaging creates a context with a given endpoint URL for staging
-	CreateContextWithEndPointStaging(contextName, endpoint string) error
+	CreateContextWithEndPointStaging(contextName, endpoint string, opts ...E2EOption) error
 	// CreateContextWithKubeconfig creates a context with the given kubeconfig file path and a context from the kubeconfig file
-	CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string) error
+	CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string, opts ...E2EOption) error
 	// CreateContextWithDefaultKubeconfig creates a context with the default kubeconfig file and a given input context name if it exists in the default kubeconfig file
-	CreateContextWithDefaultKubeconfig(contextName, kubeContext string) error
+	CreateContextWithDefaultKubeconfig(contextName, kubeContext string, opts ...E2EOption) error
 }
 
 type contextCreateOps struct {
@@ -34,9 +34,9 @@ func NewContextCreateOps() ContextCreateOps {
 	}
 }
 
-func (cc *contextCreateOps) CreateContextWithEndPoint(contextName, endpoint string) error {
-	createContextCmd := fmt.Sprintf(CreateContextWithEndPoint, endpoint, contextName)
-	out, _, err := cc.cmdExe.Exec(createContextCmd)
+func (cc *contextCreateOps) CreateContextWithEndPoint(contextName, endpoint string, opts ...E2EOption) error {
+	createContextCmd := fmt.Sprintf(CreateContextWithEndPoint, "%s", endpoint, contextName)
+	out, _, err := cc.cmdExe.Exec(createContextCmd, opts...)
 	if err != nil {
 		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
@@ -45,9 +45,9 @@ func (cc *contextCreateOps) CreateContextWithEndPoint(contextName, endpoint stri
 	return err
 }
 
-func (cc *contextCreateOps) CreateContextWithEndPointStaging(contextName, endpoint string) error {
-	createContextCmd := fmt.Sprintf(CreateContextWithEndPointStaging, endpoint, contextName)
-	out, _, err := cc.cmdExe.Exec(createContextCmd)
+func (cc *contextCreateOps) CreateContextWithEndPointStaging(contextName, endpoint string, opts ...E2EOption) error {
+	createContextCmd := fmt.Sprintf(CreateContextWithEndPointStaging, "%s", endpoint, contextName)
+	out, _, err := cc.cmdExe.Exec(createContextCmd, opts...)
 	if err != nil {
 		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
@@ -56,9 +56,9 @@ func (cc *contextCreateOps) CreateContextWithEndPointStaging(contextName, endpoi
 	return err
 }
 
-func (cc *contextCreateOps) CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string) error {
-	createContextCmd := fmt.Sprintf(CreateContextWithKubeconfigFile, kubeconfigPath, kubeContext, contextName)
-	out, _, err := cc.cmdExe.Exec(createContextCmd)
+func (cc *contextCreateOps) CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string, opts ...E2EOption) error {
+	createContextCmd := fmt.Sprintf(CreateContextWithKubeconfigFile, "%s", kubeconfigPath, kubeContext, contextName)
+	out, _, err := cc.cmdExe.Exec(createContextCmd, opts...)
 	if err != nil {
 		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
@@ -67,9 +67,9 @@ func (cc *contextCreateOps) CreateContextWithKubeconfig(contextName, kubeconfigP
 	return err
 }
 
-func (cc *contextCreateOps) CreateContextWithDefaultKubeconfig(contextName, kubeContext string) error {
-	createContextCmd := fmt.Sprintf(CreateContextWithDefaultKubeconfigFile, kubeContext, contextName)
-	out, _, err := cc.cmdExe.Exec(createContextCmd)
+func (cc *contextCreateOps) CreateContextWithDefaultKubeconfig(contextName, kubeContext string, opts ...E2EOption) error {
+	createContextCmd := fmt.Sprintf(CreateContextWithDefaultKubeconfigFile, "%s", kubeContext, contextName)
+	out, _, err := cc.cmdExe.Exec(createContextCmd, opts...)
 	if err != nil {
 		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
