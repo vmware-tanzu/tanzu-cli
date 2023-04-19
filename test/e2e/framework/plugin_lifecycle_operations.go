@@ -184,6 +184,7 @@ func (po *pluginCmdOps) SearchPluginGroups(flagsWithValues string, opts ...E2EOp
 	return ExecuteCmdAndBuildJSONOutput[PluginGroup](po.cmdExe, searchPluginGroupCmdWithOptions+JSONOutput, opts...)
 }
 
+
 func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string, opts ...E2EOption) error {
 	installPluginCmd := fmt.Sprintf(InstallPluginCmd, "%s", pluginName)
 	if len(strings.TrimSpace(target)) > 0 {
@@ -200,6 +201,15 @@ func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string, opts 
 }
 
 func (po *pluginCmdOps) InstallPluginsFromGroup(pluginNameORAll, groupName string, opts ...E2EOption) error {
+	// Default options
+	options := &E2EOptions{
+		TanzuCommandPrefix: TanzuPrefix,
+	}
+
+	// Apply provided options
+	for _, opt := range opts {
+		opt(options)
+	}
 	var installPluginCmd string
 	if len(pluginNameORAll) > 0 {
 		installPluginCmd = fmt.Sprintf(InstallPluginFromGroupCmd, "%s", pluginNameORAll, groupName)
@@ -229,6 +239,7 @@ func (po *pluginCmdOps) DescribePlugin(pluginName, target string, opts ...E2EOpt
 func (po *pluginCmdOps) DeletePlugin(pluginName, target string, opts ...E2EOption) error {
 	return po.UninstallPlugin(pluginName, target, opts...)
 }
+
 
 func (po *pluginCmdOps) UninstallPlugin(pluginName, target string, opts ...E2EOption) error {
 	uninstallPluginCmd := fmt.Sprintf(UninstallPLuginCmd, "%s", pluginName)
