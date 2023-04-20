@@ -119,7 +119,7 @@ addPlugin() {
 
                 local image_path=$publisher/$os/$arch/$target/$name
 
-                local sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$recommended','$version','FALSE','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_path:$version');"
+                local sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$recommended','$version','false','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_path:$version');"
                 if [ "$dry_run" = "echo" ]; then
                     echo $sql_cmd 
                 else 

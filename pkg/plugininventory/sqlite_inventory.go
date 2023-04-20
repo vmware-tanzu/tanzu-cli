@@ -92,11 +92,18 @@ func NewSQLiteInventory(inventoryFile, prefix string) PluginInventory {
 
 // GetAllPlugins returns all plugins found in the inventory.
 func (b *SQLiteInventory) GetAllPlugins() ([]*PluginInventoryEntry, error) {
-	return b.getPluginsFromDB(nil)
+	return b.GetPlugins(&PluginInventoryFilter{})
 }
 
 // GetPlugins returns the plugin found in the inventory that matches the provided parameters.
 func (b *SQLiteInventory) GetPlugins(filter *PluginInventoryFilter) ([]*PluginInventoryEntry, error) {
+	if filter == nil {
+		// Replace a nil filter with an empty object
+		// This will cause all hidden plugins to be ignored by default since
+		// the filter.IncludeHidden boolean field will default to false
+		filter = &PluginInventoryFilter{}
+	}
+
 	// Since the Central Repo does not have its RecommendedVersion field set yet,
 	// we first search for it by looking for the latest version amongst all versions.
 	if filter.Version == cli.VersionLatest {
@@ -181,6 +188,10 @@ func createPluginWhereClause(filter *PluginInventoryFilter) (string, error) {
 				// We want a specific version of the plugin
 				whereClause = fmt.Sprintf("%s Version='%s' AND", whereClause, filter.Version)
 			}
+		}
+		if !filter.IncludeHidden {
+			// Unless we want to also get the hidden plugins, we only request the ones that are not hidden
+			whereClause = fmt.Sprintf("%s Hidden='false' AND", whereClause)
 		}
 		if filter.OS != "" {
 			whereClause = fmt.Sprintf("%s OS='%s' AND", whereClause, filter.OS)
@@ -522,8 +533,9 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 	}
 
 	for _, pi := range pg.Plugins {
-		// Verify that the plugin exists in the database before inserting it to PluginGroup table
-		pie, err := b.GetPlugins(&PluginInventoryFilter{Name: pi.Name, Target: pi.Target, Version: pi.Version})
+		// Verify that the plugin exists in the database before inserting it to the PluginGroup table.
+		// Allow including hidden plugins.
+		pie, err := b.GetPlugins(&PluginInventoryFilter{Name: pi.Name, Target: pi.Target, Version: pi.Version, IncludeHidden: true})
 		if err != nil {
 			return errors.Wrap(err, "error while verifying existence of the plugin in the database")
 		} else if len(pie) == 0 {

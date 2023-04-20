@@ -162,6 +162,32 @@ INSERT INTO PluginBinaries VALUES(
 	'amd64',
 	'3333333333',
 	'othervendor/otherpublisher/linux/amd64/global/isolated-cluster:v1.2.3');
+INSERT INTO PluginBinaries VALUES(
+    'isolated-cluster',
+    'global',
+    'v1.2.3',
+    'v1.3.0',
+    'true',
+    'Isolated cluster plugin',
+    'otherpublisher',
+    'othervendor',
+    'linux',
+    'amd64',
+    '4444444444',
+    'othervendor/otherpublisher/linux/amd64/global/isolated-cluster:v1.3.0');
+INSERT INTO PluginBinaries VALUES(
+    'hidden-plugin',
+    'global',
+    'v1.0.0',
+    'v1.0.0',
+    'true',
+    'Hidden plugin',
+    'otherpublisher',
+    'othervendor',
+    'linux',
+    'amd64',
+    '5555555555',
+    'othervendor/otherpublisher/linux/amd64/global/hidden-plugin:v1.0.0');
 `
 const createPluginTMCNoRecommendedVersionStmt = `
 INSERT INTO PluginBinaries VALUES(
@@ -190,6 +216,19 @@ INSERT INTO PluginBinaries VALUES(
 	'amd64',
 	'1111111111',
 	'vmware/tmc/linux/amd64/tmc/management-cluster:v0.0.2');
+INSERT INTO PluginBinaries VALUES(
+    'management-cluster',
+    'mission-control',
+    '',
+    'v0.0.3',
+    'true',
+    'Mission-control management cluster operations',
+    'tmc',
+    'vmware',
+    'linux',
+    'amd64',
+    '2222222222',
+    'vmware/tmc/linux/amd64/tmc/management-cluster:v0.0.3');
 `
 const createGroupsStmt = `
 INSERT INTO PluginGroups VALUES(
@@ -392,7 +431,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(len(plugins)).To(Equal(2))
 
 					for _, p := range plugins {
-						if p.Name == "management-cluster" {
+						if p.Name == "management-cluster" { // nolint: goconst
 							Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
 							Expect(string(p.Target)).To(Equal("kubernetes"))
 							Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
@@ -546,6 +585,88 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(p.Publisher).To(Equal("otherpublisher"))
 				})
 			})
+			Context("When getting all plugins including hidden ones", func() {
+				It("should return a list of three plugins with no error", func() {
+					plugins, err := inventory.GetPlugins(&PluginInventoryFilter{IncludeHidden: true})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(plugins)).To(Equal(3))
+
+					for _, p := range plugins {
+						if p.Name == "management-cluster" {
+							Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
+							Expect(string(p.Target)).To(Equal("kubernetes"))
+							Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
+							Expect(p.Vendor).To(Equal("vmware"))
+							Expect(p.Publisher).To(Equal("tkg"))
+
+							Expect(len(p.Artifacts)).To(Equal(2))
+							artifactList := p.Artifacts["v0.28.0"]
+							Expect(len(artifactList)).To(Equal(2))
+							for _, a := range artifactList {
+								if a.OS == "linux" {
+									Expect(a.Arch).To(Equal("amd64"))
+									Expect(a.Digest).To(Equal("0000000000"))
+									Expect(a.Image).To(Equal(tmpDir + "/vmware/tkg/linux/amd64/k8s/management-cluster:v0.28.0"))
+								} else {
+									Expect(a.OS).To(Equal("darwin"))
+									Expect(a.Arch).To(Equal("amd64"))
+									Expect(a.Digest).To(Equal("1111111111"))
+									Expect(a.Image).To(Equal(tmpDir + "/vmware/tkg/darwin/amd64/k8s/management-cluster:v0.28.0"))
+								}
+							}
+							artifactList = p.Artifacts["v0.26.0"]
+							Expect(len(artifactList)).To(Equal(1))
+
+							Expect(artifactList[0].OS).To(Equal("windows"))
+							Expect(artifactList[0].Arch).To(Equal("amd64"))
+							Expect(artifactList[0].Digest).To(Equal("2222222222"))
+							Expect(artifactList[0].Image).To(Equal(tmpDir + "/vmware/tkg/windows/amd64/k8s/management-cluster:v0.26.0"))
+						} else if p.Name == "isolated-cluster" {
+							Expect(p.Name).To(Equal("isolated-cluster"))
+
+							Expect(p.RecommendedVersion).To(Equal("v1.2.3"))
+							Expect(p.Target).To(Equal(types.TargetGlobal))
+							Expect(p.Description).To(Equal("Isolated cluster plugin"))
+							Expect(p.Vendor).To(Equal("othervendor"))
+							Expect(p.Publisher).To(Equal("otherpublisher"))
+
+							Expect(len(p.Artifacts)).To(Equal(2))
+							a := p.Artifacts["v1.2.3"]
+							Expect(len(a)).To(Equal(1))
+
+							Expect(a[0].OS).To(Equal("linux"))
+							Expect(a[0].Arch).To(Equal("amd64"))
+							Expect(a[0].Digest).To(Equal("3333333333"))
+							Expect(a[0].Image).To(Equal(tmpDir + "/othervendor/otherpublisher/linux/amd64/global/isolated-cluster:v1.2.3"))
+
+							a = p.Artifacts["v1.3.0"]
+							Expect(len(a)).To(Equal(1))
+
+							Expect(a[0].OS).To(Equal("linux"))
+							Expect(a[0].Arch).To(Equal("amd64"))
+							Expect(a[0].Digest).To(Equal("4444444444"))
+							Expect(a[0].Image).To(Equal(tmpDir + "/othervendor/otherpublisher/linux/amd64/global/isolated-cluster:v1.3.0"))
+						} else {
+							Expect(p.Name).To(Equal("hidden-plugin"))
+
+							Expect(p.RecommendedVersion).To(Equal("v1.0.0"))
+							Expect(p.Target).To(Equal(types.TargetGlobal))
+							Expect(p.Description).To(Equal("Hidden plugin"))
+							Expect(p.Vendor).To(Equal("othervendor"))
+							Expect(p.Publisher).To(Equal("otherpublisher"))
+
+							Expect(len(p.Artifacts)).To(Equal(1))
+							a := p.Artifacts["v1.0.0"]
+							Expect(len(a)).To(Equal(1))
+
+							Expect(a[0].OS).To(Equal("linux"))
+							Expect(a[0].Arch).To(Equal("amd64"))
+							Expect(a[0].Digest).To(Equal("5555555555"))
+							Expect(a[0].Image).To(Equal(tmpDir + "/othervendor/otherpublisher/linux/amd64/global/hidden-plugin:v1.0.0"))
+						}
+					}
+				})
+			})
 		})
 		Describe("With a DB table with one plugin and no recommended version", func() {
 			BeforeEach(func() {
@@ -564,7 +685,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				_, err = db.Exec(CreateTablesSchema)
 				Expect(err).To(BeNil(), "failed to create DB table for testing")
 
-				// Add a plugin entry to the DB
+				// Add plugin entries to the DB
 				_, err = db.Exec(createPluginTMCNoRecommendedVersionStmt)
 				Expect(err).To(BeNil(), "failed to create plugin for testing")
 
@@ -586,6 +707,33 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(p.Artifacts["v0.0.2"]).ToNot(BeNil())
 
 					Expect(p.RecommendedVersion).To(Equal("v0.0.2"))
+					Expect(string(p.Target)).To(Equal("mission-control"))
+					Expect(p.Vendor).To(Equal("vmware"))
+					Expect(p.Publisher).To(Equal("tmc"))
+
+					artifactList := p.Artifacts["v0.0.2"]
+					Expect(len(artifactList)).To(Equal(1))
+					a := artifactList[0]
+					Expect(a.OS).To(Equal("linux"))
+					Expect(a.Arch).To(Equal("amd64"))
+					Expect(a.Digest).To(Equal("1111111111"))
+					Expect(a.Image).To(Equal(tmpDir + "/vmware/tmc/linux/amd64/tmc/management-cluster:v0.0.2"))
+				})
+			})
+			Context("When getting all plugins including hidden ones", func() {
+				It("should return a list of one plugin with no error and recommended version set to the hidden version", func() {
+					plugins, err := inventory.GetPlugins(&PluginInventoryFilter{IncludeHidden: true})
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(plugins)).To(Equal(1))
+
+					p := plugins[0]
+					Expect(p.Name).To(Equal("management-cluster"))
+					Expect(len(p.Artifacts)).To(Equal(3))
+					Expect(p.Artifacts["v0.0.1"]).ToNot(BeNil())
+					Expect(p.Artifacts["v0.0.2"]).ToNot(BeNil())
+					Expect(p.Artifacts["v0.0.3"]).ToNot(BeNil())
+
+					Expect(p.RecommendedVersion).To(Equal("v0.0.3"))
 					Expect(string(p.Target)).To(Equal("mission-control"))
 					Expect(p.Vendor).To(Equal("vmware"))
 					Expect(p.Publisher).To(Equal("tmc"))
