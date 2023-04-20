@@ -10,360 +10,33 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
-var pluginEntries = []*plugininventory.PluginInventoryEntry{
-	{
-		Name:               "cluster",
-		Target:             configtypes.TargetK8s,
-		Description:        "cluster plugin for k8s",
-		Publisher:          "tkg",
-		Vendor:             "vmware",
-		RecommendedVersion: "v0.28.0",
-		Artifacts: distribution.Artifacts{
-			"v0.26.0": []distribution.Artifact{
-				{
-					Image:  "darwin/amd64/k8s/cluster:v0.26.0",
-					URI:    "",
-					Digest: "1a11111",
-					OS:     "darwin",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "linux/amd64/k8s/cluster:v0.26.0",
-					URI:    "",
-					Digest: "1a22222",
-					OS:     "linux",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "windows/amd64/k8s/cluster:v0.26.0",
-					URI:    "",
-					Digest: "1a33333",
-					OS:     "windows",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "darwin/arm64/k8s/cluster:v0.26.0",
-					URI:    "",
-					Digest: "1a44444",
-					OS:     "darwin",
-					Arch:   "arm64",
-				},
-			},
-			"v0.28.0": []distribution.Artifact{
-				{
-					Image:  "darwin/amd64/k8s/cluster:v0.28.0",
-					URI:    "",
-					Digest: "1b11111",
-					OS:     "darwin",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "linux/amd64/k8s/cluster:v0.28.0",
-					URI:    "",
-					Digest: "1b22222",
-					OS:     "linux",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "windows/amd64/k8s/cluster:v0.28.0",
-					URI:    "",
-					Digest: "1b33333",
-					OS:     "windows",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "darwin/arm64/k8s/cluster:v0.28.0",
-					URI:    "",
-					Digest: "1b44444",
-					OS:     "darwin",
-					Arch:   "arm64",
-				},
-			},
-		},
-	},
-	{
-		Name:               "cluster",
-		Target:             configtypes.TargetTMC,
-		Description:        "Cluster plugin for tmc",
-		Publisher:          "tmc",
-		Vendor:             "vmware",
-		RecommendedVersion: "v0.2.0",
-		Artifacts: distribution.Artifacts{
-			"v0.0.1": []distribution.Artifact{
-				{
-					Image:  "darwin/amd64/k8s/cluster:v0.0.1",
-					URI:    "",
-					Digest: "2a11111",
-					OS:     "darwin",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "linux/amd64/k8s/cluster:v0.0.1",
-					URI:    "",
-					Digest: "2a22222",
-					OS:     "linux",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "windows/amd64/k8s/cluster:v0.0.1",
-					URI:    "",
-					Digest: "2a33333",
-					OS:     "windows",
-					Arch:   "amd64",
-				},
-			},
-			"v0.2.0": []distribution.Artifact{
-				{
-					Image:  "darwin/amd64/k8s/cluster:v0.2.0",
-					URI:    "",
-					Digest: "2b11111",
-					OS:     "darwin",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "linux/amd64/k8s/cluster:v0.2.0",
-					URI:    "",
-					Digest: "2b22222",
-					OS:     "linux",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "windows/amd64/k8s/cluster:v0.2.0",
-					URI:    "",
-					Digest: "2b33333",
-					OS:     "windows",
-					Arch:   "amd64",
-				},
-			},
-		},
-	},
-	{
-		Name:               "telemetry",
-		Target:             configtypes.TargetK8s,
-		Description:        "telemetry plugin for k8s",
-		Publisher:          "tkg",
-		Vendor:             "vmware",
-		RecommendedVersion: "v0.28.0",
-		Artifacts: distribution.Artifacts{
-			"v0.26.0": []distribution.Artifact{
-				{
-					Image:  "darwin/amd64/k8s/telemetry:v0.26.0",
-					URI:    "",
-					Digest: "3a11111",
-					OS:     "darwin",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "linux/amd64/k8s/telemetry:v0.26.0",
-					URI:    "",
-					Digest: "3a22222",
-					OS:     "linux",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "windows/amd64/k8s/telemetry:v0.26.0",
-					URI:    "",
-					Digest: "3a33333",
-					OS:     "windows",
-					Arch:   "amd64",
-				},
-			},
-			"v0.28.0": []distribution.Artifact{
-				{
-					Image:  "darwin/amd64/k8s/telemetry:v0.28.0",
-					URI:    "",
-					Digest: "3b11111",
-					OS:     "darwin",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "linux/amd64/k8s/telemetry:v0.28.0",
-					URI:    "",
-					Digest: "3b22222",
-					OS:     "linux",
-					Arch:   "amd64",
-				},
-				{
-					Image:  "windows/amd64/k8s/telemetry:v0.28.0",
-					URI:    "",
-					Digest: "3b33333",
-					OS:     "windows",
-					Arch:   "amd64",
-				},
-			},
-		},
-	},
+type inventoryFilterInError struct {
+	pluginFilter *plugininventory.PluginInventoryFilter
+	groupFilter  *plugininventory.PluginGroupFilter
 }
 
-var groupEntries = []*plugininventory.PluginGroup{
-	{
-		Vendor:    "vmware",
-		Publisher: "tkg",
-		Name:      "2.1.0",
-		Plugins: []*plugininventory.PluginGroupPluginEntry{
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "management-cluster",
-					Target:  configtypes.TargetK8s,
-					Version: "v0.28.0",
-				},
-			},
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "package",
-					Target:  configtypes.TargetK8s,
-					Version: "v0.28.0",
-				},
-			},
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "feature",
-					Target:  configtypes.TargetK8s,
-					Version: "v0.28.0",
-				},
-			},
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "kubernetes-release",
-					Target:  configtypes.TargetK8s,
-					Version: "v0.28.0",
-				},
-			},
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "isolated-cluster",
-					Target:  configtypes.TargetK8s,
-					Version: "v0.28.0",
-				},
-			},
-		},
-	},
-	{
-		Vendor:    "vmware",
-		Publisher: "tkg",
-		Name:      "1.6.0",
-		Plugins: []*plugininventory.PluginGroupPluginEntry{
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "management-cluster",
-					Target:  configtypes.TargetK8s,
-					Version: "v0.26.0",
-				},
-			},
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "package",
-					Target:  configtypes.TargetK8s,
-					Version: "v0.26.0",
-				},
-			},
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "feature",
-					Target:  configtypes.TargetK8s,
-					Version: "v0.26.0",
-				},
-			},
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "kubernetes-release",
-					Target:  configtypes.TargetK8s,
-					Version: "v0.26.0",
-				},
-			},
-		},
-	},
-	{
-		Vendor:    "independent",
-		Publisher: "other",
-		Name:      "mygroup",
-		Plugins: []*plugininventory.PluginGroupPluginEntry{
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "plugin1",
-					Target:  configtypes.TargetK8s,
-					Version: "v0.1.0",
-				},
-			},
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "plugin2",
-					Target:  configtypes.TargetTMC,
-					Version: "v0.2.0",
-				},
-			},
-		},
-	},
+func (i inventoryFilterInError) Error() string {
+	return ""
 }
 
 type stubInventory struct{}
 
 func (stub *stubInventory) GetAllPlugins() ([]*plugininventory.PluginInventoryEntry, error) {
-	return pluginEntries, nil
+	return stub.GetPlugins(&plugininventory.PluginInventoryFilter{})
 }
-
-// nolint: gocyclo
 func (stub *stubInventory) GetPlugins(filter *plugininventory.PluginInventoryFilter) ([]*plugininventory.PluginInventoryEntry, error) {
-	var matchingEntries []*plugininventory.PluginInventoryEntry
-	// First find the matching plugins
-	for _, entry := range pluginEntries {
-		if filter.Name != "" && entry.Name != filter.Name {
-			continue
-		}
-		if filter.Target != "" && entry.Target != filter.Target {
-			continue
-		}
-		if filter.Publisher != "" && entry.Publisher != filter.Publisher {
-			continue
-		}
-		if filter.Vendor != "" && entry.Vendor != filter.Vendor {
-			continue
-		}
-		matchingEntries = append(matchingEntries, entry)
-	}
-
-	// Now only keep the matching artifacts
-	for _, entry := range matchingEntries {
-		if filter.Version != "" {
-			if _, found := entry.Artifacts[filter.Version]; found {
-				// Only keep the matching version
-				filteredArtifacts := make(distribution.Artifacts, 0)
-				filteredArtifacts[filter.Version] = entry.Artifacts[filter.Version]
-				entry.Artifacts = filteredArtifacts
-			} else {
-				// Couldn't find the version.  Remove all artifacts.
-				entry.Artifacts = distribution.Artifacts{}
-				continue
-			}
-		}
-
-		if filter.OS != "" || filter.Arch != "" {
-			var filteredArtifactList distribution.ArtifactList
-			for version, artifactList := range entry.Artifacts {
-				for _, artifact := range artifactList {
-					if (filter.OS == "" || artifact.OS == filter.OS) &&
-						(filter.Arch == "" || artifact.Arch == filter.Arch) {
-						filteredArtifactList = append(filteredArtifactList, artifact)
-					}
-				}
-				entry.Artifacts[version] = filteredArtifactList
-			}
-		}
-	}
-	return matchingEntries, nil
+	// Return the plugin filter so the tests can verify if it is correct
+	return nil, inventoryFilterInError{pluginFilter: filter}
 }
-
-func (stub *stubInventory) GetPluginGroups(plugininventory.PluginGroupFilter) ([]*plugininventory.PluginGroup, error) {
-	return groupEntries, nil
+func (stub *stubInventory) GetPluginGroups(filter plugininventory.PluginGroupFilter) ([]*plugininventory.PluginGroup, error) {
+	// Return the group filter so the tests can verify if it is correct
+	return nil, inventoryFilterInError{groupFilter: &filter}
 }
 func (stub *stubInventory) CreateSchema() error {
 	return nil
@@ -383,11 +56,11 @@ func (stub *stubInventory) UpdatePluginGroupActivationState(pg *plugininventory.
 
 var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 	var (
-		err             error
-		tmpDir          string
-		discovery       Discovery
-		tkgConfigFile   *os.File
-		tkgConfigFileNG *os.File
+		err          error
+		tmpDir       string
+		discovery    Discovery
+		configFile   *os.File
+		configFileNG *os.File
 	)
 
 	Describe("List plugins from inventory", func() {
@@ -395,23 +68,24 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			tmpDir, err = os.MkdirTemp(os.TempDir(), "")
 			Expect(err).To(BeNil(), "unable to create temporary directory")
 
-			tkgConfigFile, err = os.CreateTemp("", "config")
+			configFile, err = os.CreateTemp("", "config")
 			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+			os.Setenv("TANZU_CONFIG", configFile.Name())
 
-			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
+			configFileNG, err = os.CreateTemp("", "config_ng")
 			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+			os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 		})
 		AfterEach(func() {
 			os.Unsetenv("TANZU_CONFIG")
 			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-			os.RemoveAll(tkgConfigFile.Name())
-			os.RemoveAll(tkgConfigFileNG.Name())
+			os.Unsetenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting)
+			os.RemoveAll(configFile.Name())
+			os.RemoveAll(configFileNG.Name())
 			os.RemoveAll(tmpDir)
 		})
 		Context("Without any criteria", func() {
-			It("should list all plugins", func() {
+			It("should have a filter that only ignore hidden plugins", func() {
 				discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
 				Expect(err).To(BeNil(), "unable to create discovery")
 				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
@@ -422,27 +96,76 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				dbDiscovery.inventory = &stubInventory{}
 
 				plugins, err := dbDiscovery.listPluginsFromInventory()
+				Expect(plugins).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				filterInErr, ok := err.(inventoryFilterInError)
+				Expect(ok).To(BeTrue())
+				Expect(*filterInErr.pluginFilter).To(Equal(plugininventory.PluginInventoryFilter{
+					IncludeHidden: false,
+				}))
+			})
+			It("with TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1 the filter should include hidden plugins", func() {
+				discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
+				Expect(err).To(BeNil(), "unable to create discovery")
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+				// Inject the stub inventory and data dir
+				dbDiscovery.pluginDataDir = tmpDir
+				dbDiscovery.inventory = &stubInventory{}
+
+				err = os.Setenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting, "true")
+				defer os.Unsetenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting)
 				Expect(err).To(BeNil())
-				Expect(plugins).ToNot(BeNil())
-				Expect(len(plugins)).To(Equal(len(pluginEntries)))
 
-				for _, p := range plugins {
-					entry := findMatchingPluginEntry(pluginEntries, p.Name, p.Target)
-
-					Expect(p.Description).To(Equal(entry.Description))
-					Expect(p.RecommendedVersion).To(Equal(entry.RecommendedVersion))
-					Expect(p.InstalledVersion).To(Equal(""))
-					Expect(p.SupportedVersions).To(Equal(getSupportedVersions(entry.Artifacts)))
-					Expect(p.Distribution).To(Equal(entry.Artifacts))
-					Expect(p.Optional).To(Equal(false))
-					Expect(p.Scope).To(Equal(common.PluginScopeStandalone))
-					Expect(p.Source).To(Equal("test-discovery"))
-					Expect(p.DiscoveryType).To(Equal(common.DiscoveryTypeOCI))
-				}
+				plugins, err := dbDiscovery.listPluginsFromInventory()
+				Expect(plugins).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				filterInErr, ok := err.(inventoryFilterInError)
+				Expect(ok).To(BeTrue())
+				Expect(*filterInErr.pluginFilter).To(Equal(plugininventory.PluginInventoryFilter{
+					IncludeHidden: true,
+				}))
 			})
 		})
 		Context("With a criteria", func() {
-			It("should list only matching info", func() {
+			It("should have a filter that matches the criteria and ignore hidden plugins", func() {
+				filteredName := "cluster" // nolint:goconst
+				filteredTarget := configtypes.TargetK8s
+				filteredVersion := "v0.26.0" // nolint:goconst
+				filteredOS := "darwin"       // nolint:goconst
+				filteredArch := "amd64"      // nolint:goconst
+
+				discovery = NewOCIDiscovery("test-discovery", "test-image:latest", &PluginDiscoveryCriteria{
+					Name:    filteredName,
+					Target:  filteredTarget,
+					Version: filteredVersion,
+					OS:      filteredOS,
+					Arch:    filteredArch,
+				})
+				Expect(err).To(BeNil(), "unable to create discovery")
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+				// Inject the stub inventory and data dir
+				dbDiscovery.pluginDataDir = tmpDir
+				dbDiscovery.inventory = &stubInventory{}
+
+				plugins, err := dbDiscovery.listPluginsFromInventory()
+				Expect(plugins).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				filterInErr, ok := err.(inventoryFilterInError)
+				Expect(ok).To(BeTrue())
+				Expect(*filterInErr.pluginFilter).To(Equal(plugininventory.PluginInventoryFilter{
+					Name:          filteredName,
+					Target:        filteredTarget,
+					Version:       filteredVersion,
+					OS:            filteredOS,
+					Arch:          filteredArch,
+					IncludeHidden: false,
+				}))
+			})
+			It("with TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1 the filter should include hidden plugin", func() {
 				filteredName := "cluster"
 				filteredTarget := configtypes.TargetK8s
 				filteredVersion := "v0.26.0"
@@ -464,41 +187,23 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				dbDiscovery.pluginDataDir = tmpDir
 				dbDiscovery.inventory = &stubInventory{}
 
-				plugins, err := dbDiscovery.listPluginsFromInventory()
+				err = os.Setenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting, "true")
+				defer os.Unsetenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting)
 				Expect(err).To(BeNil())
-				Expect(plugins).ToNot(BeNil())
-				// Only the "cluster" plugin should be returned
-				Expect(len(plugins)).To(Equal(1))
 
-				p := plugins[0]
-				Expect(p.Name).To(Equal(filteredName))
-				Expect(p.Target).To(Equal(filteredTarget))
-
-				entry := findMatchingPluginEntry(pluginEntries, p.Name, p.Target)
-
-				Expect(p.Description).To(Equal(entry.Description))
-				Expect(p.RecommendedVersion).To(Equal(entry.RecommendedVersion))
-				Expect(p.InstalledVersion).To(Equal(""))
-				// We only asked for a single version
-				Expect(p.SupportedVersions).To(Equal([]string{filteredVersion}))
-				Expect(p.Optional).To(Equal(false))
-				Expect(p.Scope).To(Equal(common.PluginScopeStandalone))
-				Expect(p.Source).To(Equal("test-discovery"))
-				Expect(p.DiscoveryType).To(Equal(common.DiscoveryTypeOCI))
-
-				Expect(p.Distribution).ToNot(BeNil())
-				artifacts, ok := p.Distribution.(distribution.Artifacts)
-				Expect(ok).To(BeTrue(), "distribution is not of type Artifacts")
-				// We only asked for a single version
-				Expect(len(artifacts)).To(Equal(1))
-				artifactList, ok := artifacts[filteredVersion]
-				Expect(ok).To(BeTrue(), "artifacts don't contain the requested version")
-
-				// We only asked for a single os/arch combination
-				Expect(len(artifactList)).To(Equal(1))
-				artifact := artifactList[0]
-				Expect(artifact.Arch).To(Equal(filteredArch))
-				Expect(artifact.OS).To(Equal(filteredOS))
+				plugins, err := dbDiscovery.listPluginsFromInventory()
+				Expect(plugins).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				filterInErr, ok := err.(inventoryFilterInError)
+				Expect(ok).To(BeTrue())
+				Expect(*filterInErr.pluginFilter).To(Equal(plugininventory.PluginInventoryFilter{
+					Name:          filteredName,
+					Target:        filteredTarget,
+					Version:       filteredVersion,
+					OS:            filteredOS,
+					Arch:          filteredArch,
+					IncludeHidden: true,
+				}))
 			})
 		})
 	})
@@ -508,22 +213,22 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			tmpDir, err = os.MkdirTemp(os.TempDir(), "")
 			Expect(err).To(BeNil(), "unable to create temporary directory")
 
-			tkgConfigFile, err = os.CreateTemp("", "config")
+			configFile, err = os.CreateTemp("", "config")
 			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+			os.Setenv("TANZU_CONFIG", configFile.Name())
 
-			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
+			configFileNG, err = os.CreateTemp("", "config_ng")
 			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+			os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 		})
 		AfterEach(func() {
 			os.Unsetenv("TANZU_CONFIG")
 			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-			os.RemoveAll(tkgConfigFile.Name())
-			os.RemoveAll(tkgConfigFileNG.Name())
+			os.RemoveAll(configFile.Name())
+			os.RemoveAll(configFileNG.Name())
 			os.RemoveAll(tmpDir)
 		})
-		It("should list three plugin groups", func() {
+		It("should use a filter that ignores hidden groups", func() {
 			discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
 			Expect(err).To(BeNil(), "unable to create discovery")
 			dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
@@ -534,10 +239,36 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			dbDiscovery.inventory = &stubInventory{}
 
 			groups, err := dbDiscovery.listGroupsFromInventory()
+			Expect(groups).To(BeNil())
+			Expect(err).ToNot(BeNil())
+			filterInErr, ok := err.(inventoryFilterInError)
+			Expect(ok).To(BeTrue())
+			Expect(*filterInErr.groupFilter).To(Equal(plugininventory.PluginGroupFilter{
+				IncludeHidden: false,
+			}))
+		})
+		It("with TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1 the filter should include hidden groups", func() {
+			discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
+			Expect(err).To(BeNil(), "unable to create discovery")
+			dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+			Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+			// Inject the stub inventory and data dir
+			dbDiscovery.pluginDataDir = tmpDir
+			dbDiscovery.inventory = &stubInventory{}
+
+			err = os.Setenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting, "true")
+			defer os.Unsetenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting)
 			Expect(err).To(BeNil())
-			Expect(groups).ToNot(BeNil())
-			Expect(len(groups)).To(Equal(len(groupEntries)))
-			Expect(groups).To(Equal(groupEntries))
+
+			groups, err := dbDiscovery.listGroupsFromInventory()
+			Expect(groups).To(BeNil())
+			Expect(err).ToNot(BeNil())
+			filterInErr, ok := err.(inventoryFilterInError)
+			Expect(ok).To(BeTrue())
+			Expect(*filterInErr.groupFilter).To(Equal(plugininventory.PluginGroupFilter{
+				IncludeHidden: true,
+			}))
 		})
 	})
 
@@ -551,13 +282,13 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			tmpDir, err = os.MkdirTemp(os.TempDir(), "")
 			Expect(err).To(BeNil(), "unable to create temporary directory")
 
-			tkgConfigFile, err = os.CreateTemp("", "config")
+			configFile, err = os.CreateTemp("", "config")
 			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+			os.Setenv("TANZU_CONFIG", configFile.Name())
 
-			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
+			configFileNG, err = os.CreateTemp("", "config_ng")
 			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+			os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 
 			discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
 			Expect(err).To(BeNil(), "unable to create discovery")
@@ -568,8 +299,8 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			os.Unsetenv(constants.PluginDiscoveryImageSignatureVerificationSkipList)
 			os.Unsetenv("TANZU_CONFIG")
 			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-			os.RemoveAll(tkgConfigFile.Name())
-			os.RemoveAll(tkgConfigFileNG.Name())
+			os.RemoveAll(configFile.Name())
+			os.RemoveAll(configFileNG.Name())
 			os.RemoveAll(tmpDir)
 		})
 		Context("Cosign signature verification is success", func() {
@@ -600,24 +331,3 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 		})
 	})
 })
-
-func getSupportedVersions(artifacts distribution.Artifacts) []string {
-	var versions []string
-	for v := range artifacts {
-		versions = append(versions, v)
-	}
-	err := utils.SortVersions(versions)
-	Expect(err).To(BeNil(), "error parsing versions for plugin")
-
-	return versions
-}
-
-// findMatchingPluginEntry returns the pluginInventoryEntry that matches the specified name and target.
-func findMatchingPluginEntry(entries []*plugininventory.PluginInventoryEntry, pluginName string, target configtypes.Target) *plugininventory.PluginInventoryEntry {
-	for _, entry := range entries {
-		if pluginName == entry.Name && target == entry.Target {
-			return entry
-		}
-	}
-	return nil
-}
