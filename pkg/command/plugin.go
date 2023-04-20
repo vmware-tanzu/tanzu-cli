@@ -111,7 +111,10 @@ func newPluginCmd() *cobra.Command {
 		}
 		pluginCmd.AddCommand(
 			newSearchPluginCmd(),
-			newPluginGroupCmd())
+			newPluginGroupCmd(),
+			newDownloadBundlePluginCmd(),
+			newUploadBundlePluginCmd(),
+		)
 	}
 
 	return pluginCmd

@@ -21,4 +21,10 @@ type Registry interface {
 	DownloadImage(imageName, outputDir string) error
 	// GetImageDigest gets the digest of an OCI image similar to the `imgpkg tag resolve -i` command
 	GetImageDigest(imageWithTag string) (string, string, error)
+	// CopyImageToTar downloads the image as tar file
+	// This is equivalent to `imgpkg copy --image <image> --to-tar <tar-file-path>` command
+	CopyImageToTar(sourceImageName, destTarFile string) error
+	// CopyImageFromTar publishes the image to destination repository from specified tar file
+	// This is equivalent to `imgpkg copy --tar <file> --to-repo <dest-repo>` command
+	CopyImageFromTar(sourceTarFile, destImageRepo string) error
 }
