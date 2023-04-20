@@ -5,7 +5,7 @@ package net_test
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	netutil "github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/net"

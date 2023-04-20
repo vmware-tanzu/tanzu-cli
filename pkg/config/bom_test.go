@@ -6,7 +6,7 @@ package config
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
