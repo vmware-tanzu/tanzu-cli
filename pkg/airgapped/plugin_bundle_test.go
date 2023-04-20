@@ -39,14 +39,15 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 
 	fakeImageOperations = &fakes.ImageOperationsImpl{}
 
-	// plugin entry to be added in the inventory database
-	pluginEntry := &plugininventory.PluginInventoryEntry{
-		Name:        "foo",
-		Target:      "global",
-		Description: "Foo plugin",
-		Publisher:   "fakepublisher",
-		Vendor:      "fakevendor",
-		Hidden:      false,
+	// plugin entry foo to be added in the inventory database
+	pluginEntryFoo := &plugininventory.PluginInventoryEntry{
+		Name:               "foo",
+		Target:             "global",
+		Description:        "Foo plugin",
+		Publisher:          "fakepublisher",
+		Vendor:             "fakevendor",
+		Hidden:             false,
+		RecommendedVersion: "v0.0.2",
 		Artifacts: map[string]distribution.ArtifactList{
 			"v0.0.2": []distribution.Artifact{
 				{
@@ -65,15 +66,69 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 		},
 	}
 
+	// plugin entry bar to be added in the inventory database
+	pluginEntryBar := &plugininventory.PluginInventoryEntry{
+		Name:               "bar",
+		Target:             "kubernetes",
+		Description:        "Bar plugin",
+		Publisher:          "fakepublisher",
+		Vendor:             "fakevendor",
+		Hidden:             false,
+		RecommendedVersion: "v0.0.1",
+		Artifacts: map[string]distribution.ArtifactList{
+			"v0.0.1": []distribution.Artifact{
+				{
+					OS:     "darwin",
+					Arch:   "amd64",
+					Digest: "fake-digest-bar",
+					Image:  "path/darwin/amd64/kubernetes/bar:v0.0.1",
+				},
+			},
+		},
+	}
+
+	pluginGroupEntry := &plugininventory.PluginGroup{
+		Vendor:    "fakevendor",
+		Publisher: "fakepublisher",
+		Name:      "default:v1.0.0",
+		Hidden:    false,
+		Plugins: []*plugininventory.PluginGroupPluginEntry{
+			{
+				PluginIdentifier: plugininventory.PluginIdentifier{
+					Name:    "bar",
+					Target:  "kubernetes",
+					Version: "v0.0.1",
+				},
+			},
+		},
+	}
+
 	// Plugin bundle manifest file generated based on the above mentioned
 	// plugin entry in the inventory database
-	pluginBundleManifestString := `images:
-    - filePath: plugin-inventory-image.tar
-      imagePath: /plugin-inventory
-    - filePath: foo-global-darwin_amd64-v0.0.2.tar
-      imagePath: /path/darwin/amd64/global/foo
-    - filePath: foo-global-linux_amd64-v0.0.2.tar
-      imagePath: /path/linux/amd64/global/foo
+	pluginBundleManifestCompleteRepositoryString := `inventoryMetadataImage:
+    sourceFilePath: plugin_inventory_metadata.db
+    relativeImagePathWithTag: /plugin-inventory-metadata:latest
+imagesToCopy:
+    - sourceFilePath: plugin-inventory-image.tar.gz
+      relativeImagePath: /plugin-inventory
+    - sourceFilePath: bar-kubernetes-darwin_amd64-v0.0.1.tar.gz
+      relativeImagePath: /path/darwin/amd64/kubernetes/bar
+    - sourceFilePath: foo-global-darwin_amd64-v0.0.2.tar.gz
+      relativeImagePath: /path/darwin/amd64/global/foo
+    - sourceFilePath: foo-global-linux_amd64-v0.0.2.tar.gz
+      relativeImagePath: /path/linux/amd64/global/foo
+`
+
+	// Plugin bundle manifest file generated based on the above mentioned
+	// plugin entry in the inventory database with only single plugin group specified
+	pluginBundleManifestDefaultGroupOnlyString := `inventoryMetadataImage:
+    sourceFilePath: plugin_inventory_metadata.db
+    relativeImagePathWithTag: /plugin-inventory-metadata:latest
+imagesToCopy:
+    - sourceFilePath: plugin-inventory-image.tar.gz
+      relativeImagePath: /plugin-inventory
+    - sourceFilePath: bar-kubernetes-darwin_amd64-v0.0.1.tar.gz
+      relativeImagePath: /path/darwin/amd64/kubernetes/bar
 `
 
 	// Configure the configuration before running the tests
@@ -96,9 +151,9 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 		defer os.RemoveAll(tempTestDir)
 	})
 
-	// downloadImageAndSaveFilesToDirStub fakes the image downloads and puts a database
+	// downloadInventoryImageAndSaveFilesToDirStub fakes the image downloads and puts a database
 	// with the table schemas created to provided path
-	downloadImageAndSaveFilesToDirStub := func(image, path string) error {
+	downloadInventoryImageAndSaveFilesToDirStub := func(image, path string) error {
 		dbFile := filepath.Join(path, plugininventory.SQliteDBFileName)
 		err := utils.SaveFile(dbFile, []byte{})
 		Expect(err).ToNot(HaveOccurred())
@@ -107,8 +162,46 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 		err = db.CreateSchema()
 		Expect(err).ToNot(HaveOccurred())
 
-		err = db.InsertPlugin(pluginEntry)
+		err = db.InsertPlugin(pluginEntryFoo)
 		Expect(err).ToNot(HaveOccurred())
+		err = db.InsertPlugin(pluginEntryBar)
+		Expect(err).ToNot(HaveOccurred())
+		err = db.InsertPluginGroup(pluginGroupEntry, true)
+		Expect(err).ToNot(HaveOccurred())
+		return nil
+	}
+
+	// downloadInventoryMetadataImageWithNoExistingPlugins fakes the image downloads and puts a database
+	// with the table schemas created to provided path
+	downloadInventoryMetadataImageWithNoExistingPlugins := func(image, path string) error {
+		dbFile := filepath.Join(path, plugininventory.SQliteInventoryMetadataDBFileName)
+		err := utils.SaveFile(dbFile, []byte{})
+		Expect(err).ToNot(HaveOccurred())
+
+		db := plugininventory.NewSQLiteInventoryMetadata(dbFile)
+		err = db.CreateInventoryMetadataDBSchema()
+		Expect(err).ToNot(HaveOccurred())
+
+		return nil
+	}
+
+	// downloadInventoryMetadataImageWithExistingPlugins fakes the image downloads and puts a database
+	// with the table schemas created to provided path
+	downloadInventoryMetadataImageWithExistingPlugins := func(image, path string) error {
+		dbFile := filepath.Join(path, plugininventory.SQliteInventoryMetadataDBFileName)
+		err := utils.SaveFile(dbFile, []byte{})
+		Expect(err).ToNot(HaveOccurred())
+
+		db := plugininventory.NewSQLiteInventoryMetadata(dbFile)
+		err = db.CreateInventoryMetadataDBSchema()
+		Expect(err).ToNot(HaveOccurred())
+
+		err = db.InsertPluginGroupIdentifier(&plugininventory.PluginGroupIdentifier{Name: pluginGroupEntry.Name, Vendor: pluginGroupEntry.Vendor, Publisher: pluginGroupEntry.Publisher})
+		Expect(err).ToNot(HaveOccurred())
+
+		err = db.InsertPluginIdentifier(&plugininventory.PluginIdentifier{Name: pluginEntryBar.Name, Target: pluginEntryBar.Target, Version: pluginEntryBar.RecommendedVersion})
+		Expect(err).ToNot(HaveOccurred())
+
 		return nil
 	}
 
@@ -140,17 +233,17 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 		})
 
 		var _ = It("when downloading plugin inventory image succeeds but copy image to tar fail with error, it should return an error", func() {
-			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadImageAndSaveFilesToDirStub)
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
 			fakeImageOperations.CopyImageToTarReturns(errors.New("fake error"))
 
 			err := dpbo.DownloadPluginBundle()
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("error while downloading plugin images"))
+			Expect(err.Error()).To(ContainSubstring("error while downloading and saving plugin images"))
 			Expect(err.Error()).To(ContainSubstring("fake error"))
 		})
 
-		var _ = It("when everything works as expected, it should download plugin bundle as tar file", func() {
-			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadImageAndSaveFilesToDirStub)
+		var _ = It("when group is not specified and everything works as expected, it should download plugin bundle as tar file", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
 			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
 
 			err := dpbo.DownloadPluginBundle()
@@ -164,25 +257,73 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			// Verify the plugin bundle manifest file is accurate
-			bytes, err := os.ReadFile(filepath.Join(tempDir, PluginBundleDirName, PluginBundleManifestFile))
+			bytes, err := os.ReadFile(filepath.Join(tempDir, PluginBundleDirName, PluginMigrationManifestFile))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(bytes).To(Equal([]byte(pluginBundleManifestString)))
-			manifest := &Manifest{}
+			Expect(string(bytes)).To(Equal(pluginBundleManifestCompleteRepositoryString))
+			manifest := &PluginMigrationManifest{}
 			err = yaml.Unmarshal(bytes, &manifest)
 			Expect(err).NotTo(HaveOccurred())
 
 			// Iterate through all the images in the manifest and verify the all image archive
 			// files mentioned in the manifest exists in the bundle
-			for _, pi := range manifest.Images {
-				exists := utils.PathExists(filepath.Join(tempDir, PluginBundleDirName, pi.FilePath))
+			for _, pi := range manifest.ImagesToCopy {
+				exists := utils.PathExists(filepath.Join(tempDir, PluginBundleDirName, pi.SourceTarFilePath))
+				Expect(exists).To(BeTrue())
+			}
+		})
+
+		var _ = It("when group specified does not exists, it should return an error", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
+			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
+
+			dpbo.Groups = []string{"vmware-tanzu/does-not-exists"}
+			err := dpbo.DownloadPluginBundle()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("error while getting selected plugin and plugin group information"))
+			Expect(err.Error()).To(ContainSubstring("incorrect plugin group \"vmware-tanzu/does-not-exists\" specified"))
+
+			dpbo.Groups = []string{"does-not-exists"}
+			err = dpbo.DownloadPluginBundle()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("error while getting selected plugin and plugin group information"))
+			Expect(err.Error()).To(ContainSubstring("incorrect plugin group \"does-not-exists\" specified"))
+		})
+
+		var _ = It("when group is specified and everything works as expected, it should download plugin bundle as tar file", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
+			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
+
+			dpbo.Groups = []string{"fakevendor-fakepublisher/default:v1.0.0"}
+			err := dpbo.DownloadPluginBundle()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that tar file was generated correctly with untar
+			tempDir, err := os.MkdirTemp("", "")
+			Expect(tempDir).ToNot(BeEmpty())
+			Expect(err).NotTo(HaveOccurred())
+			err = tarinator.UnTarinate(tempDir, dpbo.ToTar)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify the plugin bundle manifest file is accurate
+			bytes, err := os.ReadFile(filepath.Join(tempDir, PluginBundleDirName, PluginMigrationManifestFile))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(bytes)).To(Equal(pluginBundleManifestDefaultGroupOnlyString))
+			manifest := &PluginMigrationManifest{}
+			err = yaml.Unmarshal(bytes, &manifest)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Iterate through all the images in the manifest and verify the all image archive
+			// files mentioned in the manifest exists in the bundle
+			for _, pi := range manifest.ImagesToCopy {
+				exists := utils.PathExists(filepath.Join(tempDir, PluginBundleDirName, pi.SourceTarFilePath))
 				Expect(exists).To(BeTrue())
 			}
 		})
 	})
 
-	var _ = Context("Tests for uploading plugin bundle", func() {
+	var _ = Context("Tests for uploading plugin bundle when downloading entire plugin repository with all plugin", func() {
 		JustBeforeEach(func() {
-			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadImageAndSaveFilesToDirStub)
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
 			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
 
 			err := dpbo.DownloadPluginBundle()
@@ -194,7 +335,7 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 
 			err := upbo.UploadPluginBundle()
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("unable to untar provided file"))
+			Expect(err.Error()).To(ContainSubstring("unable to extract provided file"))
 		})
 
 		var _ = It("when incorrect tarfile is provided, it should return an error", func() {
@@ -203,7 +344,7 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 
 			err := upbo.UploadPluginBundle()
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("error while reading plugin bundle manifest"))
+			Expect(err.Error()).To(ContainSubstring("error while reading plugin migration manifest"))
 		})
 
 		var _ = It("when uploading image fail with error, it should return an error", func() {
@@ -215,7 +356,22 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 			Expect(err.Error()).To(ContainSubstring("fake error"))
 		})
 
-		var _ = It("when uploading image succeeds, it should not return an error", func() {
+		var _ = It("when fetching the existing inventory metadata fails, it should not return an error", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirReturns(errors.New("fake-error"))
+			fakeImageOperations.CopyImageFromTarReturns(nil)
+			err := upbo.UploadPluginBundle()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		var _ = It("when uploading images succeeds and fetching the existing inventory metadata returns no existing plugins, it should not return an error", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryMetadataImageWithNoExistingPlugins)
+			fakeImageOperations.CopyImageFromTarReturns(nil)
+			err := upbo.UploadPluginBundle()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		var _ = It("when uploading images succeeds and fetching the existing inventory metadata returns few existing plugins, merge should happen and it should not return an error", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryMetadataImageWithExistingPlugins)
 			fakeImageOperations.CopyImageFromTarReturns(nil)
 			err := upbo.UploadPluginBundle()
 			Expect(err).NotTo(HaveOccurred())

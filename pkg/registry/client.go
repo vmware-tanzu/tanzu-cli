@@ -179,6 +179,7 @@ func (r *registry) CopyImageToTar(sourceImageName, destTarFile string) error {
 
 	copyOptions := cmd.NewCopyOptions(ui.NewWrappingConfUI(writerUI, nil))
 	copyOptions.Concurrency = 3
+	copyOptions.SignatureFlags = cmd.SignatureFlags{CopyCosignSignatures: true}
 	isBundle, _ := bundle.NewBundle(sourceImageName, r.registry).IsBundle()
 	if isBundle {
 		copyOptions.BundleFlags = cmd.BundleFlags{Bundle: sourceImageName}
@@ -264,4 +265,27 @@ func (r *registry) GetImageDigest(imageWithTag string) (string, string, error) {
 		return "", "", err
 	}
 	return hash.Algorithm, hash.Hex, nil
+}
+
+// PushImage publishes the image to the specified location
+// This is equivalent to `imgpkg push -i <image> -f <filepath>`
+func (r *registry) PushImage(imageWithTag string, filePaths []string) error {
+	// Creating a dummy writer to capture the logs
+	// currently this logs are not displayed or used directly
+	var outputBuf, errorBuf bytes.Buffer
+	writerUI := ui.NewWriterUI(&outputBuf, &errorBuf, nil)
+
+	pushOptions := cmd.NewPushOptions(writerUI)
+	pushOptions.ImageFlags = cmd.ImageFlags{Image: imageWithTag}
+	pushOptions.FileFlags = cmd.FileFlags{Files: filePaths}
+	if r.opts != nil {
+		pushOptions.RegistryFlags = cmd.RegistryFlags{
+			CACertPaths: r.opts.CACertPaths,
+			VerifyCerts: r.opts.VerifyCerts,
+			Insecure:    r.opts.Insecure,
+			Anon:        r.opts.Anon,
+		}
+	}
+
+	return pushOptions.Run()
 }

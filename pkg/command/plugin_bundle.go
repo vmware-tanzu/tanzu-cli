@@ -13,11 +13,12 @@ import (
 type downloadPluginBundleOptions struct {
 	pluginDiscoveryOCIImage string
 	tarFile                 string
+	groups                  []string
 }
 
 var dpbo downloadPluginBundleOptions
 
-func newDownloadBundlePluginCmd() *cobra.Command { // nolint:dupl
+func newDownloadBundlePluginCmd() *cobra.Command {
 	var downloadBundleCmd = &cobra.Command{
 		Use:   "download-bundle",
 		Short: "Download plugin bundle to the local system",
@@ -26,6 +27,7 @@ func newDownloadBundlePluginCmd() *cobra.Command { // nolint:dupl
 			options := airgapped.DownloadPluginBundleOptions{
 				PluginInventoryImage: dpbo.pluginDiscoveryOCIImage,
 				ToTar:                dpbo.tarFile,
+				Groups:               dpbo.groups,
 				ImageProcessor:       carvelhelpers.NewImageOperationsImpl(),
 			}
 			return options.DownloadPluginBundle()
@@ -35,6 +37,7 @@ func newDownloadBundlePluginCmd() *cobra.Command { // nolint:dupl
 	f := downloadBundleCmd.Flags()
 	f.StringVarP(&dpbo.pluginDiscoveryOCIImage, "image", "", "", "URI of the plugin discovery image providing the plugins")
 	f.StringVarP(&dpbo.tarFile, "to-tar", "", "", "local tar file path to store the plugin images")
+	f.StringArrayVarP(&dpbo.groups, "group", "", []string{}, "only download the plugins specified in the plugin group")
 
 	_ = downloadBundleCmd.MarkFlagRequired("image")
 	_ = downloadBundleCmd.MarkFlagRequired("to-tar")
@@ -49,7 +52,7 @@ type uploadPluginBundleOptions struct {
 
 var upbo uploadPluginBundleOptions
 
-func newUploadBundlePluginCmd() *cobra.Command { // nolint:dupl
+func newUploadBundlePluginCmd() *cobra.Command {
 	var uploadBundleCmd = &cobra.Command{
 		Use:   "upload-bundle",
 		Short: "Upload plugin bundle to a repository",

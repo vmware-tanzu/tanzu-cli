@@ -22,4 +22,7 @@ type ImageOperationsImpl interface {
 	GetFilesMapFromImage(imageWithTag string) (map[string][]byte, error)
 	// GetImageDigest gets digest of the image
 	GetImageDigest(imageWithTag string) (string, string, error)
+	// PushImage publishes the image to the specified location
+	// This is equivalent to `imgpkg push -i <image> -f <filepath>`
+	PushImage(imageWithTag string, filePaths []string) error
 }

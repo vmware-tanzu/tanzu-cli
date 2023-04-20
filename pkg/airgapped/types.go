@@ -5,15 +5,22 @@
 package airgapped
 
 const PluginBundleDirName = "plugin_bundle"
-const PluginBundleManifestFile = "plugin_bundle_manifest.yaml"
+const PluginMigrationManifestFile = "plugin_migration_manifest.yaml"
 
-// Manifest defines struct for plugin bundle manifest
-type Manifest struct {
-	Images []*ImageInfo `yaml:"images"`
+// PluginMigrationManifest defines struct for plugin bundle manifest
+type PluginMigrationManifest struct {
+	InventoryMetadataImage *ImagePublishInfo `yaml:"inventoryMetadataImage"`
+	ImagesToCopy           []*ImageCopyInfo  `yaml:"imagesToCopy"`
 }
 
-// ImageInfo maps the relative image path and local relative file path
-type ImageInfo struct {
-	FilePath  string `yaml:"filePath"`
-	ImagePath string `yaml:"imagePath"`
+// ImageCopyInfo maps the relative image path and local relative file path
+type ImageCopyInfo struct {
+	SourceTarFilePath string `yaml:"sourceFilePath"`
+	RelativeImagePath string `yaml:"relativeImagePath"`
+}
+
+// ImagePublishInfo maps the relative image path and local relative file path
+type ImagePublishInfo struct {
+	SourceFilePath           string `yaml:"sourceFilePath"`
+	RelativeImagePathWithTag string `yaml:"relativeImagePathWithTag"`
 }
