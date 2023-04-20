@@ -835,7 +835,7 @@ func InstallPluginsFromGroup(pluginName, groupID string) error {
 				err := InstallStandalonePlugin(plugin.Name, plugin.Version, plugin.Target)
 				if err != nil {
 					numErrors++
-					fmt.Printf("unable to install plugin '%s': %v", plugin.Name, err.Error())
+					log.Warningf("unable to install plugin '%s': %v", plugin.Name, err.Error())
 				} else {
 					numInstalled++
 				}
