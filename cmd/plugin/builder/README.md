@@ -252,9 +252,14 @@ Below are the examples:
 
 ### Inventory-plugin-activate-deactivate
 
-Once the plugins are added to the inventory database, there might be a scenario where publisher need to mark the plugin as hidden or in deactive state so that users do not discover these plugins from the central repository. To support this scenario builder plugin implements `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands.
+Once the plugins are added to the inventory database, there might be scenarios where publishers want to mark
+the plugins as deactivated (hidden) so that users do not discover them from the central repository.  For
+example, when publishers want to prepare for the release of their plugins by publishing them to the central
+repository but want to wait for the actual release date to make them accessible to users, they would publish
+such plugins as _deactivated_. To support this scenario the builder plugin implements the
+`tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands.
 
-Below are the flags available with `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate` commands:
+Below are the flags available with `tanzu builder inventory plugin activate` and `tanzu builder inventory plugin deactivate`:
 
 ```txt
   -h, --help                                help for activate/deactivate
@@ -265,7 +270,7 @@ Below are the flags available with `tanzu builder inventory plugin activate` and
       --vendor string                       name of the vendor
 ```
 
-Below are the examples:
+Below are some examples:
 
 ```shell
   # Activate plugins in the inventory database based on the specified manifest file
@@ -273,6 +278,19 @@ Below are the examples:
 
   # Deactivate plugins in the inventory database based on the specified manifest file
   tanzu builder inventory plugin deactivate --repository localhost:5002/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg1 --manifest ./artifacts/packages/plugin_manifest.yaml
+```
+
+When plugins are published as _deactivated_, the CLI will completely ignore them, as if they were not
+present in the central repository.  For testing purposes, publishers can use the environment variable
+`TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY` to instruct the CLI to treat deactivated plugins as
+if they were _active_.  For example:
+
+```shell
+export TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1
+tanzu plugin search
+
+# Or for a single command
+TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1 tanzu plugin search
 ```
 
 ### Inventory-plugin-group-add
@@ -305,6 +323,21 @@ Here the `--manifest` flag is used to provide metadata about the plugin-group in
 ### Inventory-plugin-group-activate-deactivate
 
 In some scenarios, such as preparing for a new product release, a plugin-group may need to be created and added to the inventory database but kept "deactivated".  A "deactivated" plugin-group is not visible to the Tanzu CLI and therefore will not be discovered by users before the official product release, however testers can configure the CLI to discover "deactivated" plugins. To support this scenario the `builder` plugin implements the `tanzu builder inventory plugin-group activate` and `tanzu builder inventory plugin-group deactivate` commands.
+
+To configure the CLI to discover "deactivated" plugin-groups (and plugins) as if they were active,
+testers should use the environment variable `TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY`.
+For example:
+
+```shell
+export TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1
+tanzu plugin group search
+
+# Or for a single command
+TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1 tanzu plugin group search
+```
+
+*Note*: When using the builder plugin to create a plugin-group that contains _deactivated_ plugins,
+the `TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1` environment variable must first be set.
 
 Below are the flags available with `tanzu builder inventory plugin-group activate` and `tanzu builder inventory plugin-group deactivate` commands:
 

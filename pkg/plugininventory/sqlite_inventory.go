@@ -17,6 +17,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -532,10 +533,11 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 		}
 	}
 
+	allowHiddenPlugins, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting))
 	for _, pi := range pg.Plugins {
 		// Verify that the plugin exists in the database before inserting it to the PluginGroup table.
-		// Allow including hidden plugins.
-		pie, err := b.GetPlugins(&PluginInventoryFilter{Name: pi.Name, Target: pi.Target, Version: pi.Version, IncludeHidden: true})
+		// Allow including hidden plugins if the TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY is properly set.
+		pie, err := b.GetPlugins(&PluginInventoryFilter{Name: pi.Name, Target: pi.Target, Version: pi.Version, IncludeHidden: allowHiddenPlugins})
 		if err != nil {
 			return errors.Wrap(err, "error while verifying existence of the plugin in the database")
 		} else if len(pie) == 0 {
