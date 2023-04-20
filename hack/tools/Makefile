@@ -27,6 +27,7 @@ CONTROLLER_TOOLS_VERSION=0.9.2
 IMGPKG_VERSION=v0.35.0
 KUBECTL_VERSION=v1.26.0
 KIND_VERSION=v0.17.0
+GINKGO_VERSION=v2.9.2
 
 # Host information.
 HOST_OS=$(shell go env GOOS)
@@ -41,6 +42,7 @@ CONTROLLER_GEN     := $(BIN_DIR)/controller-gen
 IMGPKG             := $(BIN_DIR)/imgpkg
 KUBECTL            := $(BIN_DIR)/kubectl
 KIND               := $(BIN_DIR)/kind
+GINKGO             := $(BIN_DIR)/ginkgo
 
 ## --------------------------------------
 ## Help
@@ -107,6 +109,11 @@ $(KIND):
 	curl -Lo ./kind https://kind.sigs.k8s.io/dl/$(KIND_VERSION)/kind-$(HOST_OS)-$(HOST_ARCH)
 	mv ./kind $(@)
 	chmod a+x $(@)
+
+ginkgo: $(GINKGO) ## Install ginkgo
+$(GINKGO):
+	mkdir -p $(BIN_DIR)
+	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
 
 ## --------------------------------------
 ## Cleanup

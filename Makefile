@@ -42,7 +42,9 @@ CONTROLLER_GEN     := $(TOOLS_BIN_DIR)/controller-gen
 IMGPKG             := $(TOOLS_BIN_DIR)/imgpkg
 KUBECTL            := $(TOOLS_BIN_DIR)/kubectl
 KIND               := $(TOOLS_BIN_DIR)/kind
-TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND)
+GINKGO             := $(TOOLS_BIN_DIR)/ginkgo
+
+TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO)
 
 # Build and version information
 
