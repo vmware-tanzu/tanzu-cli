@@ -11,9 +11,11 @@ import (
 	"github.com/cppforlife/go-cli-ui/ui"
 	regname "github.com/google/go-containerregistry/pkg/name"
 	regv1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/k14s/imgpkg/pkg/imgpkg/cmd"
-	ctlimg "github.com/k14s/imgpkg/pkg/imgpkg/registry"
 	"github.com/pkg/errors"
+
+	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/bundle"
+	"github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/cmd"
+	ctlimg "github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry"
 )
 
 type registry struct {
@@ -23,7 +25,7 @@ type registry struct {
 
 // New instantiates a new Registry
 func New(opts *ctlimg.Opts) (Registry, error) {
-	reg, err := ctlimg.NewRegistry(*opts)
+	reg, err := ctlimg.NewSimpleRegistry(*opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialze registry client")
 	}
@@ -167,6 +169,63 @@ func (r *registry) DownloadBundle(imageName, outputDir string) error {
 // DownloadImage downloads an OCI image similarly to the `imgpkg pull -i` command
 func (r *registry) DownloadImage(imageName, outputDir string) error {
 	return r.downloadBundleOrImage(imageName, outputDir, false)
+}
+
+// CopyImageToTar downloads the image as tar file
+// This is equivalent to `imgpkg copy --image <image> --to-tar <tar-file-path>` command
+func (r *registry) CopyImageToTar(sourceImageName, destTarFile string) error {
+	// Creating a dummy writer to capture the logs
+	writerUI := ui.NewWriterUI(&writer{}, &writer{}, nil)
+
+	copyOptions := cmd.NewCopyOptions(ui.NewWrappingConfUI(writerUI, nil))
+	copyOptions.Concurrency = 3
+	isBundle, _ := bundle.NewBundle(sourceImageName, r.registry).IsBundle()
+	if isBundle {
+		copyOptions.BundleFlags = cmd.BundleFlags{Bundle: sourceImageName}
+	} else {
+		copyOptions.ImageFlags = cmd.ImageFlags{Image: sourceImageName}
+	}
+	copyOptions.TarFlags.TarDst = destTarFile
+
+	if r.opts != nil {
+		copyOptions.RegistryFlags = cmd.RegistryFlags{
+			CACertPaths: r.opts.CACertPaths,
+			VerifyCerts: r.opts.VerifyCerts,
+			Insecure:    r.opts.Insecure,
+			Anon:        r.opts.Anon,
+		}
+	}
+
+	err := copyOptions.Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// CopyImageFromTar publishes the image to destination repository from specified tar file
+// This is equivalent to `imgpkg copy --tar <file> --to-repo <dest-repo>` command
+func (r *registry) CopyImageFromTar(sourceTarFile, destImageRepo string) error {
+	// Creating a dummy writer to capture the logs
+	writerUI := ui.NewWriterUI(&writer{}, &writer{}, nil)
+
+	copyOptions := cmd.NewCopyOptions(ui.NewWrappingConfUI(writerUI, nil))
+	copyOptions.Concurrency = 1
+	copyOptions.TarFlags.TarSrc = sourceTarFile
+	copyOptions.RepoDst = destImageRepo
+	if r.opts != nil {
+		copyOptions.RegistryFlags = cmd.RegistryFlags{
+			CACertPaths: r.opts.CACertPaths,
+			VerifyCerts: r.opts.VerifyCerts,
+			Insecure:    r.opts.Insecure,
+			Anon:        r.opts.Anon,
+		}
+	}
+	err := copyOptions.Run()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *registry) downloadBundleOrImage(imageName, outputDir string, isBundle bool) error {

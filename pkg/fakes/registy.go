@@ -8,6 +8,30 @@ import (
 )
 
 type Registry struct {
+	CopyImageFromTarStub        func(string, string) error
+	copyImageFromTarMutex       sync.RWMutex
+	copyImageFromTarArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	copyImageFromTarReturns struct {
+		result1 error
+	}
+	copyImageFromTarReturnsOnCall map[int]struct {
+		result1 error
+	}
+	CopyImageToTarStub        func(string, string) error
+	copyImageToTarMutex       sync.RWMutex
+	copyImageToTarArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	copyImageToTarReturns struct {
+		result1 error
+	}
+	copyImageToTarReturnsOnCall map[int]struct {
+		result1 error
+	}
 	DownloadBundleStub        func(string, string) error
 	downloadBundleMutex       sync.RWMutex
 	downloadBundleArgsForCall []struct {
@@ -89,6 +113,130 @@ type Registry struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *Registry) CopyImageFromTar(arg1 string, arg2 string) error {
+	fake.copyImageFromTarMutex.Lock()
+	ret, specificReturn := fake.copyImageFromTarReturnsOnCall[len(fake.copyImageFromTarArgsForCall)]
+	fake.copyImageFromTarArgsForCall = append(fake.copyImageFromTarArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.CopyImageFromTarStub
+	fakeReturns := fake.copyImageFromTarReturns
+	fake.recordInvocation("CopyImageFromTar", []interface{}{arg1, arg2})
+	fake.copyImageFromTarMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *Registry) CopyImageFromTarCallCount() int {
+	fake.copyImageFromTarMutex.RLock()
+	defer fake.copyImageFromTarMutex.RUnlock()
+	return len(fake.copyImageFromTarArgsForCall)
+}
+
+func (fake *Registry) CopyImageFromTarCalls(stub func(string, string) error) {
+	fake.copyImageFromTarMutex.Lock()
+	defer fake.copyImageFromTarMutex.Unlock()
+	fake.CopyImageFromTarStub = stub
+}
+
+func (fake *Registry) CopyImageFromTarArgsForCall(i int) (string, string) {
+	fake.copyImageFromTarMutex.RLock()
+	defer fake.copyImageFromTarMutex.RUnlock()
+	argsForCall := fake.copyImageFromTarArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *Registry) CopyImageFromTarReturns(result1 error) {
+	fake.copyImageFromTarMutex.Lock()
+	defer fake.copyImageFromTarMutex.Unlock()
+	fake.CopyImageFromTarStub = nil
+	fake.copyImageFromTarReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *Registry) CopyImageFromTarReturnsOnCall(i int, result1 error) {
+	fake.copyImageFromTarMutex.Lock()
+	defer fake.copyImageFromTarMutex.Unlock()
+	fake.CopyImageFromTarStub = nil
+	if fake.copyImageFromTarReturnsOnCall == nil {
+		fake.copyImageFromTarReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.copyImageFromTarReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *Registry) CopyImageToTar(arg1 string, arg2 string) error {
+	fake.copyImageToTarMutex.Lock()
+	ret, specificReturn := fake.copyImageToTarReturnsOnCall[len(fake.copyImageToTarArgsForCall)]
+	fake.copyImageToTarArgsForCall = append(fake.copyImageToTarArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.CopyImageToTarStub
+	fakeReturns := fake.copyImageToTarReturns
+	fake.recordInvocation("CopyImageToTar", []interface{}{arg1, arg2})
+	fake.copyImageToTarMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *Registry) CopyImageToTarCallCount() int {
+	fake.copyImageToTarMutex.RLock()
+	defer fake.copyImageToTarMutex.RUnlock()
+	return len(fake.copyImageToTarArgsForCall)
+}
+
+func (fake *Registry) CopyImageToTarCalls(stub func(string, string) error) {
+	fake.copyImageToTarMutex.Lock()
+	defer fake.copyImageToTarMutex.Unlock()
+	fake.CopyImageToTarStub = stub
+}
+
+func (fake *Registry) CopyImageToTarArgsForCall(i int) (string, string) {
+	fake.copyImageToTarMutex.RLock()
+	defer fake.copyImageToTarMutex.RUnlock()
+	argsForCall := fake.copyImageToTarArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *Registry) CopyImageToTarReturns(result1 error) {
+	fake.copyImageToTarMutex.Lock()
+	defer fake.copyImageToTarMutex.Unlock()
+	fake.CopyImageToTarStub = nil
+	fake.copyImageToTarReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *Registry) CopyImageToTarReturnsOnCall(i int, result1 error) {
+	fake.copyImageToTarMutex.Lock()
+	defer fake.copyImageToTarMutex.Unlock()
+	fake.CopyImageToTarStub = nil
+	if fake.copyImageToTarReturnsOnCall == nil {
+		fake.copyImageToTarReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.copyImageToTarReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *Registry) DownloadBundle(arg1 string, arg2 string) error {
@@ -478,6 +626,10 @@ func (fake *Registry) ListImageTagsReturnsOnCall(i int, result1 []string, result
 func (fake *Registry) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.copyImageFromTarMutex.RLock()
+	defer fake.copyImageFromTarMutex.RUnlock()
+	fake.copyImageToTarMutex.RLock()
+	defer fake.copyImageToTarMutex.RUnlock()
 	fake.downloadBundleMutex.RLock()
 	defer fake.downloadBundleMutex.RUnlock()
 	fake.downloadImageMutex.RLock()

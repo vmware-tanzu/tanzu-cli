@@ -28,6 +28,12 @@ echoImages() {
     echo "    - an extra v11.11.11 version of the plugins of the small image"
     echo "=> localhost:9876/tanzu-cli/plugins/sandbox2:small"
     echo "    - an extra v22.22.22 version of the plugins of the small image"
+    echo "=> localhost:9876/tanzu-cli/plugins/airgapped:small"
+    echo "    - a small amount of plugins matching product plugin names"
+    echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
+    echo "=> localhost:9876/tanzu-cli/plugins/airgapped:large"
+    echo "    - all plugins matching product plugin names"
+    echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
 }
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     usage
@@ -53,6 +59,8 @@ smallImage=central:small
 largeImage=central:large
 sanboxImage1=sandbox1:small
 sanboxImage2=sandbox2:small
+smallAirgappedImage=airgapped:small
+largeAirgappedImage=airgapped:large
 database=/tmp/plugin_inventory.db
 publisher="vmware/tkg"
 
@@ -88,11 +96,9 @@ addPlugin() {
 
     # If the version is not specified, we create 10 of them
     # We include version v0.0.1 to match the real TMC plugin versions
+    recommended=""
     if [ -z "$versions" ]; then
         versions="v0.0.1 v1.1.1 v2.2.2 v3.3.3 v4.4.4 v5.5.5 v6.6.6 v7.7.7 v8.8.8 v9.9.9"
-        recommended="v9.9.9"
-    else
-        recommended=$versions
     fi
 
     for version in $versions; do
@@ -254,7 +260,72 @@ for name in ${tmcPlugins[*]}; do
     addGroup vmware tmc v22.22.22 $name mission-control v22.22.22
 done
 
-# Push sanbox inventory file
+# Push sandbox inventory file
 ${dry_run} imgpkg push -i $repoBasePath/$sanboxImage2 -f $database --registry-insecure
+
+echo "======================================"
+echo "Creating small airgapped test Central Repository: $repoBasePath/$smallAirgappedImage"
+echo "======================================"
+# Reset the DB
+rm -f $database
+touch $database
+# Create the DB table
+cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
+
+for name in ${globalPlugins[0]}; do
+    addPlugin $name global true v0.0.1
+    addPlugin $name global true v9.9.9
+    addGroup vmware tkg v9.9.9 $name global v9.9.9
+done
+
+for name in ${k8sPlugins[0]}; do
+    addPlugin $name kubernetes true v0.0.1
+    addPlugin $name kubernetes true v9.9.9
+    addGroup vmware tkg v0.0.1 $name kubernetes v0.0.1
+    addGroup vmware tkg v9.9.9 $name kubernetes v9.9.9
+done
+
+for name in ${tmcPlugins[0]}; do
+    addPlugin $name mission-control true v0.0.1
+    addPlugin $name mission-control true v9.9.9
+    addGroup vmware tmc v0.0.1 $name mission-control v0.0.1
+    addGroup vmware tmc v9.9.9 $name mission-control v9.9.9
+done
+
+# Push airgapped inventory file
+${dry_run} imgpkg push -i $repoBasePath/$smallAirgappedImage -f $database --registry-insecure
+
+
+echo "======================================"
+echo "Creating large airgapped test Central Repository: $repoBasePath/$largeAirgappedImage"
+echo "======================================"
+# Reset the DB
+rm -f $database
+touch $database
+# Create the DB table
+cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
+
+for name in ${globalPlugins[*]}; do
+    addPlugin $name global true v0.0.1
+    addPlugin $name global true v9.9.9
+    addGroup vmware tkg v9.9.9 $name global v9.9.9
+done
+
+for name in ${k8sPlugins[*]}; do
+    addPlugin $name kubernetes true v0.0.1
+    addPlugin $name kubernetes true v9.9.9
+    addGroup vmware tkg v0.0.1 $name kubernetes v0.0.1
+    addGroup vmware tkg v9.9.9 $name kubernetes v9.9.9
+done
+
+for name in ${tmcPlugins[*]}; do
+    addPlugin $name mission-control true v0.0.1
+    addPlugin $name mission-control true v9.9.9
+    addGroup vmware tmc v0.0.1 $name mission-control v0.0.1
+    addGroup vmware tmc v9.9.9 $name mission-control v9.9.9
+done
+
+# Push airgapped inventory file
+${dry_run} imgpkg push -i $repoBasePath/$largeAirgappedImage -f $database --registry-insecure
 
 rm -f $database

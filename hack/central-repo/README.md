@@ -9,6 +9,8 @@ This will start an OCI registry containing different test central repositories:
 1. `localhost:9876/tanzu-cli/plugins/central:large` - a large repo with the same plugins as the small repo plus extra stub plugins making the total number of plugins 100. This repo aims to mimic a full Central Repository.
 1. `localhost:9876/tanzu-cli/plugins/sandbox1:small` - the same plugins as the `central:small` image, but with version `v11.11.11`. This aims to mimic a sandbox repo that can be added to the CLI through the `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` variable.
 1. `localhost:9876/tanzu-cli/plugins/sandbox2:small` - the same plugins as the `central:small` image, but with version `v22.22.22`. This aims to mimic a sandbox repo that can be added to the CLI through the `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` variable.
+1. `localhost:9876/tanzu-cli/plugins/airgapped:small` - the minimal set of plugins with `v0.0.1` and `v9.9.9` versions and all plugins and all versions can be installed.
+1. `localhost:9876/tanzu-cli/plugins/airgapped:large` - the large set of plugins with `v0.0.1` and `v9.9.9` versions and all plugins and all versions can be installed.
 
 Limitations:
 

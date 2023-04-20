@@ -9,7 +9,7 @@ import (
 	"encoding/base64"
 	"os"
 
-	ctlimg "github.com/k14s/imgpkg/pkg/imgpkg/registry"
+	ctlimg "github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry"
 
 	"github.com/pkg/errors"
 
