@@ -83,8 +83,10 @@ type PluginInventoryFilter struct {
 	Arch string
 	// Publisher of the plugins to look for
 	Publisher string
-	// Vendor the plugins to look for
+	// Vendor of the plugins to look for
 	Vendor string
+	// IncludeHidden indicates if hidden plugins should be included
+	IncludeHidden bool
 }
 
 // PluginIdentifier uniquely identifies a single version of a specific plugin

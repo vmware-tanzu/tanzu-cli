@@ -156,7 +156,7 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 
 			// verify that the local db file was updated before publishing the database to remote repository
 			db := plugininventory.NewSQLiteInventory(referencedDBFile, "")
-			pluginInventoryEntries, err := db.GetAllPlugins()
+			pluginInventoryEntries, err := db.GetPlugins(&plugininventory.PluginInventoryFilter{IncludeHidden: true})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pluginInventoryEntries).NotTo(BeNil())
 			Expect(len(pluginInventoryEntries)).To(Equal(1))
@@ -217,7 +217,7 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 
 			// verify that the local db file was updated before publishing the database to remote repository
 			db := plugininventory.NewSQLiteInventory(referencedDBFile, "")
-			pluginInventoryEntries, err := db.GetAllPlugins()
+			pluginInventoryEntries, err := db.GetPlugins(&plugininventory.PluginInventoryFilter{IncludeHidden: true})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pluginInventoryEntries).NotTo(BeNil())
 			Expect(len(pluginInventoryEntries)).To(Equal(1))
