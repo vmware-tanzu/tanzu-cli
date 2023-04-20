@@ -1520,18 +1520,13 @@ func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
 		}
 	}
 
-	// Look for configured plugin discovery sources
-	cfg, err := configlib.GetClientConfig()
-	if err != nil {
-		return testDiscoveries, errors.Wrapf(err, "unable to get client configuration")
-	}
-
-	if cfg == nil || cfg.ClientOptions == nil || cfg.ClientOptions.CLI == nil {
+	discoverySources, _ := configlib.GetCLIDiscoverySources()
+	if discoverySources == nil {
 		return testDiscoveries, nil
 	}
 	// The configured discoveries should be searched BEFORE the test discoveries.
 	// For example, if the staging central repo is added as a test discovery, it
 	// may contain older versions of a plugin that is now published to the production
 	// central repo; we therefore need to search the test discoveries last.
-	return append(cfg.ClientOptions.CLI.DiscoverySources, testDiscoveries...), nil
+	return append(discoverySources, testDiscoveries...), nil
 }

@@ -18,7 +18,6 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -70,16 +69,12 @@ func newListDiscoverySourceCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List available discovery sources",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := configlib.GetClientConfig()
-			if err != nil {
-				return err
-			}
-
 			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "name", "type", "scope")
 
-			// Get standalone scoped discoveries
-			if cfg.ClientOptions != nil && cfg.ClientOptions.CLI != nil && cfg.ClientOptions.CLI.DiscoverySources != nil {
-				outputFromDiscoverySources(cfg.ClientOptions.CLI.DiscoverySources, common.PluginScopeStandalone, output)
+			// List standalone scoped discoveries
+			discoverySources, _ := configlib.GetCLIDiscoverySources()
+			if discoverySources != nil {
+				outputFromDiscoverySources(discoverySources, common.PluginScopeStandalone, output)
 			}
 
 			// If context-target feature is activated, get discovery sources from all active context
@@ -126,31 +121,16 @@ func newAddDiscoverySourceCmd() *cobra.Command {
     tanzu plugin source add --name standalone-oci --type oci --uri projects.registry.vmware.com/tkg/tanzu-plugins/standalone:latest`,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Acquire tanzu config lock
-			configlib.AcquireTanzuConfigLock()
-			defer configlib.ReleaseTanzuConfigLock()
-
-			cfg, err := configlib.GetClientConfigNoLock()
-			if err != nil {
-				return err
-			}
-			if cfg.ClientOptions == nil {
-				cfg.ClientOptions = &configtypes.ClientOptions{}
-			}
-			if cfg.ClientOptions.CLI == nil {
-				cfg.ClientOptions.CLI = &configtypes.CLIOptions{}
-			}
-
-			discoverySources, err := addDiscoverySource(cfg.ClientOptions.CLI.DiscoverySources, discoverySourceName, discoverySourceType, uri)
+			newDiscoverySource, err := createDiscoverySource(discoverySourceType, discoverySourceName, uri)
 			if err != nil {
 				return err
 			}
 
-			cfg.ClientOptions.CLI.DiscoverySources = discoverySources
-			err = configlib.StoreClientConfig(cfg)
+			err = configlib.SetCLIDiscoverySource(newDiscoverySource)
 			if err != nil {
 				return err
 			}
+
 			log.Successf("successfully added discovery source %s", discoverySourceName)
 			return nil
 		},
@@ -174,33 +154,22 @@ func newUpdateDiscoverySourceCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			discoveryName := args[0]
 
-			// Acquire tanzu config lock
-			configlib.AcquireTanzuConfigLock()
-			defer configlib.ReleaseTanzuConfigLock()
-
-			cfg, err := configlib.GetClientConfigNoLock()
-			if err != nil {
-				return err
-			}
-
 			discoveryNoExistError := fmt.Errorf("discovery %q does not exist", discoveryName)
-			if cfg.ClientOptions == nil {
-				return discoveryNoExistError
-			}
-			if cfg.ClientOptions.CLI == nil {
+			discoverySource, _ := configlib.GetCLIDiscoverySource(discoveryName)
+			if discoverySource == nil {
 				return discoveryNoExistError
 			}
 
-			newDiscoverySources, err := updateDiscoverySources(cfg.ClientOptions.CLI.DiscoverySources, discoveryName, discoverySourceType, uri)
+			newDiscoverySource, err := createDiscoverySource(discoverySourceType, discoveryName, uri)
 			if err != nil {
 				return err
 			}
 
-			cfg.ClientOptions.CLI.DiscoverySources = newDiscoverySources
-			err = configlib.StoreClientConfig(cfg)
+			err = configlib.SetCLIDiscoverySource(newDiscoverySource)
 			if err != nil {
 				return err
 			}
+
 			log.Successf("updated discovery source %s", discoveryName)
 			return nil
 		},
@@ -289,57 +258,4 @@ func discoverySourceNameAndType(ds configtypes.PluginDiscovery) (string, string)
 	default:
 		return "-", "Unknown" // Unknown discovery source found
 	}
-}
-
-func addDiscoverySource(discoverySources []configtypes.PluginDiscovery, dsName, dsType, uri string) ([]configtypes.PluginDiscovery, error) {
-	for _, ds := range discoverySources {
-		if discovery.CheckDiscoveryName(ds, dsName) {
-			return nil, fmt.Errorf("discovery name %q already exists", dsName)
-		}
-	}
-
-	pluginDiscoverySource, err := createDiscoverySource(dsType, dsName, uri)
-	if err != nil {
-		return nil, err
-	}
-
-	discoverySources = append(discoverySources, pluginDiscoverySource)
-	return discoverySources, nil
-}
-
-func deleteDiscoverySource(discoverySources []configtypes.PluginDiscovery, discoveryName string) ([]configtypes.PluginDiscovery, error) {
-	newDiscoverySources := []configtypes.PluginDiscovery{}
-	found := false
-	for _, ds := range discoverySources {
-		if discovery.CheckDiscoveryName(ds, discoveryName) {
-			found = true
-			continue
-		}
-		newDiscoverySources = append(newDiscoverySources, ds)
-	}
-	if !found {
-		return nil, fmt.Errorf("discovery source %q does not exist", discoveryName)
-	}
-	return newDiscoverySources, nil
-}
-
-func updateDiscoverySources(discoverySources []configtypes.PluginDiscovery, dsName, dsType, uri string) ([]configtypes.PluginDiscovery, error) {
-	var newDiscoverySources []configtypes.PluginDiscovery
-	var err error
-
-	found := false
-	for _, ds := range discoverySources {
-		if discovery.CheckDiscoveryName(ds, dsName) {
-			found = true
-			ds, err = createDiscoverySource(dsType, dsName, uri)
-			if err != nil {
-				return nil, err
-			}
-		}
-		newDiscoverySources = append(newDiscoverySources, ds)
-	}
-	if !found {
-		return nil, fmt.Errorf("discovery source %q does not exist", dsName)
-	}
-	return newDiscoverySources, nil
 }
