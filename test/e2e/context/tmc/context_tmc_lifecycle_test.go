@@ -32,20 +32,23 @@ const ContextShouldExistsAsCreated = "the context %s should exists as its been c
 // g. (negative test) test 'tanzu context use' command with the specific context name (incorrect, which is not exists)
 // h. test 'tanzu context list' command, should list all contexts created
 // i. test 'tanzu context delete' command, make sure to delete all context's created in previous test cases
+var (
+	tf           *framework.Framework
+	clusterInfo  *framework.ClusterInfo
+	contextNames []string
+)
+
+var _ = BeforeSuite(func() {
+	tf = framework.NewFramework()
+	// get TMC TANZU_CLI_TMC_UNSTABLE_URL and TANZU_API_TOKEN from environment variables
+	clusterInfo = context.GetTMCClusterInfo()
+	Expect(clusterInfo.EndPoint).NotTo(Equal(""), "TMC cluster URL is must needed to create TMC context")
+	Expect(clusterInfo.APIKey).NotTo(Equal(""), "TMC API Key is must needed to create TMC context")
+	contextNames = make([]string, 0)
+})
+
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", func() {
-	var (
-		tf           *framework.Framework
-		clusterInfo  *framework.ClusterInfo
-		contextNames []string
-	)
-	BeforeSuite(func() {
-		tf = framework.NewFramework()
-		// get TMC TANZU_CLI_TMC_UNSTABLE_URL and TANZU_API_TOKEN from environment variables
-		clusterInfo = context.GetTMCClusterInfo()
-		Expect(clusterInfo.EndPoint).NotTo(Equal(""), "TMC cluster URL is must needed to create TMC context")
-		Expect(clusterInfo.APIKey).NotTo(Equal(""), "TMC API Key is must needed to create TMC context")
-		contextNames = make([]string, 0)
-	})
+
 	Context("Context lifecycle tests for TMC target", func() {
 		// Test case: a. list and delete contexts if any exists
 		It("delete context command", func() {

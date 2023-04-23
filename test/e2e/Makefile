@@ -69,7 +69,7 @@ e2e-context-k8s-tests:
 ## To run TMC tests, we need to set environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL, in case of github workflow, these are set as github environment variables
 .PHONY: e2e-context-tmc-test ## Execute CLI context life cycle e2e tests for tmc target
 e2e-context-tmc-test:
-	@if [ "${TANZU_API_TOKEN}" = "" ] && [ "$(TANZU_CLI_TMC_UNSTABLE_URL)" = "" ]; then \
+	@if [ "${TANZU_API_TOKEN}" = "" ] || [ "$(TANZU_CLI_TMC_UNSTABLE_URL)" = "" ]; then \
 		echo "***Skipping TMC specific e2e tests cases because environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL are not set***" ; \
 	else \
 	    export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
