@@ -36,7 +36,7 @@ func NewContextCreateOps() ContextCreateOps {
 
 func (cc *contextCreateOps) CreateContextWithEndPoint(contextName, endpoint string, opts ...E2EOption) error {
 	createContextCmd := fmt.Sprintf(CreateContextWithEndPoint, "%s", endpoint, contextName)
-	out, _, err := cc.cmdExe.Exec(createContextCmd, opts...)
+	out, _, err := cc.cmdExe.TanzuCmdExec(createContextCmd, opts...)
 	if err != nil {
 		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
@@ -47,7 +47,7 @@ func (cc *contextCreateOps) CreateContextWithEndPoint(contextName, endpoint stri
 
 func (cc *contextCreateOps) CreateContextWithEndPointStaging(contextName, endpoint string, opts ...E2EOption) error {
 	createContextCmd := fmt.Sprintf(CreateContextWithEndPointStaging, "%s", endpoint, contextName)
-	out, _, err := cc.cmdExe.Exec(createContextCmd, opts...)
+	out, _, err := cc.cmdExe.TanzuCmdExec(createContextCmd, opts...)
 	if err != nil {
 		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
@@ -58,7 +58,7 @@ func (cc *contextCreateOps) CreateContextWithEndPointStaging(contextName, endpoi
 
 func (cc *contextCreateOps) CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string, opts ...E2EOption) error {
 	createContextCmd := fmt.Sprintf(CreateContextWithKubeconfigFile, "%s", kubeconfigPath, kubeContext, contextName)
-	out, _, err := cc.cmdExe.Exec(createContextCmd, opts...)
+	out, _, err := cc.cmdExe.TanzuCmdExec(createContextCmd, opts...)
 	if err != nil {
 		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
@@ -69,7 +69,7 @@ func (cc *contextCreateOps) CreateContextWithKubeconfig(contextName, kubeconfigP
 
 func (cc *contextCreateOps) CreateContextWithDefaultKubeconfig(contextName, kubeContext string, opts ...E2EOption) error {
 	createContextCmd := fmt.Sprintf(CreateContextWithDefaultKubeconfigFile, "%s", kubeContext, contextName)
-	out, _, err := cc.cmdExe.Exec(createContextCmd, opts...)
+	out, _, err := cc.cmdExe.TanzuCmdExec(createContextCmd, opts...)
 	if err != nil {
 		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))

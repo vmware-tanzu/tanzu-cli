@@ -20,6 +20,7 @@ type CmdOps interface {
 	ExecContainsErrorString(command, contains string, opts ...E2EOption) error
 	ExecNotContainsStdErrorString(command, contains string, opts ...E2EOption) error
 	ExecNotContainsString(command, contains string, opts ...E2EOption) error
+	TanzuCmdExec(command string, opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error)
 }
 
 // cmdOps is the implementation of CmdOps
@@ -31,12 +32,12 @@ func NewCmdOps() CmdOps {
 	return &cmdOps{}
 }
 
-// Exec the command, exit on error
-func (co *cmdOps) Exec(command string, opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error) {
+// TanzuCmdExec executes the tanzu command by default uses `tanzu` prefix
+func (co *cmdOps) TanzuCmdExec(command string, opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error) {
 	// Default options
-	options := &E2EOptions{
-		TanzuCommandPrefix: TanzuPrefix,
-	}
+	options := NewE2EOptions(
+		WithTanzuCommandPrefix(TanzuPrefix),
+	)
 
 	// Apply provided options
 	for _, opt := range opts {
@@ -46,6 +47,18 @@ func (co *cmdOps) Exec(command string, opts ...E2EOption) (stdOut, stdErr *bytes
 	// Verify if the tanzu prefix is set if not set it with default tanzu prefix value
 	if strings.Index(command, "%s") == 0 {
 		command = fmt.Sprintf(command, options.TanzuCommandPrefix)
+	}
+	return co.Exec(command)
+}
+
+// Exec the command, exit on error
+func (co *cmdOps) Exec(command string, opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error) {
+	// Default options
+	options := NewE2EOptions()
+
+	// Apply provided options
+	for _, opt := range opts {
+		opt(options)
 	}
 
 	log.Infof(ExecutingCommand, command)

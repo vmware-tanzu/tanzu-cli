@@ -180,6 +180,14 @@ type E2EOptions struct {
 	TanzuCommandPrefix string
 }
 
+func NewE2EOptions(options ...E2EOption) *E2EOptions {
+	e := &E2EOptions{}
+	for _, option := range options {
+		option(e)
+	}
+	return e
+}
+
 type E2EOption func(*E2EOptions)
 
 // WithTanzuCommandPrefix is to set the tanzu command prefix; default is tanzu

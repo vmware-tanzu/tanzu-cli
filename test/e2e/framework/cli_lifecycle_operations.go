@@ -21,15 +21,15 @@ func NewCliOps() CliOps {
 	}
 }
 
-// Init() initializes the CLI
+// CliInit() initializes the CLI
 func (co *cliOps) CliInit(opts ...E2EOption) error {
-	_, _, err := co.Exec(TanzuInit, opts...)
+	_, _, err := co.TanzuCmdExec(TanzuInit, opts...)
 	return err
 }
 
-// Version returns the CLI version info
+// CliVersion returns the CLI version info
 func (co *cliOps) CliVersion(opts ...E2EOption) (string, error) {
-	stdOut, _, err := co.Exec(TanzuVersion, opts...)
+	stdOut, _, err := co.TanzuCmdExec(TanzuInit, opts...)
 	return stdOut.String(), err
 }
 

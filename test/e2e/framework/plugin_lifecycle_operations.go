@@ -88,13 +88,13 @@ func NewPluginLifecycleOps() PluginCmdOps {
 
 func (po *pluginCmdOps) AddPluginDiscoverySource(discoveryOpts *DiscoveryOptions, opts ...E2EOption) (string, error) {
 	addCmd := fmt.Sprintf(AddPluginSource, "%s", discoveryOpts.Name, discoveryOpts.SourceType, discoveryOpts.URI)
-	out, _, err := po.cmdExe.Exec(addCmd, opts...)
+	out, _, err := po.cmdExe.TanzuCmdExec(addCmd, opts...)
 	return out.String(), err
 }
 
 func (po *pluginCmdOps) UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOptions, opts ...E2EOption) (string, error) {
 	addCmd := fmt.Sprintf(UpdatePluginSource, "%s", discoveryOpts.Name, discoveryOpts.SourceType, discoveryOpts.URI)
-	out, _, err := po.cmdExe.Exec(addCmd, opts...)
+	out, _, err := po.cmdExe.TanzuCmdExec(addCmd, opts...)
 	return out.String(), err
 }
 
@@ -104,7 +104,7 @@ func (po *pluginCmdOps) ListPluginSources(opts ...E2EOption) ([]*PluginSourceInf
 
 func (po *pluginCmdOps) DeletePluginDiscoverySource(pluginSourceName string, opts ...E2EOption) (string, error) {
 	deleteCmd := fmt.Sprintf(DeletePluginSource, "%s", pluginSourceName)
-	out, stdErr, err := po.cmdExe.Exec(deleteCmd, opts...)
+	out, stdErr, err := po.cmdExe.TanzuCmdExec(deleteCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, deleteCmd, err.Error(), stdErr.String(), out.String())
 	}
@@ -144,7 +144,7 @@ func (po *pluginCmdOps) ListPluginsForGivenContext(context string, installedOnly
 }
 
 func (po *pluginCmdOps) Sync(opts ...E2EOption) (string, error) {
-	out, stdErr, err := po.cmdExe.Exec(pluginSyncCmd, opts...)
+	out, stdErr, err := po.cmdExe.TanzuCmdExec(pluginSyncCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, pluginSyncCmd, err.Error(), stdErr.String(), out.String())
 	}
@@ -189,7 +189,7 @@ func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string, opts 
 	if len(strings.TrimSpace(versions)) > 0 {
 		installPluginCmd += " --version " + versions
 	}
-	out, stdErr, err := po.cmdExe.Exec(installPluginCmd, opts...)
+	out, stdErr, err := po.cmdExe.TanzuCmdExec(installPluginCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), out.String())
 	}
@@ -203,7 +203,7 @@ func (po *pluginCmdOps) InstallPluginsFromGroup(pluginNameORAll, groupName strin
 	} else {
 		installPluginCmd = fmt.Sprintf(InstallAllPluginsFromGroupCmd, "%s", groupName)
 	}
-	out, stdErr, err := po.cmdExe.Exec(installPluginCmd, opts...)
+	out, stdErr, err := po.cmdExe.TanzuCmdExec(installPluginCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), out.String())
 	}
@@ -216,7 +216,7 @@ func (po *pluginCmdOps) DescribePlugin(pluginName, target string, opts ...E2EOpt
 		installPluginCmd += " --target " + target
 	}
 
-	stdOut, stdErr, err := po.cmdExe.Exec(installPluginCmd, opts...)
+	stdOut, stdErr, err := po.cmdExe.TanzuCmdExec(installPluginCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), stdOut.String())
 	}
@@ -232,7 +232,7 @@ func (po *pluginCmdOps) UninstallPlugin(pluginName, target string, opts ...E2EOp
 	if len(strings.TrimSpace(target)) > 0 {
 		uninstallPluginCmd += " --target " + target
 	}
-	out, stdErr, err := po.cmdExe.Exec(uninstallPluginCmd, opts...)
+	out, stdErr, err := po.cmdExe.TanzuCmdExec(uninstallPluginCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, uninstallPluginCmd, err.Error(), stdErr.String(), out.String())
 	}
@@ -241,7 +241,7 @@ func (po *pluginCmdOps) UninstallPlugin(pluginName, target string, opts ...E2EOp
 
 func (po *pluginCmdOps) ExecuteSubCommand(pluginWithSubCommand string, opts ...E2EOption) (string, error) {
 	pluginCmdWithSubCommand := fmt.Sprintf(PluginSubCommand, "%s", pluginWithSubCommand)
-	stdOut, stdErr, err := po.cmdExe.Exec(pluginCmdWithSubCommand, opts...)
+	stdOut, stdErr, err := po.cmdExe.TanzuCmdExec(pluginCmdWithSubCommand, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, pluginCmdWithSubCommand, err.Error(), stdErr.String(), stdOut.String())
 		return stdOut.String(), errors.Wrap(err, stdErr.String())
@@ -250,7 +250,7 @@ func (po *pluginCmdOps) ExecuteSubCommand(pluginWithSubCommand string, opts ...E
 }
 
 func (po *pluginCmdOps) CleanPlugins(opts ...E2EOption) error {
-	out, stdErr, err := po.cmdExe.Exec(CleanPluginsCmd, opts...)
+	out, stdErr, err := po.cmdExe.TanzuCmdExec(CleanPluginsCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, CleanPluginsCmd, err.Error(), stdErr.String(), out.String())
 	}

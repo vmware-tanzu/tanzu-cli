@@ -58,7 +58,7 @@ func NewConfOps() ConfigLifecycleOps {
 
 // GetConfig gets the tanzu config
 func (co *configOps) GetConfig(opts ...E2EOption) (*configapi.ClientConfig, error) {
-	out, _, err := co.cmdExe.Exec(ConfigGet, opts...)
+	out, _, err := co.cmdExe.TanzuCmdExec(ConfigGet, opts...)
 	var cnf *configapi.ClientConfig
 	if err != nil {
 		return cnf, err
@@ -73,7 +73,7 @@ func (co *configOps) GetConfig(opts ...E2EOption) (*configapi.ClientConfig, erro
 // ConfigSetFeatureFlag sets the given tanzu config feature flag
 func (co *configOps) ConfigSetFeatureFlag(path, value string, opts ...E2EOption) (err error) {
 	confSetCmd := ConfigSet + path + " " + value
-	_, _, err = co.cmdExe.Exec(confSetCmd, opts...)
+	_, _, err = co.cmdExe.TanzuCmdExec(confSetCmd, opts...)
 	return err
 }
 
@@ -94,13 +94,13 @@ func (co *configOps) ConfigGetFeatureFlag(path string, opts ...E2EOption) (strin
 // ConfigUnsetFeature un-sets the tanzu config feature flag
 func (co *configOps) ConfigUnsetFeature(path string, opts ...E2EOption) (err error) {
 	unsetFeatureCmd := ConfigUnset + path
-	_, _, err = co.cmdExe.Exec(unsetFeatureCmd, opts...)
+	_, _, err = co.cmdExe.TanzuCmdExec(unsetFeatureCmd, opts...)
 	return
 }
 
 // ConfigInit performs "tanzu config init"
 func (co *configOps) ConfigInit(opts ...E2EOption) (err error) {
-	_, _, err = co.cmdExe.Exec(ConfigInit, opts...)
+	_, _, err = co.cmdExe.TanzuCmdExec(ConfigInit, opts...)
 	return
 }
 
@@ -113,7 +113,7 @@ func (co *configOps) ConfigServerList(opts ...E2EOption) ([]*Server, error) {
 // ConfigServerDelete deletes a server from tanzu config
 func (co *configOps) ConfigServerDelete(serverName string, opts ...E2EOption) error {
 	configDelCmd := fmt.Sprintf(ConfigServerDelete, "%s", serverName)
-	_, _, err := co.cmdExe.Exec(configDelCmd, opts...)
+	_, _, err := co.cmdExe.TanzuCmdExec(configDelCmd, opts...)
 	if err != nil {
 		log.Infof("failed to delete config server: %s", serverName)
 		log.Error(err, "error while running: "+configDelCmd)

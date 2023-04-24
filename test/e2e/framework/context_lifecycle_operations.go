@@ -43,13 +43,13 @@ func NewContextCmdOps() ContextCmdOps {
 
 func (cc *contextCmdOps) UseContext(contextName string, opts ...E2EOption) error {
 	useContextCmd := fmt.Sprintf(UseContext, "%s", contextName)
-	_, _, err := cc.cmdExe.Exec(useContextCmd, opts...)
+	_, _, err := cc.cmdExe.TanzuCmdExec(useContextCmd, opts...)
 	return err
 }
 
 func (cc *contextCmdOps) GetContext(contextName string, opts ...E2EOption) (ContextInfo, error) {
 	getContextCmd := fmt.Sprintf(GetContext, "%s", contextName)
-	out, _, err := cc.cmdExe.Exec(getContextCmd, opts...)
+	out, _, err := cc.cmdExe.TanzuCmdExec(getContextCmd, opts...)
 	if err != nil {
 		return ContextInfo{}, err
 	}
@@ -85,7 +85,7 @@ func (cc *contextCmdOps) GetActiveContext(targetType string, opts ...E2EOption) 
 
 func (cc *contextCmdOps) DeleteContext(contextName string, opts ...E2EOption) error {
 	deleteContextCmd := fmt.Sprintf(DeleteContext, "%s", contextName)
-	stdOut, stdErr, err := cc.cmdExe.Exec(deleteContextCmd, opts...)
+	stdOut, stdErr, err := cc.cmdExe.TanzuCmdExec(deleteContextCmd, opts...)
 	if err != nil {
 		log.Infof("failed to delete context:%s", contextName)
 		return errors.Wrapf(err, FailedToDeleteContext+", stderr:%s stdout:%s , ", stdErr.String(), stdOut.String())
