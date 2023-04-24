@@ -33,6 +33,7 @@ var (
 	pluginGroupToPluginListMap   map[string][]*framework.PluginInfo
 	pluginSourceName             string
 	tempDir                      string
+	err                          error
 )
 
 // BeforeSuite initializes and set up the environment to execute the airgapped tests
@@ -68,10 +69,11 @@ var _ = BeforeSuite(func() {
 	// set up the local central repository discovery image public key path
 	e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath)
 	Expect(e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository discovery image signature public key path", framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath))
-	os.Setenv("TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH", e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
+	os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 	// search plugin groups and make sure there plugin groups available
-	pluginGroups = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+	pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+	Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 
 	// Make sure airgapped plugin inventory image doesn't exists before starting the tests
 	_, _, err = carvelhelpers.GetImageDigest(e2eAirgappedCentralRepoImage)
@@ -81,7 +83,8 @@ var _ = BeforeSuite(func() {
 	Expect(framework.IsAllPluginGroupsExists(pluginGroups, framework.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 	// search plugins and make sure there are plugins available
-	pluginsSearchList = pluginlifecyclee2e.SearchAllPlugins(tf)
+	pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
+	Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
 	Expect(len(pluginsSearchList)).Should(BeNumerically(">", 0))
 
 	// check all required plugins are available in the central repository with plugin search output before running airgapped tests

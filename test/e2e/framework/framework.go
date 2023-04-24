@@ -7,6 +7,7 @@ package framework
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/onsi/ginkgo/v2"
 )
@@ -28,6 +29,7 @@ const (
 	ConfigServerDelete = "%s config server delete %s -y"
 	ConfigCertAdd      = "%s config cert add --host %s --ca-certificate %s --skip-cert-verify %s --insecure %s"
 	ConfigCertDelete   = "%s config cert delete %s"
+	ConfigCertList     = "%s config cert list -o json"
 
 	// Plugin commands
 	UpdatePluginSource                  = "%s plugin source update %s --uri %s"
@@ -56,6 +58,7 @@ const (
 	TanzuCliE2ETestCentralRepositoryURL                                             = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
 	TanzuCliE2ETestLocalCentralRepositoryURL                                        = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL"
 	TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH"
+	TanzuCliPluginDiscoveryImageSignaturePublicKeyPath                              = "TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH"
 	TanzuCliE2ETestLocalCentralRepositoryHost                                       = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST"
 	TanzuCliE2ETestLocalCentralRepositoryCACertPath                                 = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH"
 	TanzuCliE2ETestAirgappedRepo                                                    = "TANZU_CLI_E2E_AIRGAPPED_REPO"
@@ -67,6 +70,9 @@ const (
 	CLICoexistenceLegacyTanzuCLIVersion          = "TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION"
 	CLICoexistenceNewTanzuCLIVersion             = "TANZU_CLI_BUILD_VERSION"
 	CLICoexistenceTanzuCEIPParticipation         = "TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER"
+
+	// This skips hardcoding HTTPS in CLI Core when the E2E tests mock the TMC endpoint
+	CLIE2ETestEnvironment = "TANZU_CLI_E2E_TEST_ENVIRONMENT"
 
 	// General constants
 	True         = "true"
@@ -110,13 +116,15 @@ const (
 	GlobalTarget         = "global"
 	KubernetesTarget     = "kubernetes"
 	MissionControlTarget = "mission-control"
+	TMCPluginGroupPrefix = "vmware-tmc"
+	K8SPluginGroupPrefix = "vmware-tkg"
 
 	// log info
 	ExecutingCommand = "Executing command: %s"
 	FileContent      = "file: %s , content: %s"
 
 	// Error messages
-	UnableToFindPluginForTarget                   = "unable to find plugin '%s'"
+	UnableToFindPluginForTarget                   = "unable to find plugin '%s' with version '%s'"
 	UnableToFindPluginWithVersionForTarget        = "unable to find plugin '%s' with version '%s' for target '%s'"
 	UnableToFindPlugin                            = "unable to find plugin '%s'"
 	InvalidTargetSpecified                        = "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'"
@@ -125,6 +133,8 @@ const (
 	ErrorLogForCommandWithErrStdErrAndStdOut      = "error while executing command:'%s', error:'%s' stdErr:'%s' stdOut: '%s'"
 	FailedToConstructJSONNodeFromOutputAndErrInfo = "failed to construct json node from output:'%s' error:'%s' "
 	FailedToConstructJSONNodeFromOutput           = "failed to construct json node from output:'%s'"
+	NoErrorForPluginGroupSearch                   = "should not get any error for plugin group search"
+	NoErrorForPluginSearch                        = "should not get any error for plugin search"
 
 	// config related constants
 	FailedToCreateContext           = "failed to create context"
@@ -133,23 +143,40 @@ const (
 	ContextDeleted                  = "context %s deleted successfully"
 	ConfigServerDeleted             = "config server %s deleted successfully"
 	FailedToDeleteContext           = "failed to delete context"
+	ContextPrefixK8s                = "plugin-sync-k8s-"
+	ContextPrefixTMC                = "plugin-sync-tmc-"
+
+	// TestDir is the directory under $HOME, created during framework initialization, and the $HOME updated as $HOME/$TestDir, to create all Tanzu CLI specific files
+	// and not to disturb any existing Tanzu CLI files
+	TestDir = ".tanzu-cli-e2e"
+
+	// TestPluginsDir is the directory under $HOME/$TestDir, to store test plugins for E2E tests
+	TestPluginsDir = ".e2e-test-plugins"
+
+	// TempDirInTestDirPath is the directory under $HOME/$TestDir, to create temporary files (if any) for E2E test execution
+	TempDirInTestDirPath = "temp"
+
+	ConfigFolder       = ".config"
+	TanzuFolder        = "tanzu"
+	TanzuPluginsFolder = "tanzu-plugins"
+	ConfigFile         = "config.yaml"
+	ConfigNGFile       = "config-ng.yaml"
+	K8SCRDFileName     = "cli.tanzu.vmware.com_cliplugins.yaml"
+	Config             = "config"
+
+	WiredMockHTTPServerStartCmd = "docker run --rm -d -p 8080:8080 -p 8443:8443 --name %s -v %s:/home/wiremock rodolpheche/wiremock:2.25.1"
+	HttpMockServerStopCmd       = "docker container stop %s"
+	HttpMockServerName          = "wiremock"
+	defaultTimeout              = 5 * time.Second
+
+	TMCEndpointForPlugins        = "/v1alpha1/system/binaries/plugins"
+	TMCMockServerEndpoint        = "http://localhost:8080"
+	TMCPluginsMockServerEndpoint = "http://localhost:8080/v1alpha1/system/binaries/plugins"
+	HttpContentType              = "application/json; charset=utf-8"
+
+	// k8s CRD file
+	K8SCRDFilePath = "../../framework/config/cli.tanzu.vmware.com_cliplugins.yaml"
 )
-
-// TestDir is the directory under $HOME, created during framework initialization, and the $HOME updated as $HOME/$TestDir, to create all Tanzu CLI specific files
-// and not to disturb any existing Tanzu CLI files
-const TestDir = ".tanzu-cli-e2e"
-
-// TestPluginsDir is the directory under $HOME/$TestDir, to store test plugins for E2E tests
-const TestPluginsDir = ".e2e-test-plugins"
-
-// TempDirInTestDirPath is the directory under $HOME/$TestDir, to create temporary files (if any) for E2E test execution
-const TempDirInTestDirPath = "temp"
-
-const ConfigFolder = ".config"
-const TanzuFolder = "tanzu"
-const TanzuPluginsFolder = "tanzu-plugins"
-const ConfigFile = "config.yaml"
-const ConfigNGFile = "config-ng.yaml"
 
 var (
 	// TestDirPath is the absolute directory path for the E2E test execution uses to create all Tanzu CLI specific files (config, local plugins etc)
@@ -184,6 +211,7 @@ func CLICoreDescribe(text string, body func()) bool {
 
 // Framework has all helper functions to write CLI e2e test cases
 type Framework struct {
+	Exec CmdOps
 	CliOps
 	Config       ConfigCmdOps
 	KindCluster  ClusterOps
@@ -197,6 +225,7 @@ type Framework struct {
 type E2EOptions struct {
 	TanzuCommandPrefix string
 	CLIOptions
+	AdditionalFlags string
 }
 
 // CLIOptions used to configure certain options that are used in CLI lifecycle operations
@@ -239,8 +268,16 @@ func WithOverride(override bool) E2EOption {
 	}
 }
 
+// AddAdditionalFlagAndValue is to add any additional flag with value (if any) to the end of tanzu command
+func AddAdditionalFlagAndValue(flagWithValue string) E2EOption {
+	return func(opts *E2EOptions) {
+		opts.AdditionalFlags = opts.AdditionalFlags + " " + flagWithValue
+	}
+}
+
 func NewFramework() *Framework {
 	return &Framework{
+		Exec:         NewCmdOps(),
 		CliOps:       NewCliOps(),
 		Config:       NewConfOps(),
 		KindCluster:  NewKindCluster(NewDocker()),
@@ -263,7 +300,7 @@ func init() {
 	// Create a directory (if not exists) $HOME/.tanzu-cli-e2e/.config/tanzu-plugins/discovery/standalone
 	TestStandalonePluginsPath = filepath.Join(filepath.Join(filepath.Join(filepath.Join(TestDirPath, ConfigFolder), TanzuPluginsFolder), "discovery"), "standalone")
 	_ = CreateDir(TestStandalonePluginsPath)
-	// Create a directory (if not exists) $HOME/.tanzu-cli-e2e/test
+	// Create a directory (if not exists) $HOME/.tanzu-cli-e2e/temp
 	_ = CreateDir(FullPathForTempDir)
 
 	// TODO:cpamuluri: need to move plugins info to configuration file with positive and negative use cases - github issue: https://github.com/vmware-tanzu/tanzu-cli/issues/122

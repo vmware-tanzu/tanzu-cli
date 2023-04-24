@@ -57,3 +57,40 @@ type Server struct {
 	Path     string `json:"path"`
 	Type     string `json:"type"`
 }
+
+// TMCPluginsResponse is to mock the tmc endpoint response for plugins info
+type TMCPluginsResponse struct {
+	PluginsInfo TMCPluginsInfo `yaml:"pluginsInfo"`
+}
+
+type TMCPlugin struct {
+	Name               string `yaml:"name"`
+	Description        string `yaml:"description"`
+	RecommendedVersion string `yaml:"recommendedVersion"`
+}
+
+type TMCPluginsInfo struct {
+	Plugins []TMCPlugin `yaml:"plugins"`
+}
+
+type TMCPluginsMockRequestResponseMapping struct {
+	Request struct {
+		Method string `json:"method"`
+		URL    string `json:"url"`
+	} `json:"request"`
+	Response struct {
+		Status  int    `json:"status"`
+		Body    string `json:"body"`
+		Headers struct {
+			ContentType string `json:"Content-Type"`
+			Accept      string `json:"Accept"`
+		} `json:"headers"`
+	} `json:"response"`
+}
+
+type CertDetails struct {
+	CaCertificate        string `json:"ca-certificate"`
+	Host                 string `json:"host"`
+	Insecure             string `json:"insecure"`
+	SkipCertVerification string `json:"skip-cert-verification"`
+}

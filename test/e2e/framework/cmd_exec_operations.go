@@ -34,19 +34,23 @@ func NewCmdOps() CmdOps {
 
 // TanzuCmdExec executes the tanzu command by default uses `tanzu` prefix
 func (co *cmdOps) TanzuCmdExec(command string, opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error) {
-	// Default options
+	// Get Default options, and initialize Tanzu Command Prefix value as 'tanzu'
 	options := NewE2EOptions(
 		WithTanzuCommandPrefix(TanzuPrefix),
 	)
 
-	// Apply provided options
+	// Apply the options provided, which allow the user to override the Tanzu command prefix value, such as 'tz'
 	for _, opt := range opts {
 		opt(options)
 	}
 
-	// Verify if the tanzu prefix is set if not set it with default tanzu prefix value
+	// Verify whether the Tanzu prefix is set and if not, set it to the default Tanzu prefix value
 	if strings.Index(command, "%s") == 0 {
 		command = fmt.Sprintf(command, options.TanzuCommandPrefix)
+	}
+	// If any additional flags are added, then append them to the command
+	if options.AdditionalFlags != "" {
+		command += options.AdditionalFlags
 	}
 	return co.Exec(command)
 }

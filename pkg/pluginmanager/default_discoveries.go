@@ -5,10 +5,14 @@ package pluginmanager
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
+
+const True = "true"
 
 func defaultDiscoverySourceBasedOnServer(server *configtypes.Server) []configtypes.PluginDiscovery { // nolint:staticcheck // Deprecated
 	var defaultDiscoveries []configtypes.PluginDiscovery
@@ -57,6 +61,10 @@ func defaultDiscoverySourceForTMCTargetedContext(context *configtypes.Context) c
 }
 
 func appendURLScheme(endpoint string) string {
+	// At present, the e2e test environment lacks support for HTTPS, thus hardcoding HTTPS is being skipped.
+	if os.Getenv(constants.E2ETestEnvironment) == True {
+		return endpoint
+	}
 	e := strings.Split(endpoint, ":")[0]
 	if !strings.Contains(e, "https") {
 		return fmt.Sprintf("https://%s", e)

@@ -53,16 +53,18 @@ var _ = BeforeSuite(func() {
 	// set up the local central repository discovery image public key path
 	e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath)
 	Expect(e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository discovery image signature public key path", framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath))
-	os.Setenv("TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH", e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
+	os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 	// search plugin groups and make sure there plugin groups available
-	pluginGroups = SearchAllPluginGroups(tf)
+	pluginGroups, err = SearchAllPluginGroups(tf)
+	Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 
 	// check all required plugin groups (framework.PluginGroupsForLifeCycleTests) need for life cycle test are available in plugin group search output
 	Expect(framework.IsAllPluginGroupsExists(pluginGroups, framework.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 	// search plugins and make sure there are plugins available
-	pluginsSearchList = SearchAllPlugins(tf)
+	pluginsSearchList, err = SearchAllPlugins(tf)
+	Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
 	Expect(len(pluginsSearchList)).Should(BeNumerically(">", 0))
 
 	// check all required plugins (framework.PluginsForLifeCycleTests) for plugin life cycle e2e are available in plugin search output
