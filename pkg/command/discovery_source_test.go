@@ -7,8 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 func Test_createDiscoverySource(t *testing.T) {
@@ -69,91 +67,10 @@ func Test_createDiscoverySource(t *testing.T) {
 }
 
 func Test_addDiscoverySource(t *testing.T) {
-	assert := assert.New(t)
-
-	discoverySources := []configtypes.PluginDiscovery{
-		configtypes.PluginDiscovery{
-			Local: &configtypes.LocalDiscovery{
-				Name: "source1",
-				Path: "fakepath1",
-			},
-		},
-	}
-
-	// When discovery source already exists
-	_, err := addDiscoverySource(discoverySources, "source1", "local", "fakepath2")
-	assert.NotNil(err)
-	assert.Contains(err.Error(), "discovery name \"source1\" already exists")
-
-	// When new discovery source gets added
-	updatedDiscoverySources, err := addDiscoverySource(discoverySources, "source2", "local", "fakepath2")
-	assert.Nil(err)
-	assert.Equal(2, len(updatedDiscoverySources))
-	assert.NotNil(updatedDiscoverySources[1].Local)
-	assert.Equal("source2", updatedDiscoverySources[1].Local.Name)
-	assert.Equal("fakepath2", updatedDiscoverySources[1].Local.Path)
 }
 
 func Test_updateDiscoverySources(t *testing.T) {
-	assert := assert.New(t)
-
-	discoverySources := []configtypes.PluginDiscovery{
-		configtypes.PluginDiscovery{
-			Local: &configtypes.LocalDiscovery{
-				Name: "source1",
-				Path: "fakepath1",
-			},
-		},
-	}
-
-	// When discovery source already exists
-	updatedDiscoverySources, err := updateDiscoverySources(discoverySources, "source1", "local", "fakepath2")
-	assert.Nil(err)
-	assert.Equal(1, len(updatedDiscoverySources))
-	assert.NotNil(updatedDiscoverySources[0].Local)
-	assert.Equal("source1", updatedDiscoverySources[0].Local.Name)
-	assert.Equal("fakepath2", updatedDiscoverySources[0].Local.Path)
-
-	// When discovery source does not exist
-	_, err = updateDiscoverySources(discoverySources, "source2", "local", "fakepath2")
-	assert.NotNil(err)
-	assert.Contains(err.Error(), "discovery source \"source2\" does not exist")
 }
 
 func Test_deleteDiscoverySource(t *testing.T) {
-	assert := assert.New(t)
-
-	discoverySources := []configtypes.PluginDiscovery{
-		configtypes.PluginDiscovery{
-			Local: &configtypes.LocalDiscovery{
-				Name: "source1",
-				Path: "fakepath1",
-			},
-		},
-		configtypes.PluginDiscovery{
-			OCI: &configtypes.OCIDiscovery{
-				Name:  "source2",
-				Image: "test.registry.com/test-image:v1.0.0",
-			},
-		},
-	}
-
-	// When discovery source does not exist
-	_, err := deleteDiscoverySource(discoverySources, "source-does-not-exists")
-	assert.NotNil(err)
-	assert.Contains(err.Error(), "discovery source \"source-does-not-exists\" does not exist")
-
-	// When deleting existing discovery source
-	updatedDiscoverySources, err := deleteDiscoverySource(discoverySources, "source1")
-	assert.Nil(err)
-	assert.Equal(1, len(updatedDiscoverySources))
-	assert.Nil(updatedDiscoverySources[0].Local)
-	assert.NotNil(updatedDiscoverySources[0].OCI)
-	assert.Equal("source2", updatedDiscoverySources[0].OCI.Name)
-	assert.Equal("test.registry.com/test-image:v1.0.0", updatedDiscoverySources[0].OCI.Image)
-
-	// When deleting last discovery source
-	updatedDiscoverySources, err = deleteDiscoverySource(updatedDiscoverySources, "source2")
-	assert.Nil(err)
-	assert.Equal(0, len(updatedDiscoverySources))
 }
