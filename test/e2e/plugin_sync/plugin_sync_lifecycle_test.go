@@ -14,14 +14,14 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
-var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]", func() {
+var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 
 	// Use case 1: create a KIND cluster, don't apply CRD and CRs, create context, make sure no plugins are installed
 	// a. create k8s context for the KIND cluster
 	// b. create context and validate current active context
 	// c. list plugins and make sure no plugins installed
 	// d. delete current context and KIND cluster
-	Context("plugin install from group: install a plugin from a specific plugin group", func() {
+	Context("Use case: Install KIND Cluster, create context and validate plugin sync", func() {
 		var clusterInfo *framework.ClusterInfo
 		var contextName string
 		var err error
