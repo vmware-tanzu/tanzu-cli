@@ -28,10 +28,10 @@ const (
 	ConfigServerDelete = "%s config server delete %s -y"
 
 	// Plugin commands
-	AddPluginSource                     = "%s plugin source add --name %s --type %s --uri %s"
-	UpdatePluginSource                  = "%s plugin source update %s --type %s --uri %s"
+	UpdatePluginSource                  = "%s plugin source update %s --uri %s"
 	ListPluginSourcesWithJSONOutputFlag = "%s plugin source list -o json"
 	DeletePluginSource                  = "%s plugin source delete %s"
+	InitPluginDiscoverySource           = "%s plugin source init"
 	ListPluginsCmdWithJSONOutputFlag    = "%s plugin list -o json"
 	SearchPluginsCmd                    = "%s plugin search"
 	SearchPluginGroupsCmd               = "%s plugin group search"
@@ -48,7 +48,6 @@ const (
 	PluginKey                           = "%s_%s_%s" // Plugins - Name_Target_Versions
 
 	// Central repository
-	CentralRepositoryPreReleaseRepoImage     = "TANZU_CLI_PRE_RELEASE_REPO_IMAGE"
 	TanzuCliE2ETestCentralRepositoryURL      = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
 	TanzuCliE2ETestLocalCentralRepositoryURL = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL"
 
@@ -102,8 +101,7 @@ const (
 	UnableToFindPlugin                            = "unable to find plugin '%s'"
 	InvalidTargetSpecified                        = "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'"
 	InvalidTargetGlobal                           = "invalid target for plugin: global"
-	UnknownDiscoverySourceType                    = "unknown discovery source type"
-	DiscoverySourceNotFound                       = "cli discovery source not found"
+	DiscoverySourceNotFound                       = "discovery %q does not exist"
 	ErrorLogForCommandWithErrStdErrAndStdOut      = "error while executing command:'%s', error:'%s' stdErr:'%s' stdOut: '%s'"
 	FailedToConstructJSONNodeFromOutputAndErrInfo = "failed to construct json node from output:'%s' error:'%s' "
 	FailedToConstructJSONNodeFromOutput           = "failed to construct json node from output:'%s'"

@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 )
 
@@ -23,40 +24,36 @@ import (
 // 1. plugin search, install, delete, describe, list (with negative use cases)
 // 2. plugin source add/update/list/delete (with negative use cases)
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func() {
-	// use case: tanzu plugin source add, list, update, delete
-	// add plugin source
+	// use case: tanzu plugin source list, update, delete, init
 	// a. list plugin sources and validate plugin source created in previous step
 	// b. update plugin source URL
-	// c. (negative test) update plugin source URL with incorrect type (--type)
-	// d. (negative test) delete plugin source which is not exists
-	// e. delete plugin source which was created in previous test case
-	Context("plugin source use cases: tanzu plugin source add, list, update, delete", func() {
-		// Test case: add plugin source
-		It("add plugin source", func() {
-			pluginSourceName = framework.RandomString(5)
-			_, err := tf.PluginCmd.AddPluginDiscoverySource(&framework.DiscoveryOptions{Name: pluginSourceName, SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
-			Expect(err).To(BeNil(), "should not get any error for plugin source add")
-		})
+	// c. (negative test) delete plugin source which is not exists
+	// d. delete plugin source which was created in previous test case
+	// e. initialize the default plugin source
+	Context("plugin source use cases: tanzu plugin source list, update, delete, init", func() {
+		const pluginSourceName = "default"
 		// Test case: list plugin sources and validate plugin source created in previous step
 		It("list plugin source and validate previously created plugin source available", func() {
 			list, err := tf.PluginCmd.ListPluginSources()
 			Expect(err).To(BeNil(), "should not get any error for plugin source list")
 			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeTrue())
+			Expect(list[0].Image).To(Equal(e2eTestLocalCentralRepoURL))
 		})
 		// Test case: update plugin source URL
 		It("update previously created plugin source URL", func() {
-			_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: pluginSourceName, SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
+			newImage := framework.RandomString(5)
+			_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: pluginSourceName, SourceType: framework.SourceType, URI: newImage})
 			Expect(err).To(BeNil(), "should not get any error for plugin source update")
-		})
-		// Test case: (negative test) update plugin source URL with incorrect type (--type)
-		It("update previously created plugin source with incorrect type", func() {
-			_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: pluginSourceName, SourceType: framework.SourceType + framework.RandomString(3), URI: e2eTestLocalCentralRepoURL})
-			Expect(err.Error()).To(ContainSubstring(framework.UnknownDiscoverySourceType))
+			list, err := tf.PluginCmd.ListPluginSources()
+			Expect(err).To(BeNil(), "should not get any error for plugin source list")
+			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeTrue())
+			Expect(list[0].Image).To(Equal(newImage))
 		})
 		// Test case: (negative test) delete plugin source which is not exists
 		It("negative test case: delete plugin source which is not exists", func() {
-			_, err := tf.PluginCmd.DeletePluginDiscoverySource(framework.RandomString(5))
-			Expect(err.Error()).To(ContainSubstring(framework.DiscoverySourceNotFound))
+			wrongName := framework.RandomString(5)
+			_, err := tf.PluginCmd.DeletePluginDiscoverySource(wrongName)
+			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.DiscoverySourceNotFound, wrongName)))
 		})
 		// Test case: delete plugin source which was created in previous test case
 		It("delete previously created plugin source and validate with plugin source list", func() {
@@ -65,6 +62,19 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			list, err := tf.PluginCmd.ListPluginSources()
 			Expect(err).To(BeNil(), "should not get any error for plugin source list")
 			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeFalse())
+		})
+		// Test case: delete plugin source which was created in previous test case
+		It("initialize the default plugin source and validate with plugin source list", func() {
+			_, err := tf.PluginCmd.InitPluginDiscoverySource()
+			Expect(err).To(BeNil(), "should not get any error for plugin source init")
+			list, err := tf.PluginCmd.ListPluginSources()
+			Expect(err).To(BeNil(), "should not get any error for plugin source list")
+			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeTrue())
+			Expect(list[0].Image).To(Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage))
+		})
+		It("put back the E2E plugin repository", func() {
+			_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: pluginSourceName, SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
+			Expect(err).To(BeNil(), "should not get any error for plugin source update")
 		})
 	})
 	// use case: tanzu plugin clean, install and describe, list, delete

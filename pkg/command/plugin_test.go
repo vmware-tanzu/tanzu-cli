@@ -18,7 +18,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
@@ -359,10 +358,6 @@ func TestInstallPlugin(t *testing.T) {
 	assert.Nil(err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
-
-	// Bypass the environment variable for testing
-	err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, pluginmanager.PreReleasePluginRepoImageBypass)
-	assert.Nil(err)
 
 	featureArray := strings.Split(constants.FeatureContextCommand, ".")
 	err = config.SetFeature(featureArray[1], featureArray[2], "true")

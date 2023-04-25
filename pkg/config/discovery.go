@@ -4,81 +4,28 @@
 package config
 
 import (
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 )
 
-func populateDefaultStandaloneDiscovery(c *configtypes.ClientConfig) bool {
-	if c.ClientOptions == nil {
-		c.ClientOptions = &configtypes.ClientOptions{}
-	}
-	if c.ClientOptions.CLI == nil {
-		c.ClientOptions.CLI = &configtypes.CLIOptions{}
-	}
-	if c.ClientOptions.CLI.DiscoverySources == nil {
-		c.ClientOptions.CLI.DiscoverySources = make([]configtypes.PluginDiscovery, 0)
-	}
+func PopulateDefaultCentralDiscovery(force bool) error {
+	discoverySources, _ := configlib.GetCLIDiscoverySources()
 
-	defaultDiscovery := getDefaultStandaloneDiscoverySource(GetDefaultStandaloneDiscoveryType())
-	if defaultDiscovery == nil {
-		return false
-	}
-
-	matchIdx := findDiscoverySourceIndex(c.ClientOptions.CLI.DiscoverySources, func(pd configtypes.PluginDiscovery) bool {
-		return discovery.CheckDiscoveryName(pd, DefaultStandaloneDiscoveryName) ||
-			discovery.CheckDiscoveryName(pd, DefaultStandaloneDiscoveryNameLocal)
-	})
-
-	if matchIdx >= 0 {
-		if discovery.CompareDiscoverySource(c.ClientOptions.CLI.DiscoverySources[matchIdx], *defaultDiscovery, GetDefaultStandaloneDiscoveryType()) {
-			return false
+	// Add the default central plugin discovery if it is not there.
+	// If len(discoverySources)==0, we don't add the central discovery;
+	// this allows a user to delete the default central discovery and not
+	// have the CLI add it again.  A user can then use "plugin source init"
+	// to add the default discovery again.
+	if force || discoverySources == nil {
+		defaultDiscovery := configtypes.PluginDiscovery{
+			OCI: &configtypes.OCIDiscovery{
+				Name:  DefaultStandaloneDiscoveryName,
+				Image: constants.TanzuCLIDefaultCentralPluginDiscoveryImage,
+			},
 		}
-		c.ClientOptions.CLI.DiscoverySources[matchIdx] = *defaultDiscovery
-		return true
+		return configlib.SetCLIDiscoverySource(defaultDiscovery)
 	}
-
-	// Prepend default discovery to available discovery sources
-	c.ClientOptions.CLI.DiscoverySources = append([]configtypes.PluginDiscovery{*defaultDiscovery}, c.ClientOptions.CLI.DiscoverySources...)
-	return true
-}
-
-func findDiscoverySourceIndex(discoverySources []configtypes.PluginDiscovery, matcherFunc func(pd configtypes.PluginDiscovery) bool) int {
-	for i := range discoverySources {
-		if matcherFunc(discoverySources[i]) {
-			return i
-		}
-	}
-	return -1 // haven't found a match
-}
-
-func getDefaultStandaloneDiscoverySource(dsType string) *configtypes.PluginDiscovery {
-	switch dsType {
-	case common.DiscoveryTypeLocal:
-		return getDefaultStandaloneDiscoverySourceLocal()
-	case common.DiscoveryTypeOCI:
-		return getDefaultStandaloneDiscoverySourceOCI()
-	}
-	log.Warning("unsupported default standalone discovery configuration")
 	return nil
-}
-
-func getDefaultStandaloneDiscoverySourceOCI() *configtypes.PluginDiscovery {
-	return &configtypes.PluginDiscovery{
-		OCI: &configtypes.OCIDiscovery{
-			Name:  DefaultStandaloneDiscoveryName,
-			Image: GetDefaultStandaloneDiscoveryImage(),
-		},
-	}
-}
-
-func getDefaultStandaloneDiscoverySourceLocal() *configtypes.PluginDiscovery {
-	return &configtypes.PluginDiscovery{
-		Local: &configtypes.LocalDiscovery{
-			Name: DefaultStandaloneDiscoveryNameLocal,
-			Path: GetDefaultStandaloneDiscoveryLocalPath(),
-		},
-	}
 }

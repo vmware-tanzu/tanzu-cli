@@ -91,8 +91,6 @@ func Test_DiscoverPlugins(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistroForTesting()()
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
-	assertions.Nil(err)
 
 	serverPlugins, standalonePlugins := DiscoverPlugins()
 	assertions.Equal(len(expectedDiscoveredContextPlugins), len(serverPlugins))
@@ -109,7 +107,7 @@ func Test_DiscoverPlugins(t *testing.T) {
 		assertions.Equal(expectedDiscoveredPlugins[i].Target, p.Target)
 	}
 
-	err = configlib.SetFeature("global", "context-target-v2", "false")
+	err := configlib.SetFeature("global", "context-target-v2", "false")
 	assertions.Nil(err)
 
 	serverPlugins, standalonePlugins = DiscoverPlugins()
@@ -227,16 +225,12 @@ func Test_InstallPlugin_InstalledPlugins_No_Central_Repo(t *testing.T) {
 func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	assertions := assert.New(t)
 
-	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
-	assertions.Nil(err)
-
 	defer setupLocalDistroForTesting()()
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
 
 	// Try installing nonexistent plugin
-	err = InstallStandalonePlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
+	err := InstallStandalonePlugin("not-exists", "v0.2.0", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
 
@@ -321,10 +315,6 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 func Test_InstallPluginFromGroup(t *testing.T) {
 	assertions := assert.New(t)
 
-	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
-	assertions.Nil(err)
-
 	defer setupLocalDistroForTesting()()
 	execCommand = fakeInfoExecCommand
 	defer func() { execCommand = exec.Command }()
@@ -332,17 +322,13 @@ func Test_InstallPluginFromGroup(t *testing.T) {
 	// A local discovery currently does not support groups, but we can
 	// at least do negative testing
 	groupID := "vmware-tkg/v2.1.0"
-	err = InstallPluginsFromGroup("cluster", groupID)
+	err := InstallPluginsFromGroup("cluster", groupID)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), fmt.Sprintf("could not find group '%s'", groupID))
 }
 
 func Test_DiscoverPluginGroups(t *testing.T) {
 	assertions := assert.New(t)
-
-	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
-	assertions.Nil(err)
 
 	defer setupLocalDistroForTesting()()
 	execCommand = fakeInfoExecCommand
@@ -359,9 +345,6 @@ func Test_AvailablePlugins(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistroForTesting()()
-	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
-	assertions.Nil(err)
 
 	expectedDiscoveredPlugins := append(expectedDiscoveredContextPlugins, expectedDiscoveredStandalonePlugins...)
 	discoveredPlugins, err := AvailablePlugins()
@@ -463,9 +446,6 @@ func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_One_In
 	assertions := assert.New(t)
 
 	defer setupLocalDistroForTesting()()
-	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
-	assertions.Nil(err)
 
 	expectedDiscoveredPlugins := append(expectedDiscoveredContextPlugins, expectedDiscoveredStandalonePlugins...)
 	discoveredPlugins, err := AvailablePlugins()
@@ -519,9 +499,6 @@ func Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_Plugin
 	assertions := assert.New(t)
 
 	defer setupLocalDistroForTesting()()
-	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
-	assertions.Nil(err)
 
 	expectedDiscoveredPlugins := append(expectedDiscoveredContextPlugins, expectedDiscoveredStandalonePlugins...)
 	discoveredPlugins, err := AvailablePlugins()
@@ -689,12 +666,9 @@ func Test_DescribePlugin(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistroForTesting()()
-	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
-	assertions.Nil(err)
 
 	// Try to describe plugin when plugin is not installed
-	_, err = DescribePlugin("login", configtypes.TargetUnknown)
+	_, err := DescribePlugin("login", configtypes.TargetUnknown)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'login'")
 
@@ -733,12 +707,9 @@ func Test_DeletePlugin(t *testing.T) {
 	assertions := assert.New(t)
 
 	defer setupLocalDistroForTesting()()
-	// Bypass the environment variable for testing
-	err := os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage, PreReleasePluginRepoImageBypass)
-	assertions.Nil(err)
 
 	// Try to delete plugin when plugin is not installed
-	err = DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: configtypes.TargetTMC, ForceDelete: true})
+	err := DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: configtypes.TargetTMC, ForceDelete: true})
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'cluster'")
 
@@ -1364,11 +1335,6 @@ func TestGetPluginDiscoveries(t *testing.T) {
 
 	// Start with no additional discoveries
 	err := os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, "")
-	assertions.Nil(err)
-
-	// Bypass the temporary pre-release variable
-	err = os.Setenv(constants.ConfigVariablePreReleasePluginRepoImage,
-		PreReleasePluginRepoImageBypass)
 	assertions.Nil(err)
 
 	discoveries, err := getPluginDiscoveries()

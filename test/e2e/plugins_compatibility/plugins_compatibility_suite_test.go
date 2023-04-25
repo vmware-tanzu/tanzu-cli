@@ -30,7 +30,13 @@ var (
 // In the BeforeSuite search for the test-plugin-'s from the TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL test central repository
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
+
+	// setup the test central repo
+	centralURI := os.Getenv(framework.TanzuCliE2ETestCentralRepositoryURL)
+	_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: centralURI})
+	Expect(err).To(BeNil(), "should not get any error for plugin source update")
+
 	// get all plugins with name prefix "test-plugin-"
 	plugins = plugincompatibility.PluginsForCompatibilityTesting(tf)
-	Expect(len(plugins)).NotTo(BeZero(), fmt.Sprintf("there are no test-plugin-'s in test central repo:%s , make sure its valid test central repo with test-plugins", os.Getenv(framework.TanzuCliE2ETestCentralRepositoryURL)))
+	Expect(len(plugins)).NotTo(BeZero(), fmt.Sprintf("there are no test-plugin-'s in test central repo:%s , make sure its valid test central repo with test-plugins", centralURI))
 })
