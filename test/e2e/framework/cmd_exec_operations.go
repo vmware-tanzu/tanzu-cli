@@ -14,12 +14,13 @@ import (
 
 // CmdOps performs the Command line exec operations
 type CmdOps interface {
-	Exec(command string) (stdOut, stdErr *bytes.Buffer, err error)
-	ExecContainsString(command, contains string) error
-	ExecContainsAnyString(command string, contains []string) error
-	ExecContainsErrorString(command, contains string) error
-	ExecNotContainsStdErrorString(command, contains string) error
-	ExecNotContainsString(command, contains string) error
+	Exec(command string, opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error)
+	ExecContainsString(command, contains string, opts ...E2EOption) error
+	ExecContainsAnyString(command string, contains []string, opts ...E2EOption) error
+	ExecContainsErrorString(command, contains string, opts ...E2EOption) error
+	ExecNotContainsStdErrorString(command, contains string, opts ...E2EOption) error
+	ExecNotContainsString(command, contains string, opts ...E2EOption) error
+	TanzuCmdExec(command string, opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error)
 }
 
 // cmdOps is the implementation of CmdOps
@@ -31,9 +32,37 @@ func NewCmdOps() CmdOps {
 	return &cmdOps{}
 }
 
+// TanzuCmdExec executes the tanzu command by default uses `tanzu` prefix
+func (co *cmdOps) TanzuCmdExec(command string, opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error) {
+	// Default options
+	options := NewE2EOptions(
+		WithTanzuCommandPrefix(TanzuPrefix),
+	)
+
+	// Apply provided options
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	// Verify if the tanzu prefix is set if not set it with default tanzu prefix value
+	if strings.Index(command, "%s") == 0 {
+		command = fmt.Sprintf(command, options.TanzuCommandPrefix)
+	}
+	return co.Exec(command)
+}
+
 // Exec the command, exit on error
-func (co *cmdOps) Exec(command string) (stdOut, stdErr *bytes.Buffer, err error) {
+func (co *cmdOps) Exec(command string, opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error) {
+	// Default options
+	options := NewE2EOptions()
+
+	// Apply provided options
+	for _, opt := range opts {
+		opt(options)
+	}
+
 	log.Infof(ExecutingCommand, command)
+
 	cmdInput := strings.Split(command, " ")
 	cmdName := cmdInput[0]
 	cmdArgs := cmdInput[1:]
@@ -49,8 +78,8 @@ func (co *cmdOps) Exec(command string) (stdOut, stdErr *bytes.Buffer, err error)
 }
 
 // ExecContainsString checks that the given command output contains the string.
-func (co *cmdOps) ExecContainsString(command, contains string) error {
-	stdOut, _, err := co.Exec(command)
+func (co *cmdOps) ExecContainsString(command, contains string, opts ...E2EOption) error {
+	stdOut, _, err := co.Exec(command, opts...)
 	if err != nil {
 		return err
 	}
@@ -58,8 +87,8 @@ func (co *cmdOps) ExecContainsString(command, contains string) error {
 }
 
 // ExecContainsAnyString checks that the given command output contains any of the given set of strings.
-func (co *cmdOps) ExecContainsAnyString(command string, contains []string) error {
-	stdOut, _, err := co.Exec(command)
+func (co *cmdOps) ExecContainsAnyString(command string, contains []string, opts ...E2EOption) error {
+	stdOut, _, err := co.Exec(command, opts...)
 	if err != nil {
 		return err
 	}
@@ -67,8 +96,8 @@ func (co *cmdOps) ExecContainsAnyString(command string, contains []string) error
 }
 
 // ExecContainsErrorString checks that the given command stdErr output contains the string
-func (co *cmdOps) ExecContainsErrorString(command, contains string) error {
-	_, stdErr, err := co.Exec(command)
+func (co *cmdOps) ExecContainsErrorString(command, contains string, opts ...E2EOption) error {
+	_, stdErr, err := co.Exec(command, opts...)
 	if err != nil {
 		return err
 	}
@@ -76,8 +105,8 @@ func (co *cmdOps) ExecContainsErrorString(command, contains string) error {
 }
 
 // ExecNotContainsStdErrorString checks that the given command stdErr output contains the string
-func (co *cmdOps) ExecNotContainsStdErrorString(command, contains string) error {
-	_, stdErr, err := co.Exec(command)
+func (co *cmdOps) ExecNotContainsStdErrorString(command, contains string, opts ...E2EOption) error {
+	_, stdErr, err := co.Exec(command, opts...)
 	if err != nil && stdErr == nil {
 		return err
 	}
@@ -118,8 +147,8 @@ func ContainsAnyString(stdOut *bytes.Buffer, contains []string) error {
 }
 
 // ExecNotContainsString checks that the given command output not contains the string.
-func (co *cmdOps) ExecNotContainsString(command, contains string) error {
-	stdOut, _, err := co.Exec(command)
+func (co *cmdOps) ExecNotContainsString(command, contains string, opts ...E2EOption) error {
+	stdOut, _, err := co.Exec(command, opts...)
 	if err != nil {
 		return err
 	}

@@ -17,15 +17,15 @@ type ContextCmdOps interface {
 	// ContextCreateOps helps context create operations
 	ContextCreateOps
 	// UseContext helps to run 'context use' command
-	UseContext(contextName string) error
+	UseContext(contextName string, opts ...E2EOption) error
 	// GetContext helps to run `context get` command
-	GetContext(contextName string) (ContextInfo, error)
+	GetContext(contextName string, opts ...E2EOption) (ContextInfo, error)
 	// ListContext helps to run `context list` command
-	ListContext() ([]*ContextListInfo, error)
+	ListContext(opts ...E2EOption) ([]*ContextListInfo, error)
 	// DeleteContext helps to run `context delete` command
-	DeleteContext(contextName string) error
+	DeleteContext(contextName string, opts ...E2EOption) error
 	// GetActiveContext returns current active context
-	GetActiveContext(targetType string) (string, error)
+	GetActiveContext(targetType string, opts ...E2EOption) (string, error)
 }
 
 // contextCmdOps implements the interface ContextCmdOps
@@ -41,15 +41,15 @@ func NewContextCmdOps() ContextCmdOps {
 	}
 }
 
-func (cc *contextCmdOps) UseContext(contextName string) error {
-	useContextCmd := fmt.Sprintf(UseContext, contextName)
-	_, _, err := cc.cmdExe.Exec(useContextCmd)
+func (cc *contextCmdOps) UseContext(contextName string, opts ...E2EOption) error {
+	useContextCmd := fmt.Sprintf(UseContext, "%s", contextName)
+	_, _, err := cc.cmdExe.TanzuCmdExec(useContextCmd, opts...)
 	return err
 }
 
-func (cc *contextCmdOps) GetContext(contextName string) (ContextInfo, error) {
-	getContextCmd := fmt.Sprintf(GetContext, contextName)
-	out, _, err := cc.cmdExe.Exec(getContextCmd)
+func (cc *contextCmdOps) GetContext(contextName string, opts ...E2EOption) (ContextInfo, error) {
+	getContextCmd := fmt.Sprintf(GetContext, "%s", contextName)
+	out, _, err := cc.cmdExe.TanzuCmdExec(getContextCmd, opts...)
 	if err != nil {
 		return ContextInfo{}, err
 	}
@@ -62,12 +62,12 @@ func (cc *contextCmdOps) GetContext(contextName string) (ContextInfo, error) {
 	return contextInfo, nil
 }
 
-func (cc *contextCmdOps) ListContext() ([]*ContextListInfo, error) {
-	return ExecuteCmdAndBuildJSONOutput[ContextListInfo](cc.cmdExe, ListContextOutputInJSON)
+func (cc *contextCmdOps) ListContext(opts ...E2EOption) ([]*ContextListInfo, error) {
+	return ExecuteCmdAndBuildJSONOutput[ContextListInfo](cc.cmdExe, ListContextOutputInJSON, opts...)
 }
 
-func (cc *contextCmdOps) GetActiveContext(targetType string) (string, error) {
-	list, err := cc.ListContext()
+func (cc *contextCmdOps) GetActiveContext(targetType string, opts ...E2EOption) (string, error) {
+	list, err := cc.ListContext(opts...)
 	if err != nil {
 		return "", err
 	}
@@ -83,9 +83,9 @@ func (cc *contextCmdOps) GetActiveContext(targetType string) (string, error) {
 	return activeCtx, nil
 }
 
-func (cc *contextCmdOps) DeleteContext(contextName string) error {
-	deleteContextCmd := fmt.Sprintf(DeleteContext, contextName)
-	stdOut, stdErr, err := cc.cmdExe.Exec(deleteContextCmd)
+func (cc *contextCmdOps) DeleteContext(contextName string, opts ...E2EOption) error {
+	deleteContextCmd := fmt.Sprintf(DeleteContext, "%s", contextName)
+	stdOut, stdErr, err := cc.cmdExe.TanzuCmdExec(deleteContextCmd, opts...)
 	if err != nil {
 		log.Infof("failed to delete context:%s", contextName)
 		return errors.Wrapf(err, FailedToDeleteContext+", stderr:%s stdout:%s , ", stdErr.String(), stdOut.String())

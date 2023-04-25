@@ -93,15 +93,14 @@ func GetHomeDir() string {
 }
 
 // ExecuteCmdAndBuildJSONOutput is generic function to execute given command and build JSON output and return
-func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | PluginSourceInfo | types.ClientConfig | Server | ContextListInfo](cmdExe CmdOps, cmd string) ([]*T, error) {
-	out, stdErr, err := cmdExe.Exec(cmd)
+func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | PluginSourceInfo | types.ClientConfig | Server | ContextListInfo](cmdExe CmdOps, cmd string, opts ...E2EOption) ([]*T, error) {
+	out, stdErr, err := cmdExe.TanzuCmdExec(cmd, opts...)
 
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, cmd, err.Error(), stdErr.String(), out.String())
 		return nil, err
 	}
 	jsonStr := out.String()
-	log.Info(jsonStr)
 	var list []*T
 	err = json.Unmarshal([]byte(jsonStr), &list)
 	if err != nil {

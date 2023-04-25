@@ -14,35 +14,37 @@ import (
 const (
 	CliCore = "[CLI-Core]"
 
-	TanzuInit    = "tanzu init"
-	TanzuVersion = "tanzu version"
+	TanzuInit    = "%s init"
+	TanzuVersion = "%s version"
+	TanzuPrefix  = "tanzu"
+	TzPrefix     = "tz"
 
 	// Config commands
-	ConfigSet          = "tanzu config set "
-	ConfigGet          = "tanzu config get "
-	ConfigUnset        = "tanzu config unset "
-	ConfigInit         = "tanzu config init"
-	ConfigServerList   = "tanzu config server list"
-	ConfigServerDelete = "tanzu config server delete %s -y"
+	ConfigSet          = "%s config set "
+	ConfigGet          = "%s config get "
+	ConfigUnset        = "%s config unset "
+	ConfigInit         = "%s config init"
+	ConfigServerList   = "%s config server list"
+	ConfigServerDelete = "%s config server delete %s -y"
 
 	// Plugin commands
-	AddPluginSource                     = "tanzu plugin source add --name %s --type %s --uri %s"
-	UpdatePluginSource                  = "tanzu plugin source update %s --type %s --uri %s"
-	ListPluginSourcesWithJSONOutputFlag = "tanzu plugin source list -o json"
-	DeletePluginSource                  = "tanzu plugin source delete %s"
-	ListPluginsCmdWithJSONOutputFlag    = "tanzu plugin list -o json"
-	SearchPluginsCmd                    = "tanzu plugin search"
-	SearchPluginGroupsCmd               = "tanzu plugin group search"
-	InstallPluginCmd                    = "tanzu plugin install %s"
-	InstallPluginFromGroupCmd           = "tanzu plugin install %s --group %s"
-	InstallAllPluginsFromGroupCmd       = "tanzu plugin install --group %s"
-	DescribePluginCmd                   = "tanzu plugin describe %s"
-	UninstallPLuginCmd                  = "tanzu plugin delete %s --yes"
-	CleanPluginsCmd                     = "tanzu plugin clean"
-	pluginSyncCmd                       = "tanzu plugin sync"
+	AddPluginSource                     = "%s plugin source add --name %s --type %s --uri %s"
+	UpdatePluginSource                  = "%s plugin source update %s --type %s --uri %s"
+	ListPluginSourcesWithJSONOutputFlag = "%s plugin source list -o json"
+	DeletePluginSource                  = "%s plugin source delete %s"
+	ListPluginsCmdWithJSONOutputFlag    = "%s plugin list -o json"
+	SearchPluginsCmd                    = "%s plugin search"
+	SearchPluginGroupsCmd               = "%s plugin group search"
+	InstallPluginCmd                    = "%s plugin install %s"
+	InstallPluginFromGroupCmd           = "%s plugin install %s --group %s"
+	InstallAllPluginsFromGroupCmd       = "%s plugin install --group %s"
+	DescribePluginCmd                   = "%s plugin describe %s"
+	UninstallPLuginCmd                  = "%s plugin delete %s --yes"
+	CleanPluginsCmd                     = "%s plugin clean"
+	pluginSyncCmd                       = "%s plugin sync"
 	JSONOutput                          = " -o json"
 	TestPluginsPrefix                   = "test-plugin-"
-	PluginSubCommand                    = "tanzu %s"
+	PluginSubCommand                    = "%s %s"
 	PluginKey                           = "%s_%s_%s" // Plugins - Name_Target_Versions
 
 	// Central repository
@@ -56,14 +58,14 @@ const (
 	NotInstalled = "not installed"
 
 	// Context commands
-	CreateContextWithEndPoint              = "tanzu context create --endpoint %s --name %s"
-	CreateContextWithEndPointStaging       = "tanzu context create --endpoint %s --name %s --staging"
-	CreateContextWithKubeconfigFile        = "tanzu context create --kubeconfig %s --kubecontext %s --name %s"
-	CreateContextWithDefaultKubeconfigFile = "tanzu context create --kubecontext %s --name %s"
-	UseContext                             = "tanzu context use %s"
-	GetContext                             = "tanzu context get %s"
-	ListContextOutputInJSON                = "tanzu context list -o json"
-	DeleteContext                          = "tanzu context delete %s --yes"
+	CreateContextWithEndPoint              = "%s context create --endpoint %s --name %s"
+	CreateContextWithEndPointStaging       = "%s context create --endpoint %s --name %s --staging"
+	CreateContextWithKubeconfigFile        = "%s context create --kubeconfig %s --kubecontext %s --name %s"
+	CreateContextWithDefaultKubeconfigFile = "%s context create --kubecontext %s --name %s"
+	UseContext                             = "%s context use %s"
+	GetContext                             = "%s context get %s"
+	ListContextOutputInJSON                = "%s context list -o json"
+	DeleteContext                          = "%s context delete %s --yes"
 	TanzuAPIToken                          = "TANZU_API_TOKEN" //nolint:gosec
 	TanzuCliTmcUnstableURL                 = "TANZU_CLI_TMC_UNSTABLE_URL"
 
@@ -170,6 +172,29 @@ type Framework struct {
 	PluginCmd    PluginCmdOps    // performs plugin command operations
 	PluginHelper PluginHelperOps // helper (pre-setup) for plugin cmd operations
 	ContextCmd   ContextCmdOps
+}
+
+// E2EOptions used to configure certain options to customize the E2E framework
+// TanzuCommandPrefix should be set to customize the tanzu command prefix; default is tanzu
+type E2EOptions struct {
+	TanzuCommandPrefix string
+}
+
+func NewE2EOptions(options ...E2EOption) *E2EOptions {
+	e := &E2EOptions{}
+	for _, option := range options {
+		option(e)
+	}
+	return e
+}
+
+type E2EOption func(*E2EOptions)
+
+// WithTanzuCommandPrefix is to set the tanzu command prefix; default is tanzu
+func WithTanzuCommandPrefix(prefix string) E2EOption {
+	return func(opts *E2EOptions) {
+		opts.TanzuCommandPrefix = prefix
+	}
 }
 
 func NewFramework() *Framework {
