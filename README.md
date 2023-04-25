@@ -51,6 +51,7 @@ Plugin developers can use the End-to-End test framework to implement
 tests for the functionality of their plugins under a Tanzu CLI installation.
 More details found in the
 [End-to-End framework and test case implementation](test/e2e/README.md).
+Currently, CLI E2E framework does not support backward compatibility.
 
 ## Contributing
 

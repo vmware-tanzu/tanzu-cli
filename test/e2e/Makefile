@@ -1,7 +1,7 @@
 # Copyright 2023 VMware, Inc. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-E2E_TEST_OUTPUT ?= e2e-test-output.txt
+E2E_TEST_OUTPUT ?= ${ROOT_DIR}/e2e-test-output.txt
 E2E_TEST_TIMEOUT ?= 60m
 GOTEST_VERBOSE ?= -v
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
