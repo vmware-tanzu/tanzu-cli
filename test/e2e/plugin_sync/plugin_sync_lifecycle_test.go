@@ -198,7 +198,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", 
 		// Test case: e. run plugin sync and validate the plugin list
 		It("Uninstall one of the installed plugin", func() {
 			_, err = tf.PluginCmd.Sync()
-			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.UnableToFindPluginForTarget, pluginsWithIncorrectVer[0].Name, pluginsWithIncorrectVer[0].Target)))
+			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.UnableToFindPluginWithVersionForTarget, pluginsWithIncorrectVer[0].Name, pluginsWithIncorrectVer[0].Version, pluginsWithIncorrectVer[0].Target)))
 
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")

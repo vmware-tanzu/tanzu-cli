@@ -171,7 +171,7 @@ func Test_InstallPlugin_InstalledPlugins_No_Central_Repo(t *testing.T) {
 	// Try installing the feature plugin which is targeted for k8s but requesting the TMC target
 	err = InstallStandalonePlugin("feature", "v0.2.0", configtypes.TargetTMC)
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
+	assertions.Contains(err.Error(), "unable to find plugin 'feature' with version 'v0.2.0' for target 'mission-control'")
 
 	// Verify installed plugins
 	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
@@ -268,7 +268,7 @@ func Test_InstallPlugin_InstalledPlugins_Central_Repo(t *testing.T) {
 	// Try installing the feature plugin which is targeted for k8s but requesting the TMC target
 	err = InstallStandalonePlugin("feature", "v0.2.0", configtypes.TargetTMC)
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
+	assertions.Contains(err.Error(), "unable to find plugin 'feature' with version 'v0.2.0' for target 'mission-control'")
 
 	// Verify installed plugins
 	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
@@ -635,7 +635,7 @@ func Test_InstallPlugin_InstalledPlugins_From_LocalSource(t *testing.T) {
 	// Try installing the feature plugin which is targeted for k8s but requesting the TMC target
 	err = InstallPluginsFromLocalSource("feature", "v0.2.0", configtypes.TargetTMC, localPluginSourceDir, false)
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
+	assertions.Contains(err.Error(), "unable to find plugin 'feature' with version 'v0.2.0' for target 'mission-control'")
 
 	// Install login from local source directory
 	err = InstallPluginsFromLocalSource("login", "v0.2.0", configtypes.TargetUnknown, localPluginSourceDir, false)

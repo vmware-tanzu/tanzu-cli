@@ -690,9 +690,9 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 
 	if len(availablePlugins) == 0 {
 		if target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target))
 		}
-		return errors.Errorf("unable to find plugin '%v'", pluginName)
+		return errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version)
 	}
 
 	// Deal with duplicates from different plugin discovery sources
@@ -711,9 +711,9 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 	}
 	if len(matchedPlugins) == 0 {
 		if target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target))
 		}
-		return errors.Errorf("unable to find plugin '%v'", pluginName)
+		return errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version)
 	}
 
 	if len(matchedPlugins) == 1 {
@@ -755,9 +755,9 @@ func legacyPluginInstall(pluginName, version string, target configtypes.Target) 
 	}
 	if len(matchedPlugins) == 0 {
 		if target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target))
 		}
-		return errors.Errorf("unable to find plugin '%v'", pluginName)
+		return errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version)
 	}
 
 	if len(matchedPlugins) == 1 {
@@ -1159,9 +1159,9 @@ func InstallPluginsFromLocalSource(pluginName, version string, target configtype
 		}
 
 		if target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target))
 		}
-		return errors.Errorf("unable to find plugin '%v'", pluginName)
+		return errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version)
 	}
 
 	if len(matchedPlugins) == 1 {
