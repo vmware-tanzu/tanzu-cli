@@ -1,35 +1,40 @@
 # End-to-End testing in Tanzu CLI Core
 
-## What is CLI Core E2E tests
-
-End-to-End (E2E) test cases validate the Tanzu CLI Core product functionality
-in an environment that resembles a real production environment. They also
-validate the backward compatibility of plugins that are developed with
-versions of the Tanzu Plugin Runtime library older than the one used by the
-current CLI Core. The CLI Core project has unit and integration test cases
-to cover isolated functionalities (white box testing). Still, the E2E tests
-perform validation from an end-user perspective and test the product as
-a whole in a production-like environment.
-
-E2E tests ensure the consistent and reliable behavior of the CLI Core code
-base. CLI Core E2E CI pipelines are the final signal to ensure that the CLI
-Core product is functional according to product specifications.
-
 ## E2E Framework and Tools
 
-The End-to-End (E2E) test framework provides basic tooling and utility
-functions to write E2E test cases. This framework includes: executing
-any CLI Core command-line functionalities, creating k8s clusters, executing unix
-commands, performing CLI core commands, and processing their output. Apart
-from the basic framework tooling, the test cases are written and implemented using
+The CLI End-to-End (E2E) test framework framework provides basic tooling
+and utility functions to write E2E test cases for CLI functionality
+and also to write e2e tests for any CLI based plugin functionality, so
+this framework does helps for CLI developers and plugin developers to
+implement e2e test cases.
+
+This e2e test framework supports below functionalities:
+
+- Executing any CLI Core command-line functionalities
+- Creating and operating k8s KIND clusters
+- Executing any unix or command-line commands
+- Performing CLI Core commands and processing their outputs
+- Framework is extensible to more functionalities
+- Framework does implements e2e test cases for CLI functionalities
+- Plugin developers can use this framework to write their e2e tests for their plugin functionality
+
+CLI Core developers, the CLI E2E test cases are written and implemented using
 the Ginkgo Test Framework. Therefore, before writing CLI Core E2E test cases, one should be
 familiar with the Ginkgo testing framework and CLI Core E2E test framework to use
 existing tooling and functionalities.
 
+Plugin developers, can use your own test framework to implement your e2e tests
+by using the CLI E2E framework, if you see any gaps or needed improvements
+let us know we can improve the E2E framework.
+
 For more details about the **E2E framework functionalities** expand below section
 
 <details>
-    <summary>E2E Framework functionalities</summary>
+    <summary>CLI E2E Framework functionalities</summary>
+
+The CLI E2E framework is a separate [CLI E2E Framework module](https://github.com/vmware-tanzu/tanzu-cli/tree/main/test/e2e)
+in [CLI Core repository](https://github.com/vmware-tanzu/tanzu-cli), so to use the CLI E2E framework
+need to import the module "github.com/vmware-tanzu/tanzu-cli/tree/main/test/e2e"
 
 The CLI Core E2E framework has a struct type called `Framework` which provides
 all the interfaces and utility functions to implement E2E test cases,
@@ -189,7 +194,22 @@ type CliOps interface {
 
 </details>
 
-## Use cases covered in E2E tests
+## What is CLI Core E2E tests
+
+End-to-End (E2E) test cases validate the Tanzu CLI Core product functionality
+in an environment that resembles a real production environment. They also
+validate the backward compatibility of plugins that are developed with
+versions of the Tanzu Plugin Runtime library older than the one used by the
+current CLI Core. The CLI Core project has unit and integration test cases
+to cover isolated functionalities (white box testing). Still, the E2E tests
+perform validation from an end-user perspective and test the product as
+a whole in a production-like environment.
+
+E2E tests ensure the consistent and reliable behavior of the CLI Core code
+base. CLI Core E2E CI pipelines are the final signal to ensure that the CLI
+Core product is functional according to product specifications.
+
+## Use cases covered in CLI E2E test cases implementation
 
 ### End user operations
 
