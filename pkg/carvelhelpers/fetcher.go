@@ -4,17 +4,10 @@
 package carvelhelpers
 
 import (
-	"os"
-	"runtime"
-	"strings"
-
 	"github.com/pkg/errors"
 
 	ctlimg "github.com/vmware-tanzu/carvel-imgpkg/pkg/imgpkg/registry"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/clientconfighelpers"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/configpaths"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/registry"
 )
 
@@ -36,40 +29,19 @@ func GetImageDigest(imageWithTag string) (string, string, error) {
 	return NewImageOperationsImpl().GetImageDigest(imageWithTag)
 }
 
-// newRegistry returns a new registry object by also
-// taking into account for any custom registry or proxy
-// environment variable provided by the user
-func newRegistry() (registry.Registry, error) {
-	verifyCerts := true
-	skipVerifyCerts := os.Getenv(constants.ConfigVariableCustomImageRepositorySkipTLSVerify)
-	if strings.EqualFold(skipVerifyCerts, "true") {
-		verifyCerts = false
-	}
-
+// newRegistry returns a new registry object by also taking
+// into account for any custom registry provided by the user
+func newRegistry(registryHost string) (registry.Registry, error) {
 	registryOpts := &ctlimg.Opts{
-		VerifyCerts: verifyCerts,
-		Anon:        true,
+		Anon: true,
 	}
 
-	if runtime.GOOS == "windows" {
-		err := clientconfighelpers.AddRegistryTrustedRootCertsFileForWindows(registryOpts)
-		if err != nil {
-			return nil, err
-		}
+	regCertOptions, err := registry.GetRegistryCertOptions(registryHost)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to get the registry certificate configuration")
 	}
-
-	caCertBytes, err := clientconfighelpers.GetCustomRepositoryCaCertificateForClient()
-	if err == nil && len(caCertBytes) != 0 {
-		filePath, err := configpaths.GetRegistryCertFile()
-		if err != nil {
-			return nil, err
-		}
-		err = os.WriteFile(filePath, caCertBytes, 0o644)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to write the custom image registry CA cert to file '%s'", filePath)
-		}
-		registryOpts.CACertPaths = append(registryOpts.CACertPaths, filePath)
-	}
-
+	registryOpts.CACertPaths = regCertOptions.CACertPaths
+	registryOpts.VerifyCerts = !(regCertOptions.SkipCertVerify)
+	registryOpts.Insecure = regCertOptions.Insecure
 	return registry.New(registryOpts)
 }

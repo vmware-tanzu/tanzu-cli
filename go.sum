@@ -1289,8 +1289,8 @@ github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20221207131309-7323ca04b
 github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20221207131309-7323ca04b86c/go.mod h1:ukZpKQ0hf5bjWdJLjn2M6qXP+9giZWQPxt8nOfrCR+o=
 github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230415084831-9331f55d2999 h1:WITDH+wpdl/clw1hwy+2jtq4Pt//i/Mq9lQXGwg3q4c=
 github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230415084831-9331f55d2999/go.mod h1:umFZBUfJ8VI3p0VO/xocuE+4fO9s9QbytEiOqFcH/Tw=
-github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.0.0.20230425191535-014e58e69078 h1:FnqG7kCmltbUgnGJiDcokvQT1Bbvs38IrmVIUFj4P34=
-github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.0.0.20230425191535-014e58e69078/go.mod h1:FlvOcF26rX4EA+ADjYTJdFh6WVur6O4jh25FDP9Lp7E=
+github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.0.0.20230501201206-91282f5e9bea h1:bF1wFmxx7Syc4Oiv+pLnqWHKJky/A/gZ+PJ9NSPUVVM=
+github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.0.0.20230501201206-91282f5e9bea/go.mod h1:FlvOcF26rX4EA+ADjYTJdFh6WVur6O4jh25FDP9Lp7E=
 github.com/xanzy/go-gitlab v0.31.0/go.mod h1:sPLojNBn68fMUWSxIJtdVVIP8uSBYqesTfDUseX11Ug=
 github.com/xanzy/go-gitlab v0.73.1 h1:UMagqUZLJdjss1SovIC+kJCH4k2AZWXl58gJd38Y/hI=
 github.com/xanzy/go-gitlab v0.73.1/go.mod h1:d/a0vswScO7Agg1CZNz15Ic6SSvBG9vfw8egL99t4kA=
