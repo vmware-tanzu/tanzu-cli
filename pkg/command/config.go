@@ -37,6 +37,7 @@ func init() {
 		setConfigCmd,
 		unsetConfigCmd,
 		serversCmd,
+		newCertCmd(),
 	)
 	serversCmd.AddCommand(listServersCmd)
 	addDeleteServersCmd()
