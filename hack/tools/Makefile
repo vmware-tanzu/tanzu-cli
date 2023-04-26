@@ -28,6 +28,7 @@ IMGPKG_VERSION=v0.35.0
 KUBECTL_VERSION=v1.26.0
 KIND_VERSION=v0.17.0
 GINKGO_VERSION=v2.9.2
+COSIGN_VERSION=2.0.0
 
 # Host information.
 HOST_OS=$(shell go env GOOS)
@@ -43,6 +44,7 @@ IMGPKG             := $(BIN_DIR)/imgpkg
 KUBECTL            := $(BIN_DIR)/kubectl
 KIND               := $(BIN_DIR)/kind
 GINKGO             := $(BIN_DIR)/ginkgo
+COSIGN             := $(BIN_DIR)/cosign
 
 ## --------------------------------------
 ## Help
@@ -80,6 +82,11 @@ $(CONTROLLER_GEN):
 	mkdir -p $(BIN_DIR)
 	#go build -tags=tools -o $@ sigs.k8s.io/controller-tools/cmd/controller-gen
 	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_TOOLS_VERSION)
+
+cosign: $(COSIGN) ## Build controller-gen
+$(COSIGN):
+	mkdir -p $(BIN_DIR)
+	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/sigstore/cosign/v2/cmd/cosign@v$(COSIGN_VERSION)
 
 misspell: $(MISSPELL) ## Install misspell
 $(MISSPELL):

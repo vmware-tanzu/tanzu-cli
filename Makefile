@@ -43,8 +43,9 @@ IMGPKG             := $(TOOLS_BIN_DIR)/imgpkg
 KUBECTL            := $(TOOLS_BIN_DIR)/kubectl
 KIND               := $(TOOLS_BIN_DIR)/kind
 GINKGO             := $(TOOLS_BIN_DIR)/ginkgo
+COSIGN             := $(TOOLS_BIN_DIR)/cosign
 
-TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO)
+TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN)
 
 # Build and version information
 
@@ -182,7 +183,11 @@ start-test-central-repo: stop-test-central-repo ## Starts up a test central repo
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
 		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
 	fi
-	@docker run --rm -d -p 9876:5000 --name central \
+	@docker run --rm -d -p 9876:443 --name central \
+        -v $(ROOT_DIR)/hack/central-repo/certs:/certs \
+		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
+		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
+		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
 		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
 		mirror.gcr.io/library/registry:2 > /dev/null && \
 	    echo "Started docker test central repo with images:" && \
