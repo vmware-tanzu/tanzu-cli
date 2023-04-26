@@ -83,7 +83,7 @@ $(CONTROLLER_GEN):
 	#go build -tags=tools -o $@ sigs.k8s.io/controller-tools/cmd/controller-gen
 	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_TOOLS_VERSION)
 
-cosign: $(COSIGN) ## Build controller-gen
+cosign: $(COSIGN) ## Install cosign
 $(COSIGN):
 	mkdir -p $(BIN_DIR)
 	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/sigstore/cosign/v2/cmd/cosign@v$(COSIGN_VERSION)

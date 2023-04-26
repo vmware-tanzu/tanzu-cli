@@ -1,7 +1,7 @@
 // Copyright 2022 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package clientconfighelpers
+package registry
 
 // The embedded CA bundle is fetched from https://wiki.mozilla.org/CA/Included_Certificates
 // The exact URL from where the bundle is downloaded from - https://ccadb-public.secure.force.com/mozilla/IncludedRootsPEMTxt?TrustBitsInclude=Websites
