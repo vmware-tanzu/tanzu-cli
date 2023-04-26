@@ -15,7 +15,7 @@ type PluginMigrationManifest struct {
 
 // ImageCopyInfo maps the relative image path and local relative file path
 type ImageCopyInfo struct {
-	SourceTarFilePath string `yaml:"sourceFilePath"`
+	SourceTarFilePath string `yaml:"sourceTarFilePath"`
 	RelativeImagePath string `yaml:"relativeImagePath"`
 }
 

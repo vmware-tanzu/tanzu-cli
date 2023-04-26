@@ -109,13 +109,13 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
     sourceFilePath: plugin_inventory_metadata.db
     relativeImagePathWithTag: /plugin-inventory-metadata:latest
 imagesToCopy:
-    - sourceFilePath: plugin-inventory-image.tar.gz
+    - sourceTarFilePath: plugin-inventory-image.tar.gz
       relativeImagePath: /plugin-inventory
-    - sourceFilePath: bar-kubernetes-darwin_amd64-v0.0.1.tar.gz
+    - sourceTarFilePath: bar-kubernetes-darwin_amd64-v0.0.1.tar.gz
       relativeImagePath: /path/darwin/amd64/kubernetes/bar
-    - sourceFilePath: foo-global-darwin_amd64-v0.0.2.tar.gz
+    - sourceTarFilePath: foo-global-darwin_amd64-v0.0.2.tar.gz
       relativeImagePath: /path/darwin/amd64/global/foo
-    - sourceFilePath: foo-global-linux_amd64-v0.0.2.tar.gz
+    - sourceTarFilePath: foo-global-linux_amd64-v0.0.2.tar.gz
       relativeImagePath: /path/linux/amd64/global/foo
 `
 
@@ -125,9 +125,9 @@ imagesToCopy:
     sourceFilePath: plugin_inventory_metadata.db
     relativeImagePathWithTag: /plugin-inventory-metadata:latest
 imagesToCopy:
-    - sourceFilePath: plugin-inventory-image.tar.gz
+    - sourceTarFilePath: plugin-inventory-image.tar.gz
       relativeImagePath: /plugin-inventory
-    - sourceFilePath: bar-kubernetes-darwin_amd64-v0.0.1.tar.gz
+    - sourceTarFilePath: bar-kubernetes-darwin_amd64-v0.0.1.tar.gz
       relativeImagePath: /path/darwin/amd64/kubernetes/bar
 `
 

@@ -85,8 +85,8 @@ func (o *DownloadPluginBundleOptions) DownloadPluginBundle() error {
 // getSelectedPluginInfo returns the list of PluginInventoryEntry and
 // PluginGroupEntry based on the DownloadPluginBundleOptions that needs to be
 // considered for downloading plugin bundle.
-// Downloads the the plugin inventory image and selects the plugins and plugin
-// groups based on the DownloadPluginBundleOptions.Groups by quering the
+// Downloads the plugin inventory image and selects the plugins and plugin
+// groups based on the DownloadPluginBundleOptions.Groups by querying the
 // plugin inventory database
 func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventory.PluginInventoryEntry, []*plugininventory.PluginGroup, error) {
 	var err error
@@ -110,11 +110,11 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 
 	// If groups were not provided as argument select all available plugin groups and all available plugins
 	if len(o.Groups) == 0 {
-		selectedPluginGroups, err = pi.GetPluginGroups(plugininventory.PluginGroupFilter{})
+		selectedPluginGroups, err = pi.GetPluginGroups(plugininventory.PluginGroupFilter{IncludeHidden: true}) // Include the hidden plugin groups during plugin migration
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to read all plugin groups from database")
 		}
-		selectedPluginEntries, err = pi.GetAllPlugins()
+		selectedPluginEntries, err = pi.GetPlugins(&plugininventory.PluginInventoryFilter{IncludeHidden: true}) // Include the hidden plugins during plugin migration
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to read all plugins from database")
 		}
@@ -139,7 +139,7 @@ func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPlug
 		return nil, nil, errors.Errorf("incorrect plugin group %q specified", pgName)
 	}
 	pgFilter := plugininventory.PluginGroupFilter{
-		IncludeHidden: true,
+		IncludeHidden: true, // Include the hidden plugin groups during plugin migration
 		Vendor:        pgi.Vendor,
 		Publisher:     pgi.Publisher,
 		Name:          pgi.Name,
@@ -157,9 +157,10 @@ func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPlug
 	for _, pg := range pluginGroups {
 		for _, p := range pg.Plugins {
 			pif := &plugininventory.PluginInventoryFilter{
-				Name:    p.Name,
-				Target:  p.Target,
-				Version: p.Version,
+				Name:          p.Name,
+				Target:        p.Target,
+				Version:       p.Version,
+				IncludeHidden: true, // Include the hidden plugins during plugin migration
 			}
 			pluginEntries, err := pi.GetPlugins(pif)
 			if err != nil {

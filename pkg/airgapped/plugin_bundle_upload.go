@@ -69,7 +69,7 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	log.Infof("publishing plugin inventory metadata image...")
 	bundledPluginInventoryMetadataDBFilePath := filepath.Join(pluginBundleDir, manifest.InventoryMetadataImage.SourceFilePath)
 	pluginInventoryMetadataImageWithTag := filepath.Join(o.DestinationRepo, manifest.InventoryMetadataImage.RelativeImagePathWithTag)
-	err = o.mergePluginInventoryMetadata(pluginInventoryMetadataImageWithTag, bundledPluginInventoryMetadataDBFilePath, filepath.Join(tempDir, "inventory-metadata"))
+	err = o.mergePluginInventoryMetadata(pluginInventoryMetadataImageWithTag, bundledPluginInventoryMetadataDBFilePath, tempDir)
 	if err != nil {
 		return errors.Wrap(err, "error while merging the plugin inventory metadata database before uploading metadata image")
 	}

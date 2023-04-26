@@ -11,4 +11,3 @@ CREATE TABLE IF NOT EXISTS "AvailablePluginGroups" (
 		"GroupName"          TEXT NOT NULL,
 		PRIMARY KEY("Vendor", "Publisher", "GroupName")
 );
- 
