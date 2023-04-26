@@ -24,6 +24,7 @@ EOF
 
 case "$1" in
     info)  $1 "$@";;
+    env) env;;
     *) cat << EOF
 Stub plugin "__NAME__" "__VERSION__" for "__TARGET__"
 EOF
