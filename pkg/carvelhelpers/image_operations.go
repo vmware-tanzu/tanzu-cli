@@ -5,6 +5,8 @@ package carvelhelpers
 
 import (
 	"github.com/pkg/errors"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/registry"
 )
 
 // ImageOperationOptions implements the ImageOperationsImpl interface by using `imgpkg` library
@@ -18,7 +20,11 @@ func NewImageOperationsImpl() ImageOperationsImpl {
 // CopyImageToTar downloads the image as tar file
 // This is equivalent to `imgpkg copy --image <image> --to-tar <tar-file-path>` command
 func (i *ImageOperationOptions) CopyImageToTar(sourceImageName, destTarFile string) error {
-	reg, err := newRegistry()
+	registryName, err := registry.GetRegistryName(sourceImageName)
+	if err != nil {
+		return err
+	}
+	reg, err := newRegistry(registryName)
 	if err != nil {
 		return errors.Wrapf(err, "unable to initialize registry")
 	}
@@ -28,7 +34,11 @@ func (i *ImageOperationOptions) CopyImageToTar(sourceImageName, destTarFile stri
 // CopyImageFromTar publishes the image to destination repository from specified tar file
 // This is equivalent to `imgpkg copy --tar <file> --to-repo <dest-repo>` command
 func (i *ImageOperationOptions) CopyImageFromTar(sourceTarFile, destImageRepo string) error {
-	reg, err := newRegistry()
+	registryName, err := registry.GetRegistryName(destImageRepo)
+	if err != nil {
+		return err
+	}
+	reg, err := newRegistry(registryName)
 	if err != nil {
 		return errors.Wrapf(err, "unable to initialize registry")
 	}
@@ -38,7 +48,11 @@ func (i *ImageOperationOptions) CopyImageFromTar(sourceTarFile, destImageRepo st
 // DownloadImageAndSaveFilesToDir reads a plain OCI image and saves its
 // files to the specified location.
 func (i *ImageOperationOptions) DownloadImageAndSaveFilesToDir(imageWithTag, destinationDir string) error {
-	reg, err := newRegistry()
+	registryName, err := registry.GetRegistryName(imageWithTag)
+	if err != nil {
+		return err
+	}
+	reg, err := newRegistry(registryName)
 	if err != nil {
 		return errors.Wrapf(err, "unable to initialize registry")
 	}
@@ -53,7 +67,11 @@ func (i *ImageOperationOptions) DownloadImageAndSaveFilesToDir(imageWithTag, des
 // It takes os environment variables for custom repository and proxy
 // configuration into account while downloading image from repository
 func (i *ImageOperationOptions) GetFilesMapFromImage(imageWithTag string) (map[string][]byte, error) {
-	reg, err := newRegistry()
+	registryName, err := registry.GetRegistryName(imageWithTag)
+	if err != nil {
+		return nil, err
+	}
+	reg, err := newRegistry(registryName)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to initialize registry")
 	}
@@ -62,7 +80,11 @@ func (i *ImageOperationOptions) GetFilesMapFromImage(imageWithTag string) (map[s
 
 // GetImageDigest gets digest of the image
 func (i *ImageOperationOptions) GetImageDigest(imageWithTag string) (string, string, error) {
-	reg, err := newRegistry()
+	registryName, err := registry.GetRegistryName(imageWithTag)
+	if err != nil {
+		return "", "", err
+	}
+	reg, err := newRegistry(registryName)
 	if err != nil {
 		return "", "", errors.Wrapf(err, "unable to initialize registry")
 	}
@@ -77,7 +99,11 @@ func (i *ImageOperationOptions) GetImageDigest(imageWithTag string) (string, str
 
 // PushImage publishes the image to the specified location
 func (i *ImageOperationOptions) PushImage(imageWithTag string, filePaths []string) error {
-	reg, err := newRegistry()
+	registryName, err := registry.GetRegistryName(imageWithTag)
+	if err != nil {
+		return err
+	}
+	reg, err := newRegistry(registryName)
 	if err != nil {
 		return errors.Wrapf(err, "unable to initialize registry")
 	}
