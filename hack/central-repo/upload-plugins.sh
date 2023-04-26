@@ -4,6 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 ROOT_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
+# password to be used while signing the image using cosign
+# (cosign binary internally would use this environment variable while signing the image)
+export COSIGN_PASSWORD=test-cli-registry
 
 usage() {
     echo "upload-plugins.sh [-h | -d | --dry-run]"
@@ -70,7 +73,8 @@ echo "Creating an empty test Central Repository: $repoBasePath/central:empty"
 echo "======================================"
 rm -f $database
 touch $database
-${dry_run} imgpkg push -i $repoBasePath/central:empty -f $database --registry-insecure
+${dry_run} imgpkg push -i $repoBasePath/central:empty -f $database  --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/central:empty
 
 
 # Push an image with an empty table
@@ -79,7 +83,8 @@ echo "Creating a test Central Repository with no entries: $repoBasePath/central:
 echo "======================================"
 # Create db table
 cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
-${dry_run} imgpkg push -i $repoBasePath/central:emptytable -f $database --registry-insecure
+${dry_run} imgpkg push -i $repoBasePath/central:emptytable -f $database --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/central:emptytable
 
 addPlugin() {
     local name=$1
@@ -121,8 +126,8 @@ addPlugin() {
 
                 local sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$recommended','$version','false','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_path:$version');"
                 if [ "$dry_run" = "echo" ]; then
-                    echo $sql_cmd 
-                else 
+                    echo $sql_cmd
+                else
                     echo $sql_cmd | sqlite3 -batch $database
                 fi
 
@@ -131,7 +136,7 @@ addPlugin() {
                 if [ $pushBinary = "true" ]; then
                     if [ $version = "v0.0.1" ] || [ $version = "v9.9.9" ] || [ $version = "v11.11.11" ] || [ $version = "v22.22.22" ]; then
                         echo "Pushing binary for $name version $version for target $target, $os-$arch"
-                        ${dry_run} imgpkg push -i $repoBasePath/$image_path:$version -f $tmpPluginPhase2 --registry-insecure
+                        ${dry_run} imgpkg push -i $repoBasePath/$image_path:$version -f $tmpPluginPhase2 --registry-verify-certs=false
                     fi
                 fi
             done
@@ -153,15 +158,15 @@ addGroup() {
 
     local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$plugin','$target','$version', '$mandatory', '$hidden');"
     if [ "$dry_run" = "echo" ]; then
-        echo $sql_cmd 
-    else 
+        echo $sql_cmd
+    else
         echo $sql_cmd | sqlite3 -batch $database
     fi
 }
 
 k8sPlugins=(cluster feature management-cluster package secret telemetry kubernetes-release)
-tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster events iam 
-            inspection integration management-cluster policy workspace helm secret 
+tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster events iam
+            inspection integration management-cluster policy workspace helm secret
             continuousdelivery tanzupackage)
 globalPlugins=(isolated-cluster pinniped-auth)
 
@@ -186,7 +191,8 @@ for name in ${tmcPlugins[*]}; do
 done
 
 # Push small inventory file
-${dry_run} imgpkg push -i $repoBasePath/$smallImage -f $database --registry-insecure
+${dry_run} imgpkg push -i $repoBasePath/$smallImage -f $database --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$smallImage
 
 echo "======================================"
 echo "Creating large test Central Repository: $repoBasePath/$largeImage"
@@ -211,7 +217,8 @@ for (( idx=1; idx<=$numPluginsToCreate; idx++ )); do
 done
 
 # Push large inventory file
-${dry_run} imgpkg push -i $repoBasePath/$largeImage -f $database --registry-insecure
+${dry_run} imgpkg push -i $repoBasePath/$largeImage -f $database --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$largeImage
 
 # Create an additional image as if it was a sandbox build
 echo "======================================"
@@ -235,7 +242,8 @@ for name in ${tmcPlugins[*]}; do
 done
 
 # Push sanbox inventory file
-${dry_run} imgpkg push -i $repoBasePath/$sanboxImage1 -f $database --registry-insecure
+${dry_run} imgpkg push -i $repoBasePath/$sanboxImage1 -f $database --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$sanboxImage1
 
 # Create a second additional image as if it was a sandbox build
 echo "======================================"
@@ -261,7 +269,8 @@ for name in ${tmcPlugins[*]}; do
 done
 
 # Push sandbox inventory file
-${dry_run} imgpkg push -i $repoBasePath/$sanboxImage2 -f $database --registry-insecure
+${dry_run} imgpkg push -i $repoBasePath/$sanboxImage2 -f $database --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$sanboxImage2
 
 echo "======================================"
 echo "Creating small airgapped test Central Repository: $repoBasePath/$smallAirgappedImage"
@@ -293,8 +302,8 @@ for name in ${tmcPlugins[0]}; do
 done
 
 # Push airgapped inventory file
-${dry_run} imgpkg push -i $repoBasePath/$smallAirgappedImage -f $database --registry-insecure
-
+${dry_run} imgpkg push -i $repoBasePath/$smallAirgappedImage -f $database --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$smallAirgappedImage
 
 echo "======================================"
 echo "Creating large airgapped test Central Repository: $repoBasePath/$largeAirgappedImage"
@@ -326,6 +335,7 @@ for name in ${tmcPlugins[*]}; do
 done
 
 # Push airgapped inventory file
-${dry_run} imgpkg push -i $repoBasePath/$largeAirgappedImage -f $database --registry-insecure
+${dry_run} imgpkg push -i $repoBasePath/$largeAirgappedImage -f $database --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry  -y $repoBasePath/$largeAirgappedImage
 
 rm -f $database
