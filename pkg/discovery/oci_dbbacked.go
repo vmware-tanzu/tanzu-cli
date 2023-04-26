@@ -83,18 +83,23 @@ func (od *DBBackedOCIDiscovery) GetAllGroups() ([]*plugininventory.PluginGroup, 
 func (od *DBBackedOCIDiscovery) listPluginsFromInventory() ([]Discovered, error) {
 	var pluginEntries []*plugininventory.PluginInventoryEntry
 	var err error
+
+	shouldIncludeHidden, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting))
 	if od.criteria == nil {
-		pluginEntries, err = od.getInventory().GetAllPlugins()
+		pluginEntries, err = od.getInventory().GetPlugins(&plugininventory.PluginInventoryFilter{
+			IncludeHidden: shouldIncludeHidden,
+		})
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		pluginEntries, err = od.getInventory().GetPlugins(&plugininventory.PluginInventoryFilter{
-			Name:    od.criteria.Name,
-			Target:  od.criteria.Target,
-			Version: od.criteria.Version,
-			OS:      od.criteria.OS,
-			Arch:    od.criteria.Arch,
+			Name:          od.criteria.Name,
+			Target:        od.criteria.Target,
+			Version:       od.criteria.Version,
+			OS:            od.criteria.OS,
+			Arch:          od.criteria.Arch,
+			IncludeHidden: shouldIncludeHidden,
 		})
 		if err != nil {
 			return nil, err
@@ -133,7 +138,10 @@ func (od *DBBackedOCIDiscovery) listPluginsFromInventory() ([]Discovered, error)
 }
 
 func (od *DBBackedOCIDiscovery) listGroupsFromInventory() ([]*plugininventory.PluginGroup, error) {
-	return od.getInventory().GetPluginGroups(plugininventory.PluginGroupFilter{})
+	shouldIncludeHidden, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting))
+	return od.getInventory().GetPluginGroups(plugininventory.PluginGroupFilter{
+		IncludeHidden: shouldIncludeHidden,
+	})
 }
 
 // fetchInventoryImage downloads the OCI image containing the information about the

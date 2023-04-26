@@ -14,6 +14,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
@@ -95,6 +96,25 @@ var piEntry3 = PluginInventoryEntry{
 		},
 	},
 }
+var hiddenPluginEntry = PluginInventoryEntry{
+	Name:               "hidden-plugin",
+	Target:             types.TargetK8s,
+	Description:        "Hidden plugin for K8s",
+	Publisher:          "tkg",
+	Vendor:             "vmware",
+	RecommendedVersion: "",
+	Hidden:             true,
+	Artifacts: distribution.Artifacts{
+		"v0.0.1": []distribution.Artifact{
+			{
+				OS:     "linux",
+				Arch:   "amd64",
+				Digest: "0000000000",
+				Image:  "vmware/tmc/linux/amd64/tmc/hidden-plugin:v0.0.1",
+			},
+		},
+	},
+}
 
 var pluginGroup1 = PluginGroup{
 	Name:      "v1.0.0",
@@ -105,6 +125,19 @@ var pluginGroup1 = PluginGroup{
 		{
 			PluginIdentifier: PluginIdentifier{Name: "management-cluster", Target: types.TargetK8s, Version: "v0.28.0"},
 			Mandatory:        false,
+		},
+	},
+}
+
+var groupWithHiddenPlugin = PluginGroup{
+	Name:      "v1.0.0",
+	Vendor:    "fakevendor",
+	Publisher: "nothidden",
+	Hidden:    false,
+	Plugins: []*PluginGroupPluginEntry{
+		{
+			PluginIdentifier: PluginIdentifier{Name: "hidden-plugin", Target: types.TargetK8s, Version: "v0.0.1"},
+			Mandatory:        true,
 		},
 	},
 }
@@ -1258,6 +1291,8 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			Expect(err).To(BeNil(), "failed to insert plugin2")
 			err = inventory.InsertPlugin(&piEntry3)
 			Expect(err).To(BeNil(), "failed to insert plugin3")
+			err = inventory.InsertPlugin(&hiddenPluginEntry)
+			Expect(err).To(BeNil(), "failed to insert hidden-plugin")
 		})
 		AfterEach(func() {
 			os.RemoveAll(tmpDir)
@@ -1325,6 +1360,34 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(groups[0].Plugins[0].Target).To(Equal(pluginGroup1.Plugins[0].Target))
 				Expect(groups[0].Plugins[0].Version).To(Equal(pluginGroup1.Plugins[0].Version))
 				Expect(groups[0].Plugins[0].Mandatory).To(Equal(pluginGroup1.Plugins[0].Mandatory))
+			})
+		})
+		Context("When inserting a plugin-group containing hidden plugins that are present in the database", func() {
+			It("should return an error", func() {
+				err = inventory.InsertPluginGroup(&groupWithHiddenPlugin, false)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("specified plugin 'name:hidden-plugin', 'target:kubernetes', 'version:v0.0.1' is not present in the database"))
+			})
+			It("should not return error if TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY==true and GetPluginGroups should return the correct result", func() {
+				err = os.Setenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting, "true")
+				defer os.Unsetenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting)
+				Expect(err).To(BeNil())
+
+				err = inventory.InsertPluginGroup(&groupWithHiddenPlugin, false)
+				Expect(err).To(BeNil())
+
+				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(1))
+				Expect(groups[0].Name).To(Equal(groupWithHiddenPlugin.Name))
+				Expect(groups[0].Vendor).To(Equal(groupWithHiddenPlugin.Vendor))
+				Expect(groups[0].Publisher).To(Equal(groupWithHiddenPlugin.Publisher))
+				Expect(groups[0].Hidden).To(Equal(groupWithHiddenPlugin.Hidden))
+				Expect(len(groups[0].Plugins)).To(Equal(1))
+				Expect(groups[0].Plugins[0].Name).To(Equal(groupWithHiddenPlugin.Plugins[0].Name))
+				Expect(groups[0].Plugins[0].Target).To(Equal(groupWithHiddenPlugin.Plugins[0].Target))
+				Expect(groups[0].Plugins[0].Version).To(Equal(groupWithHiddenPlugin.Plugins[0].Version))
+				Expect(groups[0].Plugins[0].Mandatory).To(Equal(groupWithHiddenPlugin.Plugins[0].Mandatory))
 			})
 		})
 		Context("When inserting a plugin-group which already exists in the database", func() {
