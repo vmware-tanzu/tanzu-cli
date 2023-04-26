@@ -27,10 +27,15 @@ docker build -t ${IMAGE} ${ROOT_DIR} -f - <<- EOF
         curl -L https://carvel.dev/install.sh | K14SIO_INSTALL_BIN_DIR=/tmp/carvel bash && \
         install /tmp/carvel/imgpkg /usr/bin
 
+    RUN mkdir /tmp/cosign/ && \
+        curl -L https://github.com/sigstore/cosign/releases/download/v2.0.0/cosign-linux-amd64 -o /tmp/cosign/cosign && \
+        install /tmp/cosign/cosign /usr/bin
+
    WORKDIR /work
    COPY upload-plugins.sh .
    COPY fakeplugin.sh .
    COPY create_tables.sql .
+   COPY cosign-key-pair ./cosign-key-pair
 EOF
 
 # Generate both the small and large test central repositories
