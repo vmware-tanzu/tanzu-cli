@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -163,6 +164,9 @@ func getPromptOpts() []component.PromptOpt {
 		// This uses stderr because it needs to work inside the kubectl exec plugin flow where stdout is reserved.
 		promptOpts = append(promptOpts, component.WithStdio(os.Stdin, os.Stderr, os.Stderr))
 	}
+	// Add default validations, required
+	promptOpts = append(promptOpts, component.WithValidator(survey.Required), component.WithValidator(component.NoOnlySpaces))
+
 	return promptOpts
 }
 

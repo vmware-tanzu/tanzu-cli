@@ -23,6 +23,7 @@ import (
 )
 
 const cmdNameSet = "set"
+const True = "true"
 
 // NewRootCmd creates a root command.
 func NewRootCmd() (*cobra.Command, error) {
