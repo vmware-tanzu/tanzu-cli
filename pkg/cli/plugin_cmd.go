@@ -22,6 +22,7 @@ func GetCmdForPlugin(p *PluginInfo) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			runner := NewRunner(p.Name, p.InstallationPath, args)
 			ctx := context.Background()
+			setupPluginEnv()
 			return runner.Run(ctx)
 		},
 		DisableFlagParsing: true,
@@ -110,6 +111,19 @@ func getHelpArguments() []string {
 
 	// Then add the -h flag for whatever we found
 	return append(helpArgs, "-h")
+}
+
+// setupPluginEnv prepares some extra environment variables
+// that communicate certain information to plugins.
+func setupPluginEnv() {
+	env := make(map[string]string, 10)
+
+	// The location of the tanzu binary
+	env["TANZU_BIN"] = os.Args[0]
+
+	for key, val := range env {
+		os.Setenv(key, val)
+	}
 }
 
 // GetTestCmdForPlugin returns a cobra command for the test plugin.
