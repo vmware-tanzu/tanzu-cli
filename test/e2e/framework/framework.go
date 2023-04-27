@@ -26,6 +26,8 @@ const (
 	ConfigInit         = "%s config init"
 	ConfigServerList   = "%s config server list"
 	ConfigServerDelete = "%s config server delete %s -y"
+	ConfigCertAdd      = "%s config cert add --host %s --ca-certificate %s --skip-cert-verify %s --insecure %s"
+	ConfigCertDelete   = "%s config cert delete %s"
 
 	// Plugin commands
 	UpdatePluginSource                  = "%s plugin source update %s --uri %s"
@@ -49,8 +51,11 @@ const (
 	LegacyPluginKey                     = "%s_%s"    // Plugins - Name_Target_Versions or Name_Version_Status for legacy cli plugins
 
 	// Central repository
-	TanzuCliE2ETestCentralRepositoryURL      = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
-	TanzuCliE2ETestLocalCentralRepositoryURL = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL"
+	TanzuCliE2ETestCentralRepositoryURL                                             = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
+	TanzuCliE2ETestLocalCentralRepositoryURL                                        = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL"
+	TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH"
+	TanzuCliE2ETestLocalCentralRepositoryHost                                       = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST"
+	TanzuCliE2ETestLocalCentralRepositoryCACertPath                                 = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH"
 
 	// CLI Coexistence
 	CLICoexistenceLegacyTanzuCLIInstallationPath = "TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR"
@@ -176,7 +181,7 @@ func CLICoreDescribe(text string, body func()) bool {
 // Framework has all helper functions to write CLI e2e test cases
 type Framework struct {
 	CliOps
-	Config       ConfigLifecycleOps
+	Config       ConfigCmdOps
 	KindCluster  ClusterOps
 	PluginCmd    PluginCmdOps    // performs plugin command operations
 	PluginHelper PluginHelperOps // helper (pre-setup) for plugin cmd operations
