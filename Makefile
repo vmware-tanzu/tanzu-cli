@@ -178,19 +178,29 @@ test: fmt ## Run Tests
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
 e2e-cli-core: start-test-central-repo e2e-cli-core-all ## Execute all CLI Core E2E Tests
 
+.PHONY: setup-custom-cert-for-test-central-repo
+setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test-central-repo in the config file
+	@if [ ! -d $(ROOT_DIR)/hack/central-repo/certs ]; then \
+    	wget https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2;\
+  		tar xjf $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2 -C $(ROOT_DIR)/hack/central-repo/;\
+	fi
+	echo "Adding docker test central repo cert to the config file"
+	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
+	$(ROOT_DIR)/bin/tanzu config cert add --host localhost:9876 --ca-certificate $(ROOT_DIR)/hack/central-repo/certs/localhost.crt
+
 .PHONY: start-test-central-repo
-start-test-central-repo: stop-test-central-repo ## Starts up a test central repository locally with docker
+start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
 		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
 	fi
 	@docker run --rm -d -p 9876:443 --name central \
-        -v $(ROOT_DIR)/hack/central-repo/certs:/certs \
+		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
 		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
 		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
 		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
 		mirror.gcr.io/library/registry:2 > /dev/null && \
-	    echo "Started docker test central repo with images:" && \
+		echo "Started docker test central repo with images:" && \
 		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 
 .PHONY: stop-test-central-repo

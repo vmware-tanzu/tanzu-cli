@@ -77,7 +77,6 @@ type DiscoveryOptions struct {
 
 type pluginCmdOps struct {
 	cmdExe CmdOps
-	PluginCmdOps
 }
 
 func NewPluginLifecycleOps() PluginCmdOps {
