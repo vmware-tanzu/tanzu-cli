@@ -27,8 +27,7 @@ type PluginGroup struct {
 
 type PluginSourceInfo struct {
 	Name  string `json:"name"`
-	Scope string `json:"scope"`
-	Type  string `json:"type"`
+	Image string `json:"image"`
 }
 
 type ContextListInfo struct {

@@ -36,11 +36,14 @@ const numberOfPluginsToInstall = 3
 // BeforeSuite initializes and set up the environment to execute the plugin life cycle and plugin group life cycle end-to-end test cases
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
+
 	// check E2E test central repo URL (TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL)
 	e2eTestLocalCentralRepoURL = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryURL)
 	Expect(e2eTestLocalCentralRepoURL).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository URL", framework.TanzuCliE2ETestLocalCentralRepositoryURL))
-	// set E2E test central repo URL to TANZU_CLI_PRE_RELEASE_REPO_IMAGE
-	os.Setenv(framework.CentralRepositoryPreReleaseRepoImage, e2eTestLocalCentralRepoURL)
+
+	// setup the test central repo
+	_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
+	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
 	// search plugin groups and make sure there plugin groups available
 	pluginGroups = helper.SearchAllPluginGroups(tf)

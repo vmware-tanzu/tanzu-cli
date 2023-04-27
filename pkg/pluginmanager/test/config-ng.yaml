@@ -1,3 +1,11 @@
+cli:
+  discoverySources:
+    - local:
+        name: default-local
+        path: default
+    - local:
+        name: fake
+        path: standalone
 currentContext:
   kubernetes: mgmt
   mission-control: tmc-fake

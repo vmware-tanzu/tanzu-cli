@@ -13,16 +13,11 @@ import (
 func init() {
 	// Acquire tanzu config lock
 	config.AcquireTanzuConfigLock()
-	defer config.ReleaseTanzuConfigLock()
 
 	c, err := config.GetClientConfigNoLock()
 	if err != nil {
 		log.Warningf("unable to get client config: %v", err)
 	}
-	// Note: Commenting the below line since CLI wouldn't support any default discovery going forward.
-	//      Users have to add the discovery sources by using `tanzu plugin source add` command
-	// TODO: update/delete the below line after CLI make changes related to centralized repository
-	// addedDefaultDiscovery := populateDefaultStandaloneDiscovery(c)
 	addedFeatureFlags := AddDefaultFeatureFlagsIfMissing(c, constants.DefaultCliFeatureFlags)
 	addedEdition := addDefaultEditionIfMissing(c)
 	addedBomRepo := AddBomRepoIfMissing(c)
@@ -32,5 +27,16 @@ func init() {
 
 	if addedFeatureFlags || addedEdition || addedCompatabilityFile || addedBomRepo || addedContexts {
 		_ = config.StoreClientConfig(c)
+	}
+
+	// We need to release the config lock before calling PopulateDefaultCentralDiscovery() because
+	// PopulateDefaultCentralDiscovery() handles the locking of the config file itself by
+	// using the config file higher-level APIs
+	config.ReleaseTanzuConfigLock()
+
+	// Can only check for config.IsFeatureActivated() once the feature flags are setup
+	// by the above calls.
+	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
+		_ = PopulateDefaultCentralDiscovery(false)
 	}
 }

@@ -57,10 +57,10 @@ func setupLocalDistroForTesting() func() {
 	common.DefaultLocalPluginDistroDir = filepath.Join(tmpDir, "distro")
 	common.DefaultCacheDir = filepath.Join(tmpDir, "cache")
 
-	tkgConfigFile := filepath.Join(tmpDir, "tanzu_config.yaml")
-	tkgConfigNextGenFile := filepath.Join(tmpDir, "tanzu_config_ng.yaml")
-	os.Setenv("TANZU_CONFIG", tkgConfigFile)
-	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigNextGenFile)
+	configFile := filepath.Join(tmpDir, "tanzu_config.yaml")
+	configNextGenFile := filepath.Join(tmpDir, "tanzu_config_ng.yaml")
+	os.Setenv("TANZU_CONFIG", configFile)
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", configNextGenFile)
 	os.Setenv("HOME", tmpHomeDir)
 
 	err = copy.Copy(filepath.Join("test", "local"), common.DefaultLocalPluginDistroDir)
@@ -68,12 +68,12 @@ func setupLocalDistroForTesting() func() {
 		log.Fatal(err, "Error while setting local distro for testing")
 	}
 
-	err = copy.Copy(filepath.Join("test", "config.yaml"), tkgConfigFile)
+	err = copy.Copy(filepath.Join("test", "config.yaml"), configFile)
 	if err != nil {
 		log.Fatal(err, "Error while coping tanzu config file for testing")
 	}
 
-	err = copy.Copy(filepath.Join("test", "config-ng.yaml"), tkgConfigNextGenFile)
+	err = copy.Copy(filepath.Join("test", "config-ng.yaml"), configNextGenFile)
 	if err != nil {
 		log.Fatal(err, "Error while coping tanzu config next gen file for testing")
 	}

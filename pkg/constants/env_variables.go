@@ -10,7 +10,6 @@ const (
 
 const (
 	AllowedRegistries                                 = "ALLOWED_REGISTRY"
-	ConfigVariablePreReleasePluginRepoImage           = "TANZU_CLI_PRE_RELEASE_REPO_IMAGE"
 	ConfigVariableAdditionalDiscoveryForTesting       = "TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY"
 	ConfigVariableIncludeDeactivatedPluginsForTesting = "TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY"
 	// PluginDiscoveryImageSignatureVerificationSkipList is a comma separated list of discovery image urls

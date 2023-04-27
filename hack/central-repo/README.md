@@ -24,7 +24,7 @@ For the `sandbox2:small` image, the `v22.22.22` of the plugins can be installed.
 The steps to follow to use the test central repo are:
 
 1. Start the test repo with `make start-test-central-repo`.
-1. Configure the plugin source for the test central repo: `tz config set env.TANZU_CLI_PRE_RELEASE_REPO_IMAGE localhost:9876/tanzu-cli/plugins/central:small`
+1. Configure the plugin source for the test central repo: `tz plugin source update default -u localhost:9876/tanzu-cli/plugins/central:small`
 
 Here are the exact commands:
 
@@ -33,7 +33,7 @@ cd tanzu-cli
 make build
 make start-test-central-repo
 alias tz=$(pwd)/bin/tanzu
-tz config set env.TANZU_CLI_PRE_RELEASE_REPO_IMAGE localhost:9876/tanzu-cli/plugins/central:small
+tz plugin source update default -u localhost:9876/tanzu-cli/plugins/central:small
 
 tz plugin search
 tz plugin install cluster --target tmc
@@ -52,7 +52,7 @@ TMC context (`v0.0.1`), but will install them from the test Central Repository.
 To use the large test central repo instead:
 
 ```bash
-tz config set env.TANZU_CLI_PRE_RELEASE_REPO_IMAGE localhost:9876/tanzu-cli/plugins/central:large
+tz plugin source update default -u localhost:9876/tanzu-cli/plugins/central:large
 ```
 
 To stop the central repos: `make stop-test-central-repo`.
