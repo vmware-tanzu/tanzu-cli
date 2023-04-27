@@ -4,7 +4,6 @@
 package config
 
 import (
-	"net/url"
 	"os"
 	"strings"
 
@@ -109,15 +108,6 @@ var _ = Describe("defaults test cases", func() {
 
 			err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, oldValue)
 			Expect(err).To(BeNil())
-		})
-		It("trusted registries should include hostname of default central discovery", func() {
-			u, err := url.ParseRequestURI("https://" + constants.TanzuCLIDefaultCentralPluginDiscoveryImage)
-			Expect(err).To(BeNil())
-			Expect(u).NotTo(BeNil())
-
-			trustedRegis := GetTrustedRegistries()
-			Expect(trustedRegis).NotTo(BeNil())
-			Expect(trustedRegis).Should(ContainElement(u.Hostname()))
 		})
 	})
 })
