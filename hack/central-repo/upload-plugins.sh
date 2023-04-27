@@ -284,7 +284,6 @@ cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 for name in ${globalPlugins[0]}; do
     addPlugin $name global true v0.0.1
     addPlugin $name global true v9.9.9
-    addGroup vmware tkg v9.9.9 $name global v9.9.9
 done
 
 for name in ${k8sPlugins[0]}; do
@@ -317,7 +316,6 @@ cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 for name in ${globalPlugins[*]}; do
     addPlugin $name global true v0.0.1
     addPlugin $name global true v9.9.9
-    addGroup vmware tkg v9.9.9 $name global v9.9.9
 done
 
 for name in ${k8sPlugins[*]}; do
