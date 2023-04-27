@@ -27,4 +27,7 @@ type Registry interface {
 	// CopyImageFromTar publishes the image to destination repository from specified tar file
 	// This is equivalent to `imgpkg copy --tar <file> --to-repo <dest-repo>` command
 	CopyImageFromTar(sourceTarFile, destImageRepo string) error
+	// PushImage publishes the image to the specified location
+	// This is equivalent to `imgpkg push -i <image> -f <filepath>`
+	PushImage(imageWithTag string, filePaths []string) error
 }

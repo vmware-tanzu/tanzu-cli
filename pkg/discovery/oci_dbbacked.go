@@ -13,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/airgapped"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
@@ -147,9 +148,11 @@ func (od *DBBackedOCIDiscovery) listGroupsFromInventory() ([]*plugininventory.Pl
 // fetchInventoryImage downloads the OCI image containing the information about the
 // inventory of this discovery and stores it in the cache directory.
 func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
-	newCacheHashFile := od.checkImageCache()
-	if newCacheHashFile == "" {
-		// The cache can be re-used.  We are done.
+	// check the cache to see if downloaded plugin inventory database is up-to-date or not
+	// by comparing the image digests
+	newCacheHashFileForInventoryImage, newCacheHashFileForMetadataImage := od.checkImageCache()
+	if newCacheHashFileForInventoryImage == "" && newCacheHashFileForMetadataImage == "" {
+		// The cache can be re-used. We are done.
 		return nil
 	}
 
@@ -167,26 +170,78 @@ func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 		log.Fatal(nil, errMsg)
 	}
 
-	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, od.pluginDataDir); err != nil {
-		return errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
+	// download plugin inventory image to get the 'plugin_inventory.db'
+	// also handle the air-gapped scenario where additional plugin inventory metadata image is present
+	err := od.downloadInventoryDatabase()
+	if err != nil {
+		return err
 	}
 
 	// Now that everything is ready, create the digest hash file
-	_, _ = os.Create(newCacheHashFile)
+	if newCacheHashFileForInventoryImage != "" {
+		_, _ = os.Create(newCacheHashFileForInventoryImage)
+	}
+	// Also create digest hash file for inventory metadata image if not empty
+	if newCacheHashFileForMetadataImage != "" {
+		_, _ = os.Create(newCacheHashFileForMetadataImage)
+	}
 
 	return nil
 }
 
-// checkImageCache will get the image digest of this discovery
-// and check if the cache already contains the up-to-date image.
+// downloadInventoryDatabase downloads plugin inventory image to get the 'plugin_inventory.db'
+//
+// Additional check for airgapped environment as below:
+// Also check if plugin inventory metadata image is present or not. if present, downloads the inventory
+// metadata image to get the 'plugin_inventory_metadata.db' and update the 'plugin_inventory.db'
+// based on the 'plugin_inventory_metadata.db'
+func (od *DBBackedOCIDiscovery) downloadInventoryDatabase() error {
+	tempDir1, err := os.MkdirTemp("", "")
+	if err != nil {
+		return errors.Wrap(err, "unable to create temp directory")
+	}
+	tempDir2, err := os.MkdirTemp("", "")
+	if err != nil {
+		return errors.Wrap(err, "unable to create temp directory")
+	}
+	defer os.RemoveAll(tempDir1)
+	defer os.RemoveAll(tempDir2)
+
+	// Download the plugin inventory image and save to tempDir1
+	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, tempDir1); err != nil {
+		return errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
+	}
+
+	inventoryDBFilePath := filepath.Join(tempDir1, plugininventory.SQliteDBFileName)
+	metadataDBFilePath := filepath.Join(tempDir2, plugininventory.SQliteInventoryMetadataDBFileName)
+
+	// Download the plugin inventory metadata image if exists and save to tempDir2
+	pluginInventoryMetadataImage, _ := airgapped.GetPluginInventoryMetadataImage(od.image)
+	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(pluginInventoryMetadataImage, tempDir2); err == nil {
+		// Update the plugin inventory database (plugin_inventory.db) based on the plugin
+		// inventory metadata database (plugin_inventory_metadata.db)
+		err = plugininventory.NewSQLiteInventoryMetadata(metadataDBFilePath).UpdatePluginInventoryDatabase(inventoryDBFilePath)
+		if err != nil {
+			return errors.Wrap(err, "error while updating inventory database based on the inventory metadata database")
+		}
+	}
+
+	// Copy the inventory database file from temp directory to pluginDataDir
+	return utils.CopyFile(inventoryDBFilePath, filepath.Join(od.pluginDataDir, plugininventory.SQliteDBFileName))
+}
+
+// checkImageCache will get the plugin inventory image digest as well as
+// plugin inventory metadata image digest if exists for this discovery
+// and check if the cache already contains the up-to-date database.
+// Function returns two strings (hashFileForInventoryImage, HashFileForMetadataImage)
 // It returns an empty string if the cache can be used.  Otherwise
 // it returns the name of the digest file that must be created once
 // the new DB image has been downloaded.
-func (od *DBBackedOCIDiscovery) checkImageCache() string {
+func (od *DBBackedOCIDiscovery) checkImageCache() (string, string) {
 	// Get the latest digest of the discovery image.
 	// If the cache already contains the image with this digest
 	// we do not need to verify its signature nor to download it again.
-	_, hashHexVal, err := carvelhelpers.GetImageDigest(od.image)
+	_, hashHexValInventoryImage, err := carvelhelpers.GetImageDigest(od.image)
 	if err != nil {
 		// This will happen when the user has configured an invalid image discovery URI
 		log.Warningf("Unable to resolve the plugin discovery image: %v", err)
@@ -194,14 +249,35 @@ func (od *DBBackedOCIDiscovery) checkImageCache() string {
 		log.Fatal(nil, fmt.Sprintf("Fatal: plugins discovery image resolution failed. Please check that the repository image URL %q is correct ", od.image))
 	}
 
-	// We store the digest hash of the cached DB as a file named "digest.<hash>.
-	// If this file exists, we are done.  If not, we remove the current digest file
-	// as we are about to download a new DB and create a new digest file.
-	// First check any existing "digest.*" file; there should only be one, but
-	// to protect ourselves, we check first and if there are more then one due
-	// to some bug, we clean them up and invalidate the cache.
-	correctHashFile := filepath.Join(od.pluginDataDir, "digest."+hashHexVal)
-	matches, _ := filepath.Glob(filepath.Join(od.pluginDataDir, "digest.*"))
+	correctHashFileForInventoryImage := od.checkDigestFileExistence(hashHexValInventoryImage, "")
+
+	pluginInventoryMetadataImage, _ := airgapped.GetPluginInventoryMetadataImage(od.image)
+	_, hashHexValMetadataImage, _ := carvelhelpers.GetImageDigest(pluginInventoryMetadataImage)
+	// Always store the metadata image digest file even if the image does not exists
+	// If image does not exists a file named `metadata.digest.` will be stored
+	// If image exists a file names `metadata.digest.<hexval>` will be stored
+	// It is important to store the metadata digest file irrespective of image exists
+	// or not for future comparisons and validating the cache
+	// We do this, for this case:
+	// 	- Point the discovery to "image-1" (which has corresponding metadata image defined) [Generally airgapped repository]
+	// 	- Later, change to point to discovery "image-2" (which doesn't have corresponding metadata image present) [Generally Production repository]
+	// 	The cache invalidation was not happening this time if the digest of "image-1" and "image-2" are same, but since we modify
+	// 	the DB content in the air-gapped scenario, we have to invalidate the cache.
+	correctHashFileForMetadataImage := od.checkDigestFileExistence(hashHexValMetadataImage, "metadata.")
+
+	return correctHashFileForInventoryImage, correctHashFileForMetadataImage
+}
+
+// checkDigestFileExistence check the digest file already exists in the cache or not
+// We store the digest hash of the cached DB as a file named "<digestPrefix>digest.<hash>.
+// If this file exists, we are done. If not, we remove the current digest file
+// as we are about to download a new DB and create a new digest file.
+// First check any existing "<digestPrefix>digest.*" file; there should only be one, but
+// to protect ourselves, we check first and if there are more then one due
+// to some bug, we clean them up and invalidate the cache.
+func (od *DBBackedOCIDiscovery) checkDigestFileExistence(hashHexVal, digestPrefix string) string {
+	correctHashFile := filepath.Join(od.pluginDataDir, digestPrefix+"digest."+hashHexVal)
+	matches, _ := filepath.Glob(filepath.Join(od.pluginDataDir, digestPrefix+"digest.*"))
 	if len(matches) > 1 {
 		// Too many digest files.  This is a bug!  Cleanup the cache.
 		log.V(4).Warningf("Too many digest files in the cache!  Invalidating the cache.")

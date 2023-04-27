@@ -37,7 +37,13 @@ func CopyFile(sourceFile, destFile string) error {
 	if err != nil {
 		return err
 	}
-
+	dirName := filepath.Dir(destFile)
+	if _, serr := os.Stat(dirName); serr != nil {
+		merr := os.MkdirAll(dirName, os.ModePerm)
+		if merr != nil {
+			return merr
+		}
+	}
 	err = os.WriteFile(destFile, input, constants.ConfigFilePermissions)
 	return err
 }

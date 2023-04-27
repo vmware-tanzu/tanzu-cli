@@ -8,24 +8,34 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/airgapped"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 )
 
 type downloadPluginBundleOptions struct {
 	pluginDiscoveryOCIImage string
 	tarFile                 string
+	groups                  []string
 }
 
 var dpbo downloadPluginBundleOptions
 
-func newDownloadBundlePluginCmd() *cobra.Command { // nolint:dupl
+func newDownloadBundlePluginCmd() *cobra.Command {
 	var downloadBundleCmd = &cobra.Command{
 		Use:   "download-bundle",
 		Short: "Download plugin bundle to the local system",
 		Long:  "Download plugin bundle to the local system",
+		Example: `
+# Download the plugin bundle for specific group from default discovery source
+tanzu plugin download-bundle --to-tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --group vmware-tkg/default:v1.0.0
+
+# Download the plugin bundle with entire plugin repository from custom discovery source
+tanzu plugin download-bundle --image custom.registry.vmware.com/tkg/tanzu-plugins/plugin-inventory:latest --to-tar /tmp/plugin_bundle_complete.tar.gz
+		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			options := airgapped.DownloadPluginBundleOptions{
 				PluginInventoryImage: dpbo.pluginDiscoveryOCIImage,
 				ToTar:                dpbo.tarFile,
+				Groups:               dpbo.groups,
 				ImageProcessor:       carvelhelpers.NewImageOperationsImpl(),
 			}
 			return options.DownloadPluginBundle()
@@ -33,10 +43,10 @@ func newDownloadBundlePluginCmd() *cobra.Command { // nolint:dupl
 	}
 
 	f := downloadBundleCmd.Flags()
-	f.StringVarP(&dpbo.pluginDiscoveryOCIImage, "image", "", "", "URI of the plugin discovery image providing the plugins")
+	f.StringVarP(&dpbo.pluginDiscoveryOCIImage, "image", "", constants.TanzuCLIDefaultCentralPluginDiscoveryImage, "URI of the plugin discovery image providing the plugins")
 	f.StringVarP(&dpbo.tarFile, "to-tar", "", "", "local tar file path to store the plugin images")
+	f.StringSliceVarP(&dpbo.groups, "group", "", []string{}, "only download the plugins specified in the plugin group (can specify multiple)")
 
-	_ = downloadBundleCmd.MarkFlagRequired("image")
 	_ = downloadBundleCmd.MarkFlagRequired("to-tar")
 
 	return downloadBundleCmd
@@ -49,11 +59,15 @@ type uploadPluginBundleOptions struct {
 
 var upbo uploadPluginBundleOptions
 
-func newUploadBundlePluginCmd() *cobra.Command { // nolint:dupl
+func newUploadBundlePluginCmd() *cobra.Command {
 	var uploadBundleCmd = &cobra.Command{
 		Use:   "upload-bundle",
 		Short: "Upload plugin bundle to a repository",
 		Long:  "Upload plugin bundle to a repository",
+		Example: `
+# Upload the plugin bundle to the remote repository
+tanzu plugin upload-bundle --tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/
+tanzu plugin upload-bundle --tar /tmp/plugin_bundle_complete.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			options := airgapped.UploadPluginBundleOptions{
 				Tar:             upbo.sourceTar,
