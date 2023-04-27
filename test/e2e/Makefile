@@ -42,7 +42,7 @@ e2e-cli-plugin-compatibility-test:
 	@if [ "${TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL}" = "" ]; then \
 		echo "***Skipping Plugin Compatibility test cases because environment variables TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL is not set***" ; \
 	else \
-		export TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
+		export TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
 		export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
 		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
 		${GO} test ${ROOT_DIR}/test/e2e/plugins_compatibility -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
@@ -54,7 +54,6 @@ e2e-cli-plugin-lifecycle-sync-test:
 		echo "***Skipping Plugin life cycle test cases because environment variables TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL is not set***" ; \
 	else \
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
-		export TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
 		export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
 		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
 		${GO} test ${ROOT_DIR}/test/e2e/plugin_lifecycle -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \

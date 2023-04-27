@@ -40,9 +40,6 @@ type PluginBasicOps interface {
 
 // PluginSourceOps helps 'plugin source' commands
 type PluginSourceOps interface {
-	// AddPluginDiscoverySource adds plugin discovery source, and returns stdOut and error info
-	AddPluginDiscoverySource(discoveryOpts *DiscoveryOptions, opts ...E2EOption) (string, error)
-
 	// UpdatePluginDiscoverySource updates plugin discovery source, and returns stdOut and error info
 	UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOptions, opts ...E2EOption) (string, error)
 
@@ -51,6 +48,9 @@ type PluginSourceOps interface {
 
 	// ListPluginSources returns all available plugin discovery sources
 	ListPluginSources(opts ...E2EOption) ([]*PluginSourceInfo, error)
+
+	// InitPluginDiscoverySource initializes the plugin source to its default value, and returns stdOut and error info
+	InitPluginDiscoverySource(opts ...E2EOption) (string, error)
 }
 
 type PluginGroupOps interface {
@@ -86,15 +86,9 @@ func NewPluginLifecycleOps() PluginCmdOps {
 	}
 }
 
-func (po *pluginCmdOps) AddPluginDiscoverySource(discoveryOpts *DiscoveryOptions, opts ...E2EOption) (string, error) {
-	addCmd := fmt.Sprintf(AddPluginSource, "%s", discoveryOpts.Name, discoveryOpts.SourceType, discoveryOpts.URI)
-	out, _, err := po.cmdExe.TanzuCmdExec(addCmd, opts...)
-	return out.String(), err
-}
-
 func (po *pluginCmdOps) UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOptions, opts ...E2EOption) (string, error) {
-	addCmd := fmt.Sprintf(UpdatePluginSource, "%s", discoveryOpts.Name, discoveryOpts.SourceType, discoveryOpts.URI)
-	out, _, err := po.cmdExe.TanzuCmdExec(addCmd, opts...)
+	updateCmd := fmt.Sprintf(UpdatePluginSource, "%s", discoveryOpts.Name, discoveryOpts.URI)
+	out, _, err := po.cmdExe.TanzuCmdExec(updateCmd, opts...)
 	return out.String(), err
 }
 
@@ -107,6 +101,15 @@ func (po *pluginCmdOps) DeletePluginDiscoverySource(pluginSourceName string, opt
 	out, stdErr, err := po.cmdExe.TanzuCmdExec(deleteCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, deleteCmd, err.Error(), stdErr.String(), out.String())
+	}
+	return out.String(), err
+}
+
+func (po *pluginCmdOps) InitPluginDiscoverySource(opts ...E2EOption) (string, error) {
+	initCmd := fmt.Sprintf(InitPluginDiscoverySource, "%s")
+	out, stdErr, err := po.cmdExe.TanzuCmdExec(initCmd, opts...)
+	if err != nil {
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, initCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return out.String(), err
 }

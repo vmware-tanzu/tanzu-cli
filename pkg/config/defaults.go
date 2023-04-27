@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
@@ -126,16 +127,17 @@ func GetTrustedRegistries() []string {
 		trustedRegistries = append(trustedRegistries, customImageRepo)
 	}
 
-	// If the pre-release plugin repo variable is set, add its host to the list of trusted registries
-	if preReleaseRepoImage := os.Getenv(constants.ConfigVariablePreReleasePluginRepoImage); preReleaseRepoImage != "" {
-		if u, err := url.ParseRequestURI("https://" + preReleaseRepoImage); err == nil {
-			trustedRegistries = append(trustedRegistries, u.Hostname())
+	// Add the configured central plugin discovery images to the trusted registries
+	discoveries, err := configlib.GetCLIDiscoverySources()
+	if err == nil && discoveries != nil {
+		for _, discovery := range discoveries {
+			// These discoveries only support OCI images
+			if discovery.OCI != nil {
+				if u, err := url.ParseRequestURI("https://" + discovery.OCI.Image); err == nil {
+					trustedRegistries = append(trustedRegistries, u.Hostname())
+				}
+			}
 		}
-	}
-
-	// Add default central plugin discovery image to the trusted registries
-	if u, err := url.ParseRequestURI("https://" + constants.TanzuCLIDefaultCentralPluginDiscoveryImage); err == nil {
-		trustedRegistries = append(trustedRegistries, u.Hostname())
 	}
 
 	// Add any additional test central plugin discovery images to the trusted registries

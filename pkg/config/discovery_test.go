@@ -5,146 +5,167 @@ package config
 
 import (
 	"os"
-	"testing"
+	"strings"
 
-	"github.com/tj/assert"
-
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
-func TestConfigPopulateDefaultStandaloneDiscovery(t *testing.T) {
-	cfg := &configtypes.ClientConfig{
-		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				DiscoverySources: []configtypes.PluginDiscovery{},
-			},
-		},
-	}
-	configureTestDefaultStandaloneDiscoveryOCI()
+var _ = Describe("Populate default central discovery", func() {
+	var (
+		configFile   *os.File
+		configFileNG *os.File
+		err          error
+	)
+	BeforeEach(func() {
+		configFile, err = os.CreateTemp("", "config")
+		Expect(err).To(BeNil())
+		os.Setenv("TANZU_CONFIG", configFile.Name())
 
-	assert := assert.New(t)
+		configFileNG, err = os.CreateTemp("", "config_ng")
+		Expect(err).To(BeNil())
+		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 
-	added := populateDefaultStandaloneDiscovery(cfg)
-	assert.Equal(true, added)
-	assert.Equal(len(cfg.ClientOptions.CLI.DiscoverySources), 1)
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[0].OCI.Name, DefaultStandaloneDiscoveryName)
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[0].OCI.Image, "fake.image.repo/package/standalone-plugins:v1.0.0")
-}
+		featureArray := strings.Split(constants.FeatureContextCommand, ".")
+		err = configlib.SetFeature(featureArray[1], featureArray[2], "true")
+		Expect(err).To(BeNil())
+	})
+	AfterEach(func() {
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+		os.RemoveAll(configFile.Name())
+		os.RemoveAll(configFileNG.Name())
+	})
+	Context("when no discovery exists", func() {
+		It("should create the default central discovery when 'force==false'", func() {
+			err = PopulateDefaultCentralDiscovery(false)
+			Expect(err).To(BeNil())
 
-func TestConfigPopulateDefaultStandaloneDiscoveryWhenDefaultDiscoveryExistsAndIsSame(t *testing.T) {
-	cfg := &configtypes.ClientConfig{
-		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				DiscoverySources: []configtypes.PluginDiscovery{
-					configtypes.PluginDiscovery{
-						OCI: &configtypes.OCIDiscovery{
-							Name:  DefaultStandaloneDiscoveryName,
-							Image: "fake.image.repo/package/standalone-plugins:v1.0.0",
-						},
-					},
+			discoverySources, err := configlib.GetCLIDiscoverySources()
+			Expect(err).To(BeNil())
+			Expect(len(discoverySources)).To(Equal(1))
+			// It should be an OCI discovery with a specific name and image
+			Expect(discoverySources[0].OCI).ToNot(BeNil())
+			Expect(discoverySources[0].OCI.Name).To(Equal(DefaultStandaloneDiscoveryName))
+			Expect(discoverySources[0].OCI.Image).To(Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage))
+		})
+		It("should create the default central discovery when 'force==true'", func() {
+			err = PopulateDefaultCentralDiscovery(true)
+			Expect(err).To(BeNil())
+
+			discoverySources, err := configlib.GetCLIDiscoverySources()
+			Expect(err).To(BeNil())
+			Expect(len(discoverySources)).To(Equal(1))
+			// It should be an OCI discovery with a specific name and image
+			Expect(discoverySources[0].OCI).ToNot(BeNil())
+			Expect(discoverySources[0].OCI.Name).To(Equal(DefaultStandaloneDiscoveryName))
+			Expect(discoverySources[0].OCI.Image).To(Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage))
+		})
+	})
+	Context("when the default discovery already exists", func() {
+		BeforeEach(func() {
+			err = PopulateDefaultCentralDiscovery(false)
+			Expect(err).To(BeNil())
+		})
+		It("should keep the default central discovery when 'force==false'", func() {
+			err = PopulateDefaultCentralDiscovery(false)
+			Expect(err).To(BeNil())
+
+			discoverySources, err := configlib.GetCLIDiscoverySources()
+			Expect(err).To(BeNil())
+			Expect(len(discoverySources)).To(Equal(1))
+			// It should be an OCI discovery with a specific name and image
+			Expect(discoverySources[0].OCI).ToNot(BeNil())
+			Expect(discoverySources[0].OCI.Name).To(Equal(DefaultStandaloneDiscoveryName))
+			Expect(discoverySources[0].OCI.Image).To(Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage))
+		})
+		It("should keep the default central discovery when 'force==true'", func() {
+			err = PopulateDefaultCentralDiscovery(true)
+			Expect(err).To(BeNil())
+
+			discoverySources, err := configlib.GetCLIDiscoverySources()
+			Expect(err).To(BeNil())
+			Expect(len(discoverySources)).To(Equal(1))
+			// It should be an OCI discovery with a specific name and image
+			Expect(discoverySources[0].OCI).ToNot(BeNil())
+			Expect(discoverySources[0].OCI.Name).To(Equal(DefaultStandaloneDiscoveryName))
+			Expect(discoverySources[0].OCI.Image).To(Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage))
+		})
+	})
+	Context("when a different discovery already exists", func() {
+		const imageName = "different/image"
+		BeforeEach(func() {
+			err := configlib.SetCLIDiscoverySource(types.PluginDiscovery{
+				OCI: &types.OCIDiscovery{
+					Name:  DefaultStandaloneDiscoveryName,
+					Image: imageName,
 				},
-			},
-		},
-	}
-	configureTestDefaultStandaloneDiscoveryOCI()
+			})
+			Expect(err).To(BeNil())
+		})
+		It("should keep the existing discovery when 'force==false'", func() {
+			err = PopulateDefaultCentralDiscovery(false)
+			Expect(err).To(BeNil())
 
-	assert := assert.New(t)
+			discoverySources, err := configlib.GetCLIDiscoverySources()
+			Expect(err).To(BeNil())
+			Expect(len(discoverySources)).To(Equal(1))
+			// It should be an OCI discovery with a specific name and image
+			Expect(discoverySources[0].OCI).ToNot(BeNil())
+			Expect(discoverySources[0].OCI.Name).To(Equal(DefaultStandaloneDiscoveryName))
+			Expect(discoverySources[0].OCI.Image).To(Equal(imageName))
+		})
+		It("should replace the existing discovery when 'force==true'", func() {
+			err = PopulateDefaultCentralDiscovery(true)
+			Expect(err).To(BeNil())
 
-	added := populateDefaultStandaloneDiscovery(cfg)
-	assert.Equal(false, added)
-	assert.Equal(len(cfg.ClientOptions.CLI.DiscoverySources), 1)
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[0].OCI.Name, DefaultStandaloneDiscoveryName)
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[0].OCI.Image, "fake.image.repo/package/standalone-plugins:v1.0.0")
-}
+			discoverySources, err := configlib.GetCLIDiscoverySources()
+			Expect(err).To(BeNil())
+			Expect(len(discoverySources)).To(Equal(1))
+			// It should be an OCI discovery with a specific name and image
+			Expect(discoverySources[0].OCI).ToNot(BeNil())
+			Expect(discoverySources[0].OCI.Name).To(Equal(DefaultStandaloneDiscoveryName))
+			Expect(discoverySources[0].OCI.Image).To(Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage))
+		})
+	})
+	Context("when a the default central discovery was deleted by the user", func() {
+		BeforeEach(func() {
+			err = PopulateDefaultCentralDiscovery(false)
+			Expect(err).To(BeNil())
 
-func TestConfigPopulateDefaultStandaloneDiscoveryWhenDefaultDiscoveryExistsAndIsNotSame(t *testing.T) {
-	cfg := &configtypes.ClientConfig{
-		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				DiscoverySources: []configtypes.PluginDiscovery{
-					configtypes.PluginDiscovery{
-						OCI: &configtypes.OCIDiscovery{
-							Name:  DefaultStandaloneDiscoveryName,
-							Image: "fake.image/path:v2.0.0",
-						},
-					},
-					configtypes.PluginDiscovery{
-						OCI: &configtypes.OCIDiscovery{
-							Name:  "additional-discovery",
-							Image: "additional-discovery/path:v1.0.0",
-						},
-					},
-				},
-			},
-		},
-	}
-	configureTestDefaultStandaloneDiscoveryOCI()
+			err := configlib.DeleteCLIDiscoverySource(DefaultStandaloneDiscoveryName)
+			Expect(err).To(BeNil())
+			discoverySources, err := configlib.GetCLIDiscoverySources()
+			Expect(err).To(BeNil())
+			Expect(discoverySources).ToNot(BeNil())
+			Expect(len(discoverySources)).To(Equal(0))
+		})
+		It("should not add the default discovery when 'force==false'", func() {
+			err = PopulateDefaultCentralDiscovery(false)
+			Expect(err).To(BeNil())
 
-	assert := assert.New(t)
+			discoverySources, err := configlib.GetCLIDiscoverySources()
+			Expect(err).To(BeNil())
+			Expect(discoverySources).ToNot(BeNil())
+			Expect(len(discoverySources)).To(Equal(0))
+		})
+		It("should add the default discovery when 'force==true'", func() {
+			err = PopulateDefaultCentralDiscovery(true)
+			Expect(err).To(BeNil())
 
-	added := populateDefaultStandaloneDiscovery(cfg)
-	assert.Equal(true, added)
-	assert.Equal(len(cfg.ClientOptions.CLI.DiscoverySources), 2)
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[0].OCI.Name, DefaultStandaloneDiscoveryName)
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[0].OCI.Image, "fake.image.repo/package/standalone-plugins:v1.0.0")
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[1].OCI.Name, "additional-discovery")
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[1].OCI.Image, "additional-discovery/path:v1.0.0")
-}
-
-func TestConfigPopulateDefaultStandaloneDiscoveryLocal(t *testing.T) {
-	cfg := &configtypes.ClientConfig{
-		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				DiscoverySources: []configtypes.PluginDiscovery{},
-			},
-		},
-	}
-
-	configureTestDefaultStandaloneDiscoveryLocal()
-
-	assert := assert.New(t)
-
-	added := populateDefaultStandaloneDiscovery(cfg)
-	assert.Equal(true, added)
-	assert.Equal(len(cfg.ClientOptions.CLI.DiscoverySources), 1)
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[0].Local.Name, DefaultStandaloneDiscoveryNameLocal)
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[0].Local.Path, "local/path")
-}
-
-func TestConfigPopulateDefaultStandaloneDiscoveryEnvVariables(t *testing.T) {
-	cfg := &configtypes.ClientConfig{
-		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				DiscoverySources: []configtypes.PluginDiscovery{},
-			},
-		},
-	}
-
-	configureTestDefaultStandaloneDiscoveryOCI()
-
-	os.Setenv(constants.ConfigVariableCustomImageRepository, "env.fake.image.repo")
-	os.Setenv(constants.ConfigVariableDefaultStandaloneDiscoveryImagePath, "package/env/standalone-plugins")
-	os.Setenv(constants.ConfigVariableDefaultStandaloneDiscoveryImageTag, "v2.0.0")
-
-	assert := assert.New(t)
-
-	added := populateDefaultStandaloneDiscovery(cfg)
-	assert.Equal(true, added)
-	assert.Equal(len(cfg.ClientOptions.CLI.DiscoverySources), 1)
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[0].OCI.Name, DefaultStandaloneDiscoveryName)
-	assert.Equal(cfg.ClientOptions.CLI.DiscoverySources[0].OCI.Image, "env.fake.image.repo/package/env/standalone-plugins:v2.0.0")
-}
-
-func configureTestDefaultStandaloneDiscoveryOCI() {
-	DefaultStandaloneDiscoveryType = "oci"
-	DefaultStandaloneDiscoveryRepository = "fake.image.repo"
-	DefaultStandaloneDiscoveryImagePath = "package/standalone-plugins"
-	DefaultStandaloneDiscoveryImageTag = "v1.0.0"
-}
-
-func configureTestDefaultStandaloneDiscoveryLocal() {
-	DefaultStandaloneDiscoveryType = "local"
-	DefaultStandaloneDiscoveryLocalPath = "local/path"
-}
+			discoverySources, err := configlib.GetCLIDiscoverySources()
+			Expect(err).To(BeNil())
+			Expect(len(discoverySources)).To(Equal(1))
+			// It should be an OCI discovery with a specific name and image
+			Expect(discoverySources[0].OCI).ToNot(BeNil())
+			Expect(discoverySources[0].OCI.Name).To(Equal(DefaultStandaloneDiscoveryName))
+			Expect(discoverySources[0].OCI.Image).To(Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage))
+		})
+	})
+})

@@ -109,9 +109,6 @@ type PluginBasicOps interface {
 }
 // PluginSourceOps helps 'plugin source' commands
 type PluginSourceOps interface {
-    // AddPluginDiscoverySource adds plugin discovery source, and returns stdOut and error info
-    AddPluginDiscoverySource(discoveryOpts *DiscoveryOptions) (string, error)
-
     // UpdatePluginDiscoverySource updates plugin discovery source, and returns stdOut and error info
     UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOptions) (string, error)
 
@@ -120,6 +117,9 @@ type PluginSourceOps interface {
 
     // ListPluginSources returns all available plugin discovery sources
     ListPluginSources() ([]*PluginSourceInfo, error)
+
+    // InitPluginDiscoverySource initializes the plugin source to its default value, and returns stdOut and error info
+    InitPluginDiscoverySource(opts ...E2EOption) (string, error)
 }
 type PluginGroupOps interface {
     // SearchPluginGroups performs plugin group search

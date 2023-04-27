@@ -49,8 +49,6 @@ const (
 	PluginManifestFileName = "plugin_manifest.yaml"
 	// PluginFileName is the file name for the plugin info.
 	PluginFileName = "plugin.yaml"
-
-	PreReleasePluginRepoImageBypass = "TEST_BYPASS"
 )
 
 var execCommand = exec.Command
@@ -197,31 +195,6 @@ func DiscoverPluginGroups() ([]*discovery.DiscoveredPluginGroups, error) {
 	}
 
 	return discoverPluginGroups(discoveries)
-}
-
-// getPreReleasePluginDiscovery
-// For pre-releases CLI points to a default staging central plugin discovery image
-// from where the CLI will discover plugins.
-// For pre-releases, CLI also allows default discovery image to be overridden by using
-// an environment variable and pointing to the different repository of plugins.
-//
-// This is because the configuration cfg.ClientOptions.CLI.DiscoverySources
-// is read by older CLIs so we don't want to modify it.
-// TODO(khouzam): remove before 1.0
-func getPreReleasePluginDiscovery() ([]configtypes.PluginDiscovery, error) {
-	centralRepoTestImage := os.Getenv(constants.ConfigVariablePreReleasePluginRepoImage)
-	if centralRepoTestImage == "" {
-		centralRepoTestImage = constants.TanzuCLIDefaultCentralPluginDiscoveryImage
-	} else if centralRepoTestImage == PreReleasePluginRepoImageBypass {
-		return nil, nil
-	}
-	return []configtypes.PluginDiscovery{
-		{
-			OCI: &configtypes.OCIDiscovery{
-				Name:  "default",
-				Image: centralRepoTestImage,
-			},
-		}}, nil
 }
 
 // getAdditionalTestPluginDiscoveries returns an array of plugin discoveries that
@@ -1505,28 +1478,12 @@ func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
 	if !configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		// Look for testing discoveries.  Those should be stored and searched AFTER the central repo.
 		testDiscoveries = getAdditionalTestPluginDiscoveries()
-
-		// Look for the pre-release Central Repository discovery
-		pd, err := getPreReleasePluginDiscovery()
-		if err != nil {
-			return testDiscoveries, err
-		}
-		// If pd is nil without an error, we bypass the prerelease discovery
-		// and fallback to the normal plugin source configuration.
-		if pd != nil {
-			// The central repository discovery MUST be searched first
-			// so we insert before the test discoveries
-			return append(pd, testDiscoveries...), nil
-		}
 	}
 
-	discoverySources, _ := configlib.GetCLIDiscoverySources()
-	if discoverySources == nil {
-		return testDiscoveries, nil
-	}
 	// The configured discoveries should be searched BEFORE the test discoveries.
 	// For example, if the staging central repo is added as a test discovery, it
 	// may contain older versions of a plugin that is now published to the production
 	// central repo; we therefore need to search the test discoveries last.
+	discoverySources, _ := configlib.GetCLIDiscoverySources()
 	return append(discoverySources, testDiscoveries...), nil
 }
