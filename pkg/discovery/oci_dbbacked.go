@@ -246,13 +246,16 @@ func (od *DBBackedOCIDiscovery) checkImageCache() (string, string) {
 	}
 
 	correctHashFileForInventoryImage := od.checkDigestFileExistance(hashHexValInventoryImage, "")
-	correctHashFileForMetadataImage := ""
 
 	pluginInventoryMetadataImage, _ := airgapped.GetPluginInventoryMetadataImage(od.image)
-	_, hashHexValMetadataImage, err := carvelhelpers.GetImageDigest(pluginInventoryMetadataImage)
-	if err == nil {
-		correctHashFileForMetadataImage = od.checkDigestFileExistance(hashHexValMetadataImage, "metadata.")
-	}
+	_, hashHexValMetadataImage, _ := carvelhelpers.GetImageDigest(pluginInventoryMetadataImage)
+	// Always store the metadata image digest file even if the image does not exists
+	// If image does not exists a file named `metadata.digest.` will be stored
+	// If image exists a file names `metadata.digest.<hexval>` will be stored
+	// It is important to store the metadata digest file irrespective of image exists
+	// or not for future comparisons and validating the cache
+	correctHashFileForMetadataImage := od.checkDigestFileExistance(hashHexValMetadataImage, "metadata.")
+
 	return correctHashFileForInventoryImage, correctHashFileForMetadataImage
 }
 
