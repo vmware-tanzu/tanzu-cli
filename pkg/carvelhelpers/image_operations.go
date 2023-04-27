@@ -74,3 +74,12 @@ func (i *ImageOperationOptions) GetImageDigest(imageWithTag string) (string, str
 
 	return hashAlgorithm, hashHexVal, nil
 }
+
+// PushImage publishes the image to the specified location
+func (i *ImageOperationOptions) PushImage(imageWithTag string, filePaths []string) error {
+	reg, err := newRegistry()
+	if err != nil {
+		return errors.Wrapf(err, "unable to initialize registry")
+	}
+	return reg.PushImage(imageWithTag, filePaths)
+}

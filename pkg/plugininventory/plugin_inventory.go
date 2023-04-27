@@ -8,6 +8,9 @@
 package plugininventory
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
@@ -108,6 +111,16 @@ type PluginGroupPluginEntry struct {
 	Mandatory bool
 }
 
+// PluginGroupIdentifier uniquely identifies a plugin group
+type PluginGroupIdentifier struct {
+	// Vendor of the group
+	Vendor string
+	// Publisher of the group
+	Publisher string
+	// Name of the group
+	Name string
+}
+
 // PluginGroup represents a list of plugins.
 // The user will specify a group using
 // "<Vendor>-<Publisher>/<Name>:<Version>
@@ -123,6 +136,27 @@ type PluginGroup struct {
 	Hidden bool
 	// The list of plugins specified by this group
 	Plugins []*PluginGroupPluginEntry
+}
+
+func PluginGroupToID(pg *PluginGroup) string {
+	return fmt.Sprintf("%s-%s/%s", pg.Vendor, pg.Publisher, pg.Name)
+}
+
+func PluginGroupIdentifierFromID(id string) *PluginGroupIdentifier {
+	pg := &PluginGroupIdentifier{}
+	arr := strings.Split(id, "/")
+	if len(arr) != 2 {
+		return pg
+	}
+	pg.Name = arr[1]
+
+	arr1 := strings.Split(arr[0], "-")
+	if len(arr1) != 2 {
+		return pg
+	}
+	pg.Vendor = arr1[0]
+	pg.Publisher = arr1[1]
+	return pg
 }
 
 // PluginGroupFilter allows to specify different criteria for
