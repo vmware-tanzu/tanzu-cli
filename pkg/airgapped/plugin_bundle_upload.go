@@ -98,6 +98,7 @@ func (o *UploadPluginBundleOptions) mergePluginInventoryMetadata(pluginInventory
 		if err != nil {
 			return err
 		}
+		log.Infof("plugin inventory metadata image %q is present. Merging the plugin inventory metadata", pluginInventoryMetadataImageWithTag)
 	} else {
 		log.Infof("plugin inventory metadata image %q is not present. Skipping merging of the plugin inventory metadata", pluginInventoryMetadataImageWithTag)
 	}

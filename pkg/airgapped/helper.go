@@ -23,11 +23,11 @@ func GetPluginInventoryMetadataImage(pluginInventoryImage string) (string, error
 	return fmt.Sprintf("%s-metadata:%s", ref.Repository(), ref.Tag()), nil
 }
 
-// GetImageRelativePath returns relative path of the image based on `basePath`
-// E.g. If image is `fake.repo.com/plugin/plugin-inventory:latest` with
+// GetImageRelativePath returns the relative path of the image with respect to `basePath`
+// E.g. If the image is `fake.repo.com/plugin/database/plugin-inventory:latest` with
 // basePath as `fake.repo.com/plugin` it should return
-// `plugin-inventory:latest` if withTag is true and
-// `plugin-inventory` if withTag is false
+// `database/plugin-inventory:latest` if withTag is true and
+// `database/plugin-inventory` if withTag is false
 func GetImageRelativePath(image, basePath string, withTag bool) string {
 	relativePath := strings.TrimPrefix(image, basePath)
 	if withTag {
