@@ -105,7 +105,8 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 
 	// Plugin bundle manifest file generated based on the above mentioned
 	// plugin entry in the inventory database
-	pluginBundleManifestCompleteRepositoryString := `inventoryMetadataImage:
+	pluginBundleManifestCompleteRepositoryString := `relativeInventoryImagePathWithTag: /plugin-inventory:latest
+inventoryMetadataImage:
     sourceFilePath: plugin_inventory_metadata.db
     relativeImagePathWithTag: /plugin-inventory-metadata:latest
 imagesToCopy:
@@ -121,7 +122,8 @@ imagesToCopy:
 
 	// Plugin bundle manifest file generated based on the above mentioned
 	// plugin entry in the inventory database with only single plugin group specified
-	pluginBundleManifestDefaultGroupOnlyString := `inventoryMetadataImage:
+	pluginBundleManifestDefaultGroupOnlyString := `relativeInventoryImagePathWithTag: /plugin-inventory:latest
+inventoryMetadataImage:
     sourceFilePath: plugin_inventory_metadata.db
     relativeImagePathWithTag: /plugin-inventory-metadata:latest
 imagesToCopy:

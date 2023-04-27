@@ -9,8 +9,9 @@ const PluginMigrationManifestFile = "plugin_migration_manifest.yaml"
 
 // PluginMigrationManifest defines struct for plugin bundle manifest
 type PluginMigrationManifest struct {
-	InventoryMetadataImage *ImagePublishInfo `yaml:"inventoryMetadataImage"`
-	ImagesToCopy           []*ImageCopyInfo  `yaml:"imagesToCopy"`
+	RelativeInventoryImagePathWithTag string            `yaml:"relativeInventoryImagePathWithTag"`
+	InventoryMetadataImage            *ImagePublishInfo `yaml:"inventoryMetadataImage"`
+	ImagesToCopy                      []*ImageCopyInfo  `yaml:"imagesToCopy"`
 }
 
 // ImageCopyInfo maps the relative image path and local relative file path

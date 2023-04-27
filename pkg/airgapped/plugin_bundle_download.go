@@ -55,7 +55,7 @@ func (o *DownloadPluginBundleOptions) DownloadPluginBundle() error {
 	}
 
 	// Save plugin images and get list of images that needs to be copied as part of the upload process
-	imagesToCopy, err := o.saveAndGetImagesToCopy(selectedPluginEntries, tempPluginBundleDir)
+	relativeInventoryImagePathWithTag, imagesToCopy, err := o.saveAndGetImagesToCopy(selectedPluginEntries, tempPluginBundleDir)
 	if err != nil {
 		return errors.Wrap(err, "error while downloading and saving plugin images")
 	}
@@ -67,7 +67,7 @@ func (o *DownloadPluginBundleOptions) DownloadPluginBundle() error {
 	}
 
 	// Save plugin migration manifest file to the plugin bundle directory
-	err = savePluginMigrationManifestFile(imagesToCopy, inventoryMetadataImageInfo, tempPluginBundleDir)
+	err = savePluginMigrationManifestFile(relativeInventoryImagePathWithTag, imagesToCopy, inventoryMetadataImageInfo, tempPluginBundleDir)
 	if err != nil {
 		return errors.Wrap(err, "error while saving plugin migration manifest")
 	}
@@ -174,14 +174,14 @@ func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPlug
 
 // saveAndGetImagesToCopy saves the images after downloading them and
 // returns the images to copy object
-func (o *DownloadPluginBundleOptions) saveAndGetImagesToCopy(pluginEntries []*plugininventory.PluginInventoryEntry, downloadDir string) ([]*ImageCopyInfo, error) {
+func (o *DownloadPluginBundleOptions) saveAndGetImagesToCopy(pluginEntries []*plugininventory.PluginInventoryEntry, downloadDir string) (string, []*ImageCopyInfo, error) {
 	// Download all plugin inventory database and plugins as tar file
 	return o.downloadImagesAsTarFile(pluginEntries, downloadDir)
 }
 
 // downloadImagesAsTarFile downloads plugin inventory image and all plugin images
 // as tar file to the specified directory
-func (o *DownloadPluginBundleOptions) downloadImagesAsTarFile(pluginEntries []*plugininventory.PluginInventoryEntry, downloadDir string) ([]*ImageCopyInfo, error) {
+func (o *DownloadPluginBundleOptions) downloadImagesAsTarFile(pluginEntries []*plugininventory.PluginInventoryEntry, downloadDir string) (string, []*ImageCopyInfo, error) {
 	allImages := []*ImageCopyInfo{}
 
 	// Download plugin inventory database as tar file
@@ -189,8 +189,11 @@ func (o *DownloadPluginBundleOptions) downloadImagesAsTarFile(pluginEntries []*p
 	log.Infof("downloading image %q", o.PluginInventoryImage)
 	err := o.ImageProcessor.CopyImageToTar(o.PluginInventoryImage, filepath.Join(downloadDir, pluginInventoryFileNameTar))
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
+
+	relativeInventoryImagePathWithTag := GetImageRelativePath(o.PluginInventoryImage, path.Dir(o.PluginInventoryImage), true)
+
 	allImages = append(allImages, &ImageCopyInfo{
 		SourceTarFilePath: pluginInventoryFileNameTar,
 		RelativeImagePath: GetImageRelativePath(o.PluginInventoryImage, path.Dir(o.PluginInventoryImage), false),
@@ -205,7 +208,7 @@ func (o *DownloadPluginBundleOptions) downloadImagesAsTarFile(pluginEntries []*p
 				tarfileName := fmt.Sprintf("%s-%s-%s_%s-%s.tar.gz", pe.Name, pe.Target, a.OS, a.Arch, version)
 				err = o.ImageProcessor.CopyImageToTar(a.Image, filepath.Join(downloadDir, tarfileName))
 				if err != nil {
-					return nil, err
+					return "", nil, err
 				}
 				allImages = append(allImages, &ImageCopyInfo{
 					SourceTarFilePath: tarfileName,
@@ -214,7 +217,7 @@ func (o *DownloadPluginBundleOptions) downloadImagesAsTarFile(pluginEntries []*p
 			}
 		}
 	}
-	return allImages, nil
+	return relativeInventoryImagePathWithTag, allImages, nil
 }
 
 // validateOptions validates the provided options and returns
@@ -229,11 +232,12 @@ func (o *DownloadPluginBundleOptions) validateOptions() error {
 
 // savePluginMigrationManifestFile save the plugin_migration_manifest.yaml file
 // to the provided pluginBundleDir
-func savePluginMigrationManifestFile(imagesToCopy []*ImageCopyInfo, inventoryMetadataImageInfo *ImagePublishInfo, pluginBundleDir string) error {
+func savePluginMigrationManifestFile(relativeInventoryImagePathWithTag string, imagesToCopy []*ImageCopyInfo, inventoryMetadataImageInfo *ImagePublishInfo, pluginBundleDir string) error {
 	// Save all downloaded images as part of manifest file
 	manifest := PluginMigrationManifest{
-		ImagesToCopy:           imagesToCopy,
-		InventoryMetadataImage: inventoryMetadataImageInfo,
+		RelativeInventoryImagePathWithTag: relativeInventoryImagePathWithTag,
+		ImagesToCopy:                      imagesToCopy,
+		InventoryMetadataImage:            inventoryMetadataImageInfo,
 	}
 	bytes, err := yaml.Marshal(&manifest)
 	if err != nil {
