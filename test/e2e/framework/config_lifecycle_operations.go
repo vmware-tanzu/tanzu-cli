@@ -45,15 +45,36 @@ type ConfigLifecycleOps interface {
 	IsCLIConfigurationFilesExists() bool
 }
 
+// ConfigCertOps performs "tanzu config cert" command operations
+type ConfigCertOps interface {
+	// ConfigCertAdd adds cert config for a host, and returns stdOut and error info
+	ConfigCertAdd(certAddOpts *CertAddOptions, opts ...E2EOption) (string, error)
+
+	// ConfigCertDelete deletes cert config for a host, and returns error info
+	ConfigCertDelete(hostname string, opts ...E2EOption) error
+}
+
+type ConfigCmdOps interface {
+	ConfigLifecycleOps
+	ConfigCertOps
+}
+
 // configOps is the implementation of ConfOps interface
 type configOps struct {
 	cmdExe CmdOps
 }
 
-func NewConfOps() ConfigLifecycleOps {
+func NewConfOps() ConfigCmdOps {
 	return &configOps{
 		cmdExe: NewCmdOps(),
 	}
+}
+
+type CertAddOptions struct {
+	Host              string
+	CACertificatePath string
+	SkipCertVerify    string
+	Insecure          string
 }
 
 // GetConfig gets the tanzu config
@@ -153,4 +174,16 @@ func (co *configOps) IsCLIConfigurationFilesExists() bool {
 		return true
 	}
 	return false
+}
+
+func (co *configOps) ConfigCertAdd(certAddOpts *CertAddOptions, opts ...E2EOption) (string, error) {
+	certAddCmd := fmt.Sprintf(ConfigCertAdd, "%s", certAddOpts.Host, certAddOpts.CACertificatePath, certAddOpts.SkipCertVerify, certAddOpts.Insecure)
+	out, _, err := co.cmdExe.TanzuCmdExec(certAddCmd, opts...)
+	return out.String(), err
+}
+
+func (co *configOps) ConfigCertDelete(host string, opts ...E2EOption) error {
+	certDeleteCmd := fmt.Sprintf(ConfigCertDelete, "%s", host)
+	_, _, err := co.cmdExe.TanzuCmdExec(certDeleteCmd, opts...)
+	return err
 }
