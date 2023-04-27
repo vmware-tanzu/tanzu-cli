@@ -129,14 +129,14 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 		pluginInventory                     PluginInventory
 		pluginInventoryFilePath             string
 		additionalMetadataInventoryFilePath string
-		tmpDir                              string
+		tmpDir1, tmpDir2                    string
 	)
 
 	createInventoryMetadataDB := func(createSchema bool) (PluginInventoryMetadata, string) {
-		tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+		tmpDir1, err = os.MkdirTemp(os.TempDir(), "")
 		Expect(err).To(BeNil(), "unable to create temporary directory")
 		// Create empty file for the DB
-		dbFile, err := os.Create(filepath.Join(tmpDir, SQliteInventoryMetadataDBFileName))
+		dbFile, err := os.Create(filepath.Join(tmpDir1, SQliteInventoryMetadataDBFileName))
 		Expect(err).To(BeNil())
 		mi := NewSQLiteInventoryMetadata(dbFile.Name())
 		if createSchema {
@@ -147,14 +147,14 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 	}
 
 	createInventoryDB := func(createSchema bool) (PluginInventory, string) {
-		tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+		tmpDir2, err = os.MkdirTemp(os.TempDir(), "")
 		Expect(err).To(BeNil(), "unable to create temporary directory")
 
 		// Create empty file for the DB
-		dbFile, err := os.Create(filepath.Join(tmpDir, SQliteDBFileName))
+		dbFile, err := os.Create(filepath.Join(tmpDir2, SQliteDBFileName))
 		Expect(err).To(BeNil())
 
-		inventory := NewSQLiteInventory(dbFile.Name(), tmpDir)
+		inventory := NewSQLiteInventory(dbFile.Name(), tmpDir2)
 		if createSchema {
 			err = inventory.CreateSchema()
 			Expect(err).To(BeNil(), "failed to create DB table for testing")
@@ -168,7 +168,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 				metadataInventory, _ = createInventoryMetadataDB(false)
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should return an error", func() {
 				err = metadataInventory.InsertPluginIdentifier(&pluginIdentifier1)
@@ -183,7 +184,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 				metadataInventory, _ = createInventoryMetadataDB(true)
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should not return an error", func() {
 				err = metadataInventory.InsertPluginIdentifier(&pluginIdentifier1)
@@ -203,7 +205,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should return an error", func() {
 				err = metadataInventory.InsertPluginIdentifier(&pluginIdentifier1)
@@ -217,17 +220,18 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 	Describe("Insert plugin group identifier", func() {
 		Context("With an empty DB file", func() {
 			BeforeEach(func() {
-				tmpDir, err = os.MkdirTemp(os.TempDir(), "")
+				tmpDir2, err = os.MkdirTemp(os.TempDir(), "")
 				Expect(err).To(BeNil(), "unable to create temporary directory")
 
 				// Create empty file for the DB
-				dbFile, err := os.Create(filepath.Join(tmpDir, SQliteInventoryMetadataDBFileName))
+				dbFile, err := os.Create(filepath.Join(tmpDir2, SQliteInventoryMetadataDBFileName))
 				Expect(err).To(BeNil())
 
 				metadataInventory = NewSQLiteInventoryMetadata(dbFile.Name())
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should return an error", func() {
 				err = metadataInventory.InsertPluginGroupIdentifier(&pluginGroupIdentifier1)
@@ -242,7 +246,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 				metadataInventory, _ = createInventoryMetadataDB(true)
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should not return an error", func() {
 				err = metadataInventory.InsertPluginGroupIdentifier(&pluginGroupIdentifier1)
@@ -262,7 +267,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should return an error", func() {
 				err = metadataInventory.InsertPluginGroupIdentifier(&pluginGroupIdentifier1)
@@ -280,7 +286,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 				_, additionalMetadataInventoryFilePath = createInventoryMetadataDB(false)
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should return an error", func() {
 				err = metadataInventory.MergeInventoryMetadataDatabase(additionalMetadataInventoryFilePath)
@@ -295,7 +302,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 				_, additionalMetadataInventoryFilePath = createInventoryMetadataDB(true)
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should not return an error", func() {
 				err = metadataInventory.MergeInventoryMetadataDatabase(additionalMetadataInventoryFilePath)
@@ -320,7 +328,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should not return an error", func() {
 				err = metadataInventory.MergeInventoryMetadataDatabase(additionalMetadataInventoryFilePath)
@@ -348,7 +357,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should not return an error", func() {
 				err = metadataInventory.MergeInventoryMetadataDatabase(additionalMetadataInventoryFilePath)
@@ -364,7 +374,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 				_, pluginInventoryFilePath = createInventoryDB(false)
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should return an error", func() {
 				err = metadataInventory.UpdatePluginInventoryDatabase(pluginInventoryFilePath)
@@ -379,7 +390,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 				_, pluginInventoryFilePath = createInventoryDB(true)
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should return an error", func() {
 				err = metadataInventory.UpdatePluginInventoryDatabase(pluginInventoryFilePath)
@@ -394,7 +406,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 				_, pluginInventoryFilePath = createInventoryDB(true)
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("should not return an error", func() {
 				err = metadataInventory.UpdatePluginInventoryDatabase(pluginInventoryFilePath)
@@ -419,7 +432,8 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 			AfterEach(func() {
-				os.RemoveAll(tmpDir)
+				os.RemoveAll(tmpDir1)
+				os.RemoveAll(tmpDir2)
 			})
 			It("when metadata database tables are empty, it should not return an error and remove all plugin and plugin groups from inventory database", func() {
 				err = metadataInventory.UpdatePluginInventoryDatabase(pluginInventoryFilePath)

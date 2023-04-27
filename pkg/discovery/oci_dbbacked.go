@@ -178,7 +178,9 @@ func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 	}
 
 	// Now that everything is ready, create the digest hash file
-	_, _ = os.Create(newCacheHashFileForInventoryImage)
+	if newCacheHashFileForInventoryImage != "" {
+		_, _ = os.Create(newCacheHashFileForInventoryImage)
+	}
 	// Also create digest hash file for inventory metadata image if not empty
 	if newCacheHashFileForMetadataImage != "" {
 		_, _ = os.Create(newCacheHashFileForMetadataImage)
@@ -202,6 +204,8 @@ func (od *DBBackedOCIDiscovery) downloadInventoryDatabase() error {
 	if err != nil {
 		return errors.Wrap(err, "unable to create temp directory")
 	}
+	defer os.RemoveAll(tempDir1)
+	defer os.RemoveAll(tempDir2)
 
 	// Download the plugin inventory image and save to tempDir1
 	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, tempDir1); err != nil {
@@ -245,7 +249,7 @@ func (od *DBBackedOCIDiscovery) checkImageCache() (string, string) {
 		log.Fatal(nil, fmt.Sprintf("Fatal: plugins discovery image resolution failed. Please check that the repository image URL %q is correct ", od.image))
 	}
 
-	correctHashFileForInventoryImage := od.checkDigestFileExistance(hashHexValInventoryImage, "")
+	correctHashFileForInventoryImage := od.checkDigestFileExistence(hashHexValInventoryImage, "")
 
 	pluginInventoryMetadataImage, _ := airgapped.GetPluginInventoryMetadataImage(od.image)
 	_, hashHexValMetadataImage, _ := carvelhelpers.GetImageDigest(pluginInventoryMetadataImage)
@@ -254,19 +258,24 @@ func (od *DBBackedOCIDiscovery) checkImageCache() (string, string) {
 	// If image exists a file names `metadata.digest.<hexval>` will be stored
 	// It is important to store the metadata digest file irrespective of image exists
 	// or not for future comparisons and validating the cache
-	correctHashFileForMetadataImage := od.checkDigestFileExistance(hashHexValMetadataImage, "metadata.")
+	// We do this, for this case:
+	// 	- Point the discovery to "image-1" (which has corresponding metadata image defined) [Generally airgapped repository]
+	// 	- Later, change to point to discovery "image-2" (which doesn't have corresponding metadata image present) [Generally Production repository]
+	// 	The cache invalidation was not happening this time if the digest of "image-1" and "image-2" are same, but since we modify
+	// 	the DB content in the air-gapped scenario, we have to invalidate the cache.
+	correctHashFileForMetadataImage := od.checkDigestFileExistence(hashHexValMetadataImage, "metadata.")
 
 	return correctHashFileForInventoryImage, correctHashFileForMetadataImage
 }
 
-// checkDigestFileExistance check the digest file already exists in the cache or not
+// checkDigestFileExistence check the digest file already exists in the cache or not
 // We store the digest hash of the cached DB as a file named "<digestPrefix>digest.<hash>.
 // If this file exists, we are done. If not, we remove the current digest file
 // as we are about to download a new DB and create a new digest file.
 // First check any existing "<digestPrefix>digest.*" file; there should only be one, but
 // to protect ourselves, we check first and if there are more then one due
 // to some bug, we clean them up and invalidate the cache.
-func (od *DBBackedOCIDiscovery) checkDigestFileExistance(hashHexVal, digestPrefix string) string {
+func (od *DBBackedOCIDiscovery) checkDigestFileExistence(hashHexVal, digestPrefix string) string {
 	correctHashFile := filepath.Join(od.pluginDataDir, digestPrefix+"digest."+hashHexVal)
 	matches, _ := filepath.Glob(filepath.Join(od.pluginDataDir, digestPrefix+"digest.*"))
 	if len(matches) > 1 {

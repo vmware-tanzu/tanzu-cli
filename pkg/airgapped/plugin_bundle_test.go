@@ -253,6 +253,8 @@ imagesToCopy:
 			tempDir, err := os.MkdirTemp("", "")
 			Expect(tempDir).ToNot(BeEmpty())
 			Expect(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir)
+
 			err = tarinator.UnTarinate(tempDir, dpbo.ToTar)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -301,6 +303,8 @@ imagesToCopy:
 			tempDir, err := os.MkdirTemp("", "")
 			Expect(tempDir).ToNot(BeEmpty())
 			Expect(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir)
+
 			err = tarinator.UnTarinate(tempDir, dpbo.ToTar)
 			Expect(err).NotTo(HaveOccurred())
 

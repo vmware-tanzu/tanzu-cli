@@ -90,7 +90,7 @@ func (b *SQLiteInventoryMetadata) MergeInventoryMetadataDatabase(additionalMetad
 	}
 	defer db.Close()
 
-	mergeQuery := `attach ? as additionalMetadataDB;
+	mergeQuery := `ATTACH ? as additionalMetadataDB;
 	INSERT OR REPLACE INTO AvailablePluginGroups SELECT Vendor,Publisher,GroupName FROM additionalMetadataDB.AvailablePluginGroups;
 	INSERT OR REPLACE INTO AvailablePluginBinaries SELECT PluginName,Target,Version FROM additionalMetadataDB.AvailablePluginBinaries;`
 
