@@ -3,7 +3,7 @@
 This section covers information relevant to plugin developers looking to
 transition their Tanzu CLI plugins developed using the legacy Tanzu CLI
 codebase in
-[tanzu-framework](https://github.com/vmware-tanzu/tanzu-framework/tree/main/cli)
+[tanzu-framework](https://github.com/vmware-tanzu/tanzu-framework/tree/release-0.29/cli)
 to make use of [tanzu-plugin-runtime](https://github.com/vmware-tanzu/tanzu-plugin-runtime)
 project and this repository.
 
