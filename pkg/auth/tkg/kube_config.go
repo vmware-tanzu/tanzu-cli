@@ -91,7 +91,6 @@ func KubeconfigWithPinnipedAuthLoginPlugin(endpoint string, options *KubeConfigO
 		return
 	}
 
-	mergeFilePath = ""
 	if options != nil && options.MergeFilePath != "" {
 		mergeFilePath = options.MergeFilePath
 	} else {

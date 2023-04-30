@@ -5,6 +5,7 @@
 package wcp
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -22,7 +23,7 @@ const (
 func IsVSphereSupervisor(endpoint string, httpClient *http.Client) (bool, error) {
 	loginBannerURL := fmt.Sprintf("%s/wcp/loginbanner", endpoint)
 
-	req, _ := http.NewRequest("GET", loginBannerURL, http.NoBody)
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", loginBannerURL, http.NoBody)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {

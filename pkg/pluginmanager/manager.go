@@ -270,7 +270,7 @@ func discoverServerPluginsBasedOnAllCurrentContexts() ([]discovery.Discovered, e
 func discoverServerPluginsBasedOnCurrentServer() ([]discovery.Discovered, error) {
 	var plugins []discovery.Discovered
 
-	server, err := configlib.GetCurrentServer() // nolint:staticcheck // Deprecated
+	server, err := configlib.GetCurrentServer() //nolint:staticcheck // Deprecated
 	if err != nil || server == nil {
 		// If servername is not specified than returning empty list
 		// as there are no server plugins that can be discovered
@@ -665,7 +665,8 @@ func InstallPluginFromContext(pluginName, version string, target configtypes.Tar
 // installs a plugin by name, version and target.
 // If the contextName is not empty, it implies the plugin is a context-scope plugin, otherwise
 // we are installing a standalone plugin.
-// nolint: gocyclo
+//
+//nolint:gocyclo
 func installPlugin(pluginName, version string, target configtypes.Target, contextName string) error {
 	if configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		// The legacy installation can figure out if the plugin is from a context
@@ -1130,7 +1131,8 @@ func SyncPlugins() error {
 }
 
 // InstallPluginsFromLocalSource installs plugin from local source directory
-// nolint: gocyclo
+//
+//nolint:gocyclo
 func InstallPluginsFromLocalSource(pluginName, version string, target configtypes.Target, localPath string, installTestPlugin bool) error {
 	// Set default local plugin distro to local-path as while installing the plugin
 	// from local source we should take t
@@ -1484,6 +1486,10 @@ func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
 	// For example, if the staging central repo is added as a test discovery, it
 	// may contain older versions of a plugin that is now published to the production
 	// central repo; we therefore need to search the test discoveries last.
-	discoverySources, _ := configlib.GetCLIDiscoverySources()
+	discoverySources, err := configlib.GetCLIDiscoverySources()
+	if err != nil {
+		return testDiscoveries, err
+	}
+
 	return append(discoverySources, testDiscoveries...), nil
 }

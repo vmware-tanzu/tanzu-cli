@@ -95,6 +95,7 @@ func runLocalListener() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/callback", callbackHandler)
 	tokenExchange, tokenExchangeComplete = context.WithCancel(context.TODO())
+	//nolint:gosec
 	l := http.Server{
 		Addr:    "",
 		Handler: mux,

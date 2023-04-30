@@ -144,10 +144,7 @@ func (b *SQLiteInventory) getPluginsFromDB(filter *PluginInventoryFilter) ([]*Pl
 	}
 	defer db.Close()
 
-	whereClause, err := createPluginWhereClause(filter)
-	if err != nil {
-		return nil, err
-	}
+	whereClause := createPluginWhereClause(filter)
 
 	// Build the final query with the SELECT, WHERE and ORDER clauses.
 	// The ORDER clause is essential because the parsing algorithm of extractPluginsFromRows()
@@ -163,7 +160,7 @@ func (b *SQLiteInventory) getPluginsFromDB(filter *PluginInventoryFilter) ([]*Pl
 }
 
 // createPluginWhereClause parses the filter and creates the WHERE clause for the DB query.
-func createPluginWhereClause(filter *PluginInventoryFilter) (string, error) {
+func createPluginWhereClause(filter *PluginInventoryFilter) string {
 	var whereClause string
 
 	// If there is a filter, create a WHERE clause for the query.
@@ -214,7 +211,7 @@ func createPluginWhereClause(filter *PluginInventoryFilter) (string, error) {
 			whereClause = fmt.Sprintf("WHERE %s", whereClause)
 		}
 	}
-	return whereClause, nil
+	return whereClause
 }
 
 // extractPluginsFromRows loops through all DB rows and builds an array
@@ -304,10 +301,7 @@ func (b *SQLiteInventory) getGroupsFromDB(filter PluginGroupFilter) ([]*PluginGr
 	}
 	defer db.Close()
 
-	whereClause, err := createGroupWhereClause(filter)
-	if err != nil {
-		return nil, err
-	}
+	whereClause := createGroupWhereClause(filter)
 
 	// Build the final query with the SELECT, WHERE and ORDER clauses.
 	// The ORDER clause is essential because the parsing algorithm of extractGroupsFromRows()
@@ -323,7 +317,7 @@ func (b *SQLiteInventory) getGroupsFromDB(filter PluginGroupFilter) ([]*PluginGr
 }
 
 // createGroupWhereClause parses the filter and creates the WHERE clause for the DB query for groups.
-func createGroupWhereClause(filter PluginGroupFilter) (string, error) {
+func createGroupWhereClause(filter PluginGroupFilter) string {
 	var whereClause string
 
 	// If there is a filter, create a WHERE clause for the query.
@@ -348,7 +342,7 @@ func createGroupWhereClause(filter PluginGroupFilter) (string, error) {
 		whereClause = fmt.Sprintf("WHERE %s", whereClause)
 	}
 
-	return whereClause, nil
+	return whereClause
 }
 
 // extractGroupsFromRows loops through all DB rows and builds an array

@@ -130,11 +130,11 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 		})
 		Context("With a criteria", func() {
 			It("should have a filter that matches the criteria and ignore hidden plugins", func() {
-				filteredName := "cluster" // nolint:goconst
+				filteredName := "cluster" //nolint:goconst
 				filteredTarget := configtypes.TargetK8s
-				filteredVersion := "v0.26.0" // nolint:goconst
-				filteredOS := "darwin"       // nolint:goconst
-				filteredArch := "amd64"      // nolint:goconst
+				filteredVersion := "v0.26.0" //nolint:goconst
+				filteredOS := "darwin"       //nolint:goconst
+				filteredArch := "amd64"      //nolint:goconst
 
 				discovery = NewOCIDiscovery("test-discovery", "test-image:latest", &PluginDiscoveryCriteria{
 					Name:    filteredName,

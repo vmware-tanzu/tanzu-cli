@@ -160,7 +160,7 @@ func Compile(compileArgs *PluginCompileArgs) error {
 	guard := make(chan struct{}, maxConcurrent)
 
 	// Mix up IDs so we don't always get the same set.
-	randSkew := rand.Intn(len(identifiers)) // nolint:gosec
+	randSkew := rand.Intn(len(identifiers)) //nolint:gosec
 	var wg sync.WaitGroup
 	plugins := make(chan cli.Plugin, len(files))
 	fatalErrors := make(chan errInfo, len(files))

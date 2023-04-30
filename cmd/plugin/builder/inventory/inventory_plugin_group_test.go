@@ -26,7 +26,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 	fakeImgpkgWrapper := &fakes.ImgpkgWrapper{}
 
 	// pullDBImageStub create new empty database with the table schemas created
-	pullDBImageStub := func(image, path string) error {
+	pullDBImageStub := func(image, path string) error { //nolint:unparam
 		dbFile := filepath.Join(path, plugininventory.SQliteDBFileName)
 		db := plugininventory.NewSQLiteInventory(dbFile, "")
 		err := db.CreateSchema()

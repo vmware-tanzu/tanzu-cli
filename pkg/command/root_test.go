@@ -271,7 +271,7 @@ func TestSubcommands(t *testing.T) {
 			os.Stdout = w
 			os.Stderr = w
 
-			err = setupFakePlugin(dir, spec.plugin, spec.version, spec.cmdGroup, completionType, spec.target, spec.postInstallResult, spec.hidden, spec.aliases)
+			err = setupFakePlugin(dir, spec.plugin, spec.cmdGroup, completionType, spec.target, spec.postInstallResult, spec.hidden, spec.aliases)
 			assert.Nil(err)
 
 			pi := &cli.PluginInfo{
@@ -358,7 +358,7 @@ func TestEnvVarsSet(t *testing.T) {
 	os.Unsetenv(envVarName)
 }
 
-func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGroup, completionType uint8, target configtypes.Target, postInstallResult uint8, hidden bool, aliases []string) error {
+func setupFakePlugin(dir, pluginName string, commandGroup plugin.CmdGroup, completionType uint8, target configtypes.Target, postInstallResult uint8, hidden bool, aliases []string) error {
 	filePath := filepath.Join(dir, pluginName)
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)

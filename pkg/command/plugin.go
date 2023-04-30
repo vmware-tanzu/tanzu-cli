@@ -233,7 +233,7 @@ func newInstallPluginCmd() *cobra.Command {
 			}
 
 			if config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
-				return legacyPluginInstall(cmd, args)
+				return legacyPluginInstall(args)
 			}
 
 			if group != "" {
@@ -300,7 +300,7 @@ func newInstallPluginCmd() *cobra.Command {
 	return installCmd
 }
 
-func legacyPluginInstall(cmd *cobra.Command, args []string) error {
+func legacyPluginInstall(args []string) error {
 	var err error
 	if len(args) == 0 {
 		return fmt.Errorf("missing plugin name or '%s' as an argument", cli.AllPlugins)

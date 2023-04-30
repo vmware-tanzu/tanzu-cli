@@ -108,7 +108,7 @@ func newListDiscoverySourceCmd() *cobra.Command {
 					}
 				}
 			} else {
-				server, err := configlib.GetCurrentServer() // nolint:staticcheck // Deprecated
+				server, err := configlib.GetCurrentServer() //nolint:staticcheck // Deprecated
 				if err == nil && server != nil {
 					outputFromDiscoverySources(server.DiscoverySources, common.PluginScopeContext, output)
 				}
@@ -300,8 +300,8 @@ func createRESTDiscoverySource(discoveryName, uri string) *configtypes.GenericRE
 
 func discoverySourceNameAndType(ds configtypes.PluginDiscovery) (string, string) {
 	switch {
-	case ds.GCP != nil: // nolint:staticcheck // Deprecated
-		return ds.GCP.Name, common.DiscoveryTypeGCP // nolint:staticcheck // Deprecated
+	case ds.GCP != nil: //nolint:staticcheck // Deprecated
+		return ds.GCP.Name, common.DiscoveryTypeGCP //nolint:staticcheck // Deprecated
 	case ds.Kubernetes != nil:
 		return ds.Kubernetes.Name, common.DiscoveryTypeKubernetes
 	case ds.Local != nil:

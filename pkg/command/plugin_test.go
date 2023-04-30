@@ -167,7 +167,7 @@ func TestPluginList(t *testing.T) {
 			cc, err := catalog.NewContextCatalog("")
 			assert.Nil(err)
 			for i, pluginName := range spec.plugins {
-				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
+				err = setupFakePlugin(dir, pluginName, plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
 				assert.Nil(err)
 				pi := &cli.PluginInfo{
 					Name:             pluginName,
@@ -254,7 +254,7 @@ func TestDeletePlugin(t *testing.T) {
 			assert.Nil(err)
 
 			for i, pluginName := range spec.plugins {
-				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
+				err = setupFakePlugin(dir, pluginName, plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
 				assert.Nil(err)
 				pi := &cli.PluginInfo{
 					Name:             pluginName,

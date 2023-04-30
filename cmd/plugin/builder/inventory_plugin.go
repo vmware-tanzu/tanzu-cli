@@ -88,7 +88,7 @@ type inventoryPluginActivateDeactivateFlags struct {
 
 func newInventoryPluginActivateCmd() *cobra.Command {
 	pluginActivateCmd, flags := getActivateDeactivateBaseCmd()
-	pluginActivateCmd.Use = "activate" // nolint:goconst
+	pluginActivateCmd.Use = "activate" //nolint:goconst
 	pluginActivateCmd.Short = "Activate the existing plugin in the inventory database available on the remote repository"
 	pluginActivateCmd.Example = ""
 	pluginActivateCmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -108,7 +108,7 @@ func newInventoryPluginActivateCmd() *cobra.Command {
 
 func newInventoryPluginDeactivateCmd() *cobra.Command {
 	pluginDeactivateCmd, flags := getActivateDeactivateBaseCmd()
-	pluginDeactivateCmd.Use = "deactivate" // nolint:goconst
+	pluginDeactivateCmd.Use = "deactivate" //nolint:goconst
 	pluginDeactivateCmd.Short = "Deactivate the existing plugin in the inventory database available on the remote repository"
 	pluginDeactivateCmd.Example = ""
 	pluginDeactivateCmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -126,7 +126,7 @@ func newInventoryPluginDeactivateCmd() *cobra.Command {
 	return pluginDeactivateCmd
 }
 
-func getActivateDeactivateBaseCmd() (*cobra.Command, *inventoryPluginActivateDeactivateFlags) { // nolint:dupl
+func getActivateDeactivateBaseCmd() (*cobra.Command, *inventoryPluginActivateDeactivateFlags) { //nolint:dupl
 	var flags = &inventoryPluginActivateDeactivateFlags{}
 
 	var activateDeactivateCmd = &cobra.Command{}
