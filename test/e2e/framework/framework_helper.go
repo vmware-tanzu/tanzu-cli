@@ -496,3 +496,37 @@ func GetHTTPCall(url string, v interface{}) error {
 	}
 	return nil
 }
+
+// GetAvailableContexts takes list of contexts and returns only which are available in both the 'tanzu context list' command output and the input list
+func GetAvailableContexts(tf *Framework, contextNames []string) []string {
+	var available []string
+	list, err := tf.ContextCmd.ListContext()
+	gomega.Expect(err).To(gomega.BeNil(), "list context should not return any error")
+	set := SliceToSet(contextNames)
+	for _, context := range list {
+		if _, ok := set[context.Name]; ok {
+			available = append(available, context.Name)
+		}
+	}
+	return available
+}
+
+// GetAvailableServers takes list of servers and returns which are available in both the 'tanzu config server list' command output and the input server list
+func GetAvailableServers(tf *Framework, serverNames []string) []string {
+	var available []string
+	list, err := tf.Config.ConfigServerList()
+	gomega.Expect(err).To(gomega.BeNil(), "server list should not return any error")
+	set := SliceToSet(serverNames)
+	for _, server := range list {
+		if _, ok := set[server.Name]; ok {
+			available = append(available, server.Name)
+		}
+	}
+	return available
+}
+
+// GetTMCClusterInfo returns the TMC cluster info by reading environment variables TANZU_CLI_TMC_UNSTABLE_URL and TANZU_API_TOKEN
+// Currently we are setting these env variables in GitHub action for local testing these variables need to be set by the developer on their respective machine
+func GetTMCClusterInfo() *ClusterInfo {
+	return &ClusterInfo{EndPoint: os.Getenv(TanzuCliTmcUnstableURL), APIKey: os.Getenv(TanzuAPIToken)}
+}

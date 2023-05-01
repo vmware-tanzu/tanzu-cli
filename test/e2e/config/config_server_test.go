@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/vmware-tanzu/tanzu-cli/test/e2e/context"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 )
 
@@ -75,7 +74,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Config-Server]", func() {
 				err := tf.Config.ConfigServerDelete(ctx)
 				Expect(err).To(BeNil(), "delete server should delete server without any error")
 			}
-			list := context.GetAvailableServers(tf, contextNames)
+			list := framework.GetAvailableServers(tf, contextNames)
 			Expect(len(list)).To(Equal(0), "delete server should have deleted all given server names")
 		})
 		// Test case: (negative test) test 'tanzu context delete' command for context name which is not exists

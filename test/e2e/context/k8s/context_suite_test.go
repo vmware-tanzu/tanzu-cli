@@ -1,6 +1,8 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
-package context
+
+// Package contextk8s provides context command specific E2E test cases for k8s target
+package contextk8s
 
 import (
 	"testing"
