@@ -53,6 +53,15 @@ func GetMapKeyForPlugin(pluginsList *PluginInfo) string {
 	return fmt.Sprintf(PluginKey, pluginsList.Name, pluginsList.Target, pluginsList.Version)
 }
 
+// LegacyPluginListToMap converts the given PluginInfo slice to map type, key is combination  of plugin's name_target_version and value is PluginInfo
+func LegacyPluginListToMap(pluginsList []*PluginInfo) map[string]*PluginInfo {
+	m := make(map[string]*PluginInfo)
+	for i := range pluginsList {
+		m[fmt.Sprintf(LegacyPluginKey, (pluginsList)[i].Name, (pluginsList)[i].Version)] = pluginsList[i]
+	}
+	return m
+}
+
 // PluginGroupToMap converts the given slice of PluginGroups to map (PluginGroup name is the key) and PluginGroup is the value
 func PluginGroupToMap(pluginGroups []*PluginGroup) map[string]*PluginGroup {
 	m := make(map[string]*PluginGroup)
@@ -138,8 +147,8 @@ func CreateKindCluster(tf *Framework, name string) (*ClusterInfo, error) {
 }
 
 // IsContextExists checks the given context is exists in the config file by listing the existing contexts in the config file
-func IsContextExists(tf *Framework, contextName string) bool {
-	list, err := tf.ContextCmd.ListContext()
+func IsContextExists(tf *Framework, contextName string, opts ...E2EOption) bool {
+	list, err := tf.ContextCmd.ListContext(opts...)
 	gomega.Expect(err).To(gomega.BeNil(), "list context should not return any error")
 	for _, context := range list {
 		if context.Name == contextName {

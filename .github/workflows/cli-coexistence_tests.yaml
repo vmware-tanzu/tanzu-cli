@@ -1,0 +1,40 @@
+name: Tanzu CLI Coexistence Tests
+
+on:
+  pull_request:
+    branches: [main, release-*]
+  push:
+    branches: [main, release-*]
+
+jobs:
+  build-and-run:
+    name: Tanzu CLI Coexistence Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v1
+
+      - name: Start local OCI registry
+        run: |
+          make start-test-central-repo
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: cli-coexistence:latest
+          build-args: |
+            TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR=/app/legacy-tanzu-cli
+            TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION=v0.28.1
+            TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR=/app/tanzu-cli
+
+      - name: Run Docker image
+        run: make cli-coexistence-tests
+
+      - name: Tests Results Summary
+        if: always()
+        run: |
+          TEST_RESULTS_MD=$(./hack/scripts/process-ginkgo-test-results.sh test/e2e/coexistence/coexistence-tests.json)
+          echo "$TEST_RESULTS_MD" >> $GITHUB_STEP_SUMMARY
