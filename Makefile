@@ -172,7 +172,7 @@ choco-package: ## Build a Chocolatey package
 
 .PHONY: test
 test: fmt ## Run Tests
-	${GO} test `go list ./... | grep -v test/e2e` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
+	${GO} test `go list ./... | grep -v test/e2e | grep -v test/coexistence` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
 
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
 e2e-cli-core: start-test-central-repo e2e-cli-core-all ## Execute all CLI Core E2E Tests
@@ -253,7 +253,6 @@ generate-manifests:  ## Generate API manifests e.g. CRD
 
 generate: generate-controller-code generate-manifests 	## Generate controller code and manifests e.g. CRD etc.
 
-
 ## --------------------------------------
 ## Tooling Binaries
 ## --------------------------------------
@@ -263,3 +262,63 @@ tools: $(TOOLING_BINARIES) ## Build tooling binaries
 $(TOOLING_BINARIES):
 	make -C $(TOOLS_DIR) $(@F)
 
+.PHONY: clean-tools
+clean-tools:
+	make -C $(TOOLS_DIR) clean
+
+## --------------------------------------
+## CLI Coexistence Testing
+## --------------------------------------
+
+# CLI Coexistence related settings
+
+ifndef TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR
+TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR = /app/legacy-tanzu-cli
+endif
+
+ifndef TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR
+TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR = /app/tanzu-cli
+endif
+
+ifndef TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL
+TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL = localhost:9876/tanzu-cli/plugins/central:small
+endif
+
+ifndef TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION
+TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION = v0.28.1
+endif
+
+ifndef TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER
+TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER = yes
+endif
+
+.PHONY: build-cli-coexistence ## Build CLI Coexistence docker image
+build-cli-coexistence: start-test-central-repo
+	docker build \
+		--build-arg TANZU_CLI_BUILD_VERSION=$(BUILD_VERSION) \
+		--build-arg TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR=$(TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR) \
+		--build-arg TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR=$(TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR) \
+		--build-arg TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION=$(TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION) \
+		--build-arg TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
+		--build-arg TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
+		--build-arg TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
+		--build-arg TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER=$(TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER) \
+		-t cli-coexistence \
+		.
+
+.PHONY: cli-coexistence-tests ## Run CLI Coexistence tests
+cli-coexistence-tests:start-test-central-repo
+	docker run --rm \
+	  --network host \
+	  -e TANZU_CLI_BUILD_VERSION=$(BUILD_VERSION) \
+	  -e TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR=$(TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR) \
+	  -e TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR=$(TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR) \
+	  -e TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION=$(TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION) \
+	  -e TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
+	  -e TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
+	  -e TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
+	  -e TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER=$(TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER) \
+	  -v $(ROOT_DIR):/tmp/tanzu-cli/ \
+	  -w /tmp/tanzu-cli/ \
+	  cli-coexistence \
+	  ${GO} test ${GOTEST_VERBOSE}  ./test/e2e/coexistence... --ginkgo.v --ginkgo.randomize-all --ginkgo.trace --ginkgo.json-report=coexistence-tests.json

@@ -13,6 +13,7 @@ import (
 )
 
 // GetTMCClusterInfo returns the TMC cluster info by reading environment variables TANZU_CLI_TMC_UNSTABLE_URL and TANZU_API_TOKEN
+// Currently we are setting these env variables in GitHub action for local testing these variables need to be set by the developer on their respective machine
 func GetTMCClusterInfo() *framework.ClusterInfo {
 	return &framework.ClusterInfo{EndPoint: os.Getenv(framework.TanzuCliTmcUnstableURL), APIKey: os.Getenv(framework.TanzuAPIToken)}
 }

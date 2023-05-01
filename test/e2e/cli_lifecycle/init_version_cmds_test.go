@@ -21,13 +21,13 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Command-init-version]", f
 	Context("tests for tanzu init and version commands", func() {
 		When("init command executed", func() {
 			It("should initialize cli successfully", func() {
-				err := tf.CliInit()
+				err := tf.CLIInit()
 				Expect(err).To(BeNil())
 			})
 		})
 		When("version command executed", func() {
 			It("should return version info", func() {
-				version, err := tf.CliVersion()
+				version, err := tf.CLIVersion()
 				Expect(version).NotTo(BeNil())
 				Expect(err).To(BeNil())
 			})

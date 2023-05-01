@@ -81,10 +81,12 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 		})
 		// Test case: d. (negative test) Create context for TMC target with TMC cluster URL as endpoint when api token set as incorrect
 		It("create tmc context with endpoint and with incorrect api token", func() {
-			os.Setenv(framework.TanzuAPIToken, framework.RandomString(4))
+			err := os.Setenv(framework.TanzuAPIToken, framework.RandomString(4))
+			Expect(err).ToNot(BeNil())
 			ctxName := framework.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
-			os.Setenv(framework.TanzuAPIToken, clusterInfo.APIKey)
+			err = tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
+			Expect(err).ToNot(BeNil())
+			err = os.Setenv(framework.TanzuAPIToken, clusterInfo.APIKey)
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctxName))
