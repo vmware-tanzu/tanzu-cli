@@ -4,12 +4,14 @@
 package coexistence_test
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 
-	pluginlifecyclee2e "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugin_lifecycle"
-
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
+	pluginlifecyclee2e "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugin_lifecycle"
 )
 
 var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
@@ -87,6 +89,12 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(version).To(gomega.ContainSubstring(newTanzuCLIVersion))
 			gomega.Expect(err).To(gomega.BeNil())
 
+			// set up the test local central repository host CA cert in the config file
+			setTestLocalCentralRepoCertConfig([]framework.E2EOption{framework.WithTanzuCommandPrefix(framework.TzPrefix)})
+
+			// set up the local central repository discovery image signature public key path
+			os.Setenv("TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH", e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
+
 			ginkgo.By("Update plugin discovery source with test central repo")
 			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL}, framework.WithTanzuCommandPrefix(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin source update")
@@ -156,6 +164,12 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(version).To(gomega.ContainSubstring(newTanzuCLIVersion))
 			gomega.Expect(err).To(gomega.BeNil())
 
+			// set up the test local central repository host CA cert in the config file
+			setTestLocalCentralRepoCertConfig([]framework.E2EOption{})
+
+			// set up the local central repository discovery image signature public key path
+			os.Setenv("TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH", e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
+
 			ginkgo.By("Update plugin discovery source with test central repo")
 			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin source update")
@@ -219,6 +233,12 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			version, err = tf.CLIVersion()
 			gomega.Expect(version).To(gomega.ContainSubstring(newTanzuCLIVersion))
 			gomega.Expect(err).To(gomega.BeNil())
+
+			// set up the test local central repository host CA cert in the config file
+			setTestLocalCentralRepoCertConfig([]framework.E2EOption{})
+
+			// set up the local central repository discovery image signature public key path
+			os.Setenv("TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH", e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 			ginkgo.By("Update plugin discovery source with test central repo")
 			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
@@ -294,6 +314,12 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(version).To(gomega.ContainSubstring(newTanzuCLIVersion))
 			gomega.Expect(err).To(gomega.BeNil())
 
+			// set up the test local central repository host CA cert in the config file
+			setTestLocalCentralRepoCertConfig([]framework.E2EOption{framework.WithTanzuCommandPrefix(framework.TzPrefix)})
+
+			// set up the local central repository discovery image signature public key path
+			os.Setenv("TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH", e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
+
 			ginkgo.By("Update plugin discovery source with test central repo")
 			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL}, framework.WithTanzuCommandPrefix(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin source update")
@@ -367,6 +393,12 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			version, err = tf.CLIVersion()
 			gomega.Expect(version).To(gomega.ContainSubstring(newTanzuCLIVersion))
 			gomega.Expect(err).To(gomega.BeNil())
+
+			// set up the test local central repository host CA cert in the config file
+			setTestLocalCentralRepoCertConfig([]framework.E2EOption{})
+
+			// set up the local central repository discovery image signature public key path
+			os.Setenv("TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH", e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 			ginkgo.By("Update plugin discovery source with test central repo")
 			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
@@ -522,3 +554,13 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 	})
 
 })
+
+func setTestLocalCentralRepoCertConfig(options []framework.E2EOption) {
+	e2eTestLocalCentralRepoPluginHost := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryHost)
+	gomega.Expect(e2eTestLocalCentralRepoPluginHost).NotTo(gomega.BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository host", framework.TanzuCliE2ETestLocalCentralRepositoryHost))
+
+	// set up the CA cert fort local central repository
+	_ = tf.Config.ConfigCertDelete(e2eTestLocalCentralRepoPluginHost, options...)
+	_, err := tf.Config.ConfigCertAdd(&framework.CertAddOptions{Host: e2eTestLocalCentralRepoPluginHost, CACertificatePath: e2eTestLocalCentralRepoCACertPath, SkipCertVerify: "false", Insecure: "false"}, options...)
+	gomega.Expect(err).To(gomega.BeNil())
+}
