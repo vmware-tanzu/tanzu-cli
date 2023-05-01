@@ -355,6 +355,26 @@ to exclusively store data and artifacts specific to Tanzu CLI:
 
 Cleaning out the above-mentioned directories should restore the CLI to a pristine state.
 
+### Plugin environment variables
+
+When the Tanzu CLI executes a plugin, it passes the outer environment to the
+plugin, and also injects some additional environment variables.
+
+Currently, the only additional environment variable passed to the plugin is
+`TANZU_BIN` which provides the path to the `tanzu` command (as executed by the user).
+If a plugin needs to trigger a Tanzu CLI operation, it can do so by externally calling
+the `tanzu` binary specified by the `TANZU_BIN` variable.
+
+For example, the plugin can use the following to perform a `tanzu plugin sync`:
+
+```go
+cliPath := os.Getenv("TANZU_BIN")
+command := exec.Command(cliPath, "plugin", "sync")
+command.Stdout = os.Stdout
+command.Stderr = os.Stderr
+command.Run()
+```
+
 ## Deprecation of existing plugin functionality
 
 It is highly recommended that plugin authors follow the same process used by
