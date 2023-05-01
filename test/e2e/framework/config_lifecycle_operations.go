@@ -51,7 +51,7 @@ type ConfigCertOps interface {
 	ConfigCertAdd(certAddOpts *CertAddOptions, opts ...E2EOption) (string, error)
 
 	// ConfigCertDelete deletes cert config for a host, and returns error info
-	ConfigCertDelete(hostname string, opts ...E2EOption) error
+	ConfigCertDelete(host string, opts ...E2EOption) error
 }
 
 type ConfigCmdOps interface {
