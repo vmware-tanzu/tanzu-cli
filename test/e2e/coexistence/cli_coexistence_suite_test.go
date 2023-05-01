@@ -27,6 +27,9 @@ var (
 
 	e2eTestLocalCentralRepoURL string
 
+	e2eTestLocalCentralRepoCACertPath                                 string
+	e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath string
+
 	// PluginsForLegacyTanzuCLICoexistenceTests is list of plugins (which are published in local central repo) used in plugin life cycle test cases
 	PluginsForLegacyTanzuCLICoexistenceTests []*framework.PluginInfo
 
@@ -56,6 +59,10 @@ var _ = ginkgo.BeforeSuite(func() {
 	// verify the new Tanzu CLI version is set
 	newTanzuCLIVersion = os.Getenv(framework.CLICoexistenceNewTanzuCLIVersion)
 	gomega.Expect(newTanzuCLIVersion).NotTo(gomega.BeEmpty(), fmt.Sprintf("new tanzu CLI %s should be set", framework.CLICoexistenceNewTanzuCLIVersion))
+
+	// test local central repository CA certs are mounted at path /cosign-key-pair in docker
+	e2eTestLocalCentralRepoCACertPath = "/localhost_certs/localhost.crt"
+	e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath = "/cosign-key-pair/cosign.pub"
 
 	// verify the legacy Tanzu CLI installation path is set
 	legacyTanzuCLIInstallationPath := os.Getenv(framework.CLICoexistenceLegacyTanzuCLIInstallationPath)

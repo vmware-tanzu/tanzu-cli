@@ -304,7 +304,7 @@ TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION = v0.28.1
 endif
 
 ifndef TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER
-TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER = yes
+TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER = no
 endif
 
 .PHONY: build-cli-coexistence ## Build CLI Coexistence docker image
@@ -316,7 +316,6 @@ build-cli-coexistence: start-test-central-repo
 		--build-arg TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION=$(TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION) \
 		--build-arg TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
 		--build-arg TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
-		--build-arg TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
 		--build-arg TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER=$(TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER) \
 		-t cli-coexistence \
 		.
@@ -333,7 +332,10 @@ cli-coexistence-tests:start-test-central-repo
 	  -e TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
 	  -e TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
 	  -e TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER=$(TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER) \
+	  -e TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST)  \
 	  -v $(ROOT_DIR):/tmp/tanzu-cli/ \
+	  -v $(ROOT_DIR)/hack/central-repo/certs:/localhost_certs/ \
+	  -v $(ROOT_DIR)/hack/central-repo/cosign-key-pair:/cosign-key-pair/ \
 	  -w /tmp/tanzu-cli/ \
 	  cli-coexistence \
 	  ${GO} test ${GOTEST_VERBOSE}  ./test/e2e/coexistence... --ginkgo.v --ginkgo.randomize-all --ginkgo.trace --ginkgo.json-report=coexistence-tests.json
