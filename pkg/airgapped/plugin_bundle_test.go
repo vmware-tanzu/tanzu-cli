@@ -15,6 +15,7 @@ import (
 	"github.com/verybluebot/tarinator-go"
 	"gopkg.in/yaml.v3"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
@@ -148,6 +149,7 @@ imagesToCopy:
 			Tar:             filepath.Join(tempTestDir, "plugin_bundle.tar"),
 			ImageProcessor:  fakeImageOperations,
 		}
+		os.Setenv(constants.PluginDiscoveryImageSignatureVerificationSkipList, dpbo.PluginInventoryImage)
 	})
 	AfterEach(func() {
 		defer os.RemoveAll(tempTestDir)
