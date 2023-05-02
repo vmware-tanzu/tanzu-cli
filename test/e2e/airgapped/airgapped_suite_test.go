@@ -48,9 +48,27 @@ var _ = BeforeSuite(func() {
 
 	e2eAirgappedCentralRepoImage = fmt.Sprintf("%s%s", e2eAirgappedCentralRepo, filepath.Base(e2eTestLocalCentralRepoImage))
 
+	os.Setenv(framework.TanzuCliPluginDiscoverySignatureVerificationSkipList, e2eAirgappedCentralRepoImage)
+
 	// setup the test central repo
 	_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoImage})
 	Expect(err).To(BeNil(), "should not get any error for plugin source update")
+
+	e2eTestLocalCentralRepoPluginHost := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryHost)
+	Expect(e2eTestLocalCentralRepoPluginHost).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository host", framework.TanzuCliE2ETestLocalCentralRepositoryHost))
+
+	e2eTestLocalCentralRepoCACertPath := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryCACertPath)
+	Expect(e2eTestLocalCentralRepoCACertPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository CA cert path", framework.TanzuCliE2ETestLocalCentralRepositoryCACertPath))
+
+	// set up the CA cert fort local central repository
+	_ = tf.Config.ConfigCertDelete(e2eTestLocalCentralRepoPluginHost)
+	_, err = tf.Config.ConfigCertAdd(&framework.CertAddOptions{Host: e2eTestLocalCentralRepoPluginHost, CACertificatePath: e2eTestLocalCentralRepoCACertPath, SkipCertVerify: "false", Insecure: "false"})
+	Expect(err).To(BeNil())
+
+	// set up the local central repository discovery image public key path
+	e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath)
+	Expect(e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository discovery image signature public key path", framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath))
+	os.Setenv("TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH", e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 	// search plugin groups and make sure there plugin groups available
 	pluginGroups = pluginlifecyclee2e.SearchAllPluginGroups(tf)

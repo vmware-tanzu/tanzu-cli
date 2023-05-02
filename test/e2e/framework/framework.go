@@ -59,6 +59,7 @@ const (
 	TanzuCliE2ETestLocalCentralRepositoryHost                                       = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST"
 	TanzuCliE2ETestLocalCentralRepositoryCACertPath                                 = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH"
 	TanzuCliE2ETestAirgappedRepo                                                    = "TANZU_CLI_E2E_AIRGAPPED_REPO"
+	TanzuCliPluginDiscoverySignatureVerificationSkipList                            = "TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST"
 
 	// CLI Coexistence
 	CLICoexistenceLegacyTanzuCLIInstallationPath = "TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR"
