@@ -1,0 +1,20 @@
+default:
+  image: golang:1.20
+
+stages:
+- build
+
+build-job:
+  stage: build
+  script:
+    - apt-get update
+    - apt-get install -y ca-certificates
+    - echo "deb https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | tee /etc/apt/sources.list.d/tanzu.list
+    - apt-get update --allow-insecure-repositories
+    - apt-get install -y tanzu-cli --allow-unauthenticated
+    - tanzu ceip-participation set false
+    - tanzu version
+    - tanzu plugin install builder
+    - make plugin-build-install-local
+    - make test
+    - make lint
