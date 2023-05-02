@@ -57,5 +57,5 @@ var GithubWorkflowBuild string
 
 // GitlabCI contains the Gitlab CI template
 //
-//go:embed gitlab-ci.yaml.tmpl
+//go:embed gitlab-ci.yml.tmpl
 var GitlabCI string

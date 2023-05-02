@@ -22,7 +22,7 @@ var GitIgnore = Target{
 
 // GitLabCI target
 var GitLabCI = Target{
-	Filepath: ".gitlab-ci.yaml",
+	Filepath: ".gitlab-ci.yml",
 	Template: plugintemplates.GitlabCI,
 }
 
