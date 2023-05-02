@@ -14,12 +14,6 @@ var GoMod = Target{
 	Template: plugintemplates.Gomod,
 }
 
-// BuildVersion target
-var BuildVersion = Target{
-	Filepath: "BUILD_VERSION",
-	Template: `v0.0.1`,
-}
-
 // GitIgnore target
 var GitIgnore = Target{
 	Filepath: ".gitignore",
@@ -33,11 +27,9 @@ var GitLabCI = Target{
 }
 
 // GitHubCI target
-// TODO (pbarker): should we push everything to a single repository, or at least make that possible?
-// TODO (pbarker): should report stats
 var GitHubCI = Target{
-	Filepath: ".github/workflows/release.yaml",
-	Template: plugintemplates.GithubWorkflowRelease,
+	Filepath: ".github/workflows/build.yaml",
+	Template: plugintemplates.GithubWorkflowBuild,
 }
 
 // CommonMK MK4 target
@@ -62,12 +54,6 @@ var PluginToolingMK = Target{
 var Codeowners = Target{
 	Filepath: "CODEOWNERS",
 	Template: `* # edit as appropriate`,
-}
-
-// Tools target.
-var Tools = Target{
-	Filepath: "tools/tools.go",
-	Template: plugintemplates.ToolsGo,
 }
 
 // MainReadMe target

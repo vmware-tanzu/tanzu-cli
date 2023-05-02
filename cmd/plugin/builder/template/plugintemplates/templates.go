@@ -50,15 +50,10 @@ var MainGo string
 //go:embed main_test.go.tmpl
 var MainTestGo string
 
-// ToolsGo contains the plugin tools.go template
+// GithubWorkflowBuild contains the Github build workflow template
 //
-//go:embed tools.go.tmpl
-var ToolsGo string
-
-// GithubWorkflowRelease contains the Github release workflow template
-//
-//go:embed github_workflow_release.yaml.tmpl
-var GithubWorkflowRelease string
+//go:embed github_workflow_build.yaml.tmpl
+var GithubWorkflowBuild string
 
 // GitlabCI contains the Gitlab CI template
 //

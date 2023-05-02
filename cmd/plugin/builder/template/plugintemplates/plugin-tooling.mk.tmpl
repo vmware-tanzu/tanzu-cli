@@ -1,9 +1,6 @@
 # Copyright 2023 VMware, Inc. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Ensure Make is run with bash shell as some syntax below is bash-specific
-SHELL := /usr/bin/env bash
-
 GOHOSTOS ?= $(shell go env GOHOSTOS)
 GOHOSTARCH ?= $(shell go env GOHOSTARCH)
 
@@ -13,7 +10,6 @@ ifeq ($(GOHOSTOS),windows)
 endif
 
 # Build and version information
-
 PLUGIN_BUILD_SHA ?= $(shell git describe --match=$(git rev-parse --short HEAD) --always --dirty)
 PLUGIN_BUILD_DATE ?= $(shell date -u +"%Y-%m-%d")
 PLUGIN_BUILD_VERSION ?= $(shell git describe --tags --abbrev=0 2>$(NUL))

@@ -1,6 +1,6 @@
 # Ensure Make is run with bash shell as some syntax below is bash-specific
-SHELL:=bash
-.ONESHELL:
+SHELL := /usr/bin/env bash
+
 .EXPORT_ALL_VARIABLES:
 .SHELLFLAGS := -eu -o pipefail -c
 .DELETE_ON_ERROR:
@@ -26,7 +26,6 @@ ifeq ($(GOPROXY),)
 GOPROXY := https://proxy.golang.org
 endif
 export GOPROXY
-
 
 ## --------------------------------------
 ## Help
