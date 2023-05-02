@@ -1,0 +1,43 @@
+name: Build
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.20
+        id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+
+    - name: Get dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ca-certificates
+        sudo echo "deb https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
+        sudo apt-get update --allow-insecure-repositories
+        sudo apt-get install -y tanzu-cli --allow-unauthenticated
+        tanzu ceip-participation set false
+        tanzu version
+        tanzu plugin install builder
+
+    - name: Build
+      run: make plugin-build-install-local
+
+    - name: Test
+      run: make test
+
+    - name: Lint
+      run: make lint

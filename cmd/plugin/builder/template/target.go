@@ -58,13 +58,11 @@ func (t Target) Run(rootDir string, data interface{}, dryRun bool) error {
 // DefaultInitTargets are the default initialization targets.
 var DefaultInitTargets = []Target{
 	GoMod,
-	BuildVersion,
 	GitIgnore,
 	Makefile,
 	Codeowners,
 	MainReadMe,
 	GolangCIConfig,
-	Tools,
 	CommonMK,
 	PluginToolingMK,
 }
