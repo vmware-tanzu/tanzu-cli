@@ -112,7 +112,7 @@ const (
 	FileContent      = "file: %s , content: %s"
 
 	// Error messages
-	UnableToFindPluginForTarget                   = "unable to find plugin '%s' for target '%s'"
+	UnableToFindPluginForTarget                   = "unable to find plugin '%s'"
 	UnableToFindPluginWithVersionForTarget        = "unable to find plugin '%s' with version '%s' for target '%s'"
 	UnableToFindPlugin                            = "unable to find plugin '%s'"
 	InvalidTargetSpecified                        = "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'"

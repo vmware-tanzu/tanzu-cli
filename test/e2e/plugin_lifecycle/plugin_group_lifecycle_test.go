@@ -37,7 +37,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("clean plugins if any installed already", func() {
 			err := tf.PluginCmd.CleanPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
 		})
@@ -75,7 +75,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("clean plugins if any installed already", func() {
 			err := tf.PluginCmd.CleanPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
 		})
@@ -96,7 +96,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("clean plugins if any installed already", func() {
 			err := tf.PluginCmd.CleanPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
 		})
@@ -122,7 +122,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("clean plugins if any installed already", func() {
 			err := tf.PluginCmd.CleanPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
 		})
