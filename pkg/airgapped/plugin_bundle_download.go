@@ -14,6 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
@@ -227,6 +228,13 @@ func (o *DownloadPluginBundleOptions) validateOptions() error {
 	if err != nil {
 		return errors.Wrapf(err, "invalid path for %q", o.ToTar)
 	}
+
+	// Verify the inventory image signature before downloading the plugin inventory database
+	err = sigverifier.VerifyInventoryImageSignature(o.PluginInventoryImage)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
