@@ -86,10 +86,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 			ctxName := framework.RandomString(4)
 			err = tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
 			Expect(err).ToNot(BeNil(), "Create context should fail as the TANZU_API_TOKEN was set incorrectly")
-			err = os.Setenv(framework.TanzuAPIToken, clusterInfo.APIKey)
-			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctxName))
+			err = os.Setenv(framework.TanzuAPIToken, clusterInfo.APIKey)
+			Expect(err).To(BeNil(), "There should not be any error in setting environment variables.")
 		})
 		// Test case: e. Create context for TMC target with TMC cluster URL as endpoint, and validate the active context, should be recently create context
 		It("create tmc context with endpoint and check active context", func() {
