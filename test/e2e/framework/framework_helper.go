@@ -322,3 +322,18 @@ func LogFile(file string) error {
 	log.Infof(FileContent, ConfigFilePath, string(dat))
 	return err
 }
+
+// GetPluginsList returns a list of plugins, either installed or both installed and uninstalled, based on the value of the installedOnly parameter.
+func GetPluginsList(tf *Framework, installedOnly bool) ([]*PluginInfo, error) {
+	out := make([]*PluginInfo, 0)
+	pluginListOutput, err := tf.PluginCmd.ListPlugins()
+	if err != nil {
+		return out, nil
+	}
+	for _, pluginInfo := range pluginListOutput {
+		if pluginInfo.Status == Installed {
+			out = append(out, pluginInfo)
+		}
+	}
+	return out, nil
+}

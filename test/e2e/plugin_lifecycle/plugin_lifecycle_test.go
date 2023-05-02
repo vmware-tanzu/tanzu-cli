@@ -89,7 +89,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		It("clean plugins if any installed already", func() {
 			err := tf.PluginCmd.CleanPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
 		})
@@ -122,7 +122,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		})
 		// Test case: list plugins and validate the list plugins output has all plugins which are installed in previous steps
 		It("list plugins and check number plugins should be same as installed in previous test", func() {
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(Equal(len(framework.PluginsForLifeCycleTests)), "plugins list should return all installed plugins")
 			Expect(framework.CheckAllPluginsExists(pluginsList, framework.PluginsForLifeCycleTests)).Should(BeTrue(), "the plugin list output is not same as the plugins being installed")
@@ -134,7 +134,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 				Expect(err).To(BeNil(), "should not get any error for plugin delete")
 			}
 			// validate above plugin delete with plugin list command, plugin list should return 0 plugins
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
 		})
@@ -148,7 +148,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		It("clean plugins", func() {
 			err := tf.PluginCmd.CleanPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
 		})
@@ -163,7 +163,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 				Expect(str).NotTo(BeNil(), "there should be output for plugin describe")
 			}
 			// validate installed plugins count same as number of plugins installed
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(Equal(len(framework.PluginsForLifeCycleTests)), "plugins list should return all installed plugins")
 		})
@@ -171,7 +171,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		It("clean plugins and verify with plugin list", func() {
 			err := tf.PluginCmd.CleanPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
 		})
@@ -196,8 +196,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		It("install plugin with incorrect version", func() {
 			for _, plugin := range framework.PluginsForLifeCycleTests {
 				if !(plugin.Target == framework.GlobalTarget) {
-					err := tf.PluginCmd.InstallPlugin(plugin.Name, plugin.Target, plugin.Version+framework.RandomNumber(3))
-					Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.UnableToFindPluginForTarget, plugin.Name, plugin.Target)))
+					version := plugin.Version + framework.RandomNumber(3)
+					err := tf.PluginCmd.InstallPlugin(plugin.Name, plugin.Target, version)
+					Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.UnableToFindPluginWithVersionForTarget, plugin.Name, version, plugin.Target)))
 					break
 				}
 			}
