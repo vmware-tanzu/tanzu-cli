@@ -265,12 +265,34 @@ as it would introduce a security risk.
 
 ### Testing the plugins
 
+#### Manual testing
+
+As a plugin developer, you will want to test your plugin manually at some point.
+During the development cycle, you can easily build and install the latest version of your plugin
+as described in the section on [building a plugin](#building-a-plugin).
+
+If you are using "contexts" while doing testing of your plugin and that your plugin is context-scoped
+you may find that your new plugin version is being overwritten with an older version by the CLI.
+When a plugin is context-scoped a context may recommend a specific version of that plugin for the CLI
+to use.  In such a case, if you want to test your new version and prevent the CLI from overwriting it
+with the version recommended by the context you can enable the `TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS`
+variable by doing:
+
+```sh
+tanzu config set env.TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS true
+```
+
+This variable will instruct the CLI that any installation done with `tanzu plugin install <pluginName>`
+should take precedence over any installation coming from a context.
+
+#### Automated tests using the test plugin
+
 Plugin tests can be run by installing the admin `test` plugin.
 Currently, we only support testing plugins built locally.
 
 **Note:** The `test` admin functionality has been deprecated and no future enhancements are planned for this plugin.
 
-Steps to test plugin :-
+Steps to test a plugin:
 
 1. Bootstrap a new plugin
 2. Build a plugin binary

@@ -5,8 +5,12 @@
 package pluginsupplier
 
 import (
+	"os"
+	"strconv"
+
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
@@ -27,62 +31,90 @@ func GetInstalledPlugins() ([]cli.PluginInfo, error) {
 
 // GetInstalledStandalonePlugins returns the installed standalone plugins.
 func GetInstalledStandalonePlugins() ([]cli.PluginInfo, error) {
-	standAloneCatalog, err := catalog.NewContextCatalog("")
+	standalonePlugins, _, err := getInstalledStandaloneAndServerPlugins()
 	if err != nil {
 		return nil, err
 	}
-	plugins := standAloneCatalog.List()
-
-	// Any server plugin installed takes precedence over the same plugin
-	// installed as standalone.  We therefore remove those standalone
-	// plugins from the list.
-	plugins, err = removeInstalledServerPlugins(plugins)
-	if err != nil {
-		return nil, err
-	}
-	return plugins, nil
+	return standalonePlugins, nil
 }
 
 // GetInstalledServerPlugins returns the installed server plugins.
 func GetInstalledServerPlugins() ([]cli.PluginInfo, error) {
-	serverNames, err := configlib.GetAllCurrentContextsList()
+	_, serverPlugins, err := getInstalledStandaloneAndServerPlugins()
 	if err != nil {
 		return nil, err
 	}
+	return serverPlugins, nil
+}
 
-	var serverPlugins []cli.PluginInfo
+func getInstalledStandaloneAndServerPlugins() (standalonePlugins, serverPlugins []cli.PluginInfo, err error) {
+	// Get all the standalone plugins found in the catalog
+	standAloneCatalog, err := catalog.NewContextCatalog("")
+	if err != nil {
+		return nil, nil, err
+	}
+	standalonePlugins = standAloneCatalog.List()
+
+	// Get all the server plugins found in the catalog
+	serverNames, err := configlib.GetAllCurrentContextsList()
+	if err != nil {
+		return nil, nil, err
+	}
 	for _, serverName := range serverNames {
 		if serverName != "" {
 			serverCatalog, err := catalog.NewContextCatalog(serverName)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			serverPlugins = append(serverPlugins, serverCatalog.List()...)
 		}
 	}
 
-	return serverPlugins, nil
+	// If the same plugin is present both as standalone and
+	// as a server plugin we need to select which one to use
+	// based on the TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS variable
+	standalonePlugins, serverPlugins = filterIdenticalStandaloneAndServerPlugins(standalonePlugins, serverPlugins)
+	return standalonePlugins, serverPlugins, nil
 }
 
-// Remove any installed standalone plugin if it is also installed as a server plugin.
-func removeInstalledServerPlugins(standalone []cli.PluginInfo) ([]cli.PluginInfo, error) {
-	serverPlugins, err := GetInstalledServerPlugins()
-	if err != nil {
-		return nil, err
-	}
+// Remove an installed standalone plugin if it is also installed as a server plugin,
+// or vice versa if the TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS variable is enabled
+func filterIdenticalStandaloneAndServerPlugins(standalonePlugins, serverPlugins []cli.PluginInfo) (installedStandalone, installedServer []cli.PluginInfo) {
+	standaloneOverServerPlugins, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableStandaloneOverContextPlugins))
 
-	var installedStandalone []cli.PluginInfo
-	for i := range standalone {
-		found := false
-		for j := range serverPlugins {
-			if standalone[i].Name == serverPlugins[j].Name && standalone[i].Target == serverPlugins[j].Target {
-				found = true
-				break
+	if !standaloneOverServerPlugins {
+		installedServer = serverPlugins
+
+		for i := range standalonePlugins {
+			found := false
+			for j := range serverPlugins {
+				if standalonePlugins[i].Name == serverPlugins[j].Name && standalonePlugins[i].Target == serverPlugins[j].Target {
+					found = true
+					break
+				}
+			}
+			if !found {
+				// No server plugin of the same name/target so we keep the standalone plugin
+				installedStandalone = append(installedStandalone, standalonePlugins[i])
 			}
 		}
-		if !found {
-			installedStandalone = append(installedStandalone, standalone[i])
+	} else {
+		installedStandalone = standalonePlugins
+
+		for i := range serverPlugins {
+			found := false
+			for j := range standalonePlugins {
+				if serverPlugins[i].Name == standalonePlugins[j].Name && serverPlugins[i].Target == standalonePlugins[j].Target {
+					found = true
+					break
+				}
+			}
+			if !found {
+				// No standalone plugin of the same name/target so we keep the server plugin
+				installedServer = append(installedServer, serverPlugins[i])
+			}
 		}
 	}
-	return installedStandalone, nil
+
+	return installedStandalone, installedServer
 }
