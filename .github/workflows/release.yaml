@@ -126,7 +126,8 @@ jobs:
         RELEASE_NOTES=$(cat <<-END
           ## Tanzu CLI Installation Instructions
 
-          If you are installing Tanzu CLI using the artifacts published as part of this release, please follow the [instructions](https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/release/usage.md).
+          If you are installing Tanzu CLI using the artifacts published as part of this release, please follow the
+          [instructions](https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/quickstart/install.md#from-the-binary-releases-in-github-project).
 
           $RELEASE_TOOL_NOTES
 
