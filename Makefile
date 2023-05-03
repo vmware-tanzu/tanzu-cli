@@ -209,11 +209,12 @@ stop-test-central-repo: ## Stops and removes the local test central repository
 
 .PHONY: start-airgapped-local-registry
 start-airgapped-local-registry: stop-airgapped-local-registry
-	docker run -d -p 6001:5000 --name temp-airgapped-local-registry mirror.gcr.io/library/registry:2
+	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry mirror.gcr.io/library/registry:2 > /dev/null && \
+		echo "Started docker test airgapped repo at 'localhost:6001'."
 
 .PHONY: stop-airgapped-local-registry
 stop-airgapped-local-registry:
-	docker stop temp-airgapped-local-registry && docker rm -v temp-airgapped-local-registry || true
+	@docker stop temp-airgapped-local-registry > /dev/null 2>&1 && echo "Stopping docker test airgapped repo if running..." || true
 
 .PHONY: fmt
 fmt: $(GOIMPORTS) ## Run goimports
