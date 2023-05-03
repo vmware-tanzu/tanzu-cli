@@ -44,6 +44,8 @@ const (
 	UninstallPLuginCmd                  = "%s plugin delete %s --yes"
 	CleanPluginsCmd                     = "%s plugin clean"
 	pluginSyncCmd                       = "%s plugin sync"
+	PluginDownloadBundleCmd             = "%s plugin download-bundle"
+	PluginUploadBundleCmd               = "%s plugin upload-bundle"
 	JSONOutput                          = " -o json"
 	TestPluginsPrefix                   = "test-plugin-"
 	PluginSubCommand                    = "%s %s"
@@ -56,6 +58,8 @@ const (
 	TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH"
 	TanzuCliE2ETestLocalCentralRepositoryHost                                       = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST"
 	TanzuCliE2ETestLocalCentralRepositoryCACertPath                                 = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH"
+	TanzuCliE2ETestAirgappedRepo                                                    = "TANZU_CLI_E2E_AIRGAPPED_REPO"
+	TanzuCliPluginDiscoverySignatureVerificationSkipList                            = "TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST"
 
 	// CLI Coexistence
 	CLICoexistenceLegacyTanzuCLIInstallationPath = "TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR"
