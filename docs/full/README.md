@@ -206,35 +206,3 @@ Signature verification could fail in the scenarios below:
    that signature verification is skipped for the repository. Users can choose to
    suppress this warning by setting the environment variable `TANZU_CLI_SUPPRESS_SKIP_SIGNATURE_VERIFICATION_WARNING`
    to `true`.
-
-## Interacting with a central repository hosted on a registry with self-signed CA or with expired CA
-
-If a user has configured a central repository on a custom registry (e.g. air-gaped environment) with a self-signed CA or
-if the
-registry CA
-certificate is expired, the user can execute the `tanzu config cert` family of commands to configure the certificate for
-the registry host.
-
-```shell
-
-    # If the registry host is self-signed add CA certificate for the registry
-    tanzu config cert add --host test.registry.com --ca-certificate path/to/ca/cert
-
-    # If the registry is self-signed and is serving on non-default port add CA certificate for the registry
-    tanzu config cert add --host test.registry.com:8443 --ca-certificate path/to/ca/cert
-
-    # If the registry is self-signed or CA cert is expired, add cert configuration for the registry host with
-    # skip-cert-verify option
-    tanzu config cert add --host test.registry.com  --skip-cert-verify true
-
-    # Set to allow insecure (http) connection while interacting with host
-    tanzu config cert add --host test.registry.com  --insecure true
-
-```
-
-The CLI uses the certificate configuration added for the registry host (using `tanzu config cert add` command ) while
-interacting with the registry.
-
-Users can update or delete the certificate configuration using the `tanzu config cert update`
-and `tanzu config cert delete` commands.
-Also, users can list the certificate configuration using the `tanzu config cert list` command.
