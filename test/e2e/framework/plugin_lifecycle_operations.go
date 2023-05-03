@@ -62,11 +62,22 @@ type PluginGroupOps interface {
 	InstallPluginsFromGroup(pluginNameORAll, groupName string, opts ...E2EOption) error
 }
 
+type PluginDownloadAndUploadOps interface {
+	// DownloadPluginBundle downloads the plugin inventory and plugin bundles to local tar file
+	DownloadPluginBundle(image string, groups []string, toTar string, opts ...E2EOption) error
+
+	// UploadPluginBundle performs the uploading plugin bundle to the remote repository
+	// Based on the remote repository status, it setups a new discovery source endpoint
+	// or merges the additional plugins in the bundle to the existing discovery source
+	UploadPluginBundle(toRepo string, tar string, opts ...E2EOption) error
+}
+
 // PluginCmdOps helps to perform the plugin and its sub-commands lifecycle operations
 type PluginCmdOps interface {
 	PluginBasicOps
 	PluginSourceOps
 	PluginGroupOps
+	PluginDownloadAndUploadOps
 }
 
 type DiscoveryOptions struct {
@@ -255,6 +266,34 @@ func (po *pluginCmdOps) CleanPlugins(opts ...E2EOption) error {
 	out, stdErr, err := po.cmdExe.TanzuCmdExec(CleanPluginsCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, CleanPluginsCmd, err.Error(), stdErr.String(), out.String())
+	}
+	return err
+}
+
+func (po *pluginCmdOps) DownloadPluginBundle(image string, groups []string, toTar string, opts ...E2EOption) error {
+	downloadPluginBundle := PluginDownloadBundleCmd
+	if len(strings.TrimSpace(image)) > 0 {
+		downloadPluginBundle += " --image " + image
+	}
+	if len(groups) > 0 {
+		downloadPluginBundle += " --group " + strings.Join(groups, ",")
+	}
+	downloadPluginBundle += " --to-tar " + strings.TrimSpace(toTar)
+
+	out, stdErr, err := po.cmdExe.TanzuCmdExec(downloadPluginBundle, opts...)
+	if err != nil {
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, downloadPluginBundle, err.Error(), stdErr.String(), out.String())
+	}
+	return err
+}
+
+func (po *pluginCmdOps) UploadPluginBundle(toRepo string, tar string, opts ...E2EOption) error {
+	uploadPluginBundle := PluginUploadBundleCmd
+	uploadPluginBundle += " --to-repo " + strings.TrimSpace(toRepo)
+	uploadPluginBundle += " --tar " + strings.TrimSpace(tar)
+	out, stdErr, err := po.cmdExe.TanzuCmdExec(uploadPluginBundle, opts...)
+	if err != nil {
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, uploadPluginBundle, err.Error(), stdErr.String(), out.String())
 	}
 	return err
 }

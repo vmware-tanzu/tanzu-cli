@@ -5,6 +5,7 @@ E2E_TEST_OUTPUT ?= ${ROOT_DIR}/e2e-test-output.txt
 E2E_TEST_TIMEOUT ?= 60m
 GOTEST_VERBOSE ?= -v
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
+GO := go
 
 ifndef TANZU_API_TOKEN
 TANZU_API_TOKEN = ""
@@ -34,10 +35,16 @@ ifndef TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PU
 TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH = ${ROOT_DIR}/hack/central-repo/cosign-key-pair/cosign.pub
 endif
 
+ifndef TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_IMAGE_FOR_AIRGAPPED
+TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_IMAGE_FOR_AIRGAPPED = localhost:9876/tanzu-cli/plugins/airgapped:large
+endif
 
+ifndef TANZU_CLI_E2E_AIRGAPPED_REPO
+TANZU_CLI_E2E_AIRGAPPED_REPO = localhost:6001/tanzu-cli/plugins/
+endif
 
 .PHONY: e2e-cli-core-all ## Execute all CLI Core E2E Tests
-e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-cli-plugin-compatibility-test e2e-context-k8s-tests e2e-context-tmc-test e2e-cli-plugin-lifecycle-sync-test
+e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-cli-plugin-compatibility-test e2e-context-k8s-tests e2e-context-tmc-test e2e-cli-plugin-lifecycle-sync-test e2e-airgapped-tests
 
 
 .PHONY: e2e-cli-lifecycle ## Execute CLI life cycle specific e2e tests
@@ -89,3 +96,14 @@ e2e-context-tmc-test:
 	    export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 		${GO} test ${ROOT_DIR}/test/e2e/context/tmc -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 	fi
+
+.PHONY: e2e-airgapped-tests ## Execute CLI airgapped tests
+e2e-airgapped-tests:
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_IMAGE_FOR_AIRGAPPED) ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH) ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
+	export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_IMAGE_FOR_AIRGAPPED) ; \
+	export TANZU_CLI_E2E_AIRGAPPED_REPO=$(TANZU_CLI_E2E_AIRGAPPED_REPO) ; \
+	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
+	${GO} test ${ROOT_DIR}/test/e2e/airgapped -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ;
