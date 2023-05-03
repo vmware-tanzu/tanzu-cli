@@ -238,3 +238,82 @@ interacting with the registry.
 Users can update or delete the certificate configuration using the `tanzu config cert update`
 and `tanzu config cert delete` commands.
 Also, users can list the certificate configuration using the `tanzu config cert list` command.
+## Installing Tanzu CLI plugins in internet-restricted environments
+
+The Tanzu CLI allows users to install and run CLI plugins in internet-restricted
+environments (which means air-gapped environments, with no physical connection
+to the Internet). To run the Tanzu CLI in internet-restricted environments a
+private Docker-compatible container registry such as
+[Harbor](https://goharbor.io/), [Docker](https://docs.docker.com/registry/), or
+[Artifactory](https://jfrog.com/artifactory/) is required.
+
+Once the private registry is set up, the operator of the private registry can
+migrate plugins from the publicly available registry to the private registry
+using the below-mentioned steps:
+
+1. Download the plugin-inventory image along with all selected plugin images
+as a `tar.gz` file on the local disk of a machine which has internet access
+using the `tanzu plugin download-bundle` command.
+2. Copy this `tar.gz` file to the air-gapped network (using a USB drive or
+other mechanism).
+3. Upload the plugin bundle `tar.gz` to the air-gapped private registry using
+the `tanzu plugin upload-bundle` command.
+
+### Downloading plugin bundle
+
+You can download all plugins within the default central repository by running
+the following command:
+
+```sh
+tanzu plugin download-bundle --to-tar /tmp/plugin_bundle_complete.tar.gz
+```
+
+However, If you want to just migrate plugins within specific plugin groups
+(e.g. `vmware-tkg/default:v2.1.0`) you can run the below command to download
+the plugin bundle containing only plugins from specified groups:
+
+```sh
+tanzu plugin download-bundle --group vmware-tkg/default:v2.1.0 --to-tar /tmp/plugin_bundle_tkg_v2_1_0.tar.gz
+```
+
+To migrate plugins from the specific plugin repository and not use the default
+plugin repository you can provide a `--image` flag with the above command. Example:
+
+```sh
+tanzu plugin download-bundle
+                  --image custom.repo.example.com/tanzu-cli/plugins/plugin-inventory:latest
+                  --group vmware-tkg/default:v2.1.0
+                  --to-tar /tmp/plugin_bundle_tkg_v2_1_0.tar.gz
+```
+
+### Uploading plugin bundle to the private registry
+
+Once you download the plugin bundle as a `tar.gz` file and copy the file to the
+air-gapped network, you can run the following command to migrate plugins to the
+private registry (e.g. `registry.example.com/tanzu-cli/plugin`).
+
+```sh
+tanzu plugin upload-bundle --tar /tmp/plugin_bundle_complete.tar.gz --to-repo `registry.example.com/tanzu-cli/plugin`
+```
+
+The above-mentioned command uploads the plugin bundle to the provided private
+repository location with the image name `plugin-inventory:latest`. So for the
+above example, the plugin inventory image will be published to
+`registry.example.com/tanzu-cli/plugin/plugin-inventory:latest`.
+
+Please note that `tanzu plugin upload-bundle` uploads the plugins by adding them
+to any plugin-inventory already present in the private registry. That means if you have already uploaded
+any plugins to the specified private repository, it will keep the existing
+plugins and append new plugins from the plugin bundle provided.
+
+You can use this image and configure the default discovery source to point to
+this image by running the following command:
+
+```sh
+tanzu plugin source update default --uri registry.example.com/tanzu-cli/plugin/plugin-inventory:latest
+```
+
+Now, the Tanzu CLI should be able to discover plugins from this newly configured
+private plugin discovery source. Verify that plugins are discoverable by
+running the `tanzu plugin search`, `tanzu plugin group search`, and
+`tanzu plugin install` commands.
