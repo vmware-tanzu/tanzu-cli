@@ -207,7 +207,7 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 stop-test-central-repo: ## Stops and removes the local test central repository
 	@docker container stop central > /dev/null 2>&1 && echo "Stopped docker test central repo" || true
 
-.PHONY: airgapped-local-registry
+.PHONY: start-airgapped-local-registry
 start-airgapped-local-registry: stop-airgapped-local-registry
 	docker run -d -p 6001:5000 --name temp-airgapped-local-registry mirror.gcr.io/library/registry:2
 
