@@ -12,6 +12,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
@@ -51,7 +52,7 @@ var _ = Describe("GetInstalledStandalonePlugins", func() {
 	})
 	Context("when a standalone plugins installed", func() {
 		BeforeEach(func() {
-			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s)
+			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -112,7 +113,7 @@ var _ = Describe("GetInstalledServerPlugins", func() {
 	Context("when a server plugin for k8s target installed", func() {
 		BeforeEach(func() {
 			contextNameFromConfig := k8sContextName
-			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin1", types.TargetK8s)
+			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin1", types.TargetK8s, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -126,7 +127,7 @@ var _ = Describe("GetInstalledServerPlugins", func() {
 	Context("when a server plugin for tmc target installed", func() {
 		BeforeEach(func() {
 			contextNameFromConfig := tmcContextName
-			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetTMC)
+			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetTMC, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -140,11 +141,11 @@ var _ = Describe("GetInstalledServerPlugins", func() {
 	Context("when a server plugin for both tmc and k8s targets installed", func() {
 		BeforeEach(func() {
 			contextNameFromConfig := k8sContextName
-			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin1", types.TargetTMC)
+			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin1", types.TargetTMC, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
 			contextNameFromConfig = tmcContextName
-			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetTMC)
+			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetTMC, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -160,14 +161,17 @@ var _ = Describe("GetInstalledServerPlugins", func() {
 
 var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", func() {
 	var (
-		cdir         string
-		err          error
-		configFile   *os.File
-		configFileNG *os.File
-		pd1          *cli.PluginInfo
-		pd2          *cli.PluginInfo
-		pd3          *cli.PluginInfo
-		pd4          *cli.PluginInfo
+		cdir             string
+		err              error
+		configFile       *os.File
+		configFileNG     *os.File
+		pd1              *cli.PluginInfo
+		pd2              *cli.PluginInfo
+		pd3              *cli.PluginInfo
+		pd4              *cli.PluginInfo
+		pd5              *cli.PluginInfo
+		pd6              *cli.PluginInfo
+		originalVarValue string
 	)
 	const (
 		tmcContextName = "test-tmc-context"
@@ -189,6 +193,8 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 		err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), configFileNG.Name())
 		Expect(err).To(BeNil(), "Error while coping tanzu config-ng file for testing")
+
+		originalVarValue = os.Getenv(constants.ConfigVariableStandaloneOverContextPlugins)
 	})
 	AfterEach(func() {
 		os.RemoveAll(cdir)
@@ -196,6 +202,8 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
 		os.RemoveAll(configFile.Name())
 		os.RemoveAll(configFileNG.Name())
+
+		os.Setenv(constants.ConfigVariableStandaloneOverContextPlugins, originalVarValue)
 	})
 
 	Context("when no standalone or server plugins installed", func() {
@@ -208,7 +216,7 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 	})
 	Context("when a standalone plugins installed", func() {
 		BeforeEach(func() {
-			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s)
+			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -221,11 +229,11 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 	})
 	Context("when a standalone and server plugin for k8s target installed", func() {
 		BeforeEach(func() {
-			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s)
+			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
 			contextNameFromConfig := k8sContextName
-			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetK8s)
+			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetK8s, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -240,15 +248,15 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 
 	Context("when a standalone plugin and server plugin for both tmc and k8s targets installed", func() {
 		BeforeEach(func() {
-			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s)
+			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
 			contextNameFromConfig := k8sContextName
-			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetK8s)
+			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetK8s, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
 			contextNameFromConfig = tmcContextName
-			pd3, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin3", types.TargetTMC)
+			pd3, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin3", types.TargetTMC, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -266,11 +274,11 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 		BeforeEach(func() {
 			sharedPluginName := "fake-plugin"
 			sharedPluginTarget := types.TargetK8s
-			pd1, err = fakeInstallPlugin("", sharedPluginName, sharedPluginTarget)
+			pd1, err = fakeInstallPlugin("", sharedPluginName, sharedPluginTarget, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
 			contextNameFromConfig := k8sContextName
-			pd2, err = fakeInstallPlugin(contextNameFromConfig, sharedPluginName, sharedPluginTarget)
+			pd2, err = fakeInstallPlugin(contextNameFromConfig, sharedPluginName, sharedPluginTarget, "v2.0.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -280,29 +288,38 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 			Expect(len(installedPlugins)).To(Equal(1))
 			Expect(installedPlugins).Should(ContainElement(*pd2))
 		})
+		It("if TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS=1 it should return the standalone plugin only", func() {
+			err := os.Setenv(constants.ConfigVariableStandaloneOverContextPlugins, "1")
+			Expect(err).ToNot(HaveOccurred())
+
+			installedPlugins, err := GetInstalledPlugins()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(installedPlugins)).To(Equal(1))
+			Expect(installedPlugins).Should(ContainElement(*pd1))
+		})
 	})
 
 	Context("when multiple standalone plugins and server plugins are installed with some overlap", func() {
 		BeforeEach(func() {
-			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s)
+			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
 			contextNameFromConfig := k8sContextName
-			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetK8s)
+			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetK8s, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
 			sharedPluginName := "fake-plugin1"
 			sharedPluginTarget := types.TargetK8s
-			_, err = fakeInstallPlugin("", sharedPluginName, sharedPluginTarget)
+			pd3, err = fakeInstallPlugin("", sharedPluginName, sharedPluginTarget, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
-			pd3, err = fakeInstallPlugin(contextNameFromConfig, sharedPluginName, sharedPluginTarget)
+			pd4, err = fakeInstallPlugin(contextNameFromConfig, sharedPluginName, sharedPluginTarget, "v2.0.0")
 			Expect(err).ToNot(HaveOccurred())
 
 			sharedPluginName = "fake-plugin2"
 			sharedPluginTarget = types.TargetTMC
-			_, err = fakeInstallPlugin("", sharedPluginName, sharedPluginTarget)
+			pd5, err = fakeInstallPlugin("", sharedPluginName, sharedPluginTarget, "v1.0.0")
 			Expect(err).ToNot(HaveOccurred())
-			pd4, err = fakeInstallPlugin(contextNameFromConfig, sharedPluginName, sharedPluginTarget)
+			pd6, err = fakeInstallPlugin(contextNameFromConfig, sharedPluginName, sharedPluginTarget, "v2.0.0")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
@@ -312,8 +329,19 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 			Expect(len(installedPlugins)).To(Equal(4))
 			Expect(installedPlugins).Should(ContainElement(*pd1))
 			Expect(installedPlugins).Should(ContainElement(*pd2))
-			Expect(installedPlugins).Should(ContainElement(*pd3))
 			Expect(installedPlugins).Should(ContainElement(*pd4))
+			Expect(installedPlugins).Should(ContainElement(*pd6))
+		})
+		It("if TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS=1 it should not return any server plugins that are also standalone plugins", func() {
+			err := os.Setenv(constants.ConfigVariableStandaloneOverContextPlugins, "1")
+			Expect(err).ToNot(HaveOccurred())
+			installedPlugins, err := GetInstalledPlugins()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(installedPlugins)).To(Equal(4))
+			Expect(installedPlugins).Should(ContainElement(*pd1))
+			Expect(installedPlugins).Should(ContainElement(*pd2))
+			Expect(installedPlugins).Should(ContainElement(*pd3))
+			Expect(installedPlugins).Should(ContainElement(*pd5))
 		})
 	})
 	Context("with a catalog cache from an older CLI version", func() {
@@ -433,15 +461,15 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 	})
 })
 
-func fakeInstallPlugin(contextName, pluginName string, target types.Target) (*cli.PluginInfo, error) {
+func fakeInstallPlugin(contextName, pluginName string, target types.Target, version string) (*cli.PluginInfo, error) {
 	cc, err := catalog.NewContextCatalog(contextName)
 	if err != nil {
 		return nil, err
 	}
 	pi := &cli.PluginInfo{
 		Name:             pluginName,
-		InstallationPath: "/path/to/plugin/" + pluginName,
-		Version:          "1.0.0",
+		InstallationPath: "/path/to/plugin/" + pluginName + "/" + version,
+		Version:          version,
 		Hidden:           true,
 		Target:           target,
 		DefaultFeatureFlags: map[string]bool{
