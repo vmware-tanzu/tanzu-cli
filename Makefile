@@ -126,13 +126,9 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 ## Plugins-specific
 ## --------------------------------------
 
-BUILDER := $(ROOT_DIR)/bin/builder
-BUILDER_SRC := $(shell find cmd/plugin/builder -type f -print)
-$(BUILDER): $(BUILDER_SRC)
-	cd cmd/plugin/builder && $(GO) build -o $(BUILDER) .
-
 .PHONY: prepare-builder
-prepare-builder: $(BUILDER) ## Build Tanzu CLI builder plugin
+prepare-builder: ## Build Tanzu CLI builder plugin
+	cd cmd/plugin/builder && $(GO) build -o $(ROOT_DIR)/bin/builder .
 
 ## --------------------------------------
 ## OS Packages
