@@ -41,7 +41,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		// Test case: Validate that the correct plugins and plugin group exists with `tanzu plugin search` and `tanzu plugin group search` output
 		It("validate the plugins from group 'vmware-tkg/v0.0.1' exists", func() {
 			// search plugin groups
-			pluginGroups = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			// check all expected plugin groups are available in the `plugin group search` output from the airgapped repository
 			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/v0.0.1"}}
 			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
@@ -49,7 +50,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// search plugins and make sure correct number of plugins available
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
 			expectedPlugins := pluginsForPG_TKG_001
-			pluginsSearchList = pluginlifecyclee2e.SearchAllPlugins(tf)
+			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
 			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
 		})
@@ -91,14 +93,16 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 		It("validate the plugins from group 'vmware-tmc/v9.9.9' exists", func() {
 			// search plugin groups and make sure there plugin groups available
-			pluginGroups = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			// check all expected plugin groups are available in plugin group search output
 			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/v0.0.1"}, {Group: "vmware-tmc/v9.9.9"}}
 			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 			// search plugins and make sure correct number of plugins available
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
-			pluginsSearchList = pluginlifecyclee2e.SearchAllPlugins(tf)
+			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			expectedPlugins := append(pluginsForPG_TKG_001, pluginsForPG_TMC_999...)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
 			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
@@ -132,7 +136,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 		It("validate the plugins from group 'vmware-tmc/v0.0.1' exists", func() {
 			// search plugin groups
-			pluginGroups = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			// check all expected plugin groups are available in the `plugin group search` output from the airgapped repository
 			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/v0.0.1"}, {Group: "vmware-tmc/v9.9.9"}, {Group: "vmware-tmc/v0.0.1"}}
 			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
@@ -140,7 +145,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// search plugins and make sure correct number of plugins available
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
 			expectedPlugins := append(pluginsForPG_TKG_001, pluginsForPG_TMC_999...)
-			pluginsSearchList = pluginlifecyclee2e.SearchAllPlugins(tf)
+			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
 			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
 		})
@@ -174,7 +180,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		// Test case: validate that all plugins and plugin groups exists
 		It("validate that all plugins and plugin groups exists", func() {
 			// search plugin groups and make sure there plugin groups available
-			pluginGroups = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			// check all expected plugin groups are available in the `plugin group search` output from the airgapped repository
 			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/v0.0.1"}, {Group: "vmware-tkg/v9.9.9"}, {Group: "vmware-tmc/v9.9.9"}, {Group: "vmware-tmc/v0.0.1"}}
 			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
@@ -183,7 +190,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
 			expectedPlugins := append(pluginsForPG_TKG_999, pluginsForPG_TMC_999...)
 			expectedPlugins = append(expectedPlugins, pluginsNotInAnyPG_999...)
-			pluginsSearchList = pluginlifecyclee2e.SearchAllPlugins(tf)
+			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
 			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
 		})

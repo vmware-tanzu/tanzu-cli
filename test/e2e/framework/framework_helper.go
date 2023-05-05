@@ -5,12 +5,16 @@
 package framework
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/onsi/gomega"
 	"github.com/pkg/errors"
@@ -102,7 +106,7 @@ func GetHomeDir() string {
 }
 
 // ExecuteCmdAndBuildJSONOutput is generic function to execute given command and build JSON output and return
-func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | PluginSourceInfo | types.ClientConfig | Server | ContextListInfo](cmdExe CmdOps, cmd string, opts ...E2EOption) ([]*T, error) {
+func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | PluginSourceInfo | types.ClientConfig | Server | ContextListInfo | CertDetails](cmdExe CmdOps, cmd string, opts ...E2EOption) ([]*T, error) {
 	out, stdErr, err := cmdExe.TanzuCmdExec(cmd, opts...)
 
 	if err != nil {
@@ -336,4 +340,159 @@ func GetPluginsList(tf *Framework, installedOnly bool) ([]*PluginInfo, error) {
 		}
 	}
 	return out, nil
+}
+
+// GetPluginGroupWhichStartsWithGivenPrefix takes plugin groups list and prefix string
+// returns first plugin group which starts with the given prefix
+func GetPluginGroupWhichStartsWithGivenPrefix(pgs []*PluginGroup, prefix string) string {
+	for _, pg := range pgs {
+		if strings.Contains(pg.Group, prefix) {
+			return pg.Group
+		}
+	}
+	return ""
+}
+
+// StartMockServer starts the http mock server (rodolpheche/wiremock)
+func StartMockServer(tf *Framework, mappingDir, containerName string) error {
+	err := StopContainer(tf, containerName)
+	if err != nil && !strings.Contains(err.Error(), "No such container") {
+		return err
+	}
+	startServerCmd := fmt.Sprintf(WiredMockHTTPServerStartCmd, containerName, mappingDir)
+	_, _, err = tf.Exec.Exec(startServerCmd)
+	// tests are failing randomly if not wait for some time after HTTP mock server started
+	time.Sleep(2 * time.Second)
+	return err
+}
+
+// StopContainer stops the given docker container
+func StopContainer(tf *Framework, containerName string) error {
+	cmd := fmt.Sprintf(HttpMockServerStopCmd, containerName)
+	_, _, err := tf.Exec.Exec(cmd)
+	return err
+}
+
+// ConvertPluginsInfoToTMCEndpointMockResponse takes the plugins info and converts to TMC endpoint response to mock http calls
+func ConvertPluginsInfoToTMCEndpointMockResponse(plugins []*PluginInfo) (*TMCPluginsMockRequestResponseMapping, error) {
+	tmcPlugins := &TMCPluginsResponse{}
+	tmcPlugins.PluginsInfo = TMCPluginsInfo{}
+	tmcPlugins.PluginsInfo.Plugins = make([]TMCPlugin, 0)
+	for i, _ := range plugins {
+		tmcPlugin := TMCPlugin{}
+		tmcPlugin.Name = plugins[i].Name
+		tmcPlugin.Description = plugins[i].Description
+		tmcPlugin.RecommendedVersion = plugins[i].Version
+		tmcPlugins.PluginsInfo.Plugins = append(tmcPlugins.PluginsInfo.Plugins, tmcPlugin)
+	}
+	m := &TMCPluginsMockRequestResponseMapping{}
+	m.Request.Method = "GET"
+	m.Request.URL = TMCEndpointForPlugins
+	m.Response.Status = 200
+	m.Response.Headers.ContentType = HttpContentType
+	m.Response.Headers.Accept = HttpContentType
+	content, err := json.Marshal(tmcPlugins.PluginsInfo)
+	if err != nil {
+		log.Error(err, "error while processing input type to json")
+		return m, err
+	}
+	m.Response.Body = string(content)
+	return m, nil
+}
+
+// WriteToFileInJSONFormat creates (if not exists) and writes the given input type to given file in json format
+func WriteToFileInJSONFormat(input any, filePath string) error {
+	content, err := json.Marshal(input)
+	if err != nil {
+		log.Error(err, "error while processing input type to json")
+		return err
+	}
+	err = CreateOrTruncateFile(filePath)
+	if err != nil {
+		log.Error(err, fmt.Sprintf("error while creating truncating file %s", filePath))
+		return err
+	}
+	f, err := os.OpenFile(filePath, os.O_WRONLY, 0644)
+	if err != nil {
+		log.Error(err, fmt.Sprintf("error while opening file %s", filePath))
+		return err
+	}
+	defer f.Close()
+	_, err = f.Write(content)
+	if err != nil {
+		log.Error(err, fmt.Sprintf("error while writing to file %s", filePath))
+		return err
+	}
+	return nil
+}
+
+// CreateOrTruncateFile creates a given file if not exists
+func CreateOrTruncateFile(filePath string) error {
+	// check if file exists
+	var _, err = os.Stat(filePath)
+	// create file if not exists
+	if os.IsNotExist(err) {
+		var file, err = os.Create(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+	} else {
+		return os.Truncate(filePath, 0)
+	}
+	return nil
+}
+
+// CreateDir creates given directory if not exists
+func CreateDir(dir string) error {
+	err := os.MkdirAll(dir, 0750)
+	if err != nil && !os.IsExist(err) {
+		log.Fatal(err, fmt.Sprintf("error while creating directory: %s", dir))
+		return err
+	}
+	return nil
+}
+
+// UpdatePluginDiscoverySource updates the plugin discovery source with given url
+func UpdatePluginDiscoverySource(tf *Framework, repoURL string) error {
+	// setup the test central repo
+	_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&DiscoveryOptions{Name: "default", SourceType: SourceType, URI: repoURL})
+	return err
+}
+
+// ApplyConfigOnKindCluster applies the config files on kind cluster
+func ApplyConfigOnKindCluster(tf *Framework, clusterInfo *ClusterInfo, confFilePaths []string) error {
+	for _, pluginCRFilePaths := range confFilePaths {
+		err := tf.KindCluster.ApplyConfig(clusterInfo.ClusterKubeContext, pluginCRFilePaths)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// GetHTTPCall queries http GET call on given url
+func GetHTTPCall(url string, v interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", HttpContentType)
+	req.Header.Set("Accept", HttpContentType)
+	client := &http.Client{}
+	response, err := client.Do(req)
+	if err != nil {
+		log.Error(err, "error for GET call")
+		return err
+	}
+	defer response.Body.Close()
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusBadRequest {
+		return fmt.Errorf("API error, status code: %d", response.StatusCode)
+	}
+	if err := json.NewDecoder(response.Body).Decode(v); err != nil {
+		return err
+	}
+	return nil
 }

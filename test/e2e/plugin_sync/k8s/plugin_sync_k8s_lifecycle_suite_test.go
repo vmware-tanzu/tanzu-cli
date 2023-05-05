@@ -1,8 +1,8 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// pluginsynce2e provides plugin sync command specific E2E test cases
-package pluginsynce2e
+// pluginsynce2ek8s provides plugin sync command specific E2E test cases
+package pluginsynce2ek8s
 
 import (
 	"fmt"
@@ -19,18 +19,20 @@ import (
 
 func TestPluginSyncLifecycle(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Plugin-Sync-Lifecycle E2E Test Suite")
+	RunSpecs(t, "Plugin-Sync-k8s-Lifecycle E2E Test Suite")
 }
 
 var (
-	tf                         *framework.Framework
-	e2eTestLocalCentralRepoURL string
-	pluginsSearchList          []*framework.PluginInfo
-	pluginGroups               []*framework.PluginGroup
-	pluginGroupToPluginListMap map[string][]*framework.PluginInfo
+	tf                                *framework.Framework
+	e2eTestLocalCentralRepoURL        string
+	pluginsSearchList                 []*framework.PluginInfo
+	pluginGroups                      []*framework.PluginGroup
+	pluginGroupToPluginListMap        map[string][]*framework.PluginInfo
+	usePluginsFromPluginGroup         string
+	e2eTestLocalCentralRepoPluginHost string
+	e2eTestLocalCentralRepoCACertPath string
 )
 
-const CRDFilePath = "../framework/config/cli.tanzu.vmware.com_cliplugins.yaml"
 const numberOfPluginsToInstall = 3
 
 // BeforeSuite initializes and set up the environment to execute the plugin life cycle and plugin group life cycle end-to-end test cases
@@ -45,30 +47,40 @@ var _ = BeforeSuite(func() {
 	_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
 	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
-	e2eTestLocalCentralRepoPluginHost := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryHost)
+	e2eTestLocalCentralRepoPluginHost = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryHost)
 	Expect(e2eTestLocalCentralRepoPluginHost).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository host", framework.TanzuCliE2ETestLocalCentralRepositoryHost))
 
-	e2eTestLocalCentralRepoCACertPath := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryCACertPath)
+	e2eTestLocalCentralRepoCACertPath = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryCACertPath)
 	Expect(e2eTestLocalCentralRepoCACertPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository CA cert path", framework.TanzuCliE2ETestLocalCentralRepositoryCACertPath))
 
-	// set up the CA cert fort local central repository
+	// set up the CA cert for local central repository
 	_ = tf.Config.ConfigCertDelete(e2eTestLocalCentralRepoPluginHost)
 	_, err = tf.Config.ConfigCertAdd(&framework.CertAddOptions{Host: e2eTestLocalCentralRepoPluginHost, CACertificatePath: e2eTestLocalCentralRepoCACertPath, SkipCertVerify: "false", Insecure: "false"})
-	Expect(err).To(BeNil())
+	Expect(err).To(BeNil(), "should not be any error for cert add")
+	// list and validate the cert added
+	list, err := tf.Config.ConfigCertList()
+	Expect(err).To(BeNil(), "should not be any error for cert list")
+	Expect(len(list)).To(Equal(1), "should not be any error for cert list")
 
 	// set up the local central repository discovery image public key path
 	e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath)
 	Expect(e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository discovery image signature public key path", framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath))
-	os.Setenv("TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH", e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
+	os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 	// search plugin groups and make sure there plugin groups available
-	pluginGroups = helper.SearchAllPluginGroups(tf)
+	pluginGroups, err = helper.SearchAllPluginGroups(tf)
+	Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 
 	// check all required plugin groups (framework.PluginGroupsForLifeCycleTests) need for life cycle test are available in plugin group search output
 	Expect(framework.IsAllPluginGroupsExists(pluginGroups, framework.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
+	// get k8s plugin group
+	usePluginsFromPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(framework.PluginGroupsForLifeCycleTests, framework.K8SPluginGroupPrefix)
+	Expect(usePluginsFromPluginGroup).NotTo(BeEmpty(), "there should be a k8s specific plugin group")
+
 	// search plugins and make sure there are plugins available
-	pluginsSearchList = helper.SearchAllPlugins(tf)
+	pluginsSearchList, err = helper.SearchAllPlugins(tf)
+	Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
 	Expect(len(pluginsSearchList)).Should(BeNumerically(">", 0))
 
 	// check all required plugins (framework.PluginsForLifeCycleTests) for plugin life cycle e2e are available in plugin search output
@@ -90,10 +102,3 @@ var _ = AfterSuite(func() {
 	err := os.RemoveAll(framework.FullPathForTempDir) // delete an entire directory
 	Expect(err).To(BeNil(), "should not get any error while deleting temp directory")
 })
-
-func ApplyConfigOnKindCluster(tf *framework.Framework, clusterInfo *framework.ClusterInfo, confFilePaths []string) {
-	for _, pluginCRFilePaths := range confFilePaths {
-		err := tf.KindCluster.ApplyConfig(clusterInfo.ClusterKubeContext, pluginCRFilePaths)
-		Expect(err).To(BeNil(), "should not get any error for config apply")
-	}
-}

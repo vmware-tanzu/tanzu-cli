@@ -43,9 +43,12 @@ ifndef TANZU_CLI_E2E_AIRGAPPED_REPO
 TANZU_CLI_E2E_AIRGAPPED_REPO = localhost:6001/tanzu-cli/plugins/
 endif
 
-.PHONY: e2e-cli-core-all ## Execute all CLI Core E2E Tests
-e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-cli-plugin-compatibility-test e2e-context-k8s-tests e2e-context-tmc-test e2e-cli-plugin-lifecycle-sync-test e2e-airgapped-tests
+# Set the plugin group name for the plugins used to execute E2E test cases.
+E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_TMC ?= vmware-tmc/v9.9.9
+E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_K8S ?= vmware-tkg/v9.9.9
 
+.PHONY: e2e-cli-core-all ## Execute all CLI Core E2E Tests
+e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-plugin-compatibility-test e2e-plugin-lifecycle-test  e2e-plugin-sync-tmc e2e-plugin-sync-k8s e2e-context-tmc-test e2e-context-k8s-tests e2e-airgapped-tests
 
 .PHONY: e2e-cli-lifecycle ## Execute CLI life cycle specific e2e tests
 e2e-cli-lifecycle:
@@ -57,35 +60,48 @@ e2e-cli-config:
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	${GO} test ${ROOT_DIR}/test/e2e/config -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 
-.PHONY: e2e-cli-plugin-compatibility-test ## Execute CLI Core Plugin Compatibility E2E test cases
-e2e-cli-plugin-compatibility-test:
-	@if [ "${TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL}" = "" ]; then \
-		echo "***Skipping Plugin Compatibility test cases because environment variables TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL is not set***" ; \
-	else \
-		export TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
-		export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
-		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
-		${GO} test ${ROOT_DIR}/test/e2e/plugins_compatibility -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
-	fi 
+.PHONY: e2e-plugin-compatibility-test ## Execute CLI Core Plugin Compatibility E2E test cases
+e2e-plugin-compatibility-test:
+	export TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
+	export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
+	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	${GO} test ${ROOT_DIR}/test/e2e/plugins_compatibility -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 
-.PHONY: e2e-cli-plugin-lifecycle-sync-test ## Execute CLI Core Plugin life cycle E2E test cases
-e2e-cli-plugin-lifecycle-sync-test:
-	@if [ "${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL}" = "" ]; then \
-		echo "***Skipping Plugin life cycle test cases because environment variables TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL is not set***" ; \
+.PHONY: e2e-plugin-lifecycle-test ## Execute CLI Core Plugin life cycle E2E test cases
+e2e-plugin-lifecycle-test:
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH) ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
+	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	${GO} test ${ROOT_DIR}/test/e2e/plugin_lifecycle -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
+
+.PHONY: e2e-plugin-sync-k8s ## Execute CLI Core Plugin sync E2E test cases for k8s target
+e2e-plugin-sync-k8s:
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH) ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
+	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	${GO} test ${ROOT_DIR}/test/e2e/plugin_sync/k8s -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
+
+
+## To run TMC tests, we need to set environment variable TANZU_API_TOKEN, in case of github workflow, its been set as environment variable
+.PHONY: e2e-plugin-sync-tmc ## Execute CLI Core Plugin sync E2E test cases for tmc target
+e2e-plugin-sync-tmc:
+	@if [ "${TANZU_API_TOKEN}" = "" ]; then \
+		echo "***Skipping TMC specific plugin sync e2e test cases because environment variables TANZU_API_TOKEN is not set***" ; \
 	else \
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH) ; \
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
 		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
-		${GO} test ${ROOT_DIR}/test/e2e/plugin_lifecycle -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
-		${GO} test ${ROOT_DIR}/test/e2e/plugin_sync -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
+		export TANZU_CLI_E2E_TEST_ENVIRONMENT="true" ; \
+		export TANZU_API_TOKEN=$(TANZU_API_TOKEN) ; \
+		${GO} test -p 1 ${ROOT_DIR}/test/e2e/plugin_sync/tmc -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 	fi
 
-.PHONY: e2e-context-k8s-tests ## Execute CLI context life cycle e2e tests for k8s target
-e2e-context-k8s-tests:
-	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
-	${GO} test `go list ${ROOT_DIR}/test/e2e/context/... | grep -v test/e2e/context/tmc` -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE}
 
 ## To run TMC tests, we need to set environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL, in case of github workflow, these are set as github environment variables
 .PHONY: e2e-context-tmc-test ## Execute CLI context life cycle e2e tests for tmc target
@@ -96,6 +112,15 @@ e2e-context-tmc-test:
 	    export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 		${GO} test ${ROOT_DIR}/test/e2e/context/tmc -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 	fi
+
+.PHONY: e2e-context-k8s-tests ## Execute CLI context life cycle e2e tests for k8s target
+e2e-context-k8s-tests:
+		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH) ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
+	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	${GO} test `go list ${ROOT_DIR}/test/e2e/context/... | grep -v test/e2e/context/tmc` -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE}
 
 .PHONY: e2e-airgapped-tests ## Execute CLI airgapped tests
 e2e-airgapped-tests:
