@@ -55,18 +55,15 @@ func NewCosignVerifier(publicKeyPath string, registryOpts *RegistryOptions) Cosi
 func (vo *CosignVerifyOptions) Verify(ctx context.Context, images []string) error {
 	var pubKey signature.Verifier
 	var err error
-	pool, err := vo.getCertPool()
+	httpTrans, err := vo.newHTTPTransport()
 	if err != nil {
-		return errors.Wrapf(err, "loading the cert pool")
+		return errors.Wrapf(err, "creating registry HTTP transport")
 	}
 
 	co := &cosign.CheckOpts{
 		RegistryClientOpts: []ociremote.Option{
 			ociremote.WithRemoteOptions(remote.WithContext(ctx)),
-			ociremote.WithRemoteOptions(remote.WithTransport(&http.Transport{
-				// #nosec G402
-				TLSClientConfig: &tls.Config{RootCAs: pool, InsecureSkipVerify: vo.RegistryOpts.SkipCertVerify},
-			})),
+			ociremote.WithRemoteOptions(remote.WithTransport(httpTrans)),
 		},
 	}
 
@@ -115,7 +112,7 @@ func (vo *CosignVerifyOptions) Verify(ctx context.Context, images []string) erro
 	return nil
 }
 
-func (vo *CosignVerifyOptions) getCertPool() (*x509.CertPool, error) {
+func (vo *CosignVerifyOptions) newHTTPTransport() (*http.Transport, error) {
 	var pool *x509.CertPool
 
 	var err error
@@ -133,5 +130,14 @@ func (vo *CosignVerifyOptions) getCertPool() (*x509.CertPool, error) {
 			}
 		}
 	}
-	return pool, nil
+
+	clonedDefaultTransport := http.DefaultTransport.(*http.Transport).Clone()
+	clonedDefaultTransport.ForceAttemptHTTP2 = false
+	// #nosec G402
+	clonedDefaultTransport.TLSClientConfig = &tls.Config{
+		RootCAs:            pool,
+		InsecureSkipVerify: vo.RegistryOpts.SkipCertVerify,
+	}
+
+	return clonedDefaultTransport, nil
 }
