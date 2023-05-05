@@ -324,7 +324,7 @@ func Test_InstallPluginFromGroup(t *testing.T) {
 	groupID := "vmware-tkg/v2.1.0"
 	err := InstallPluginsFromGroup("cluster", groupID)
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), fmt.Sprintf("could not find group '%s'", groupID))
+	assertions.Contains(err.Error(), "unable to create group discovery: unknown group discovery source")
 }
 
 func Test_DiscoverPluginGroups(t *testing.T) {
@@ -336,9 +336,9 @@ func Test_DiscoverPluginGroups(t *testing.T) {
 
 	// A local discovery currently does not support groups, but we can
 	// at least do negative testing
-	groups, err := DiscoverPluginGroups()
-	assertions.Nil(err)
-	assertions.Equal(0, len(groups))
+	_, err := DiscoverPluginGroups(nil)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to create group discovery: unknown group discovery source")
 }
 
 func Test_AvailablePlugins(t *testing.T) {

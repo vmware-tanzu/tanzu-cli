@@ -110,65 +110,58 @@ func discoverSpecificPlugins(pd []configtypes.PluginDiscovery, criteria *discove
 	return allPlugins, kerrors.NewAggregate(errorList)
 }
 
-// discoverPluginGroups returns all the plugin groups found in the discoveries
-func discoverPluginGroups(pd []configtypes.PluginDiscovery) ([]*discovery.DiscoveredPluginGroups, error) {
+// discoverSpecificPluginGroups returns all the plugin groups found in the discoveries
+func discoverSpecificPluginGroups(pd []configtypes.PluginDiscovery, criteria *discovery.GroupDiscoveryCriteria) ([]*discovery.DiscoveredPluginGroups, error) {
 	var allDiscovered []*discovery.DiscoveredPluginGroups
 	for _, d := range pd {
-		discObject, err := discovery.CreateDiscoveryFromV1alpha1(d, nil)
+		groupDisc, err := discovery.CreateGroupDiscovery(d, criteria)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to create discovery")
-		}
-
-		groupDisc, ok := discObject.(discovery.GroupDiscovery)
-		if !ok {
-			// This discovery does not support plugin groups
-			continue
+			return nil, errors.Wrapf(err, "unable to create group discovery")
 		}
 
 		groups, err := groupDisc.GetAllGroups()
 		if err != nil {
-			log.Warningf("unable to list groups from discovery '%v': %v", discObject.Name(), err.Error())
+			log.Warningf("unable to list groups from discovery '%v': %v", groupDisc.Name(), err.Error())
 			continue
 		}
 
-		allDiscovered = append(
-			allDiscovered,
-			&discovery.DiscoveredPluginGroups{
-				Source: discObject.Name(),
-				Groups: groups,
-			})
+		if len(groups) > 0 {
+			allDiscovered = append(
+				allDiscovered,
+				&discovery.DiscoveredPluginGroups{
+					Source: groupDisc.Name(),
+					Groups: groups,
+				})
+		}
 	}
 	return allDiscovered, nil
 }
 
 // discoverPluginGroup returns the one matching plugin group found in the discoveries
 func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupID string) (*plugininventory.PluginGroup, error) {
-	groupsByDiscovery, err := discoverPluginGroups(pd)
+	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupID)
+	groupsByDiscovery, err := discoverSpecificPluginGroups(pd, &discovery.GroupDiscoveryCriteria{
+		Vendor:    groupIdentifier.Vendor,
+		Publisher: groupIdentifier.Publisher,
+		Name:      groupIdentifier.Name,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	var matchingDiscoveries []string
-	var matchingGroup *plugininventory.PluginGroup
-	for _, discAndGroups := range groupsByDiscovery {
-		for _, group := range discAndGroups.Groups {
-			id := plugininventory.PluginGroupToID(group)
-			if id == groupID {
-				// Found the group.
-				if matchingGroup == nil {
-					// Store the first matching group found
-					matchingGroup = group
-				}
-				matchingDiscoveries = append(matchingDiscoveries, discAndGroups.Source)
-			}
-		}
+	if len(groupsByDiscovery) == 0 {
+		return nil, nil
 	}
 
-	if len(matchingDiscoveries) > 1 {
+	if len(groupsByDiscovery) > 1 {
+		var matchingDiscoveries []string
+		for _, disc := range groupsByDiscovery {
+			matchingDiscoveries = append(matchingDiscoveries, disc.Source)
+		}
 		log.Warningf("group '%s' was found in multiple discoveries: %v.  Using the first one.", groupID, matchingDiscoveries)
 	}
 
-	return matchingGroup, nil
+	return groupsByDiscovery[0].Groups[0], nil
 }
 
 // DiscoverStandalonePlugins returns the available standalone plugins
@@ -191,13 +184,19 @@ func DiscoverStandalonePlugins(criteria *discovery.PluginDiscoveryCriteria) ([]d
 }
 
 // DiscoverPluginGroups returns the available plugin groups
-func DiscoverPluginGroups() ([]*discovery.DiscoveredPluginGroups, error) {
+func DiscoverPluginGroups(criteria *discovery.GroupDiscoveryCriteria) ([]*discovery.DiscoveredPluginGroups, error) {
 	discoveries, err := getPluginDiscoveries()
 	if err != nil {
 		return nil, err
 	}
 
-	return discoverPluginGroups(discoveries)
+	groups, err := discoverSpecificPluginGroups(discoveries, criteria)
+	if err != nil {
+		return nil, err
+	}
+	// TODO(khouzam): merge groups as we do for plugins once we support group versions
+	// return mergeDuplicateGroups(groups), nil
+	return groups, err
 }
 
 // getAdditionalTestPluginDiscoveries returns an array of plugin discoveries that
