@@ -270,15 +270,6 @@ func (sp *scriptBasedPlugins) generatePluginBinary(pm *PluginMeta) (string, erro
 	return filePath, nil
 }
 
-// CreateDir creates directory if not exists
-func CreateDir(dir string) error {
-	err := os.MkdirAll(dir, 0750)
-	if err != nil && !os.IsExist(err) {
-		return err
-	}
-	return nil
-}
-
 // generatePluginDiscoveryOverlay creates plugin overly object for given plugin metadata
 func (po *localOCIPluginOps) generatePluginDiscoveryOverlay(pm *PluginMeta) (plugin *CLIPlugin, err error) {
 	plugin = &CLIPlugin{}

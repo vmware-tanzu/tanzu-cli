@@ -52,6 +52,9 @@ type ConfigCertOps interface {
 
 	// ConfigCertDelete deletes cert config for a host, and returns error info
 	ConfigCertDelete(host string, opts ...E2EOption) error
+
+	// ConfigCertList list cert
+	ConfigCertList(opts ...E2EOption) ([]*CertDetails, error)
 }
 
 type ConfigCmdOps interface {
@@ -186,4 +189,8 @@ func (co *configOps) ConfigCertDelete(host string, opts ...E2EOption) error {
 	certDeleteCmd := fmt.Sprintf(ConfigCertDelete, "%s", host)
 	_, _, err := co.cmdExe.TanzuCmdExec(certDeleteCmd, opts...)
 	return err
+}
+
+func (co *configOps) ConfigCertList(opts ...E2EOption) ([]*CertDetails, error) {
+	return ExecuteCmdAndBuildJSONOutput[CertDetails](co.cmdExe, ConfigCertList, opts...)
 }
