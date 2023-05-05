@@ -34,6 +34,13 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			// update plugin discovery source
 			err = f.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
 			Expect(err).To(BeNil(), "should not get any error for plugin source update")
+
+			// Add Cert
+			_, err = tf.Config.ConfigCertAdd(&f.CertAddOptions{Host: e2eTestLocalCentralRepoPluginHost, CACertificatePath: e2eTestLocalCentralRepoCACertPath, SkipCertVerify: "false", Insecure: "false"})
+			Expect(err).To(BeNil(), "should not be any error for cert add")
+			list, err := tf.Config.ConfigCertList()
+			Expect(err).To(BeNil(), "should not be any error for cert list")
+			Expect(len(list)).To(Equal(1), "should not be any error for cert list")
 		})
 	})
 
@@ -187,7 +194,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 	Context("Use case: Create context should not install unavailable plugins, plugin sync also should not install unavailable plugins", func() {
 		var pluginsToGenerateMockResponse, pluginsGeneratedMockResponseWithCorrectInfo, pluginsList []*f.PluginInfo
 		var pluginWithIncorrectVersion *f.PluginInfo
-		var contextName string
+		var contextName, randomPluginVersion string
 		var err error
 		var ok bool
 		// Test case: a. update tmc endpoint mock response (make sure at least a plugin does not exists in test central repo) and restart REST API mock server
@@ -201,7 +208,8 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			// assign incorrect version to last plugin in the slice, to make sure at least one plugin is not available
 			// in the mock response
 			actualVersion := pluginsToGenerateMockResponse[numberOfPluginsToInstall-1].Version
-			pluginsToGenerateMockResponse[numberOfPluginsToInstall-1].Version = pluginsToGenerateMockResponse[numberOfPluginsToInstall-1].Version + f.RandomNumber(2)
+			randomPluginVersion = pluginsToGenerateMockResponse[numberOfPluginsToInstall-1].Version + f.RandomNumber(2)
+			pluginsToGenerateMockResponse[numberOfPluginsToInstall-1].Version = randomPluginVersion
 			pluginWithIncorrectVersion = pluginsToGenerateMockResponse[numberOfPluginsToInstall-1]
 			// generate mock response for all plugins (including the incorrect version plugin)
 			mockReqResMapping, err := f.ConvertPluginsInfoToTMCEndpointMockResponse(pluginsToGenerateMockResponse)
@@ -244,7 +252,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// Test case: d. run plugin sync and validate the plugin list
 		It("run plugin sync and validate err response in plugin sync, validate plugin list output", func() {
 			_, err = tf.PluginCmd.Sync()
-			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(f.UnableToFindPluginForTarget, pluginWithIncorrectVersion.Name, pluginWithIncorrectVersion.Target)))
+			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(f.UnableToFindPluginWithVersionForTarget, pluginWithIncorrectVersion.Name, randomPluginVersion, pluginWithIncorrectVersion.Target)))
 
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
 			Expect(err).To(BeNil(), noErrorForPluginList)

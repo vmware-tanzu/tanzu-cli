@@ -24,17 +24,19 @@ func TestPluginSyncLifecycle(t *testing.T) {
 }
 
 var (
-	tf                           *framework.Framework
-	e2eTestLocalCentralRepoURL   string
-	pluginsSearchList            []*framework.PluginInfo
-	pluginGroups                 []*framework.PluginGroup
-	pluginGroupToPluginListMap   map[string][]*framework.PluginInfo
-	usePluginsFromTmcPluginGroup string
-	usePluginsFromK8sPluginGroup string
-	K8SCRDFilePath               string
-	tmcMappingsDir               string
-	tmcPluginsMockFilePath       string
-	tmcConfigFolderPath          string
+	tf                                *framework.Framework
+	e2eTestLocalCentralRepoURL        string
+	pluginsSearchList                 []*framework.PluginInfo
+	pluginGroups                      []*framework.PluginGroup
+	pluginGroupToPluginListMap        map[string][]*framework.PluginInfo
+	usePluginsFromTmcPluginGroup      string
+	usePluginsFromK8sPluginGroup      string
+	K8SCRDFilePath                    string
+	tmcMappingsDir                    string
+	tmcPluginsMockFilePath            string
+	tmcConfigFolderPath               string
+	e2eTestLocalCentralRepoPluginHost string
+	e2eTestLocalCentralRepoCACertPath string
 )
 
 const mockAPIEndpointForPlugins = "/pluginsInfo"
@@ -79,6 +81,25 @@ var _ = BeforeSuite(func() {
 
 	// create a file to update http request/response mocking for every test case
 	tmcPluginsMockFilePath = filepath.Join(tmcMappingsDir, tmcPluginsMockFile)
+
+	// set up the test central repo
+	_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
+	Expect(err).To(BeNil(), "should not get any error for plugin source update")
+
+	e2eTestLocalCentralRepoPluginHost = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryHost)
+	Expect(e2eTestLocalCentralRepoPluginHost).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository host", framework.TanzuCliE2ETestLocalCentralRepositoryHost))
+
+	e2eTestLocalCentralRepoCACertPath = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryCACertPath)
+	Expect(e2eTestLocalCentralRepoCACertPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository CA cert path", framework.TanzuCliE2ETestLocalCentralRepositoryCACertPath))
+
+	// set up the CA cert for local central repository
+	_ = tf.Config.ConfigCertDelete(e2eTestLocalCentralRepoPluginHost)
+	_, err = tf.Config.ConfigCertAdd(&framework.CertAddOptions{Host: e2eTestLocalCentralRepoPluginHost, CACertificatePath: e2eTestLocalCentralRepoCACertPath, SkipCertVerify: "false", Insecure: "false"})
+	Expect(err).To(BeNil(), "should not be any error for cert add")
+	// list and validate the cert added
+	list, err := tf.Config.ConfigCertList()
+	Expect(err).To(BeNil(), "should not be any error for cert list")
+	Expect(len(list)).To(Equal(1), "should not be any error for cert list")
 
 	// Search for plugin groups and ensure that there are available plugin groups.
 	pluginGroups, err = helper.SearchAllPluginGroups(tf)
