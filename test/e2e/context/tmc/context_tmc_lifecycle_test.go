@@ -12,14 +12,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	context "github.com/vmware-tanzu/tanzu-cli/test/e2e/context"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	types "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
-
-const ContextNamePrefix = "context-endpoint-tmc-"
-const ContextShouldNotExists = "the context %s should not exists"
-const ContextShouldExistsAsCreated = "the context %s should exists as its been created"
 
 // Test suite tests the context life cycle use cases for the TMC target
 // Here are sequence of test cases in this suite:
@@ -32,20 +27,6 @@ const ContextShouldExistsAsCreated = "the context %s should exists as its been c
 // g. (negative test) test 'tanzu context use' command with the specific context name (incorrect, which is not exists)
 // h. test 'tanzu context list' command, should list all contexts created
 // i. test 'tanzu context delete' command, make sure to delete all context's created in previous test cases
-var (
-	tf           *framework.Framework
-	clusterInfo  *framework.ClusterInfo
-	contextNames []string
-)
-
-var _ = BeforeSuite(func() {
-	tf = framework.NewFramework()
-	// get TMC TANZU_CLI_TMC_UNSTABLE_URL and TANZU_API_TOKEN from environment variables
-	clusterInfo = context.GetTMCClusterInfo()
-	Expect(clusterInfo.EndPoint).NotTo(Equal(""), "TMC cluster URL is must needed to create TMC context")
-	Expect(clusterInfo.APIKey).NotTo(Equal(""), "TMC API Key is must needed to create TMC context")
-	contextNames = make([]string, 0)
-})
 
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", func() {
 
@@ -65,7 +46,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 		})
 		// Test case: b. Create context for TMC target with TMC cluster URL as endpoint
 		It("create tmc context with endpoint", func() {
-			ctxName := ContextNamePrefix + framework.RandomString(4)
+			ctxName := prefix + framework.RandomString(4)
 			_, err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
 			Expect(err).To(BeNil(), "context should create without any error")
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
@@ -73,7 +54,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 		})
 		// Test case: c. (negative test) Create context for TMC target with TMC cluster "incorrect" URL as endpoint
 		It("create tmc context with incorrect endpoint", func() {
-			ctxName := ContextNamePrefix + framework.RandomString(4)
+			ctxName := prefix + framework.RandomString(4)
 			_, err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, framework.RandomString(4))
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
@@ -94,7 +75,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 		})
 		// Test case: e. Create context for TMC target with TMC cluster URL as endpoint, and validate the active context, should be recently create context
 		It("create tmc context with endpoint and check active context", func() {
-			ctxName := ContextNamePrefix + framework.RandomString(4)
+			ctxName := prefix + framework.RandomString(4)
 			_, err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
 			Expect(err).To(BeNil(), "context should create without any error")
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
@@ -118,7 +99,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 		})
 		// Test case: h. test 'tanzu context list' command, should list all contexts created
 		It("list context should have all added contexts", func() {
-			list := context.GetAvailableContexts(tf, contextNames)
+			list := framework.GetAvailableContexts(tf, contextNames)
 			Expect(len(list)).To(Equal(len(contextNames)), "list context should exists all contexts added in previous tests")
 		})
 		// Test case: i. test 'tanzu context delete' command, make sure to delete all context's created in previous test cases
@@ -128,7 +109,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 				Expect(framework.IsContextExists(tf, ctx)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists+" as been deleted", ctx))
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
 			}
-			list := context.GetAvailableContexts(tf, contextNames)
+			list := framework.GetAvailableContexts(tf, contextNames)
 			Expect(len(list)).To(Equal(0), "deleted contexts should not be in list context")
 		})
 	})

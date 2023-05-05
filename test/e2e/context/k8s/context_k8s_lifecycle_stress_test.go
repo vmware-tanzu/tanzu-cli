@@ -1,8 +1,8 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// context provides context command specific E2E test cases
-package context
+// Package contextk8s provides context command specific E2E test cases for k8s target
+package contextk8s
 
 import (
 	"fmt"
@@ -79,7 +79,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-stress-
 		// Test case: e. test 'tanzu context list' command, should list all contexts created
 		It("list context should have all added contexts", func() {
 			By("list context should have all added contexts")
-			list := GetAvailableContexts(tf, contextNamesStress)
+			list := framework.GetAvailableContexts(tf, contextNamesStress)
 			Expect(len(list)).To(Equal(len(contextNamesStress)), "list context should have all contexts added in previous tests")
 		})
 		// Test case: f. test 'tanzu context delete' command, make sure to delete all contexts created in previous test cases
@@ -91,7 +91,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-stress-
 				Expect(framework.IsContextExists(tf, ctx)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, ctx))
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
 			}
-			list := GetAvailableContexts(tf, contextNamesStress)
+			list := framework.GetAvailableContexts(tf, contextNamesStress)
 			Expect(len(list)).To(Equal(0), "delete context should have deleted all given contexts")
 		})
 	})
