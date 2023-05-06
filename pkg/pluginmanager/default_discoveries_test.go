@@ -106,7 +106,7 @@ metadata:
 	assert.Nil(t, err)
 	pdsTMC := append(context.DiscoverySources, defaultDiscoverySourceBasedOnContext(context)...)
 	assert.Equal(t, 1, len(pdsTMC))
-	assert.Equal(t, pdsTMC[0].REST.Endpoint, "https://test.cloud.vmware.com")
+	assert.Equal(t, pdsTMC[0].REST.Endpoint, "https://test.cloud.vmware.com:443")
 	assert.Equal(t, pdsTMC[0].REST.BasePath, "v1alpha1/system/binaries/plugins")
 	assert.Equal(t, pdsTMC[0].REST.Name, "default-tmc-test")
 
@@ -117,4 +117,57 @@ metadata:
 	assert.Equal(t, pdsK8s[0].Kubernetes.Name, "default-mgmt")
 	assert.Equal(t, pdsK8s[0].Kubernetes.Path, "config")
 	assert.Equal(t, pdsK8s[0].Kubernetes.Context, "mgmt-admin@mgmt")
+}
+
+func Test_appendURLScheme(t *testing.T) {
+	tests := []struct {
+		name     string
+		endpoint string
+		output   string
+	}{
+		{
+			name:     "url does not start with any scheme and not port",
+			endpoint: "tmc.cloud.vmware.com",
+			output:   "https://tmc.cloud.vmware.com",
+		},
+		{
+			name:     "url does not start with any scheme, but ends with https port",
+			endpoint: "tmc.cloud.vmware.com:443",
+			output:   "https://tmc.cloud.vmware.com:443",
+		},
+
+		{
+			name:     "url does not start with any scheme, but ends with non-default https port",
+			endpoint: "tmc.cloud.vmware.com:8443",
+			output:   "https://tmc.cloud.vmware.com:8443",
+		},
+		{
+			name:     "url does start with http, but ends with https port",
+			endpoint: "http://tmc.cloud.vmware.com:443",
+			output:   "http://tmc.cloud.vmware.com:443",
+		},
+
+		{
+			name:     "url does start with https, but ends with https port",
+			endpoint: "https://tmc.cloud.vmware.com:443",
+			output:   "https://tmc.cloud.vmware.com:443",
+		},
+
+		{
+			name:     "url start with http, but ends with non-default http/https port",
+			endpoint: "http://tmc.cloud.vmware.com:9443",
+			output:   "http://tmc.cloud.vmware.com:9443",
+		},
+		{
+			name:     "url start with http, but ends with default http port",
+			endpoint: "http://tmc.cloud.vmware.com:80",
+			output:   "http://tmc.cloud.vmware.com:80",
+		},
+	}
+	for _, spec := range tests {
+		t.Run(spec.name, func(t *testing.T) {
+			output := appendURLScheme(spec.endpoint)
+			assert.Equal(t, output, spec.output)
+		})
+	}
 }
