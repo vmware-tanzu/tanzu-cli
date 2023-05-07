@@ -30,12 +30,14 @@ var pluginIdentifier2 = PluginIdentifier{
 var pluginGroupIdentifier1 = PluginGroupIdentifier{
 	Vendor:    "fakevendor",
 	Publisher: "fakepublisher",
-	Name:      "fake1:v1.0.0",
+	Name:      "fake1",
+	Version:   "v1.0.0",
 }
 var pluginGroupIdentifier2 = PluginGroupIdentifier{
 	Vendor:    "fakevendor",
 	Publisher: "fakepublisher",
-	Name:      "fake2:v2.0.0",
+	Name:      "fake2",
+	Version:   "v2.0.0",
 }
 
 var pluginEntry1 = PluginInventoryEntry{
@@ -97,26 +99,32 @@ var pluginEntry3 = PluginInventoryEntry{
 }
 
 var pluginGroupEntry1 = PluginGroup{
-	Name:      "fake1:v1.0.0",
-	Vendor:    "fakevendor",
-	Publisher: "fakepublisher",
-	Hidden:    false,
-	Plugins: []*PluginGroupPluginEntry{
-		{
-			PluginIdentifier: PluginIdentifier{Name: "plugin1", Target: types.TargetGlobal, Version: "v1.0.0"},
-			Mandatory:        false,
+	Name:        "fake1",
+	Vendor:      "fakevendor",
+	Publisher:   "fakepublisher",
+	Description: "Description for fakevendor-fakepublisher/fake1",
+	Hidden:      false,
+	Versions: map[string][]*PluginGroupPluginEntry{
+		"v1.0.0": {
+			{
+				PluginIdentifier: PluginIdentifier{Name: "plugin1", Target: types.TargetGlobal, Version: "v1.0.0"},
+				Mandatory:        false,
+			},
 		},
 	},
 }
 var pluginGroupEntry2 = PluginGroup{
-	Name:      "fake2:v2.0.0",
-	Vendor:    "fakevendor",
-	Publisher: "fakepublisher",
-	Hidden:    false,
-	Plugins: []*PluginGroupPluginEntry{
-		{
-			PluginIdentifier: PluginIdentifier{Name: "plugin2", Target: types.TargetK8s, Version: "v2.0.0"},
-			Mandatory:        false,
+	Name:        "fake2",
+	Vendor:      "fakevendor",
+	Publisher:   "fakepublisher",
+	Description: "Description for fakevendor-fakepublisher/fake2",
+	Hidden:      false,
+	Versions: map[string][]*PluginGroupPluginEntry{
+		"v2.0.0": {
+			{
+				PluginIdentifier: PluginIdentifier{Name: "plugin2", Target: types.TargetK8s, Version: "v2.0.0"},
+				Mandatory:        false,
+			},
 		},
 	},
 }
@@ -179,7 +187,7 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 			})
 		})
 
-		Context("With an empty DB tables", func() {
+		Context("With empty DB tables", func() {
 			BeforeEach(func() {
 				metadataInventory, _ = createInventoryMetadataDB(true)
 			})
@@ -196,7 +204,7 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 			})
 		})
 
-		Context("When same plugin indentifier entry already exists", func() {
+		Context("When the same plugin identifier entry already exists", func() {
 			BeforeEach(func() {
 				metadataInventory, _ = createInventoryMetadataDB(true)
 
@@ -241,7 +249,7 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 			})
 		})
 
-		Context("With an empty DB tables", func() {
+		Context("With empty DB tables", func() {
 			BeforeEach(func() {
 				metadataInventory, _ = createInventoryMetadataDB(true)
 			})
@@ -258,7 +266,7 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 			})
 		})
 
-		Context("When same plugin group indentifier entry already exists", func() {
+		Context("When the same plugin group identifier entry already exists", func() {
 			BeforeEach(func() {
 				metadataInventory, _ = createInventoryMetadataDB(true)
 
@@ -280,7 +288,7 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 	})
 
 	Describe("Merge Inventory Metadata Database", func() {
-		Context("when one of the database does not have tables created", func() {
+		Context("when one of the databases does not have tables created", func() {
 			BeforeEach(func() {
 				metadataInventory, _ = createInventoryMetadataDB(true)
 				_, additionalMetadataInventoryFilePath = createInventoryMetadataDB(false)
@@ -337,7 +345,7 @@ var _ = Describe("Unit tests for plugin inventory metadata", func() {
 			})
 		})
 
-		Context("when both inventory metadata databases does have some overlap of plugins and plugin groups", func() {
+		Context("when both inventory metadata databases have some overlap of plugins and plugin groups", func() {
 			BeforeEach(func() {
 				metadataInventory, _ = createInventoryMetadataDB(true)
 				additionalMetadataInventory, additionalMetadataInventoryFilePath = createInventoryMetadataDB(true)

@@ -105,14 +105,27 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		}
 		db := plugininventory.NewSQLiteInventory(referencedDBFile, "")
 		pgEntry := plugininventory.PluginGroup{
-			Vendor:    "fakevendor",
-			Publisher: "fakepublisher",
-			Name:      "v1.0.0",
-			Hidden:    false,
-			Plugins: []*plugininventory.PluginGroupPluginEntry{
-				{
-					PluginIdentifier: plugininventory.PluginIdentifier{Name: "foo", Target: "global", Version: "v0.0.2"},
-					Mandatory:        false,
+			Vendor:      "fakevendor",
+			Publisher:   "fakepublisher",
+			Name:        "default",
+			Description: "Desc for plugin",
+			Hidden:      false,
+			Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
+				"v1.0.0": {
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "foo", Target: "global", Version: "v0.0.2"},
+						Mandatory:        false,
+					},
+				},
+				"v2.0.0": {
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "foo", Target: "global", Version: "v0.0.2"},
+						Mandatory:        false,
+					},
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "bar", Target: "mission-control", Version: "v0.0.3"},
+						Mandatory:        false,
+					},
 				},
 			},
 		}
@@ -131,7 +144,9 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 				Vendor:                  "fakevendor",
 				Publisher:               "fakepublisher",
 				PluginGroupManifestFile: pluginGroupManifestFile,
-				GroupName:               "v1.0.0",
+				GroupName:               "default",
+				GroupVersion:            "v1.0.0",
+				Description:             "Desc for plugin",
 				DeactivatePluginGroup:   false,
 				Override:                false,
 			}
@@ -186,11 +201,15 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pgEntries).NotTo(BeNil())
 			Expect(len(pgEntries)).To(Equal(1))
-			Expect(pgEntries[0].Name).To(Equal("v1.0.0"))
+			Expect(pgEntries[0].Name).To(Equal("default"))
 			Expect(pgEntries[0].Publisher).To(Equal("fakepublisher"))
 			Expect(pgEntries[0].Vendor).To(Equal("fakevendor"))
+			Expect(pgEntries[0].Description).To(Equal("Desc for plugin"))
 			Expect(pgEntries[0].Hidden).To(Equal(ipgu.DeactivatePluginGroup))
-			Expect(len(pgEntries[0].Plugins)).To(Equal(2))
+			Expect(len(pgEntries[0].Versions)).To(Equal(1))
+
+			plugins := pgEntries[0].Versions["v1.0.0"]
+			Expect(len(plugins)).To(Equal(2))
 		})
 
 		var _ = It("when specified plugin-group already exist in the inventory database and override is not provided, adding plugin group should throw error", func() {
@@ -221,11 +240,17 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pgEntries).NotTo(BeNil())
 			Expect(len(pgEntries)).To(Equal(1))
-			Expect(pgEntries[0].Name).To(Equal("v1.0.0"))
+			Expect(pgEntries[0].Name).To(Equal("default"))
 			Expect(pgEntries[0].Publisher).To(Equal("fakepublisher"))
 			Expect(pgEntries[0].Vendor).To(Equal("fakevendor"))
+			Expect(pgEntries[0].Description).To(Equal("Desc for plugin"))
 			Expect(pgEntries[0].Hidden).To(Equal(ipgu.DeactivatePluginGroup))
-			Expect(len(pgEntries[0].Plugins)).To(Equal(2))
+			Expect(len(pgEntries[0].Versions)).To(Equal(2))
+
+			plugins := pgEntries[0].Versions["v1.0.0"]
+			Expect(len(plugins)).To(Equal(2))
+			plugins = pgEntries[0].Versions["v2.0.0"]
+			Expect(len(plugins)).To(Equal(2))
 		})
 
 		var _ = It("when inventory database cannot be published from the repository", func() {
@@ -249,7 +274,9 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 				ImgpkgOptions:         fakeImgpkgWrapper,
 				Vendor:                "fakevendor",
 				Publisher:             "fakepublisher",
-				GroupName:             "v1.0.0",
+				GroupName:             "default",
+				GroupVersion:          "v1.0.0",
+				Description:           "Desc for plugin",
 				DeactivatePluginGroup: false,
 			}
 		})
@@ -273,7 +300,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 			err := ipgu.UpdatePluginGroupActivationState()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error while updating activation state of plugin group"))
-			Expect(err.Error()).To(ContainSubstring("unable to update plugin-group 'fakevendor-fakepublisher/v1.0.0'. This might be possible because the provided plugin-group doesn't exists"))
+			Expect(err.Error()).To(ContainSubstring("unable to update plugin-group 'fakevendor-fakepublisher/default:v1.0.0'. This might be possible because the provided plugin-group version doesn't exists"))
 		})
 
 		var _ = It("when specified plugin-group exists in the inventory database, updating the activation state with 'DeactivatePluginGroup=true' should be successful", func() {
@@ -287,15 +314,19 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 
 			// verify that the local db file was updated correctly before publishing the database to remote repository
 			db := plugininventory.NewSQLiteInventory(referencedDBFile, "")
-			pgEntries, err := db.GetPluginGroups(plugininventory.PluginGroupFilter{IncludeHidden: true})
+			pgEntries, err := db.GetPluginGroups(plugininventory.PluginGroupFilter{IncludeHidden: false})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pgEntries).NotTo(BeNil())
 			Expect(len(pgEntries)).To(Equal(1))
-			Expect(pgEntries[0].Name).To(Equal("v1.0.0"))
+			Expect(pgEntries[0].Name).To(Equal("default"))
 			Expect(pgEntries[0].Publisher).To(Equal("fakepublisher"))
 			Expect(pgEntries[0].Vendor).To(Equal("fakevendor"))
-			Expect(pgEntries[0].Hidden).To(Equal(ipgu.DeactivatePluginGroup))
-			Expect(len(pgEntries[0].Plugins)).To(Equal(1))
+			Expect(pgEntries[0].Description).To(Equal("Desc for plugin"))
+			Expect(pgEntries[0].Hidden).To(Equal(false))
+			Expect(len(pgEntries[0].Versions)).To(Equal(1))
+
+			plugins := pgEntries[0].Versions["v2.0.0"]
+			Expect(len(plugins)).To(Equal(2))
 		})
 
 		var _ = It("when specified plugin-group exists in the inventory database, updating the activation state with 'DeactivatePluginGroup=false' should be successful", func() {
@@ -313,11 +344,17 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(pgEntries).NotTo(BeNil())
 			Expect(len(pgEntries)).To(Equal(1))
-			Expect(pgEntries[0].Name).To(Equal("v1.0.0"))
+			Expect(pgEntries[0].Name).To(Equal("default"))
 			Expect(pgEntries[0].Publisher).To(Equal("fakepublisher"))
 			Expect(pgEntries[0].Vendor).To(Equal("fakevendor"))
+			Expect(pgEntries[0].Description).To(Equal("Desc for plugin"))
 			Expect(pgEntries[0].Hidden).To(Equal(ipgu.DeactivatePluginGroup))
-			Expect(len(pgEntries[0].Plugins)).To(Equal(1))
+			Expect(len(pgEntries[0].Versions)).To(Equal(2))
+
+			plugins := pgEntries[0].Versions["v1.0.0"]
+			Expect(len(plugins)).To(Equal(1))
+			plugins = pgEntries[0].Versions["v2.0.0"]
+			Expect(len(plugins)).To(Equal(2))
 		})
 
 		var _ = It("when inventory database cannot be published from the repository", func() {

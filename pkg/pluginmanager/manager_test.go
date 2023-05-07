@@ -22,6 +22,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
@@ -321,7 +322,7 @@ func Test_InstallPluginFromGroup(t *testing.T) {
 
 	// A local discovery currently does not support groups, but we can
 	// at least do negative testing
-	groupID := "vmware-tkg/v2.1.0"
+	groupID := "vmware-tkg/default:v2.1.0"
 	err := InstallPluginsFromGroup("cluster", groupID)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to create group discovery: unknown group discovery source")
@@ -1755,4 +1756,197 @@ func TestMergeDuplicatePluginsWithReplacedVersion(t *testing.T) {
 	mergedPlugins := mergeDuplicatePlugins(preMergePlugins)
 	assertions.Equal(1, len(mergedPlugins))
 	assertions.Equal(expectedPlugin, mergedPlugins[0])
+}
+
+func TestMergeDuplicateGroups(t *testing.T) {
+	assertions := assert.New(t)
+
+	preMergeGroups := []*plugininventory.PluginGroup{
+		{
+			Name:        "default",
+			Vendor:      "fakevendor",
+			Publisher:   "fakepublisher",
+			Description: "Description for fakevendor-fakepublisher/default",
+			Hidden:      false,
+			Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
+				"v2.0.0": {
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v2.2.2"},
+						Mandatory:        true,
+					},
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.1.1"},
+						Mandatory:        true,
+					},
+				},
+				"v1.0.0": {
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v1.0.0"},
+						Mandatory:        true,
+					},
+				},
+			},
+		},
+		{
+			Name:        "default",
+			Vendor:      "fakevendor",
+			Publisher:   "fakepublisher",
+			Description: "Description for fakevendor-fakepublisher/default",
+			Hidden:      false,
+			Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
+				"v3.0.0": {
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v3.3.3"},
+						Mandatory:        true,
+					},
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.2.3"},
+						Mandatory:        true,
+					},
+				},
+			},
+		},
+	}
+
+	expectedGroup := &plugininventory.PluginGroup{
+		Name:        "default",
+		Vendor:      "fakevendor",
+		Publisher:   "fakepublisher",
+		Description: "Description for fakevendor-fakepublisher/default",
+		Hidden:      false,
+		Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
+			"v2.0.0": {
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v2.2.2"},
+					Mandatory:        true,
+				},
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.1.1"},
+					Mandatory:        true,
+				},
+			},
+			"v1.0.0": {
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v1.0.0"},
+					Mandatory:        true,
+				},
+			},
+			"v3.0.0": {
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v3.3.3"},
+					Mandatory:        true,
+				},
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.2.3"},
+					Mandatory:        true,
+				},
+			},
+		},
+	}
+
+	mergedGroup := mergeDuplicateGroups(preMergeGroups)
+	assertions.Equal(1, len(mergedGroup))
+	assertions.Equal(expectedGroup, mergedGroup[0])
+}
+
+func TestMergeDuplicateGroupsWithReplacedVersion(t *testing.T) {
+	assertions := assert.New(t)
+
+	preMergeGroups := []*plugininventory.PluginGroup{
+		{
+			Name:        "default",
+			Vendor:      "fakevendor",
+			Publisher:   "fakepublisher",
+			Description: "Description for fakevendor-fakepublisher/default",
+			Hidden:      false,
+			Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
+				"v2.0.0": {
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v2.2.2"},
+						Mandatory:        true,
+					},
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.1.1"},
+						Mandatory:        true,
+					},
+				},
+				"v1.0.0": {
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v1.0.0"},
+						Mandatory:        true,
+					},
+				},
+			},
+		},
+		{
+			Name:        "default",
+			Vendor:      "fakevendor",
+			Publisher:   "fakepublisher",
+			Description: "Description for fakevendor-fakepublisher/default",
+			Hidden:      false,
+			Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
+				// Same version as the other group.  This version should be ignored while we keep the one from the other group.
+				"v2.0.0": {
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v3.3.3"},
+						Mandatory:        true,
+					},
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.2.3"},
+						Mandatory:        true,
+					},
+				},
+				"v3.0.0": {
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v3.3.3"},
+						Mandatory:        true,
+					},
+					{
+						PluginIdentifier: plugininventory.PluginIdentifier{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.2.3"},
+						Mandatory:        true,
+					},
+				},
+			},
+		},
+	}
+
+	expectedGroup := &plugininventory.PluginGroup{
+		Name:        "default",
+		Vendor:      "fakevendor",
+		Publisher:   "fakepublisher",
+		Description: "Description for fakevendor-fakepublisher/default",
+		Hidden:      false,
+		Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
+			"v2.0.0": {
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v2.2.2"},
+					Mandatory:        true,
+				},
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.1.1"},
+					Mandatory:        true,
+				},
+			},
+			"v1.0.0": {
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v1.0.0"},
+					Mandatory:        true,
+				},
+			},
+			"v3.0.0": {
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v3.3.3"},
+					Mandatory:        true,
+				},
+				{
+					PluginIdentifier: plugininventory.PluginIdentifier{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.2.3"},
+					Mandatory:        true,
+				},
+			},
+		},
+	}
+
+	mergedGroup := mergeDuplicateGroups(preMergeGroups)
+	assertions.Equal(1, len(mergedGroup))
+	assertions.Equal(expectedGroup, mergedGroup[0])
 }
