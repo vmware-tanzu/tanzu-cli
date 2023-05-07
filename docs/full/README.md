@@ -89,7 +89,7 @@ Commands producing meaningful output consistently provide alternative output suc
 
 ### Plugin discovery and lifecycle management
 
-The CLI is configured to use a default plugin repository. Through various commands like `tanzu plugin search`, `tanzu plugin install`, `tanzu plugin install --group <groupName>`, the CLI provides various means to discover, then securely install or update plugins to serve specific needs of the user.
+The CLI is configured to use a default plugin repository. Through various commands like `tanzu plugin search`, `tanzu plugin install`, `tanzu plugin install --group <groupName>:<groupVersion>`, the CLI provides various means to discover, then securely install or update plugins to serve specific needs of the user.
 
 Certain context endpoints will require that a specific set of plugins be installed so as to enable proper interaction with said endpoints. For these, establishing a connection with these endpoints may lead to the discovery and automatic installation of additional plugins. Plugins installed through this mean of discovery are referred to as "context-scoped" plugins. To learn more about the context-scoped plugins, please check the [context-scoped plugin installation](../full/context-scoped-plugins.md) documentation.
 

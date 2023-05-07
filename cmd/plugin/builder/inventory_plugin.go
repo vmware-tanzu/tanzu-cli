@@ -126,7 +126,7 @@ func newInventoryPluginDeactivateCmd() *cobra.Command {
 	return pluginDeactivateCmd
 }
 
-func getActivateDeactivateBaseCmd() (*cobra.Command, *inventoryPluginActivateDeactivateFlags) { // nolint:dupl
+func getActivateDeactivateBaseCmd() (*cobra.Command, *inventoryPluginActivateDeactivateFlags) {
 	var flags = &inventoryPluginActivateDeactivateFlags{}
 
 	var activateDeactivateCmd = &cobra.Command{}

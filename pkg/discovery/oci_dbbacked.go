@@ -73,8 +73,8 @@ func (od *DBBackedOCIDiscovery) List() ([]Discovered, error) {
 	return od.listPluginsFromInventory()
 }
 
-// GetAllGroups returns all plugin groups defined in the discovery
-func (od *DBBackedOCIDiscovery) GetAllGroups() ([]*plugininventory.PluginGroup, error) {
+// GetGroups returns the plugin groups defined in the discovery
+func (od *DBBackedOCIDiscovery) GetGroups() ([]*plugininventory.PluginGroup, error) {
 	err := od.fetchInventoryImage()
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to fetch the inventory of discovery '%s' for groups", od.Name())
@@ -152,6 +152,7 @@ func (od *DBBackedOCIDiscovery) listGroupsFromInventory() ([]*plugininventory.Pl
 		Vendor:        od.groupCriteria.Vendor,
 		Publisher:     od.groupCriteria.Publisher,
 		Name:          od.groupCriteria.Name,
+		Version:       od.groupCriteria.Version,
 		IncludeHidden: shouldIncludeHidden,
 	})
 }

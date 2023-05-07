@@ -9,5 +9,6 @@ CREATE TABLE IF NOT EXISTS "AvailablePluginGroups" (
 		"Vendor"             TEXT NOT NULL,
 		"Publisher"          TEXT NOT NULL,
 		"GroupName"          TEXT NOT NULL,
-		PRIMARY KEY("Vendor", "Publisher", "GroupName")
+		"GroupVersion"       TEXT NOT NULL,
+		PRIMARY KEY("Vendor", "Publisher", "GroupName", "GroupVersion")
 );

@@ -111,7 +111,7 @@ type PluginGroupPluginEntry struct {
 	Mandatory bool
 }
 
-// PluginGroupIdentifier uniquely identifies a plugin group
+// PluginGroupIdentifier uniquely identifies a single version of a specific plugin group
 type PluginGroupIdentifier struct {
 	// Vendor of the group
 	Vendor string
@@ -119,6 +119,8 @@ type PluginGroupIdentifier struct {
 	Publisher string
 	// Name of the group
 	Name string
+	// Version of the group
+	Version string
 }
 
 // PluginGroup represents a list of plugins.
@@ -132,34 +134,57 @@ type PluginGroup struct {
 	Publisher string
 	// Name of the group
 	Name string
+	// Description of the group
+	Description string
 	// Hidden tells whether the plugin-group should be ignored by the CLI.
 	Hidden bool
-	// The list of plugins specified by this group
-	Plugins []*PluginGroupPluginEntry
+	// Recommended version that the Tanzu CLI should install by default.
+	// The value should be a valid semantic version as defined in
+	// https://semver.org/. E.g., 2.0.1
+	RecommendedVersion string
+	// Map of version to list of plugins
+	Versions map[string][]*PluginGroupPluginEntry
 }
 
 func PluginGroupToID(pg *PluginGroup) string {
 	return fmt.Sprintf("%s-%s/%s", pg.Vendor, pg.Publisher, pg.Name)
 }
 
-// PluginGroupIdentifierFromID splits 'id' into 'vendor'-'publisher'/'name'.
+// PluginGroupIdentifierFromID converts a plugin group id into a
+// PluginGroupIdentifier structure.
+// A group id can be of the forms:
+//  1. vendor-publisher/name:version
+//  2. vendor-publisher/name, in which case the version field is left empty
+//
 // Returns nil if 'id' is not of the expected format.
 func PluginGroupIdentifierFromID(id string) *PluginGroupIdentifier {
 	pg := &PluginGroupIdentifier{}
+
+	// Split into "vendor-publisher" and "name:version"
 	arr := strings.Split(id, "/")
 	if len(arr) != 2 {
 		return nil
 	}
-	pg.Name = arr[1]
 
-	arr1 := strings.Split(arr[0], "-")
-	if len(arr1) != 2 {
+	// Split "vendor-publisher" into "vendor" and "publisher"
+	vendorPublisher := strings.Split(arr[0], "-")
+	if len(vendorPublisher) != 2 {
 		return nil
 	}
-	pg.Vendor = arr1[0]
-	pg.Publisher = arr1[1]
+	pg.Vendor = vendorPublisher[0]
+	pg.Publisher = vendorPublisher[1]
 
-	if pg.Name == "" || pg.Vendor == "" || pg.Publisher == "" {
+	// Sprint "name:version" into "name" an optionally "version"
+	nameVersion := strings.Split(arr[1], ":")
+	pg.Name = nameVersion[0]
+	if len(nameVersion) > 2 {
+		return nil
+	}
+	if len(nameVersion) == 2 {
+		pg.Version = nameVersion[1]
+	}
+
+	if pg.Name == "" || pg.Vendor == "" || pg.Publisher == "" { // It is ok for "pg.Version" to be empty
 		// This can happen if the id is something like `vmware-/default` or `vmware-tkg/`
 		return nil
 	}
@@ -175,6 +200,8 @@ type PluginGroupFilter struct {
 	Publisher string
 	// Name of the group to look for
 	Name string
+	// Version of the group
+	Version string
 	// IncludeHidden indicates if hidden plugin groups should be included
 	IncludeHidden bool
 }
