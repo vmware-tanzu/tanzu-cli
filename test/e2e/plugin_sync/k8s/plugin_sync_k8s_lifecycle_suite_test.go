@@ -39,12 +39,15 @@ const numberOfPluginsToInstall = 3
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
 
+	err := framework.CleanConfigFiles(tf)
+	Expect(err).To(BeNil())
+
 	// check E2E test central repo URL (TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL)
 	e2eTestLocalCentralRepoURL = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryURL)
 	Expect(e2eTestLocalCentralRepoURL).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository URL", framework.TanzuCliE2ETestLocalCentralRepositoryURL))
 
 	// set up the test central repo
-	_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
+	_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
 	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
 	e2eTestLocalCentralRepoPluginHost = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryHost)
