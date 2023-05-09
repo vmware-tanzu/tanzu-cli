@@ -24,25 +24,18 @@ var (
 )
 
 const searchLongDesc = `Search provides the ability to search for plugins that can be installed.
-Without an argument, the command lists all plugins currently available.
-The search command can also be used with a keyword filter to filter the
-list of available plugins. If the filter is flanked with slashes, the
-filter will be treated as a regex.
+The command lists all plugins currently available for installation.
+The search command also provides flags to limit the scope of the search.
 `
 
 func newSearchPluginCmd() *cobra.Command {
 	var searchCmd = &cobra.Command{
-		Use:               "search [keyword|/regex/]",
-		Short:             "Search for a keyword or regex in the list of available plugins",
+		Use:               "search",
+		Short:             "Search for available plugins",
 		Long:              searchLongDesc,
-		Args:              cobra.MaximumNArgs(1),
+		Args:              cobra.MaximumNArgs(0),
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO(khouzam): Implement the filter arg
-			if len(args) == 1 {
-				return fmt.Errorf("the filter argument is not yet implemented")
-			}
-
 			if !configtypes.IsValidTarget(targetStr, true, true) {
 				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
 			}
@@ -85,7 +78,7 @@ func newSearchPluginCmd() *cobra.Command {
 	f.StringVarP(&pluginName, "name", "n", "", "limit the search to plugins with the specified name")
 	f.StringVarP(&outputFormat, "output", "o", "", "output format (yaml|json|table)")
 	f.StringVarP(&local, "local", "l", "", "path to local plugin source")
-	f.StringVarP(&targetStr, "target", "t", "", "list plugins for the specified target (kubernetes[k8s]/mission-control[tmc])")
+	f.StringVarP(&targetStr, "target", "t", "", "limit the search to plugins of the specified target (kubernetes[k8s]/mission-control[tmc]/global)")
 
 	searchCmd.MarkFlagsMutuallyExclusive("local", "name")
 	searchCmd.MarkFlagsMutuallyExclusive("local", "target")
