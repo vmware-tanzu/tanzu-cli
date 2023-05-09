@@ -30,6 +30,7 @@ import (
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
 	wcpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
@@ -40,9 +41,10 @@ var (
 )
 
 const (
-	knownGlobalHost = "cloud.vmware.com"
-	apiTokenType    = "api-token"
-	idTokenType     = "id-token"
+	knownGlobalHost                        = "cloud.vmware.com"
+	apiTokenType                           = "api-token"
+	idTokenType                            = "id-token"
+	ControlPlaneEndPointTypeSelfManagedTMC = "self-managed-tmc"
 )
 
 var contextCmd = &cobra.Command{
@@ -83,9 +85,6 @@ var createCtxCmd = &cobra.Command{
 	# Create a TKG management cluster context using endpoint
 	tanzu context create --endpoint "https://k8s.example.com" --name mgmt-cluster
 
-	# Create a TMC self-managed context using endpoint
-	tanzu context create --self-managed --endpoint "https://k8s.example.com" --name test-context
-
 	# Create a TKG management cluster context using kubeconfig path and context
 	tanzu context create --kubeconfig path/to/kubeconfig --kubecontext kubecontext --name mgmt-cluster
 
@@ -109,16 +108,22 @@ func initCreateCtxCmd() {
 	createCtxCmd.Flags().BoolVar(&stderrOnly, "stderr-only", false, "send all output to stderr rather than stdout")
 	createCtxCmd.Flags().BoolVar(&forceCSP, "force-csp", false, "force the context to use CSP auth")
 	createCtxCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
-	createCtxCmd.Flags().BoolVarP(&selfManaged, "self-managed", "l", false, "indicate the context is for a self-managed TMC")
+
 	_ = createCtxCmd.Flags().MarkHidden("api-token")
 	_ = createCtxCmd.Flags().MarkHidden("stderr-only")
 	_ = createCtxCmd.Flags().MarkHidden("force-csp")
 	_ = createCtxCmd.Flags().MarkHidden("staging")
-	createCtxCmd.MarkFlagsMutuallyExclusive("self-managed", "kubecontext")
-	createCtxCmd.MarkFlagsMutuallyExclusive("self-managed", "kubeconfig")
+	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint", "kubecontext")
+	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint", "kubeconfig")
 }
 
 func createCtx(_ *cobra.Command, _ []string) (err error) {
+	controlPlaneEPType := os.Getenv(constants.ControlPlaneEndpointType)
+	if controlPlaneEPType != "" {
+		if strings.EqualFold(controlPlaneEPType, ControlPlaneEndPointTypeSelfManagedTMC) {
+			selfManaged = true
+		}
+	}
 	ctx, err := createNewContext()
 	if err != nil {
 		return err
@@ -182,7 +187,7 @@ func createNewContext() (context *configtypes.Context, err error) {
 	err = component.Prompt(
 		&component.PromptConfig{
 			Message: "Select context creation type",
-			Options: []string{"Control plane endpoint", "Local kubeconfig", "Self-managed TMC"},
+			Options: []string{"Control plane endpoint", "Local kubeconfig"},
 			Default: "Control plane endpoint",
 		},
 		&ctxCreationType,
@@ -193,10 +198,6 @@ func createNewContext() (context *configtypes.Context, err error) {
 	}
 
 	if ctxCreationType == "Control plane endpoint" {
-		return createContextWithEndpoint()
-	}
-	if ctxCreationType == "Self-managed TMC" {
-		selfManaged = true
 		return createContextWithEndpoint()
 	}
 
