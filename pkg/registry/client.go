@@ -27,7 +27,7 @@ type registry struct {
 func New(opts *ctlimg.Opts) (Registry, error) {
 	reg, err := ctlimg.NewSimpleRegistry(*opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to initialze registry client")
+		return nil, errors.Wrap(err, "failed to initialize registry client")
 	}
 
 	return &registry{
@@ -193,7 +193,6 @@ func (r *registry) CopyImageToTar(sourceImageName, destTarFile string) error {
 			CACertPaths: r.opts.CACertPaths,
 			VerifyCerts: r.opts.VerifyCerts,
 			Insecure:    r.opts.Insecure,
-			Anon:        r.opts.Anon,
 		}
 	}
 
@@ -219,7 +218,6 @@ func (r *registry) CopyImageFromTar(sourceTarFile, destImageRepo string) error {
 			CACertPaths: r.opts.CACertPaths,
 			VerifyCerts: r.opts.VerifyCerts,
 			Insecure:    r.opts.Insecure,
-			Anon:        r.opts.Anon,
 		}
 	}
 	err := copyOptions.Run()
@@ -247,7 +245,6 @@ func (r *registry) downloadBundleOrImage(imageName, outputDir string, isBundle b
 			CACertPaths: r.opts.CACertPaths,
 			VerifyCerts: r.opts.VerifyCerts,
 			Insecure:    r.opts.Insecure,
-			Anon:        r.opts.Anon,
 		}
 	}
 
@@ -283,7 +280,6 @@ func (r *registry) PushImage(imageWithTag string, filePaths []string) error {
 			CACertPaths: r.opts.CACertPaths,
 			VerifyCerts: r.opts.VerifyCerts,
 			Insecure:    r.opts.Insecure,
-			Anon:        r.opts.Anon,
 		}
 	}
 
