@@ -136,7 +136,7 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 
 func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPluginGroupName(pgName string, pi plugininventory.PluginInventory) ([]*plugininventory.PluginGroup, []*plugininventory.PluginInventoryEntry, error) {
 	pgi := plugininventory.PluginGroupIdentifierFromID(pgName)
-	if pgi.Name == "" || pgi.Vendor == "" || pgi.Publisher == "" {
+	if pgi == nil {
 		return nil, nil, errors.Errorf("incorrect plugin group %q specified", pgName)
 	}
 	pgFilter := plugininventory.PluginGroupFilter{

@@ -140,6 +140,9 @@ func discoverSpecificPluginGroups(pd []configtypes.PluginDiscovery, criteria *di
 // discoverPluginGroup returns the one matching plugin group found in the discoveries
 func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupID string) (*plugininventory.PluginGroup, error) {
 	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupID)
+	if groupIdentifier == nil {
+		return nil, fmt.Errorf("could not find group '%s'", groupID)
+	}
 	groupsByDiscovery, err := discoverSpecificPluginGroups(pd, &discovery.GroupDiscoveryCriteria{
 		Vendor:    groupIdentifier.Vendor,
 		Publisher: groupIdentifier.Publisher,

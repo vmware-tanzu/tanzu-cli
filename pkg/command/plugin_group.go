@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
@@ -46,6 +47,10 @@ func newSearchCmd() *cobra.Command {
 			var criteria *discovery.GroupDiscoveryCriteria
 			if groupID != "" {
 				groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupID)
+				if groupIdentifier == nil {
+					return errors.Errorf("incorrect plugin group %q specified", groupID)
+				}
+
 				criteria = &discovery.GroupDiscoveryCriteria{
 					Vendor:    groupIdentifier.Vendor,
 					Publisher: groupIdentifier.Publisher,

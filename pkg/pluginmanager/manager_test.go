@@ -325,6 +325,32 @@ func Test_InstallPluginFromGroup(t *testing.T) {
 	err := InstallPluginsFromGroup("cluster", groupID)
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to create group discovery: unknown group discovery source")
+
+	// make sure a poorly formatted group is properly handled
+	groupID = "invalid"
+	err = InstallPluginsFromGroup("cluster", groupID)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "could not find group")
+
+	groupID = "invalid/withslash"
+	err = InstallPluginsFromGroup("cluster", groupID)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "could not find group")
+
+	groupID = "vendor-publisher/"
+	err = InstallPluginsFromGroup("cluster", groupID)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "could not find group")
+
+	groupID = "vendor-/name"
+	err = InstallPluginsFromGroup("cluster", groupID)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "could not find group")
+
+	groupID = "-publisher/name"
+	err = InstallPluginsFromGroup("cluster", groupID)
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "could not find group")
 }
 
 func Test_DiscoverPluginGroups(t *testing.T) {
