@@ -91,7 +91,7 @@ var _ = BeforeSuite(func() {
 
 	pluginGroupToPluginListMap = framework.MapPluginsToPluginGroups(pluginsSearchList, framework.PluginGroupsForLifeCycleTests)
 	for pluginGroupLatest := range framework.PluginGroupsLatestToOldVersions {
-		framework.CopyPluginsBetweenPluginGroupsAndUpdatePluginsVersion(pluginGroupToPluginListMap, pluginGroupLatest, framework.PluginGroupsLatestToOldVersions[pluginGroupLatest], strings.Split(framework.PluginGroupsLatestToOldVersions[pluginGroupLatest], "/")[1])
+		framework.CopyPluginsBetweenPluginGroupsAndUpdatePluginsVersion(pluginGroupToPluginListMap, pluginGroupLatest, framework.PluginGroupsLatestToOldVersions[pluginGroupLatest], strings.Split(strings.Split(framework.PluginGroupsLatestToOldVersions[pluginGroupLatest], "/")[1], ":")[1])
 	}
 
 	// check for every plugin group (in framework.PluginGroupsForLifeCycleTests) there should be plugins available

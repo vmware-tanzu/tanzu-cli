@@ -17,16 +17,16 @@ import (
 
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-DownloadBundle-UploadBundle-Lifecycle]", func() {
 
-	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tkg/v0.0.1'", func() {
-		// Test case: download plugin bundle for plugin-group vmware-tkg/v0.0.1
-		It("download plugin bundle with specific plugin-group vmware-tkg/v0.0.1", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tkg/v0.0.1"}, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-v0.0.1.tar.gz"))
+	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tkg/default:v0.0.1'", func() {
+		// Test case: download plugin bundle for plugin-group vmware-tkg/default:v0.0.1
+		It("download plugin bundle with specific plugin-group vmware-tkg/default:v0.0.1", func() {
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tkg/default:v0.0.1"}, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-default-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
 		})
 
-		// Test case: upload plugin bundle downloaded using vmware-tkg/v0.0.1 plugin-group to the airgapped repository
-		It("upload plugin bundle that was downloaded using vmware-tkg/v0.0.1 plugin-group to the airgapped repository", func() {
-			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-v0.0.1.tar.gz"))
+		// Test case: upload plugin bundle downloaded using vmware-tkg/default:v0.0.1 plugin-group to the airgapped repository
+		It("upload plugin bundle that was downloaded using vmware-tkg/default:v0.0.1 plugin-group to the airgapped repository", func() {
+			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-default-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while uploading plugin bundle")
 		})
 
@@ -39,12 +39,12 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		})
 
 		// Test case: Validate that the correct plugins and plugin group exists with `tanzu plugin search` and `tanzu plugin group search` output
-		It("validate the plugins from group 'vmware-tkg/v0.0.1' exists", func() {
+		It("validate the plugins from group 'vmware-tkg/default:v0.0.1' exists", func() {
 			// search plugin groups
 			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			// check all expected plugin groups are available in the `plugin group search` output from the airgapped repository
-			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/v0.0.1"}}
+			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/default", Latest: "v0.0.1", Description: "Desc for vmware-tkg/default:v0.0.1"}}
 			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 			// search plugins and make sure correct number of plugins available
@@ -57,9 +57,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		})
 
 		// Test case: Validate that the plugins can be installed from the plugin-group
-		It("validate that plugins can be installed from group 'vmware-tkg/v0.0.1'", func() {
+		It("validate that plugins can be installed from group 'vmware-tkg/default:v0.0.1'", func() {
 			// All plugins should get installed from the group
-			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/v0.0.1")
+			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/default:v0.0.1")
 			Expect(err).To(BeNil())
 
 			// Verify all plugins got installed with `tanzu plugin list`
@@ -78,25 +78,28 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		})
 	})
 
-	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tmc/v9.9.9'", func() {
-		// Test case: download plugin bundle for plugin-group vmware-tmc/v9.9.9
-		It("download plugin bundle for plugin-group vmware-tmc/v9.9.9", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tmc/v9.9.9"}, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-v9.9.9.tar.gz"))
+	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tmc/tmc-user:v9.9.9'", func() {
+		// Test case: download plugin bundle for plugin-group vmware-tmc/tmc-user:v9.9.9
+		It("download plugin bundle for plugin-group vmware-tmc/tmc-user:v9.9.9", func() {
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tmc/tmc-user:v9.9.9"}, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-default-v9.9.9.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
 		})
 
-		// Test case: upload plugin bundle downloaded using vmware-tmc/v9.9.9 plugin-group to the airgapped repository
-		It("upload plugin bundle downloaded using vmware-tmc/v9.9.9 plugin-group to the airgapped repository", func() {
-			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-v9.9.9.tar.gz"))
+		// Test case: upload plugin bundle downloaded using vmware-tmc/tmc-user:v9.9.9 plugin-group to the airgapped repository
+		It("upload plugin bundle downloaded using vmware-tmc/tmc-user:v9.9.9 plugin-group to the airgapped repository", func() {
+			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-default-v9.9.9.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while uploading plugin bundle with specific group")
 		})
 
-		It("validate the plugins from group 'vmware-tmc/v9.9.9' exists", func() {
+		It("validate the plugins from group 'vmware-tmc/tmc-user:v9.9.9' exists", func() {
 			// search plugin groups and make sure there plugin groups available
 			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			// check all expected plugin groups are available in plugin group search output
-			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/v0.0.1"}, {Group: "vmware-tmc/v9.9.9"}}
+			expectedPluginGroups := []*framework.PluginGroup{
+				{Group: "vmware-tkg/default", Latest: "v0.0.1", Description: "Desc for vmware-tkg/default:v0.0.1"},
+				{Group: "vmware-tmc/tmc-user", Latest: "v9.9.9", Description: "Desc for vmware-tmc/tmc-user:v9.9.9"},
+			}
 			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 			// search plugins and make sure correct number of plugins available
@@ -108,9 +111,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
 		})
 
-		It("validate that plugins can be installed from group 'vmware-tmc/v9.9.9'", func() {
+		It("validate that plugins can be installed from group 'vmware-tmc/tmc-user:v9.9.9'", func() {
 			// All plugins should get installed from the group
-			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tmc/v9.9.9")
+			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tmc/tmc-user:v9.9.9")
 			Expect(err).To(BeNil())
 
 			// Verify all plugins got installed with `tanzu plugin list`
@@ -121,25 +124,28 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 	})
 
-	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tmc/v0.0.1'", func() {
-		// Test case: download plugin bundle for plugin-group vmware-tmc/v0.0.1
-		It("download plugin bundle for plugin-group vmware-tmc/v0.0.1", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tmc/v0.0.1"}, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-v0.0.1.tar.gz"))
+	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tmc/tmc-user:v0.0.1'", func() {
+		// Test case: download plugin bundle for plugin-group vmware-tmc/tmc-user:v0.0.1
+		It("download plugin bundle for plugin-group vmware-tmc/tmc-user:v0.0.1", func() {
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tmc/tmc-user:v0.0.1"}, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
 		})
 
-		// Test case: upload plugin bundle downloaded using vmware-tmc/v0.0.1 plugin-group to the airgapped repository
-		It("upload plugin bundle downloaded using vmware-tmc/v0.0.1 plugin-group to the airgapped repository", func() {
+		// Test case: upload plugin bundle downloaded using vmware-tmc/tmc-user:v0.0.1 plugin-group to the airgapped repository
+		It("upload plugin bundle downloaded using vmware-tmc/tmc-user:v0.0.1 plugin-group to the airgapped repository", func() {
 			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
 		})
 
-		It("validate the plugins from group 'vmware-tmc/v0.0.1' exists", func() {
+		It("validate the plugins from group 'vmware-tmc/tmc-user:v0.0.1' exists", func() {
 			// search plugin groups
 			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			// check all expected plugin groups are available in the `plugin group search` output from the airgapped repository
-			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/v0.0.1"}, {Group: "vmware-tmc/v9.9.9"}, {Group: "vmware-tmc/v0.0.1"}}
+			expectedPluginGroups := []*framework.PluginGroup{
+				{Group: "vmware-tkg/default", Latest: "v0.0.1", Description: "Desc for vmware-tkg/default:v0.0.1"},
+				{Group: "vmware-tmc/tmc-user", Latest: "v9.9.9", Description: "Desc for vmware-tmc/tmc-user:v9.9.9"},
+			}
 			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 			// search plugins and make sure correct number of plugins available
@@ -151,9 +157,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
 		})
 
-		It("validate that plugins can be installed from group 'vmware-tmc/v0.0.1'", func() {
+		It("validate that plugins can be installed from group 'vmware-tmc/tmc-user:v0.0.1'", func() {
 			// All plugins should get installed from the group
-			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tmc/v0.0.1")
+			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tmc/tmc-user:v0.0.1")
 			Expect(err).To(BeNil())
 
 			// Verify all plugins got installed with `tanzu plugin list`
@@ -183,7 +189,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			// check all expected plugin groups are available in the `plugin group search` output from the airgapped repository
-			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/v0.0.1"}, {Group: "vmware-tkg/v9.9.9"}, {Group: "vmware-tmc/v9.9.9"}, {Group: "vmware-tmc/v0.0.1"}}
+			expectedPluginGroups := []*framework.PluginGroup{
+				{Group: "vmware-tkg/default", Latest: "v9.9.9", Description: "Desc for vmware-tkg/default:v9.9.9"},
+				{Group: "vmware-tmc/tmc-user", Latest: "v9.9.9", Description: "Desc for vmware-tmc/tmc-user:v9.9.9"},
+			}
 			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 			// search plugins and make sure correct number of plugins available
@@ -196,10 +205,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
 		})
 
-		// Test case: validate that plugins can be installed from group newly added plugin-group 'vmware-tkg/v9.9.9'
-		It("validate that plugins can be installed from group newly added plugin-group 'vmware-tkg/v9.9.9'", func() {
+		// Test case: validate that plugins can be installed from group newly added plugin-group 'vmware-tkg/default:v9.9.9'
+		It("validate that plugins can be installed from group newly added plugin-group 'vmware-tkg/default:v9.9.9'", func() {
 			// All plugins should get installed from the group
-			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/v9.9.9")
+			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/default:v9.9.9")
 			Expect(err).To(BeNil())
 
 			// Verify all plugins got installed with `tanzu plugin list`

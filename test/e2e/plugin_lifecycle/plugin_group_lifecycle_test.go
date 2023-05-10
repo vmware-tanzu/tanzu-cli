@@ -21,7 +21,7 @@ import (
 //  1. 'plugin group search' there should be some groups always
 //  2. 'tanzu plugin install <plugin|all> --group <group>'
 //     'tanzu plugin install all --group <group>' will be validated by getting list of plugins belongs to specific plugin group by mapping
-//     plugin group version ( vmware-tmc/v9.9.9 ) with plugin version from the plugin search output, tanzu plugin group get <group> is
+//     plugin group version ( vmware-tmc/tmc-user:v9.9.9 ) with plugin version from the plugin search output, tanzu plugin group get <group> is
 //     not supported yet.
 //
 // Use cases not covered:
@@ -152,10 +152,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		})
 	})
 	// TODO:
-	//	1) Use case: 	Install a plugin from a specific group eg: 'vmware-tkg/v0.0.1', plugin: secret target: kubernetes, Version: v0.0.1
-	//					Install same plugin different version but same target from another group eg: 'vmware-tkg/v9.9.9', plugin: secret target: kubernetes, Version: v9.9.9
+	//	1) Use case: 	Install a plugin from a specific group eg: 'vmware-tkg/default:v0.0.1', plugin: secret target: kubernetes, Version: v0.0.1
+	//					Install same plugin different version but same target from another group eg: 'vmware-tkg/default:v9.9.9', plugin: secret target: kubernetes, Version: v9.9.9
 	//			expected results: it should install successfully
-	//	2) Use case: 	Install a same plugin (with same version) from a same group, but different targets, eg: group: 'vmware-tkg/v9.9.9' plugin: secret target: kubernetes, and another plugin:  plugin: secret target: mission-control
-	//					Install all plugins in the group: tanzu plugin install --group 'vmware-tkg/v9.9.9'
+	//	2) Use case: 	Install a same plugin (with same version) from a same group, but different targets, eg: group: 'vmware-tkg/default:v9.9.9' plugin: secret target: kubernetes, and another plugin:  plugin: secret target: mission-control
+	//					Install all plugins in the group: tanzu plugin install --group 'vmware-tkg/default:v9.9.9'
 	//		expected results: it should install all plugins, and there should be two secret plugins installed one for kubernetes and another for mission-control with same version.
 })

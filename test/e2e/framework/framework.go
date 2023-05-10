@@ -312,9 +312,9 @@ func init() {
 	PluginsForLifeCycleTests = []*PluginInfo{{Name: "cluster", Target: "kubernetes", Version: "v9.9.9", Description: "cluster functionality"}, {Name: "cluster", Target: "mission-control", Version: "v9.9.9", Description: "cluster functionality"}, {Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "pinniped-auth functionality"}}
 
 	// TODO:cpamuluri: need to move Plugin Groups to configuration file with positive and negative use cases - github issue: https://github.com/vmware-tanzu/tanzu-cli/issues/122
-	PluginGroupsForLifeCycleTests = []*PluginGroup{{Group: "vmware-tkg/v9.9.9"}, {Group: "vmware-tmc/v9.9.9"}}
+	PluginGroupsForLifeCycleTests = []*PluginGroup{{Group: "vmware-tkg/default", Latest: "v9.9.9", Description: "Desc for vmware-tkg/default:v9.9.9"}, {Group: "vmware-tmc/tmc-user", Latest: "v9.9.9", Description: "Desc for vmware-tmc/tmc-user:v9.9.9"}}
 
 	PluginGroupsLatestToOldVersions = make(map[string]string)
-	PluginGroupsLatestToOldVersions["vmware-tmc/v9.9.9"] = "vmware-tmc/v0.0.1"
-	PluginGroupsLatestToOldVersions["vmware-tkg/v9.9.9"] = "vmware-tkg/v0.0.1"
+	PluginGroupsLatestToOldVersions["vmware-tmc/tmc-user:v9.9.9"] = "vmware-tmc/tmc-user:v0.0.1"
+	PluginGroupsLatestToOldVersions["vmware-tkg/default:v9.9.9"] = "vmware-tkg/default:v0.0.1"
 }
