@@ -117,19 +117,24 @@ func newRootCmd() *cobra.Command {
 		// Flag parsing must be deactivated because the root plugin won't know about all flags.
 		DisableFlagParsing: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// Prompt user for EULA and CEIP agreement if necessary, except when
+			//   - performing shell completion (The shell completion setup is not interactive,
+			//     so it should not trigger a prompt)
+			//   - 'tanzu version'(common first command to run),
+			//   - 'config set' (would be a chicken and egg issue if user tries to set CEIP configuration
+			//      using "tanzu config set env.TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER yes")
+			//   - 'config eula xxx', 'ceip set' (auto prompting when running these commands is confusing)
 			if cmd.Name() != cobra.ShellCompRequestCmd && cmd.Name() != completionCmd.Name() &&
 				cmd.Name() != newVersionCmd().Name() &&
-				!(cmd.Name() == cmdNameSet && cmd.Parent().Name() == configCmd.Name()) &&
-				!(cmd.Name() == cmdNameSet && cmd.Parent().Name() == newCEIPParticipationCmd().Name()) {
-				//  Configure CEIP setting but skip the CEIP setting for below commands:
-				//      - shell completion (The shell completion setup is not interactive,
-				//        so it should not trigger the ceipt prompt)
-				//      - 'tanzu version'(common first command to run),
-				//      - 'ceip set' (not a good UX to prompt user who is trying to set the CEIP configuration)
-				//      - 'config set' (would be a chicken and egg issue if user tries to set CEIP configuration
-				//         using "tanzu config set env.TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER yes")
-				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
-					return err
+				!(cmd.Name() == cmdNameSet && cmd.Parent().Name() == configCmd.Name()) {
+				if !(cmd.Parent().Name() == newEULACmd().Name()) &&
+					!(cmd.Name() == cmdNameSet && cmd.Parent().Name() == newCEIPParticipationCmd().Name()) {
+					if err := cliconfig.ConfigureEULA(false); err != nil {
+						return err
+					}
+					if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
+						return err
+					}
 				}
 			}
 			return nil

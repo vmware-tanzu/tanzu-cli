@@ -53,11 +53,13 @@ e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-plugin-compatibility-test
 .PHONY: e2e-cli-lifecycle ## Execute CLI life cycle specific e2e tests
 e2e-cli-lifecycle:
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GO} test ${ROOT_DIR}/test/e2e/cli_lifecycle -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 
 .PHONY: e2e-cli-config ## Execute CLI config life cycle specific e2e tests
 e2e-cli-config:
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GO} test ${ROOT_DIR}/test/e2e/config -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 
 .PHONY: e2e-plugin-compatibility-tests ## Execute CLI Core Plugin Compatibility E2E test cases
@@ -65,6 +67,7 @@ e2e-plugin-compatibility-tests:
 	export TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
 	export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GO} test ${ROOT_DIR}/test/e2e/plugins_compatibility -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 
 .PHONY: e2e-plugin-lifecycle-tests ## Execute CLI Core Plugin life cycle E2E test cases
@@ -74,6 +77,7 @@ e2e-plugin-lifecycle-tests:
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GO} test ${ROOT_DIR}/test/e2e/plugin_lifecycle -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 
 .PHONY: e2e-plugin-sync-k8s ## Execute CLI Core Plugin sync E2E test cases for k8s target
@@ -83,6 +87,7 @@ e2e-plugin-sync-k8s:
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GO} test ${ROOT_DIR}/test/e2e/plugin_sync/k8s -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 
 
@@ -97,6 +102,7 @@ e2e-plugin-sync-tmc:
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
 		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+		export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 		export TANZU_CLI_E2E_TEST_ENVIRONMENT="true" ; \
 		export TANZU_API_TOKEN=$(TANZU_API_TOKEN) ; \
 		${GO} test -p 1 ${ROOT_DIR}/test/e2e/plugin_sync/tmc -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
@@ -110,6 +116,7 @@ e2e-context-tmc-tests:
 		echo "***Skipping TMC specific e2e tests cases because environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL are not set***" ; \
 	else \
 	    export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+		export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 		${GO} test ${ROOT_DIR}/test/e2e/context/tmc -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ; \
 	fi
 
@@ -120,6 +127,7 @@ e2e-context-k8s-tests:
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GO} test `go list ${ROOT_DIR}/test/e2e/context/... | grep -v test/e2e/context/tmc` -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE}
 
 .PHONY: e2e-airgapped-tests ## Execute CLI airgapped tests
@@ -131,4 +139,5 @@ e2e-airgapped-tests:
 	export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_IMAGE_FOR_AIRGAPPED) ; \
 	export TANZU_CLI_E2E_AIRGAPPED_REPO=$(TANZU_CLI_E2E_AIRGAPPED_REPO) ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
+	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GO} test ${ROOT_DIR}/test/e2e/airgapped -timeout ${E2E_TEST_TIMEOUT} -race -coverprofile ${E2E_TEST_OUTPUT} ${GOTEST_VERBOSE} ;

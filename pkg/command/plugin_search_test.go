@@ -66,6 +66,7 @@ func TestPluginSearch(t *testing.T) {
 	assert.Nil(err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
 
 	featureArray := strings.Split(constants.FeatureContextCommand, ".")
 	err = config.SetFeature(featureArray[1], featureArray[2], "true")
@@ -75,6 +76,7 @@ func TestPluginSearch(t *testing.T) {
 		os.Unsetenv("TANZU_CONFIG")
 		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
 		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 		os.RemoveAll(configFile.Name())
 		os.RemoveAll(configFileNG.Name())
 	}()
