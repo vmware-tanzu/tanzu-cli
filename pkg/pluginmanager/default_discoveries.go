@@ -13,6 +13,8 @@ import (
 )
 
 const True = "true"
+const HTTPS = "https"
+const HTTP = "http"
 
 func defaultDiscoverySourceBasedOnServer(server *configtypes.Server) []configtypes.PluginDiscovery { // nolint:staticcheck // Deprecated
 	var defaultDiscoveries []configtypes.PluginDiscovery
@@ -65,9 +67,13 @@ func appendURLScheme(endpoint string) string {
 	if os.Getenv(constants.E2ETestEnvironment) == True {
 		return endpoint
 	}
-	e := strings.Split(endpoint, ":")[0]
-	if !strings.Contains(e, "https") {
-		return fmt.Sprintf("https://%s", e)
+	urlSec := strings.Split(endpoint, ":")
+	// url does not have any scheme
+	if len(urlSec) == 1 {
+		return fmt.Sprintf("%s://%s", HTTPS, urlSec[0])
+	} else if urlSec[0] == HTTPS || urlSec[0] == HTTP { // url starts with http/https scheme, do nothing
+		return endpoint
+	} else { // endpoint does not start http/https
+		return fmt.Sprintf("%s://%s", HTTPS, endpoint)
 	}
-	return e
 }
