@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command"
+	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/docker"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/plugin"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
@@ -43,7 +44,6 @@ type pluginBuildFlags struct {
 type pluginBuildPackageFlags struct {
 	BinaryArtifactDir  string
 	PackageArtifactDir string
-	LocalOCIRepository string
 }
 
 type pluginPublishPackageFlags struct {
@@ -112,8 +112,8 @@ func newPluginBuildPackageCmd() *cobra.Command {
 			bppArgs := &plugin.BuildPluginPackageOptions{
 				BinaryArtifactDir:  pbpFlags.BinaryArtifactDir,
 				PackageArtifactDir: pbpFlags.PackageArtifactDir,
-				LocalOCIRegistry:   pbpFlags.LocalOCIRepository,
 				ImgpkgOptions:      imgpkg.NewImgpkgCLIWrapper(),
+				DockerOptions:      docker.NewDockerCLIWrapper(),
 			}
 			return bppArgs.BuildPluginPackages()
 		},
@@ -121,7 +121,6 @@ func newPluginBuildPackageCmd() *cobra.Command {
 
 	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.BinaryArtifactDir, "binary-artifacts", "", "./artifacts/plugins", "plugin binary artifact directory")
 	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.PackageArtifactDir, "package-artifacts", "", "./artifacts/packages", "plugin package artifacts directory")
-	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.LocalOCIRepository, "oci-registry", "", "", "local oci-registry to use for generating packages")
 
 	return pluginBuildPackageCmd
 }
@@ -142,6 +141,7 @@ func newPluginPublishPackageCmd() *cobra.Command {
 				Repository:         pppFlags.Repository,
 				DryRun:             pppFlags.DryRun,
 				ImgpkgOptions:      imgpkg.NewImgpkgCLIWrapper(),
+				DockerOptions:      docker.NewDockerCLIWrapper(),
 			}
 			return bppArgs.PublishPluginPackages()
 		},

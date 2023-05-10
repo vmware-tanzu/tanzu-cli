@@ -8,30 +8,6 @@ import (
 )
 
 type ImgpkgWrapper struct {
-	CopyArchiveToRepoStub        func(string, string) error
-	copyArchiveToRepoMutex       sync.RWMutex
-	copyArchiveToRepoArgsForCall []struct {
-		arg1 string
-		arg2 string
-	}
-	copyArchiveToRepoReturns struct {
-		result1 error
-	}
-	copyArchiveToRepoReturnsOnCall map[int]struct {
-		result1 error
-	}
-	CopyImageToArchiveStub        func(string, string) error
-	copyImageToArchiveMutex       sync.RWMutex
-	copyImageToArchiveArgsForCall []struct {
-		arg1 string
-		arg2 string
-	}
-	copyImageToArchiveReturns struct {
-		result1 error
-	}
-	copyImageToArchiveReturnsOnCall map[int]struct {
-		result1 error
-	}
 	GetFileDigestFromImageStub        func(string, string) (string, error)
 	getFileDigestFromImageMutex       sync.RWMutex
 	getFileDigestFromImageArgsForCall []struct {
@@ -83,130 +59,6 @@ type ImgpkgWrapper struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-func (fake *ImgpkgWrapper) CopyArchiveToRepo(arg1 string, arg2 string) error {
-	fake.copyArchiveToRepoMutex.Lock()
-	ret, specificReturn := fake.copyArchiveToRepoReturnsOnCall[len(fake.copyArchiveToRepoArgsForCall)]
-	fake.copyArchiveToRepoArgsForCall = append(fake.copyArchiveToRepoArgsForCall, struct {
-		arg1 string
-		arg2 string
-	}{arg1, arg2})
-	stub := fake.CopyArchiveToRepoStub
-	fakeReturns := fake.copyArchiveToRepoReturns
-	fake.recordInvocation("CopyArchiveToRepo", []interface{}{arg1, arg2})
-	fake.copyArchiveToRepoMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *ImgpkgWrapper) CopyArchiveToRepoCallCount() int {
-	fake.copyArchiveToRepoMutex.RLock()
-	defer fake.copyArchiveToRepoMutex.RUnlock()
-	return len(fake.copyArchiveToRepoArgsForCall)
-}
-
-func (fake *ImgpkgWrapper) CopyArchiveToRepoCalls(stub func(string, string) error) {
-	fake.copyArchiveToRepoMutex.Lock()
-	defer fake.copyArchiveToRepoMutex.Unlock()
-	fake.CopyArchiveToRepoStub = stub
-}
-
-func (fake *ImgpkgWrapper) CopyArchiveToRepoArgsForCall(i int) (string, string) {
-	fake.copyArchiveToRepoMutex.RLock()
-	defer fake.copyArchiveToRepoMutex.RUnlock()
-	argsForCall := fake.copyArchiveToRepoArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
-}
-
-func (fake *ImgpkgWrapper) CopyArchiveToRepoReturns(result1 error) {
-	fake.copyArchiveToRepoMutex.Lock()
-	defer fake.copyArchiveToRepoMutex.Unlock()
-	fake.CopyArchiveToRepoStub = nil
-	fake.copyArchiveToRepoReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *ImgpkgWrapper) CopyArchiveToRepoReturnsOnCall(i int, result1 error) {
-	fake.copyArchiveToRepoMutex.Lock()
-	defer fake.copyArchiveToRepoMutex.Unlock()
-	fake.CopyArchiveToRepoStub = nil
-	if fake.copyArchiveToRepoReturnsOnCall == nil {
-		fake.copyArchiveToRepoReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.copyArchiveToRepoReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *ImgpkgWrapper) CopyImageToArchive(arg1 string, arg2 string) error {
-	fake.copyImageToArchiveMutex.Lock()
-	ret, specificReturn := fake.copyImageToArchiveReturnsOnCall[len(fake.copyImageToArchiveArgsForCall)]
-	fake.copyImageToArchiveArgsForCall = append(fake.copyImageToArchiveArgsForCall, struct {
-		arg1 string
-		arg2 string
-	}{arg1, arg2})
-	stub := fake.CopyImageToArchiveStub
-	fakeReturns := fake.copyImageToArchiveReturns
-	fake.recordInvocation("CopyImageToArchive", []interface{}{arg1, arg2})
-	fake.copyImageToArchiveMutex.Unlock()
-	if stub != nil {
-		return stub(arg1, arg2)
-	}
-	if specificReturn {
-		return ret.result1
-	}
-	return fakeReturns.result1
-}
-
-func (fake *ImgpkgWrapper) CopyImageToArchiveCallCount() int {
-	fake.copyImageToArchiveMutex.RLock()
-	defer fake.copyImageToArchiveMutex.RUnlock()
-	return len(fake.copyImageToArchiveArgsForCall)
-}
-
-func (fake *ImgpkgWrapper) CopyImageToArchiveCalls(stub func(string, string) error) {
-	fake.copyImageToArchiveMutex.Lock()
-	defer fake.copyImageToArchiveMutex.Unlock()
-	fake.CopyImageToArchiveStub = stub
-}
-
-func (fake *ImgpkgWrapper) CopyImageToArchiveArgsForCall(i int) (string, string) {
-	fake.copyImageToArchiveMutex.RLock()
-	defer fake.copyImageToArchiveMutex.RUnlock()
-	argsForCall := fake.copyImageToArchiveArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
-}
-
-func (fake *ImgpkgWrapper) CopyImageToArchiveReturns(result1 error) {
-	fake.copyImageToArchiveMutex.Lock()
-	defer fake.copyImageToArchiveMutex.Unlock()
-	fake.CopyImageToArchiveStub = nil
-	fake.copyImageToArchiveReturns = struct {
-		result1 error
-	}{result1}
-}
-
-func (fake *ImgpkgWrapper) CopyImageToArchiveReturnsOnCall(i int, result1 error) {
-	fake.copyImageToArchiveMutex.Lock()
-	defer fake.copyImageToArchiveMutex.Unlock()
-	fake.CopyImageToArchiveStub = nil
-	if fake.copyImageToArchiveReturnsOnCall == nil {
-		fake.copyImageToArchiveReturnsOnCall = make(map[int]struct {
-			result1 error
-		})
-	}
-	fake.copyImageToArchiveReturnsOnCall[i] = struct {
-		result1 error
-	}{result1}
 }
 
 func (fake *ImgpkgWrapper) GetFileDigestFromImage(arg1 string, arg2 string) (string, error) {
@@ -462,10 +314,6 @@ func (fake *ImgpkgWrapper) ResolveImageReturnsOnCall(i int, result1 error) {
 func (fake *ImgpkgWrapper) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.copyArchiveToRepoMutex.RLock()
-	defer fake.copyArchiveToRepoMutex.RUnlock()
-	fake.copyImageToArchiveMutex.RLock()
-	defer fake.copyImageToArchiveMutex.RUnlock()
 	fake.getFileDigestFromImageMutex.RLock()
 	defer fake.getFileDigestFromImageMutex.RUnlock()
 	fake.pullImageMutex.RLock()
