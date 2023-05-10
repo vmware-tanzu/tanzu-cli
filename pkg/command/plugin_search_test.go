@@ -82,7 +82,7 @@ func TestPluginSearch(t *testing.T) {
 	for _, spec := range tests {
 		t.Run(spec.test, func(t *testing.T) {
 			// Disable the Central Repository feature if needed
-			if spec.centralRepoDisabled == "true" {
+			if strings.EqualFold(spec.centralRepoDisabled, "true") {
 				featureArray := strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
 				err := config.SetFeature(featureArray[1], featureArray[2], spec.centralRepoDisabled)
 				assert.Nil(err)

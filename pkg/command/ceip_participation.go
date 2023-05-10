@@ -49,14 +49,14 @@ func newCEIPParticipationCmd() *cobra.Command {
 func newCEIPParticipationSetCmd() *cobra.Command {
 	var setCmd = &cobra.Command{
 		Use:   "set OPT_IN_BOOL",
-		Short: "Set the opt-in preference for CEIP (subject to change)",
+		Short: "Set the opt-in preference for CEIP45 (subject to change)",
 		Long:  "Set the opt-in preference for CEIP (subject to change)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !strings.EqualFold(args[0], True) && !strings.EqualFold(args[0], "false") {
+			if !strings.EqualFold(args[0], "true") && !strings.EqualFold(args[0], "false") {
 				return errors.Errorf("incorrect boolean argument: %q", args[0])
 			}
-			err := configlib.SetCEIPOptIn(strconv.FormatBool(strings.EqualFold(args[0], True)))
+			err := configlib.SetCEIPOptIn(strconv.FormatBool(strings.EqualFold(args[0], "true")))
 			if err != nil {
 				return errors.Wrapf(err, "failed to update the configuration")
 			}
@@ -78,7 +78,7 @@ func newCEIPParticipationGetCmd() *cobra.Command {
 				return errors.Wrapf(err, "failed to get the CEIP opt-in status")
 			}
 			ceipStatus := ""
-			if optInVal == True {
+			if strings.EqualFold(optInVal, "true") {
 				ceipStatus = CeipOptInStatus
 			} else {
 				ceipStatus = CeipOptOutStatus
