@@ -181,7 +181,7 @@ setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test
   		tar xjf $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2 -C $(ROOT_DIR)/hack/central-repo/;\
 	fi
 	echo "Adding docker test central repo cert to the config file"
-	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
+	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" TANZU_CLI_EULA_PROMPT_ANSWER="Yes" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
 	$(ROOT_DIR)/bin/tanzu config cert add --host localhost:9876 --ca-certificate $(ROOT_DIR)/hack/central-repo/certs/localhost.crt
 
 .PHONY: start-test-central-repo
@@ -312,6 +312,10 @@ ifndef TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER
 TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER = no
 endif
 
+ifndef TANZU_CLI_EULA_PROMPT_ANSWER
+TANZU_CLI_EULA_PROMPT_ANSWER = yes
+endif
+
 .PHONY: build-cli-coexistence ## Build CLI Coexistence docker image
 build-cli-coexistence: start-test-central-repo
 	docker build \
@@ -322,6 +326,7 @@ build-cli-coexistence: start-test-central-repo
 		--build-arg TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
 		--build-arg TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
 		--build-arg TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER=$(TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER) \
+		--build-arg TANZU_CLI_EULA_PROMPT_ANSWER=$(TANZU_CLI_EULA_PROMPT_ANSWER) \
 		-t cli-coexistence \
 		.
 
@@ -337,6 +342,7 @@ cli-coexistence-tests:start-test-central-repo
 	  -e TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
 	  -e TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
 	  -e TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER=$(TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER) \
+	  -e TANZU_CLI_EULA_PROMPT_ANSWER=$(TANZU_CLI_EULA_PROMPT_ANSWER) \
 	  -e TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST)  \
 	  -v $(ROOT_DIR):/tmp/tanzu-cli/ \
 	  -v $(ROOT_DIR)/hack/central-repo/certs:/localhost_certs/ \

@@ -37,6 +37,7 @@ func init() {
 		setConfigCmd,
 		unsetConfigCmd,
 		serversCmd,
+		newEULACmd(),
 		newCertCmd(),
 	)
 	serversCmd.AddCommand(listServersCmd)

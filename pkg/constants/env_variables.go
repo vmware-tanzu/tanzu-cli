@@ -18,6 +18,7 @@ const (
 	PublicKeyPathForPluginDiscoveryImageSignature     = "TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH"
 	SuppressSkipSignatureVerificationWarning          = "TANZU_CLI_SUPPRESS_SKIP_SIGNATURE_VERIFICATION_WARNING"
 	CEIPOptInUserPromptAnswer                         = "TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER"
+	EULAPromptAnswer                                  = "TANZU_CLI_EULA_PROMPT_ANSWER"
 	E2ETestEnvironment                                = "TANZU_CLI_E2E_TEST_ENVIRONMENT"
 	// ControlPlaneEndpointType is the control-plane endpoint type to be used for "self-managed-tmc"(this list may grow in future)
 	ControlPlaneEndpointType = "TANZU_CLI_CONTROL_PLANE_ENDPOINT_TYPE"

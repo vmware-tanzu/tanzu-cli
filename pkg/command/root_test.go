@@ -319,6 +319,7 @@ func TestEnvVarsSet(t *testing.T) {
 	configFileNG, _ := os.CreateTemp("", "config_ng")
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
 	defer os.RemoveAll(configFileNG.Name())
 
 	// Setup default feature flags since we have created new config files
@@ -355,6 +356,7 @@ func TestEnvVarsSet(t *testing.T) {
 	os.Unsetenv("TANZU_CONFIG")
 	os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
 	os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+	os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 	os.Unsetenv(envVarName)
 }
 
