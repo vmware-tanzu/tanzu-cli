@@ -148,6 +148,7 @@ func TestPluginList(t *testing.T) {
 		defer os.RemoveAll(dir)
 		os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
 		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+		os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
 
 		// Always turn on the context feature
 		featureArray := strings.Split(constants.FeatureContextCommand, ".")
@@ -210,6 +211,7 @@ func TestPluginList(t *testing.T) {
 		os.Unsetenv("TANZU_CONFIG")
 		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
 		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 	}
 }
 
@@ -247,6 +249,7 @@ func TestDeletePlugin(t *testing.T) {
 		defer os.RemoveAll(dir)
 		os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
 		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+		os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
 		var completionType uint8
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
@@ -286,6 +289,7 @@ func TestDeletePlugin(t *testing.T) {
 		})
 		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
 		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 	}
 }
 
@@ -358,6 +362,7 @@ func TestInstallPlugin(t *testing.T) {
 	assert.Nil(err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
 
 	featureArray := strings.Split(constants.FeatureContextCommand, ".")
 	err = config.SetFeature(featureArray[1], featureArray[2], "true")
@@ -367,6 +372,7 @@ func TestInstallPlugin(t *testing.T) {
 		os.Unsetenv("TANZU_CONFIG")
 		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
 		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 		os.RemoveAll(tkgConfigFile.Name())
 		os.RemoveAll(tkgConfigFileNG.Name())
 	}()
@@ -416,6 +422,7 @@ func TestUpgradePlugin(t *testing.T) {
 	assert.Nil(err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
 
 	featureArray := strings.Split(constants.FeatureContextCommand, ".")
 	err = config.SetFeature(featureArray[1], featureArray[2], "true")
@@ -425,6 +432,7 @@ func TestUpgradePlugin(t *testing.T) {
 		os.Unsetenv("TANZU_CONFIG")
 		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
 		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 		os.RemoveAll(tkgConfigFile.Name())
 		os.RemoveAll(tkgConfigFileNG.Name())
 	}()
