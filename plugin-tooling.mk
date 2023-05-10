@@ -175,7 +175,7 @@ inventory-plugin-group-deactivate: ## Deactivate plugin-group in the inventory d
 
 .PHONY: plugin-local-registry
 plugin-local-registry: plugin-clean-registry ## Starts up a local docker registry for generating packages
-	docker run -d -p $(REGISTRY_PORT):5000 --name temp-package-registry mirror.gcr.io/library/registry:2
+	docker run -d -p $(REGISTRY_PORT):5000 --name temp-package-registry mirror.gcr.io/library/registry:2.7.1
 
 .PHONY: plugin-clean-registry
 plugin-clean-registry: ## Stops and removes local docker registry

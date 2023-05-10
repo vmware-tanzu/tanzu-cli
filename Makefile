@@ -195,7 +195,7 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
 		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
 		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
-		mirror.gcr.io/library/registry:2 > /dev/null && \
+		mirror.gcr.io/library/registry:2.7.1 > /dev/null && \
 		echo "Started docker test central repo with images:" && \
 		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 
@@ -205,7 +205,7 @@ stop-test-central-repo: ## Stops and removes the local test central repository
 
 .PHONY: start-airgapped-local-registry
 start-airgapped-local-registry: stop-airgapped-local-registry
-	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry mirror.gcr.io/library/registry:2 > /dev/null && \
+	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry mirror.gcr.io/library/registry:2.7.1 > /dev/null && \
 		echo "Started docker test airgapped repo at 'localhost:6001'."
 
 .PHONY: stop-airgapped-local-registry
