@@ -60,7 +60,7 @@ func (rep *localOCIRegistry) StartRegistry() (url string, err error) {
 		}
 	}
 
-	ociRegStart := "docker run -d -p " + rep.registryPort + ":5000 --name " + rep.registryName + " mirror.gcr.io/library/registry:2"
+	ociRegStart := "docker run -d -p " + rep.registryPort + ":5000 --name " + rep.registryName + " mirror.gcr.io/library/registry:2.7.1"
 	_, _, err = rep.cmdExe.Exec(ociRegStart)
 	if err != nil {
 		return "", err
