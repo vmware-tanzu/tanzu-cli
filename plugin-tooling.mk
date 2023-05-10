@@ -24,6 +24,7 @@ endif
 PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Date=$(PLUGIN_BUILD_DATE)'
 PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.SHA=$(PLUGIN_BUILD_SHA)'
 PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Version=$(PLUGIN_BUILD_VERSION)'
+PLUGIN_GO_FLAGS ?=
 
 # Add supported OS-ARCHITECTURE combinations here
 PLUGIN_BUILD_OS_ARCH ?= linux-amd64 windows-amd64 darwin-amd64
@@ -84,6 +85,7 @@ plugin-build-%:
 		--binary-artifacts $(PLUGIN_BINARY_ARTIFACTS_DIR) \
 		--version $(PLUGIN_BUILD_VERSION) \
 		--ldflags "$(PLUGIN_LD_FLAGS)" \
+		--goflags "$(PLUGIN_GO_FLAGS)" \
 		--os-arch $(OS)_$(ARCH) \
 		--match "$(PLUGIN_NAME)" \
 		--plugin-scope-association-file $(PLUGIN_SCOPE_ASSOCIATION_FILE)

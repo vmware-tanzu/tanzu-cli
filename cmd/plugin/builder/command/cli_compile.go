@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -38,6 +39,7 @@ func init() {
 var (
 	version, artifactsDir, ldflags string
 	tags, goprivate                string
+	goflags                        string
 	targetArch                     []string
 	groupByOSArch                  bool
 )
@@ -59,6 +61,7 @@ type PluginCompileArgs struct {
 	ArtifactsDir               string
 	LDFlags                    string
 	Tags                       string
+	GoFlags                    string
 	Match                      string
 	Description                string
 	GoPrivate                  string
@@ -134,6 +137,7 @@ func setGlobals(compileArgs *PluginCompileArgs) {
 	goprivate = compileArgs.GoPrivate
 	targetArch = compileArgs.TargetArch
 	groupByOSArch = compileArgs.GroupByOSArch
+	goflags = compileArgs.GoFlags
 
 	// Append version specific ldflag by default so that user doesn't need to pass this ldflag always.
 	ldflags = fmt.Sprintf("%s -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Version=%s'", ldflags, version)
@@ -327,7 +331,7 @@ type target struct {
 	args []string
 }
 
-func (t target) build(targetPath, prefix, modPath, ldflags, tags string) error {
+func (t target) build(targetPath, prefix, modPath, ldflags, tags, goflags string) error {
 	cmd := goCommand("build")
 
 	var commonArgs = []string{
@@ -335,6 +339,9 @@ func (t target) build(targetPath, prefix, modPath, ldflags, tags string) error {
 		"-tags", tags,
 	}
 
+	if goflags != "" {
+		cmd.Args = append(cmd.Args, strings.Split(goflags, " ")...)
+	}
 	cmd.Args = append(cmd.Args, t.args...)
 	cmd.Args = append(cmd.Args, commonArgs...)
 
@@ -514,7 +521,7 @@ func buildTargets(targetPath, artifactsDir, pluginName, target, id, modPath stri
 		}
 
 		tgt := targetBuilder(pn, outputDir)
-		err := tgt.build(targetPath, id, modPath, ldflags, tags)
+		err := tgt.build(targetPath, id, modPath, ldflags, tags, goflags)
 		if err != nil {
 			return err
 		}
