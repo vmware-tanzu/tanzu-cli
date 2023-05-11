@@ -193,6 +193,7 @@ func (r *registry) CopyImageToTar(sourceImageName, destTarFile string) error {
 			CACertPaths: r.opts.CACertPaths,
 			VerifyCerts: r.opts.VerifyCerts,
 			Insecure:    r.opts.Insecure,
+			Anon:        r.opts.Anon,
 		}
 	}
 
@@ -245,6 +246,7 @@ func (r *registry) downloadBundleOrImage(imageName, outputDir string, isBundle b
 			CACertPaths: r.opts.CACertPaths,
 			VerifyCerts: r.opts.VerifyCerts,
 			Insecure:    r.opts.Insecure,
+			Anon:        r.opts.Anon,
 		}
 	}
 
