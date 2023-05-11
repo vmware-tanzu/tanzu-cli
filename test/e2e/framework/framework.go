@@ -135,6 +135,7 @@ const (
 	FailedToConstructJSONNodeFromOutput           = "failed to construct json node from output:'%s'"
 	NoErrorForPluginGroupSearch                   = "should not get any error for plugin group search"
 	NoErrorForPluginSearch                        = "should not get any error for plugin search"
+	UnableToSync                                  = "unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually"
 
 	// config related constants
 	FailedToCreateContext           = "failed to create context"

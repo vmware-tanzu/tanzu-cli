@@ -19,10 +19,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 	// cleanup and initialize the config files
 	Context("Delete config files and initialize", func() {
 		It("Delete config files and initialize", func() {
-			err := tf.Config.DeleteCLIConfigurationFiles()
-			Expect(err).To(BeNil())
-			// call init
-			err = tf.Config.ConfigInit()
+			err := f.CleanConfigFiles(tf)
 			Expect(err).To(BeNil())
 
 			// update plugin discovery source
@@ -240,7 +237,6 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
 		})
 	})
-
 	// Use case 4: test delete context use case, it should uninstall plugins installed for the context
 	// Steps:
 	// a. create KIND cluster
