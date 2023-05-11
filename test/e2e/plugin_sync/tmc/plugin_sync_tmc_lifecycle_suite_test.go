@@ -64,10 +64,13 @@ const testRepoDoesNotHaveEnoughPlugins = "test central repo does not have enough
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
 
+	err := framework.CleanConfigFiles(tf)
+	Expect(err).To(BeNil())
+
 	// check E2E test central repo URL (TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) and update the same for plugin discovery
 	e2eTestLocalCentralRepoURL = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryURL)
 	Expect(e2eTestLocalCentralRepoURL).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository URL", framework.TanzuCliE2ETestLocalCentralRepositoryURL))
-	err := framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
+	err = framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
 	Expect(err).To(BeNil(), "should not be any error while updating plugin discovery source")
 
 	// Check whether the TMC token is set and whether TANZU_CLI_E2E_TEST_ENVIRONMENT is set to skip HTTPS hardcoding when mocking TMC response.

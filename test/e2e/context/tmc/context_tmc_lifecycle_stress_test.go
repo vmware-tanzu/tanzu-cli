@@ -39,7 +39,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-stress-
 			By("create tmc context with tmc endpoint")
 			for i := 0; i < maxCtx; i++ {
 				ctxName := prefix + framework.RandomString(5)
-				_, err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
+				_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
 				Expect(err).To(BeNil(), "context should create without any error")
 				Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
 				contextNames = append(contextNames, ctxName)

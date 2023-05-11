@@ -530,3 +530,14 @@ func GetAvailableServers(tf *Framework, serverNames []string) []string {
 func GetTMCClusterInfo() *ClusterInfo {
 	return &ClusterInfo{EndPoint: os.Getenv(TanzuCliTmcUnstableURL), APIKey: os.Getenv(TanzuAPIToken)}
 }
+
+// CleanConfigFiles deletes the tanzu CLI config files and initializes the tanzu CLI config
+func CleanConfigFiles(tf *Framework) error {
+	err := tf.Config.DeleteCLIConfigurationFiles()
+	if err != nil {
+		return err
+	}
+	// call init
+	err = tf.Config.ConfigInit()
+	return err
+}

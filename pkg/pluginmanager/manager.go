@@ -87,24 +87,27 @@ func discoverPlugins(pd []configtypes.PluginDiscovery) ([]discovery.Discovered, 
 	return discoverSpecificPlugins(pd, nil)
 }
 
-// discoverSpecificPlugins returns the available plugin matching the criteria, if the criteria is not nil.
+// discoverSpecificPlugins returns all plugins that match the specified criteria from all PluginDiscovery sources,
+// along with an aggregated error (if any) that occurred while creating the plugin discovery source or fetching plugins.
 func discoverSpecificPlugins(pd []configtypes.PluginDiscovery, criteria *discovery.PluginDiscoveryCriteria) ([]discovery.Discovered, error) {
 	allPlugins := make([]discovery.Discovered, 0)
+	errorList := make([]error, 0)
 	for _, d := range pd {
 		discObject, err := discovery.CreateDiscoveryFromV1alpha1(d, criteria)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to create discovery")
+			errorList = append(errorList, errors.Wrapf(err, "unable to create discovery"))
+			continue
 		}
 
 		plugins, err := discObject.List()
 		if err != nil {
-			log.Warningf("unable to list plugin from discovery '%v': %v", discObject.Name(), err.Error())
+			errorList = append(errorList, errors.Wrapf(err, "unable to list plugins from discovery source '%v'", discObject.Name()))
 			continue
 		}
 
 		allPlugins = append(allPlugins, plugins...)
 	}
-	return allPlugins, nil
+	return allPlugins, kerrors.NewAggregate(errorList)
 }
 
 // discoverPluginGroups returns all the plugin groups found in the discoveries
@@ -244,9 +247,12 @@ func discoverServerPluginsBasedOnAllCurrentContexts() ([]discovery.Discovered, e
 		discoverySources = append(discoverySources, context.DiscoverySources...)
 		discoverySources = append(discoverySources, defaultDiscoverySourceBasedOnContext(context)...)
 		discoveredPlugins, err := discoverPlugins(discoverySources)
+
+		// If there is an error while discovering plugins from all of the given plugin sources,
+		// append the error to the error list and continue processing the discoveredPlugins,
+		// as there may still be plugins that were successfully discovered from some of the discovery sources.
 		if err != nil {
 			errList = append(errList, err)
-			continue
 		}
 		for i := range discoveredPlugins {
 			discoveredPlugins[i].Scope = common.PluginScopeContext
@@ -677,13 +683,14 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 	if err != nil || len(discoveries) == 0 {
 		return err
 	}
-	availablePlugins, err := discoverSpecificPlugins(discoveries, &discovery.PluginDiscoveryCriteria{
+	criteria := &discovery.PluginDiscoveryCriteria{
 		Name:    pluginName,
 		Target:  target,
 		Version: version,
 		OS:      runtime.GOOS,
 		Arch:    runtime.GOARCH,
-	})
+	}
+	availablePlugins, err := discoverSpecificPlugins(discoveries, criteria)
 	if err != nil {
 		return err
 	}
@@ -1236,7 +1243,7 @@ func discoverPluginsFromLocalSource(localPath string) ([]discovery.Discovered, e
 
 	plugins, err := discoverPlugins(pds)
 	if err != nil {
-		return nil, err
+		return plugins, err
 	}
 
 	for i := range plugins {
