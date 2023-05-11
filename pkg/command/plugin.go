@@ -600,7 +600,14 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 	}
 
 	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
+
+	// sort contexts to maintain consistency in the plugin list output
+	contexts := make([]string, 0, len(ctxPluginsByContext))
 	for context := range ctxPluginsByContext {
+		contexts = append(contexts, context)
+	}
+	sort.Strings(contexts)
+	for _, context := range contexts {
 		outputWriter := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status")
 
 		fmt.Println("")
