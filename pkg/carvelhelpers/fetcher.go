@@ -32,7 +32,9 @@ func GetImageDigest(imageWithTag string) (string, string, error) {
 // newRegistry returns a new registry object by also taking
 // into account for any custom registry provided by the user
 func newRegistry(registryHost string) (registry.Registry, error) {
-	registryOpts := &ctlimg.Opts{}
+	registryOpts := &ctlimg.Opts{
+		Anon: true,
+	}
 
 	regCertOptions, err := registry.GetRegistryCertOptions(registryHost)
 	if err != nil {
