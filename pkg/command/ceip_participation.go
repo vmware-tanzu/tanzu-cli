@@ -49,7 +49,7 @@ func newCEIPParticipationCmd() *cobra.Command {
 func newCEIPParticipationSetCmd() *cobra.Command {
 	var setCmd = &cobra.Command{
 		Use:   "set OPT_IN_BOOL",
-		Short: "Set the opt-in preference for CEIP45 (subject to change)",
+		Short: "Set the opt-in preference for CEIP (subject to change)",
 		Long:  "Set the opt-in preference for CEIP (subject to change)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
