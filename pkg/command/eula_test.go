@@ -8,10 +8,24 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
+
+// Executes the command and verify if prompt is expected to be shown or not
+func checkForPromptOnExecute(cmd *cobra.Command, expectPrompt bool) {
+	err := cmd.Execute()
+	// Survey prompts when run without attached tty will fail. Use this fact
+	// to help detect that a prompt is indeed presented.
+	if expectPrompt {
+		Expect(err).ToNot(BeNil())
+		Expect(err.Error()).To(ContainSubstring("prompt failed"))
+	} else {
+		Expect(err).To(BeNil())
+	}
+}
 
 var _ = Describe("EULA command tests", func() {
 	Describe("config eula show tests", func() {
@@ -32,14 +46,17 @@ var _ = Describe("EULA command tests", func() {
 			featureArray := strings.Split(constants.FeatureContextCommand, ".")
 			err = config.SetFeature(featureArray[1], featureArray[2], "true")
 			Expect(err).To(BeNil())
+
+			os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 		})
 		AfterEach(func() {
 			os.Unsetenv("TANZU_CONFIG")
 			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+			os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
 			os.RemoveAll(tanzuConfigFile.Name())
 			os.RemoveAll(tanzuConfigFileNG.Name())
 		})
-		// TODO(vuil) : add tests for show command
+
 		Context("When invoking the accept command", func() {
 			It("should return successfully with agreement acceptance registered", func() {
 				eulaCmd := newEULACmd()
@@ -50,6 +67,46 @@ var _ = Describe("EULA command tests", func() {
 				eulaStatus, err := config.GetEULAStatus()
 				Expect(err).To(BeNil())
 				Expect(eulaStatus).To(Equal(config.EULAStatusAccepted))
+			})
+		})
+		Context("When invoking the show command", func() {
+			It("should invoke the eula prompt", func() {
+				eulaCmd := newEULACmd()
+				eulaCmd.SetArgs([]string{"show"})
+				checkForPromptOnExecute(eulaCmd, true)
+			})
+
+			It("should invoke the eula prompt even if EULA is accepted", func() {
+				acceptCmd := newEULACmd()
+				acceptCmd.SetArgs([]string{"accept"})
+				err = acceptCmd.Execute()
+				Expect(err).To(BeNil())
+
+				eulaCmd := newEULACmd()
+				eulaCmd.SetArgs([]string{"show"})
+				checkForPromptOnExecute(eulaCmd, true)
+			})
+		})
+		Context("When invoking an arbitrary command", func() {
+			It("should invoke the eula prompt if EULA has not been accepted", func() {
+				os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "No")
+				cmd, err := NewRootCmd()
+				Expect(err).To(BeNil())
+				cmd.SetArgs([]string{"context", "list"})
+				err = cmd.Execute()
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("terms not accepted"))
+				os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
+			})
+
+			It("should not invoke the eula prompt if EULA has been accepted", func() {
+				os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "yes")
+				cmd, err := NewRootCmd()
+				Expect(err).To(BeNil())
+				cmd.SetArgs([]string{"context", "list"})
+				err = cmd.Execute()
+				Expect(err).To(BeNil())
+				os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 			})
 		})
 	})
