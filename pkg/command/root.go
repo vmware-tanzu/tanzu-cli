@@ -5,6 +5,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -132,6 +133,13 @@ func newRootCmd() *cobra.Command {
 					if err := cliconfig.ConfigureEULA(false); err != nil {
 						return err
 					}
+
+					configVal, _ := config.GetEULAStatus()
+					if configVal != config.EULAStatusAccepted {
+						fmt.Fprintf(os.Stderr, "The Tanzu CLI is only usable with reduced functionality until the General Terms are agreed to.\nPlease use `tanzu config eula show` to review the terms, or `tanzu config eula accept` to accept them directly\n")
+						return errors.New("terms not accepted")
+					}
+
 					if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
 						return err
 					}
