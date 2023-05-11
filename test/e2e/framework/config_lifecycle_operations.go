@@ -131,7 +131,8 @@ func (co *configOps) ConfigInit(opts ...E2EOption) (err error) {
 // ConfigServerList returns the server list
 func (co *configOps) ConfigServerList(opts ...E2EOption) ([]*Server, error) {
 	ConfigServerListWithJSONOutput := ConfigServerList + JSONOutput
-	return ExecuteCmdAndBuildJSONOutput[Server](co.cmdExe, ConfigServerListWithJSONOutput, opts...)
+	list, _, _, err := ExecuteCmdAndBuildJSONOutput[Server](co.cmdExe, ConfigServerListWithJSONOutput, opts...)
+	return list, err
 }
 
 // ConfigServerDelete deletes a server from tanzu config
@@ -192,5 +193,6 @@ func (co *configOps) ConfigCertDelete(host string, opts ...E2EOption) error {
 }
 
 func (co *configOps) ConfigCertList(opts ...E2EOption) ([]*CertDetails, error) {
-	return ExecuteCmdAndBuildJSONOutput[CertDetails](co.cmdExe, ConfigCertList, opts...)
+	list, _, _, err := ExecuteCmdAndBuildJSONOutput[CertDetails](co.cmdExe, ConfigCertList, opts...)
+	return list, err
 }

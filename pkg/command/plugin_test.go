@@ -132,6 +132,16 @@ func TestPluginList(t *testing.T) {
 			expectedFailure:    false,
 			expected:           `- context: "" description: some foo description name: foo status: installed target: kubernetes version: v0.1.0`,
 		},
+		{
+			test:               "plugin describe json output requested",
+			centralRepoFeature: true,
+			plugins:            []string{"foo"},
+			versions:           []string{"v0.1.0"},
+			targets:            []configtypes.Target{configtypes.TargetK8s},
+			args:               []string{"plugin", "describe", "foo", "-o", "json"},
+			expectedFailure:    false,
+			expected:           `[ { "buildsha": "", "completiontype": "0", "defaultfeatureflags": "map[]", "description": "some foo description", "digest": "", "discoveredrecommendedversion": "", "discovery": "", "docurl": "", "group": "System", "installationpath": "%v", "name": "foo", "scope": "", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
+		},
 	}
 
 	for _, spec := range tests {
@@ -167,16 +177,18 @@ func TestPluginList(t *testing.T) {
 			assert := assert.New(t)
 			cc, err := catalog.NewContextCatalog("")
 			assert.Nil(err)
+			pluginInstallationPath := ""
 			for i, pluginName := range spec.plugins {
 				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
 				assert.Nil(err)
+				pluginInstallationPath = filepath.Join(common.DefaultPluginRoot, pluginName)
 				pi := &cli.PluginInfo{
 					Name:             pluginName,
 					Description:      fmt.Sprintf("some %s description", pluginName),
 					Group:            plugin.SystemCmdGroup,
 					Aliases:          []string{pluginName[:2]},
 					Version:          spec.versions[i],
-					InstallationPath: filepath.Join(common.DefaultPluginRoot, pluginName),
+					InstallationPath: pluginInstallationPath,
 					Status:           common.PluginStatusInstalled,
 					Target:           spec.targets[i],
 				}
@@ -188,7 +200,6 @@ func TestPluginList(t *testing.T) {
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
-
 			b := bytes.NewBufferString("")
 			rootCmd.SetOut(b)
 
@@ -201,6 +212,10 @@ func TestPluginList(t *testing.T) {
 				} else {
 					got, err := io.ReadAll(b)
 					assert.Nil(err)
+
+					if strings.Contains(spec.expected, "installationpath") {
+						spec.expected = fmt.Sprintf(spec.expected, pluginInstallationPath)
+					}
 
 					// whitespace-agnostic match
 					assert.Contains(strings.Join(strings.Fields(string(got)), " "), spec.expected)

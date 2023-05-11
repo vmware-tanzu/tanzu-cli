@@ -48,9 +48,11 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 				err := tf.PluginCmd.InstallPluginsFromGroup(plugins[0].Name, pg)
 				Expect(err).To(BeNil(), "should not get any error for plugin install from plugin group")
 
-				str, err := tf.PluginCmd.DescribePlugin(plugins[0].Name, plugins[0].Target)
-				Expect(err).To(BeNil(), "should not get any error for plugin describe")
-				Expect(str).NotTo(BeNil(), "there should be output for plugin describe")
+				pd, err := tf.PluginCmd.DescribePlugin(plugins[0].Name, plugins[0].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
+				Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
+				Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
+				Expect(pd[0].Name).To(Equal(plugins[0].Name), framework.PluginNameShouldMatch)
+
 			}
 		})
 		// Test case: install a plugin from each plugin group and validate the installation with plugin describe
@@ -60,13 +62,15 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 				Expect(err).To(BeNil(), "should not get any error for plugin install from plugin group")
 				plugins := pluginGroupToPluginListMap[pg]
 				for i := range plugins {
-					str, err := tf.PluginCmd.DescribePlugin(plugins[i].Name, plugins[i].Target)
-					Expect(err).To(BeNil(), "should not get any error for plugin describe")
-					Expect(str).NotTo(BeNil(), "there should be output for plugin describe")
+					pd, err := tf.PluginCmd.DescribePlugin(plugins[i].Name, plugins[i].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
+					Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
+					Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
+					Expect(pd[0].Name).To(Equal(plugins[i].Name), framework.PluginNameShouldMatch)
 				}
 			}
 		})
 	})
+
 	// Use cases:
 	// a. clean installation with "all": clean, install all plugin from a plugin group and validate the installation by running plugin describe.
 	// b. clean installation without "all": clean, install all plugin from a plugin group (pass empty string instead of "all") and validate the installation by running plugin describe.
@@ -86,9 +90,11 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 				Expect(err).To(BeNil(), "should not get any error for plugin install from plugin group")
 				plugins := pluginGroupToPluginListMap[pg]
 				for i := range plugins {
-					str, err := tf.PluginCmd.DescribePlugin(plugins[i].Name, plugins[i].Target)
-					Expect(err).To(BeNil(), "should not get any error for plugin describe")
-					Expect(str).NotTo(BeNil(), "there should be output for plugin describe")
+					pd, err := tf.PluginCmd.DescribePlugin(plugins[i].Name, plugins[i].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
+					Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
+					Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
+					Expect(pd[0].Name).To(Equal(plugins[i].Name), framework.PluginNameShouldMatch)
+
 				}
 			}
 		})
@@ -107,9 +113,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 				Expect(err).To(BeNil(), "should not get any error for plugin install from plugin group")
 				plugins := pluginGroupToPluginListMap[pg]
 				for i := range plugins {
-					str, err := tf.PluginCmd.DescribePlugin(plugins[i].Name, plugins[i].Target)
-					Expect(err).To(BeNil(), "should not get any error for plugin describe")
-					Expect(str).NotTo(BeNil(), "there should be output for plugin describe")
+					pd, err := tf.PluginCmd.DescribePlugin(plugins[i].Name, plugins[i].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
+					Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
+					Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
+					Expect(pd[0].Name).To(Equal(plugins[i].Name), framework.PluginNameShouldMatch)
 				}
 			}
 		})
@@ -151,5 +158,4 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 	//	2) Use case: 	Install a same plugin (with same version) from a same group, but different targets, eg: group: 'vmware-tkg/v9.9.9' plugin: secret target: kubernetes, and another plugin:  plugin: secret target: mission-control
 	//					Install all plugins in the group: tanzu plugin install --group 'vmware-tkg/v9.9.9'
 	//		expected results: it should install all plugins, and there should be two secret plugins installed one for kubernetes and another for mission-control with same version.
-
 })

@@ -78,6 +78,7 @@ const (
 	True         = "true"
 	Installed    = "installed"
 	NotInstalled = "not installed"
+	JSONOtuput   = "-o json"
 
 	// Context commands
 	CreateContextWithEndPoint              = "%s context create --endpoint %s --name %s"
@@ -136,6 +137,9 @@ const (
 	NoErrorForPluginGroupSearch                   = "should not get any error for plugin group search"
 	NoErrorForPluginSearch                        = "should not get any error for plugin search"
 	UnableToSync                                  = "unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually"
+	PluginDescribeShouldNotThrowErr               = "should not get any error for plugin describe"
+	PluginDescShouldExist                         = "there should be one plugin description"
+	PluginNameShouldMatch                         = "plugin name should be same as input value"
 
 	// config related constants
 	FailedToCreateContext           = "failed to create context"
