@@ -34,25 +34,25 @@ func TestPluginSearch(t *testing.T) {
 			test:            "invalid target",
 			args:            []string{"plugin", "search", "--target", "invalid"},
 			expectedFailure: true,
-			expected:        "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'",
+			expected:        "unknown flag: --target",
 		},
 		{
 			test:            "no --local and --name together",
 			args:            []string{"plugin", "search", "--local", "./", "--name", "myplugin"},
 			expectedFailure: true,
-			expected:        "if any flags in the group [local name] are set none of the others can be",
+			expected:        "unknown flag: --local",
 		},
 		{
 			test:            "no --local and --target together",
 			args:            []string{"plugin", "search", "--local", "./", "--target", "tmc"},
 			expectedFailure: true,
-			expected:        "if any flags in the group [local target] are set none of the others can be",
+			expected:        "unknown flag: --local",
 		},
 		{
 			test:            "no --local and --show-details together",
 			args:            []string{"plugin", "search", "--local", "./", "--show-details"},
 			expectedFailure: true,
-			expected:        "if any flags in the group [local show-details] are set none of the others can be",
+			expected:        "unknown flag: --local",
 		},
 	}
 
@@ -82,9 +82,11 @@ func TestPluginSearch(t *testing.T) {
 	for _, spec := range tests {
 		t.Run(spec.test, func(t *testing.T) {
 			// Disable the Central Repository feature if needed
-			featureArray := strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
-			err := config.SetFeature(featureArray[1], featureArray[2], spec.centralRepoDisabled)
-			assert.Nil(err)
+			if strings.EqualFold(spec.centralRepoDisabled, "true") {
+				featureArray := strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
+				err := config.SetFeature(featureArray[1], featureArray[2], spec.centralRepoDisabled)
+				assert.Nil(err)
+			}
 
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)

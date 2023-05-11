@@ -5,6 +5,7 @@ go 1.19
 replace cloud.google.com/go => cloud.google.com/go v0.102.1
 
 require (
+	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/Masterminds/semver v1.5.0
 	github.com/adrg/xdg v0.4.0
 	github.com/cppforlife/go-cli-ui v0.0.0-20220425131040-94f26b16bc14
@@ -33,7 +34,7 @@ require (
 	github.com/vmware-tanzu/carvel-imgpkg v0.36.1
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230415084831-9331f55d2999
-	github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.1
+	github.com/vmware-tanzu/tanzu-plugin-runtime v1.0.0-dev
 	go.pinniped.dev v0.20.0
 	go.uber.org/multierr v1.8.0
 	golang.org/x/mod v0.9.0
@@ -53,7 +54,6 @@ require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go/compute v1.18.0 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
-	github.com/AlecAivazis/survey/v2 v2.3.6 // indirect
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.28 // indirect
