@@ -13,7 +13,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -71,6 +70,8 @@ func newPluginCmd() *cobra.Command {
 		}
 		installPluginCmd.Flags().StringVar(&group, "group", "", "install the plugins specified in a plugin group")
 	}
+
+	describePluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
 
 	installPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local discovery/distribution source")
 	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
@@ -193,6 +194,7 @@ func newDescribePluginCmd() *cobra.Command {
 		Use:   "describe [name]",
 		Short: "Describe a plugin",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "name", "description", "version", "buildSHA", "digest", "group", "docURL", "completionType", "installationPath", "discovery", "scope", "status", "discoveredRecommendedVersion", "target", "defaultFeatureFlags")
 			if len(args) != 1 {
 				return fmt.Errorf("must provide plugin name as positional argument")
 			}
@@ -206,12 +208,9 @@ func newDescribePluginCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			b, err := yaml.Marshal(pd)
-			if err != nil {
-				return errors.Wrap(err, "could not marshal plugin")
-			}
-			fmt.Println(string(b))
+			output.AddRow(pd.Name, pd.Description, pd.Version, pd.BuildSHA, pd.Digest, pd.Group, pd.DocURL, pd.CompletionType, pd.InstallationPath,
+				pd.Discovery, pd.Scope, pd.Status, pd.DiscoveredRecommendedVersion, pd.Target, pd.DefaultFeatureFlags)
+			output.Render()
 			return nil
 		},
 	}

@@ -63,7 +63,8 @@ func (cc *contextCmdOps) GetContext(contextName string, opts ...E2EOption) (Cont
 }
 
 func (cc *contextCmdOps) ListContext(opts ...E2EOption) ([]*ContextListInfo, error) {
-	return ExecuteCmdAndBuildJSONOutput[ContextListInfo](cc.cmdExe, ListContextOutputInJSON, opts...)
+	list, _, _, err := ExecuteCmdAndBuildJSONOutput[ContextListInfo](cc.cmdExe, ListContextOutputInJSON, opts...)
+	return list, err
 }
 
 func (cc *contextCmdOps) GetActiveContext(targetType string, opts ...E2EOption) (string, error) {

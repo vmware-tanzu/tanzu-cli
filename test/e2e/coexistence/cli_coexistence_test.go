@@ -70,7 +70,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install for legacy tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
+				str, err := tf.PluginCmd.DescribePluginLegacy(plugin.Name, plugin.Target)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe for legacy tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe for legacy tanzu cli")
 			}
@@ -112,7 +112,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version, framework.WithTanzuCommandPrefix(framework.TzPrefix))
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install for new tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.WithTanzuCommandPrefix(framework.TzPrefix), framework.GetJsonOutputFormatAdditionalFlagFunction())
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe for new tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe for new tanzu cli")
 			}
@@ -146,7 +146,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using legacy tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
+				str, err := tf.PluginCmd.DescribePluginLegacy(plugin.Name, plugin.Target)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe using legacy tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe using legcy tanzu cli")
 			}
@@ -188,7 +188,8 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using new tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
+				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
+
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe using new tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe using new tanzu cli")
 			}
@@ -217,7 +218,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using legacy tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
+				str, err := tf.PluginCmd.DescribePluginLegacy(plugin.Name, plugin.Target)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe using legacy tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe using legcy tanzu cli")
 			}
@@ -259,7 +260,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using new tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
+				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe using new tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe using new tanzu cli")
 			}
@@ -298,7 +299,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using legacy tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
+				str, err := tf.PluginCmd.DescribePluginLegacy(plugin.Name, plugin.Target)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe using legacy tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe using legcy tanzu cli")
 			}
@@ -340,7 +341,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version, framework.WithTanzuCommandPrefix(framework.TzPrefix))
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using new tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.WithTanzuCommandPrefix(framework.TzPrefix), framework.GetJsonOutputFormatAdditionalFlagFunction())
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe using new tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe using new tanzu cli")
 			}
@@ -379,7 +380,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using legacy tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
+				str, err := tf.PluginCmd.DescribePluginLegacy(plugin.Name, plugin.Target)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe using legacy tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe using legacy tanzu cli")
 			}
@@ -421,7 +422,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using new tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
+				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe using new tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe using new tanzu cli")
 			}
