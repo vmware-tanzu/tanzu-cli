@@ -18,6 +18,7 @@ import (
 
 	"github.com/onsi/gomega"
 	"github.com/pkg/errors"
+	"gopkg.in/yaml.v3"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -106,21 +107,33 @@ func GetHomeDir() string {
 }
 
 // ExecuteCmdAndBuildJSONOutput is generic function to execute given command and build JSON output and return
-func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | PluginSourceInfo | types.ClientConfig | Server | ContextListInfo | CertDetails](cmdExe CmdOps, cmd string, opts ...E2EOption) ([]*T, error) {
+func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | PluginSourceInfo | types.ClientConfig | Server | ContextListInfo | CertDetails | PluginDescribe](cmdExe CmdOps, cmd string, opts ...E2EOption) ([]*T, string, string, error) {
 	out, stdErr, err := cmdExe.TanzuCmdExec(cmd, opts...)
-
+	outStr := ""
+	stdErrStr := ""
+	if out != nil {
+		outStr = out.String()
+	}
+	if stdErr != nil {
+		stdErrStr = stdErr.String()
+	}
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, cmd, err.Error(), stdErr.String(), out.String())
-		return nil, err
+		return nil, outStr, stdErrStr, err
 	}
 	jsonStr := out.String()
 	var list []*T
 	err = json.Unmarshal([]byte(jsonStr), &list)
 	if err != nil {
 		log.Errorf(FailedToConstructJSONNodeFromOutputAndErrInfo, jsonStr, err.Error())
-		return nil, errors.Wrapf(err, FailedToConstructJSONNodeFromOutput, jsonStr)
+		log.Errorf("trying with yaml unmarshal")
+		// try with yaml format unmarshal
+		err2 := yaml.Unmarshal([]byte(jsonStr), &list)
+		if err2 != nil {
+			return nil, outStr, stdErrStr, errors.Wrapf(err, FailedToConstructJSONNodeFromOutput, jsonStr)
+		}
 	}
-	return list, nil
+	return list, outStr, stdErrStr, err
 }
 
 // GetMapKeys takes map[K]any and returns the slice of all map keys
@@ -540,4 +553,9 @@ func CleanConfigFiles(tf *Framework) error {
 	// call init
 	err = tf.Config.ConfigInit()
 	return err
+}
+
+// GetJsonOutputFormatAdditionalFlagFunction returns a E2EOption function to add json as output format
+func GetJsonOutputFormatAdditionalFlagFunction() E2EOption {
+	return AddAdditionalFlagAndValue(JSONOtuput)
 }

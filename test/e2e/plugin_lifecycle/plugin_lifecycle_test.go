@@ -24,6 +24,7 @@ import (
 // 1. plugin search, install, delete, describe, list (with negative use cases)
 // 2. plugin source add/update/list/delete (with negative use cases)
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func() {
+
 	// use case: tanzu plugin source list, update, delete, init
 	// a. list plugin sources and validate plugin source created in previous step
 	// b. update plugin source URL
@@ -102,22 +103,22 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				Expect(err).To(BeNil(), "should not get any error for plugin install")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
-				Expect(err).To(BeNil(), "should not get any error for plugin describe")
-				Expect(str).NotTo(BeNil(), "there should be output for plugin describe")
+
+				pd, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
+				Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
+				Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
+				Expect(pd[0].Name).To(Equal(plugin.Name), framework.PluginNameShouldMatch)
 			}
 		})
 		// Test case: (negative) describe plugin with incorrect target type
 		It("plugin describe: describe installed plugin with incorrect target type", func() {
-			str, err := tf.PluginCmd.DescribePlugin(framework.PluginsForLifeCycleTests[0].Name, framework.RandomString(5))
-			Expect(str).To(BeEmpty(), "stdout should be empty when target type is incorrect for plugin describe")
+			_, err := tf.PluginCmd.DescribePlugin(framework.PluginsForLifeCycleTests[0].Name, framework.RandomString(5), framework.GetJsonOutputFormatAdditionalFlagFunction())
 			Expect(err.Error()).To(ContainSubstring(framework.InvalidTargetSpecified))
 		})
 		// Test case: (negative) describe plugin with incorrect plugin name
 		It("plugin describe: describe installed plugin with incorrect plugin name as input", func() {
 			name := framework.RandomString(5)
-			str, err := tf.PluginCmd.DescribePlugin(name, framework.PluginsForLifeCycleTests[0].Target)
-			Expect(str).To(BeEmpty(), "stdout should be empty when plugin name is incorrect for plugin describe command")
+			_, err := tf.PluginCmd.DescribePlugin(name, framework.PluginsForLifeCycleTests[0].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.UnableToFindPlugin, name)))
 		})
 		// Test case: list plugins and validate the list plugins output has all plugins which are installed in previous steps
@@ -158,9 +159,11 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 				target := plugin.Target
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				Expect(err).To(BeNil(), "should not get any error for plugin install")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target)
-				Expect(err).To(BeNil(), "should not get any error for plugin describe")
-				Expect(str).NotTo(BeNil(), "there should be output for plugin describe")
+
+				pd, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
+				Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
+				Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
+				Expect(pd[0].Name).To(Equal(plugin.Name), framework.PluginNameShouldMatch)
 			}
 			// validate installed plugins count same as number of plugins installed
 			pluginsList, err := framework.GetPluginsList(tf, true)
@@ -176,6 +179,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
 		})
 	})
+
 	// use case: negative test cases for plugin install and plugin delete commands
 	// a. install plugin with incorrect value target flag
 	// b. install plugin with incorrect plugin name

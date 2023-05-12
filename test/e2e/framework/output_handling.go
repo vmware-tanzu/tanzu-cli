@@ -94,3 +94,21 @@ type CertDetails struct {
 	Insecure             string `json:"insecure"`
 	SkipCertVerification string `json:"skip-cert-verification"`
 }
+
+type PluginDescribe struct {
+	Buildsha                     string `yaml:"buildsha"`
+	Completiontype               string `yaml:"completiontype"`
+	Defaultfeatureflags          string `yaml:"defaultfeatureflags"`
+	Description                  string `yaml:"description"`
+	Digest                       string `yaml:"digest"`
+	Discoveredrecommendedversion string `yaml:"discoveredrecommendedversion"`
+	Discovery                    string `yaml:"discovery"`
+	Docurl                       string `yaml:"docurl"`
+	Group                        string `yaml:"group"`
+	Installationpath             string `yaml:"installationpath"`
+	Name                         string `yaml:"name"`
+	Scope                        string `yaml:"scope"`
+	Status                       string `yaml:"status"`
+	Target                       string `yaml:"target"`
+	Version                      string `yaml:"version"`
+}

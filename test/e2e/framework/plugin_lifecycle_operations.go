@@ -26,8 +26,10 @@ type PluginBasicOps interface {
 	InstallPlugin(pluginName, target, versions string, opts ...E2EOption) error
 	// Sync performs sync operation
 	Sync(opts ...E2EOption) (string, error)
-	// DescribePlugin describes given plugin and flags
-	DescribePlugin(pluginName, target string, opts ...E2EOption) (string, error)
+	// DescribePlugin describes given plugin and flags, returns the plugin description as PluginDescribe
+	DescribePlugin(pluginName, target string, opts ...E2EOption) ([]*PluginDescribe, error)
+	// DescribePluginLegacy describes given plugin and flags, returns plugin description in string format
+	DescribePluginLegacy(pluginName, target string, opts ...E2EOption) (string, error)
 	// UninstallPlugin uninstalls/deletes given plugin
 	UninstallPlugin(pluginName, target string, opts ...E2EOption) error
 	// DeletePlugin deletes/uninstalls given plugin
@@ -103,7 +105,8 @@ func (po *pluginCmdOps) UpdatePluginDiscoverySource(discoveryOpts *DiscoveryOpti
 }
 
 func (po *pluginCmdOps) ListPluginSources(opts ...E2EOption) ([]*PluginSourceInfo, error) {
-	return ExecuteCmdAndBuildJSONOutput[PluginSourceInfo](po.cmdExe, ListPluginSourcesWithJSONOutputFlag, opts...)
+	output, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginSourceInfo](po.cmdExe, ListPluginSourcesWithJSONOutputFlag, opts...)
+	return output, err
 }
 
 func (po *pluginCmdOps) DeletePluginDiscoverySource(pluginSourceName string, opts ...E2EOption) (string, error) {
@@ -125,11 +128,12 @@ func (po *pluginCmdOps) InitPluginDiscoverySource(opts ...E2EOption) (string, er
 }
 
 func (po *pluginCmdOps) ListPlugins(opts ...E2EOption) ([]*PluginInfo, error) {
-	return ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
+	output, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
+	return output, err
 }
 
 func (po *pluginCmdOps) ListInstalledPlugins(opts ...E2EOption) ([]*PluginInfo, error) {
-	plugins, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
+	plugins, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
 	installedPlugins := make([]*PluginInfo, 0)
 	for i := range plugins {
 		if plugins[i].Status == Installed {
@@ -140,7 +144,7 @@ func (po *pluginCmdOps) ListInstalledPlugins(opts ...E2EOption) ([]*PluginInfo, 
 }
 
 func (po *pluginCmdOps) ListPluginsForGivenContext(context string, installedOnly bool, opts ...E2EOption) ([]*PluginInfo, error) {
-	plugins, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
+	plugins, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
 	contextSpecificPlugins := make([]*PluginInfo, 0)
 	for i := range plugins {
 		if plugins[i].Context == context {
@@ -169,7 +173,7 @@ func (po *pluginCmdOps) SearchPlugins(filter string, opts ...E2EOption) ([]*Plug
 	if len(strings.TrimSpace(filter)) > 0 {
 		searchPluginCmdWithOptions = searchPluginCmdWithOptions + " " + strings.TrimSpace(filter)
 	}
-	result, err := ExecuteCmdAndBuildJSONOutput[PluginSearch](po.cmdExe, searchPluginCmdWithOptions+JSONOutput, opts...)
+	result, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginSearch](po.cmdExe, searchPluginCmdWithOptions+JSONOutput, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +195,8 @@ func (po *pluginCmdOps) SearchPluginGroups(flagsWithValues string, opts ...E2EOp
 	if len(strings.TrimSpace(flagsWithValues)) > 0 {
 		searchPluginGroupCmdWithOptions = searchPluginGroupCmdWithOptions + " " + strings.TrimSpace(flagsWithValues)
 	}
-	return ExecuteCmdAndBuildJSONOutput[PluginGroup](po.cmdExe, searchPluginGroupCmdWithOptions+JSONOutput, opts...)
+	list, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginGroup](po.cmdExe, searchPluginGroupCmdWithOptions+JSONOutput, opts...)
+	return list, err
 }
 
 func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string, opts ...E2EOption) error {
@@ -223,7 +228,16 @@ func (po *pluginCmdOps) InstallPluginsFromGroup(pluginNameORAll, groupName strin
 	return err
 }
 
-func (po *pluginCmdOps) DescribePlugin(pluginName, target string, opts ...E2EOption) (string, error) {
+func (po *pluginCmdOps) DescribePlugin(pluginName, target string, opts ...E2EOption) ([]*PluginDescribe, error) {
+	pluginDescCmd := fmt.Sprintf(DescribePluginCmd, "%s", pluginName)
+	if len(strings.TrimSpace(target)) > 0 {
+		pluginDescCmd += " --target " + target
+	}
+	list, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginDescribe](po.cmdExe, pluginDescCmd, opts...)
+	return list, err
+}
+
+func (po *pluginCmdOps) DescribePluginLegacy(pluginName, target string, opts ...E2EOption) (string, error) {
 	installPluginCmd := fmt.Sprintf(DescribePluginCmd, "%s", pluginName)
 	if len(strings.TrimSpace(target)) > 0 {
 		installPluginCmd += " --target " + target
