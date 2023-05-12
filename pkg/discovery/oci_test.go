@@ -138,13 +138,13 @@ func Test_ProcessOCIPluginManifest(t *testing.T) {
 func Test_NewOCIDiscovery(t *testing.T) {
 	assert := assert.New(t)
 
-	tkgConfigFile, err := os.CreateTemp("", "config")
+	configFile, err := os.CreateTemp("", "config")
 	assert.Nil(err)
-	os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+	os.Setenv("TANZU_CONFIG", configFile.Name())
 
-	tkgConfigFileNG, err := os.CreateTemp("", "config_ng")
+	configFileNG, err := os.CreateTemp("", "config_ng")
 	assert.Nil(err)
-	os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 
 	featureArray := strings.Split(constants.FeatureContextCommand, ".")
 	err = config.SetFeature(featureArray[1], featureArray[2], "true")
@@ -153,8 +153,8 @@ func Test_NewOCIDiscovery(t *testing.T) {
 	defer func() {
 		os.Unsetenv("TANZU_CONFIG")
 		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-		os.RemoveAll(tkgConfigFile.Name())
-		os.RemoveAll(tkgConfigFileNG.Name())
+		os.RemoveAll(configFile.Name())
+		os.RemoveAll(configFileNG.Name())
 	}()
 
 	discoveryName := "test-discovery"
@@ -172,7 +172,8 @@ func Test_NewOCIDiscovery(t *testing.T) {
 	assert.True(ok)
 	assert.Equal(discoveryName, dbDiscovery.name)
 	assert.Equal(discoveryImage, dbDiscovery.image)
-	assert.Equal(discoveryCriteria, *dbDiscovery.criteria)
+	assert.Equal(discoveryCriteria, *dbDiscovery.pluginCriteria)
+	assert.Nil(dbDiscovery.groupCriteria)
 
 	// Turn off central repo feature
 	featureArray = strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
@@ -189,4 +190,25 @@ func Test_NewOCIDiscovery(t *testing.T) {
 	assert.True(ok)
 	assert.Equal(discoveryName, ociDiscovery.name)
 	assert.Equal(discoveryImage, ociDiscovery.image)
+}
+
+func Test_NewOCIGroupDiscovery(t *testing.T) {
+	assert := assert.New(t)
+
+	discoveryName := "test-discovery2"
+	discoveryImage := "test-image2:latest"
+	criteriaName := "test-criteria2"
+	groupCriteria := GroupDiscoveryCriteria{Name: criteriaName}
+
+	// Check that the correct discovery is returned
+	pd := NewOCIGroupDiscovery(discoveryName, discoveryImage, &groupCriteria)
+	assert.NotNil(pd)
+	assert.Equal(discoveryName, pd.Name())
+
+	dbDiscovery, ok := pd.(*DBBackedOCIDiscovery)
+	assert.True(ok)
+	assert.Equal(discoveryName, dbDiscovery.name)
+	assert.Equal(discoveryImage, dbDiscovery.image)
+	assert.Equal(groupCriteria, *dbDiscovery.groupCriteria)
+	assert.Nil(dbDiscovery.pluginCriteria)
 }

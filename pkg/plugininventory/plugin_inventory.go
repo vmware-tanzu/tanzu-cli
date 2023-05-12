@@ -142,20 +142,27 @@ func PluginGroupToID(pg *PluginGroup) string {
 	return fmt.Sprintf("%s-%s/%s", pg.Vendor, pg.Publisher, pg.Name)
 }
 
+// PluginGroupIdentifierFromID splits 'id' into 'vendor'-'publisher'/'name'.
+// Returns nil if 'id' is not of the expected format.
 func PluginGroupIdentifierFromID(id string) *PluginGroupIdentifier {
 	pg := &PluginGroupIdentifier{}
 	arr := strings.Split(id, "/")
 	if len(arr) != 2 {
-		return pg
+		return nil
 	}
 	pg.Name = arr[1]
 
 	arr1 := strings.Split(arr[0], "-")
 	if len(arr1) != 2 {
-		return pg
+		return nil
 	}
 	pg.Vendor = arr1[0]
 	pg.Publisher = arr1[1]
+
+	if pg.Name == "" || pg.Vendor == "" || pg.Publisher == "" {
+		// This can happen if the id is something like `vmware-/default` or `vmware-tkg/`
+		return nil
+	}
 	return pg
 }
 

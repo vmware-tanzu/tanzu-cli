@@ -28,6 +28,9 @@ type Discovery interface {
 }
 
 type GroupDiscovery interface {
+	// Name of the discovery
+	Name() string
+
 	// GetAllGroups returns all plugin groups defined in the discovery
 	GetAllGroups() ([]*plugininventory.PluginGroup, error)
 }
@@ -47,6 +50,20 @@ type PluginDiscoveryCriteria struct {
 	Arch string
 }
 
+// GroupDiscoveryCriteria provides criteria to look for
+// plugin groups in a discovery.
+type GroupDiscoveryCriteria struct {
+	// Vendor of the group
+	Vendor string
+	// Publisher of the group
+	Publisher string
+	// Name of the group
+	Name string
+	// Version is the version for the plugin
+	// TODO(khouzam): add when we support group versions
+	// Version string
+}
+
 // CreateDiscoveryFromV1alpha1 creates discovery interface from v1alpha1 API
 func CreateDiscoveryFromV1alpha1(pd configtypes.PluginDiscovery, criteria *PluginDiscoveryCriteria) (Discovery, error) {
 	switch {
@@ -61,4 +78,11 @@ func CreateDiscoveryFromV1alpha1(pd configtypes.PluginDiscovery, criteria *Plugi
 		return NewRESTDiscovery(pd.REST.Name, pd.REST.Endpoint, pd.REST.BasePath), nil
 	}
 	return nil, errors.New("unknown plugin discovery source")
+}
+
+func CreateGroupDiscovery(pd configtypes.PluginDiscovery, criteria *GroupDiscoveryCriteria) (GroupDiscovery, error) {
+	if pd.OCI != nil {
+		return NewOCIGroupDiscovery(pd.OCI.Name, pd.OCI.Image, criteria), nil
+	}
+	return nil, errors.New("unknown group discovery source")
 }

@@ -58,3 +58,63 @@ func Test_CreateDiscoveryFromV1alpha1(t *testing.T) {
 	assert.Equal(common.DiscoveryTypeREST, discovery.Type())
 	assert.Equal("fake-rest", discovery.Name())
 }
+
+func Test_CreateGroupDiscovery(t *testing.T) {
+	assert := assert.New(t)
+
+	// When no discovery type is provided, it should throw error
+	pd := configtypes.PluginDiscovery{}
+	_, err := CreateGroupDiscovery(pd, nil)
+	assert.NotNil(err)
+	assert.Contains(err.Error(), "unknown group discovery source")
+
+	// When OCI discovery is provided
+	pd = configtypes.PluginDiscovery{
+		OCI: &configtypes.OCIDiscovery{Name: "fake-oci", Image: "fake.repo.com/test:v1.0.0"},
+	}
+	discovery, err := CreateGroupDiscovery(pd, nil)
+	assert.Nil(err)
+	assert.Equal("fake-oci", discovery.Name())
+
+	// When OCI discovery is provided with criteria
+	pd = configtypes.PluginDiscovery{
+		OCI: &configtypes.OCIDiscovery{Name: "fake-oci", Image: "fake.repo.com/test:v1.0.0"},
+	}
+	criteria := &GroupDiscoveryCriteria{
+		Vendor:    "vmware",
+		Publisher: "tkg",
+		Name:      "fakegroup",
+	}
+	discovery, err = CreateGroupDiscovery(pd, criteria)
+	assert.Nil(err)
+	assert.Equal("fake-oci", discovery.Name())
+
+	groupDisc, ok := discovery.(*DBBackedOCIDiscovery)
+	assert.True(ok)
+	assert.Equal(criteria, groupDisc.groupCriteria)
+	assert.Nil(groupDisc.pluginCriteria)
+
+	// When Local discovery is provided
+	pd = configtypes.PluginDiscovery{
+		Local: &configtypes.LocalDiscovery{Name: "fake-local", Path: "test/path"},
+	}
+	_, err = CreateGroupDiscovery(pd, nil)
+	assert.NotNil(err)
+	assert.Equal(err.Error(), "unknown group discovery source")
+
+	// When K8s discovery is provided
+	pd = configtypes.PluginDiscovery{
+		Kubernetes: &configtypes.KubernetesDiscovery{Name: "fake-k8s"},
+	}
+	_, err = CreateGroupDiscovery(pd, nil)
+	assert.NotNil(err)
+	assert.Equal(err.Error(), "unknown group discovery source")
+
+	// When REST discovery is provided
+	pd = configtypes.PluginDiscovery{
+		REST: &configtypes.GenericRESTDiscovery{Name: "fake-rest"},
+	}
+	_, err = CreateGroupDiscovery(pd, nil)
+	assert.NotNil(err)
+	assert.Equal(err.Error(), "unknown group discovery source")
+}

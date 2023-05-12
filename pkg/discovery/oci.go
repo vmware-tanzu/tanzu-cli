@@ -34,27 +34,39 @@ type OCIDiscovery struct {
 // NewOCIDiscovery returns a new Discovery using the specified OCI image.
 func NewOCIDiscovery(name, image string, criteria *PluginDiscoveryCriteria) Discovery {
 	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
-		// The plugin inventory uses relative image URIs to be future-proof.
-		// Determine the image prefix from the main image.
-		// E.g., if the main image is at project.registry.vmware.com/tanzu-cli/plugins/plugin-inventory:latest
-		// then the image prefix should be project.registry.vmware.com/tanzu-cli/plugins/
-		imagePrefix := path.Dir(image)
-		// The data for the inventory is stored in the cache
-		pluginDataDir := filepath.Join(common.DefaultCacheDir, inventoryDirName, name)
-
-		inventory := plugininventory.NewSQLiteInventory(filepath.Join(pluginDataDir, plugininventory.SQliteDBFileName), imagePrefix)
-		return &DBBackedOCIDiscovery{
-			name:          name,
-			image:         image,
-			criteria:      criteria,
-			pluginDataDir: pluginDataDir,
-			inventory:     inventory,
-		}
+		discovery := newDBBackedOCIDiscovery(name, image)
+		discovery.pluginCriteria = criteria
+		return discovery
 	}
 
 	return &OCIDiscovery{
 		name:  name,
 		image: image,
+	}
+}
+
+// NewOCIGroupDiscovery returns a new plugn group Discovery using the specified OCI image.
+func NewOCIGroupDiscovery(name, image string, criteria *GroupDiscoveryCriteria) GroupDiscovery {
+	discovery := newDBBackedOCIDiscovery(name, image)
+	discovery.groupCriteria = criteria
+	return discovery
+}
+
+func newDBBackedOCIDiscovery(name, image string) *DBBackedOCIDiscovery {
+	// The plugin inventory uses relative image URIs to be future-proof.
+	// Determine the image prefix from the main image.
+	// E.g., if the main image is at project.registry.vmware.com/tanzu-cli/plugins/plugin-inventory:latest
+	// then the image prefix should be project.registry.vmware.com/tanzu-cli/plugins/
+	imagePrefix := path.Dir(image)
+	// The data for the inventory is stored in the cache
+	pluginDataDir := filepath.Join(common.DefaultCacheDir, inventoryDirName, name)
+
+	inventory := plugininventory.NewSQLiteInventory(filepath.Join(pluginDataDir, plugininventory.SQliteDBFileName), imagePrefix)
+	return &DBBackedOCIDiscovery{
+		name:          name,
+		image:         image,
+		pluginDataDir: pluginDataDir,
+		inventory:     inventory,
 	}
 }
 
