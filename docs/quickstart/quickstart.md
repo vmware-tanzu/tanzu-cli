@@ -66,6 +66,31 @@ $ tanzu plugin group search
   vmware-tmc/tmc-user  Plugins for Tanzu Mission-Control       v0.0.1
 ```
 
+### List the plugins of a plugin group
+
+```console
+$ tz plugin group get vmware-tkg/default:v2.1.0
+Plugins in Group:  vmware-tkg/default:v2.1.0
+  NAME                TARGET      LATEST
+  cluster             kubernetes  v0.28.0
+  feature             kubernetes  v0.28.0
+  isolated-cluster    global      v0.28.0
+  kubernetes-release  kubernetes  v0.28.0
+  management-cluster  kubernetes  v0.28.0
+  package             kubernetes  v0.28.0
+  pinniped-auth       global      v0.28.0
+  secret              kubernetes  v0.28.0
+  telemetry           kubernetes  v0.28.0
+```
+
+Note that you can omit the version if you are interested in the contents of the latest version of a group:
+
+```console
+$ tz plugin group get vmware-tkg/default
+Plugins in Group:  vmware-tkg/default:v2.1.0
+[...]
+```
+
 ### Install all plugins in a group
 
 ```console
