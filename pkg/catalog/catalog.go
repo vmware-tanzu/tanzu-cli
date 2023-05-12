@@ -246,17 +246,6 @@ func testPath() string {
 	return filepath.Join(pluginRoot, "test")
 }
 
-// UpdateCatalogCache when updating the core CLI from v0.x.x to v1.x.x. This is
-// needed to group the standalone plugins by context type.
-func UpdateCatalogCache() error {
-	c, err := getCatalogCache()
-	if err != nil {
-		return err
-	}
-
-	return saveCatalogCache(c)
-}
-
 // PluginNameTarget constructs a string to uniquely refer to a plugin associated
 // with a specific target when target is provided.
 func PluginNameTarget(pluginName string, target configtypes.Target) string {
