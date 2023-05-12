@@ -18,14 +18,14 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
-type RegistryCertOptions struct {
+type CertOptions struct {
 	CACertPaths    []string
 	SkipCertVerify bool
 	Insecure       bool
 }
 
-func GetRegistryCertOptions(registryHost string) (*RegistryCertOptions, error) {
-	registryCertOpts := &RegistryCertOptions{
+func GetRegistryCertOptions(registryHost string) (*CertOptions, error) {
+	registryCertOpts := &CertOptions{
 		SkipCertVerify: false,
 		Insecure:       false,
 	}
@@ -39,6 +39,10 @@ func GetRegistryCertOptions(registryHost string) (*RegistryCertOptions, error) {
 
 	// check if the custom cert data is configured for the registry
 	if exists, _ := configlib.CertExists(registryHost); !exists {
+		err := checkForProxyConfigAndUpdateCert(registryCertOpts)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to check for proxy config and update the cert")
+		}
 		return registryCertOpts, nil
 	}
 	cert, err := configlib.GetCert(registryHost)
@@ -51,11 +55,15 @@ func GetRegistryCertOptions(registryHost string) (*RegistryCertOptions, error) {
 		return nil, errors.Wrapf(err, "failed to updated the registry cert options")
 	}
 
+	err = checkForProxyConfigAndUpdateCert(registryCertOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to check for proxy config and update the cert")
+	}
 	return registryCertOpts, nil
 }
 
 // updateRegistryCertOptions sets the registry options by taking the custom certificate data configured for registry as input
-func updateRegistryCertOptions(cert *configtypes.Cert, registryCertOpts *RegistryCertOptions) error {
+func updateRegistryCertOptions(cert *configtypes.Cert, registryCertOpts *CertOptions) error {
 	if cert.SkipCertVerify != "" {
 		skipVerifyCerts, _ := strconv.ParseBool(cert.SkipCertVerify)
 		registryCertOpts.SkipCertVerify = skipVerifyCerts
@@ -65,28 +73,16 @@ func updateRegistryCertOptions(cert *configtypes.Cert, registryCertOpts *Registr
 		registryCertOpts.Insecure = insecure
 	}
 
-	if cert.CACertData != "" {
-		caCertBytes, err := base64.StdEncoding.DecodeString(cert.CACertData)
-		if err != nil {
-			return errors.Wrap(err, "unable to decode the base64-encoded custom registry CA certificate string")
-		}
-		if len(caCertBytes) != 0 {
-			filePath, err := configpaths.GetRegistryCertFile()
-			if err != nil {
-				return err
-			}
-			err = os.WriteFile(filePath, caCertBytes, 0o644)
-			if err != nil {
-				return errors.Wrapf(err, "failed to write the custom image registry CA cert to file '%s'", filePath)
-			}
-			registryCertOpts.CACertPaths = append(registryCertOpts.CACertPaths, filePath)
-		}
+	err := updateCACertData(cert.CACertData, registryCertOpts)
+	if err != nil {
+		return err
 	}
+
 	return nil
 }
 
 // AddRegistryTrustedRootCertsFileForWindows adds CA certificate to registry options for Windows environments
-func AddRegistryTrustedRootCertsFileForWindows(registryCertOpts *RegistryCertOptions) error {
+func AddRegistryTrustedRootCertsFileForWindows(registryCertOpts *CertOptions) error {
 	filePath, err := configpaths.GetRegistryTrustedCACertFileForWindows()
 	if err != nil {
 		return err
@@ -107,4 +103,40 @@ func GetRegistryName(imageName string) (string, error) {
 		return "", errors.Wrapf(err, "unable to fetch registry name from image %q", imageName)
 	}
 	return tag.Registry.Name(), nil
+}
+
+// checkForProxyConfigAndUpdateCert checks if user has configured proxy CA cert data using "PROXY_CA_CERT" environment variable
+// if configured, updates cert data in CertOptions
+func checkForProxyConfigAndUpdateCert(registryCertOpts *CertOptions) error {
+	// check if user provided cert configuration for proxy host, if so, use it
+	proxyCACertData := os.Getenv(constants.ProxyCACert)
+
+	// If proxy CA cert data is available, overwrite the registry cert data
+	err := updateCACertData(proxyCACertData, registryCertOpts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func updateCACertData(caCertData string, registryCertOpts *CertOptions) error {
+	if caCertData != "" {
+		caCertBytes, err := base64.StdEncoding.DecodeString(caCertData)
+		if err != nil {
+			return errors.Wrap(err, "unable to decode the base64-encoded custom registry CA certificate string")
+		}
+		if len(caCertBytes) != 0 {
+			filePath, err := configpaths.GetRegistryCertFile()
+			if err != nil {
+				return err
+			}
+			err = os.WriteFile(filePath, caCertBytes, 0o644)
+			if err != nil {
+				return errors.Wrapf(err, "failed to write the custom image registry CA cert to file '%s'", filePath)
+			}
+			registryCertOpts.CACertPaths = append(registryCertOpts.CACertPaths, filePath)
+		}
+	}
+	return nil
 }
