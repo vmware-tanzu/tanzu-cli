@@ -56,7 +56,6 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 	var (
 		err          error
 		tmpDir       string
-		discovery    Discovery
 		configFile   *os.File
 		configFileNG *os.File
 	)
@@ -83,8 +82,8 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			os.RemoveAll(tmpDir)
 		})
 		Context("Without any criteria", func() {
-			It("should have a filter that only ignore hidden plugins", func() {
-				discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
+			It("should have a filter that only ignores hidden plugins", func() {
+				discovery := NewOCIDiscovery("test-discovery", "test-image:latest", nil)
 				Expect(err).To(BeNil(), "unable to create discovery")
 				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
 				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
@@ -103,7 +102,7 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				}))
 			})
 			It("with TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1 the filter should include hidden plugins", func() {
-				discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
+				discovery := NewOCIDiscovery("test-discovery", "test-image:latest", nil)
 				Expect(err).To(BeNil(), "unable to create discovery")
 				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
 				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
@@ -127,14 +126,15 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			})
 		})
 		Context("With a criteria", func() {
-			It("should have a filter that matches the criteria and ignore hidden plugins", func() {
-				filteredName := "cluster" // nolint:goconst
-				filteredTarget := configtypes.TargetK8s
-				filteredVersion := "v0.26.0" // nolint:goconst
-				filteredOS := "darwin"       // nolint:goconst
-				filteredArch := "amd64"      // nolint:goconst
-
-				discovery = NewOCIDiscovery("test-discovery", "test-image:latest", &PluginDiscoveryCriteria{
+			const (
+				filteredName    = "cluster"
+				filteredTarget  = configtypes.TargetK8s
+				filteredVersion = "v0.26.0"
+				filteredOS      = "darwin"
+				filteredArch    = "amd64"
+			)
+			It("should have a filter that matches the criteria and ignores hidden plugins", func() {
+				discovery := NewOCIDiscovery("test-discovery", "test-image:latest", &PluginDiscoveryCriteria{
 					Name:    filteredName,
 					Target:  filteredTarget,
 					Version: filteredVersion,
@@ -164,13 +164,7 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				}))
 			})
 			It("with TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1 the filter should include hidden plugin", func() {
-				filteredName := "cluster"
-				filteredTarget := configtypes.TargetK8s
-				filteredVersion := "v0.26.0"
-				filteredOS := "darwin"
-				filteredArch := "amd64"
-
-				discovery = NewOCIDiscovery("test-discovery", "test-image:latest", &PluginDiscoveryCriteria{
+				discovery := NewOCIDiscovery("test-discovery", "test-image:latest", &PluginDiscoveryCriteria{
 					Name:    filteredName,
 					Target:  filteredTarget,
 					Version: filteredVersion,
@@ -226,47 +220,113 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			os.RemoveAll(configFileNG.Name())
 			os.RemoveAll(tmpDir)
 		})
-		It("should use a filter that ignores hidden groups", func() {
-			discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
-			Expect(err).To(BeNil(), "unable to create discovery")
-			dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
-			Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+		Context("Without any criteria", func() {
+			It("should use a filter that ignores hidden groups", func() {
+				discovery := NewOCIDiscovery("test-discovery", "test-image:latest", nil)
+				Expect(err).To(BeNil(), "unable to create discovery")
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
 
-			// Inject the stub inventory and data dir
-			dbDiscovery.pluginDataDir = tmpDir
-			dbDiscovery.inventory = &stubInventory{}
+				// Inject the stub inventory and data dir
+				dbDiscovery.pluginDataDir = tmpDir
+				dbDiscovery.inventory = &stubInventory{}
 
-			groups, err := dbDiscovery.listGroupsFromInventory()
-			Expect(groups).To(BeNil())
-			Expect(err).ToNot(BeNil())
-			filterInErr, ok := err.(inventoryFilterInError)
-			Expect(ok).To(BeTrue())
-			Expect(*filterInErr.groupFilter).To(Equal(plugininventory.PluginGroupFilter{
-				IncludeHidden: false,
-			}))
+				groups, err := dbDiscovery.listGroupsFromInventory()
+				Expect(groups).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				filterInErr, ok := err.(inventoryFilterInError)
+				Expect(ok).To(BeTrue())
+				Expect(*filterInErr.groupFilter).To(Equal(plugininventory.PluginGroupFilter{
+					IncludeHidden: false,
+				}))
+			})
+			It("with TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1 the filter should include hidden groups", func() {
+				discovery := NewOCIDiscovery("test-discovery", "test-image:latest", nil)
+				Expect(err).To(BeNil(), "unable to create discovery")
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+				// Inject the stub inventory and data dir
+				dbDiscovery.pluginDataDir = tmpDir
+				dbDiscovery.inventory = &stubInventory{}
+
+				err = os.Setenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting, "true")
+				defer os.Unsetenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting)
+				Expect(err).To(BeNil())
+
+				groups, err := dbDiscovery.listGroupsFromInventory()
+				Expect(groups).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				filterInErr, ok := err.(inventoryFilterInError)
+				Expect(ok).To(BeTrue())
+				Expect(*filterInErr.groupFilter).To(Equal(plugininventory.PluginGroupFilter{
+					IncludeHidden: true,
+				}))
+			})
 		})
-		It("with TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1 the filter should include hidden groups", func() {
-			discovery = NewOCIDiscovery("test-discovery", "test-image:latest", nil)
-			Expect(err).To(BeNil(), "unable to create discovery")
-			dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
-			Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+		Context("With a criteria", func() {
+			const (
+				filteredVendor    = "vmware"
+				filteredPublisher = "tkg"
+				filteredName      = "groupname"
+			)
+			It("should have a filter that matches the criteria and ignores hidden groups", func() {
+				discovery := NewOCIGroupDiscovery("test-discovery", "test-image:latest", &GroupDiscoveryCriteria{
+					Vendor:    filteredVendor,
+					Publisher: filteredPublisher,
+					Name:      filteredName,
+				})
+				Expect(err).To(BeNil(), "unable to create discovery")
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
 
-			// Inject the stub inventory and data dir
-			dbDiscovery.pluginDataDir = tmpDir
-			dbDiscovery.inventory = &stubInventory{}
+				// Inject the stub inventory and data dir
+				dbDiscovery.pluginDataDir = tmpDir
+				dbDiscovery.inventory = &stubInventory{}
 
-			err = os.Setenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting, "true")
-			defer os.Unsetenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting)
-			Expect(err).To(BeNil())
+				groups, err := dbDiscovery.listGroupsFromInventory()
+				Expect(groups).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				filterInErr, ok := err.(inventoryFilterInError)
+				Expect(ok).To(BeTrue())
+				Expect(*filterInErr.groupFilter).To(Equal(plugininventory.PluginGroupFilter{
+					Vendor:        filteredVendor,
+					Publisher:     filteredPublisher,
+					Name:          filteredName,
+					IncludeHidden: false,
+				}))
+			})
+			It("with TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY=1 the filter should include hidden groups", func() {
+				discovery := NewOCIGroupDiscovery("test-discovery", "test-image:latest", &GroupDiscoveryCriteria{
+					Vendor:    filteredVendor,
+					Publisher: filteredPublisher,
+					Name:      filteredName,
+				})
+				Expect(err).To(BeNil(), "unable to create discovery")
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
 
-			groups, err := dbDiscovery.listGroupsFromInventory()
-			Expect(groups).To(BeNil())
-			Expect(err).ToNot(BeNil())
-			filterInErr, ok := err.(inventoryFilterInError)
-			Expect(ok).To(BeTrue())
-			Expect(*filterInErr.groupFilter).To(Equal(plugininventory.PluginGroupFilter{
-				IncludeHidden: true,
-			}))
+				// Inject the stub inventory and data dir
+				dbDiscovery.pluginDataDir = tmpDir
+				dbDiscovery.inventory = &stubInventory{}
+
+				err = os.Setenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting, "true")
+				defer os.Unsetenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting)
+				Expect(err).To(BeNil())
+
+				groups, err := dbDiscovery.listGroupsFromInventory()
+				Expect(groups).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				filterInErr, ok := err.(inventoryFilterInError)
+				Expect(ok).To(BeTrue())
+
+				Expect(*filterInErr.groupFilter).To(Equal(plugininventory.PluginGroupFilter{
+					Vendor:        filteredVendor,
+					Publisher:     filteredPublisher,
+					Name:          filteredName,
+					IncludeHidden: true,
+				}))
+			})
 		})
 	})
 })

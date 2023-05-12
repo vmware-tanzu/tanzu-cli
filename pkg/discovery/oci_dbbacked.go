@@ -37,9 +37,12 @@ type DBBackedOCIDiscovery struct {
 	// E.g., harbor.my-domain.local/tanzu-cli/plugins/plugins-inventory:latest
 	// This image contains a single SQLite database file.
 	image string
-	// criteria specified different conditions that a plugin must respect to be discovered.
+	// pluginCriteria specifies different conditions that a plugin must respect to be discovered.
 	// This allows to filter the list of plugins that will be returned.
-	criteria *PluginDiscoveryCriteria
+	pluginCriteria *PluginDiscoveryCriteria
+	// groupCriteria specifies different conditions that a plugin group must respect to be discovered.
+	// This allows to filter the list of plugins groups that will be returned.
+	groupCriteria *GroupDiscoveryCriteria
 	// pluginDataDir is the location where the plugin data will be stored once
 	// extracted from the OCI image
 	pluginDataDir string
@@ -84,7 +87,7 @@ func (od *DBBackedOCIDiscovery) listPluginsFromInventory() ([]Discovered, error)
 	var err error
 
 	shouldIncludeHidden, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting))
-	if od.criteria == nil {
+	if od.pluginCriteria == nil {
 		pluginEntries, err = od.getInventory().GetPlugins(&plugininventory.PluginInventoryFilter{
 			IncludeHidden: shouldIncludeHidden,
 		})
@@ -93,11 +96,11 @@ func (od *DBBackedOCIDiscovery) listPluginsFromInventory() ([]Discovered, error)
 		}
 	} else {
 		pluginEntries, err = od.getInventory().GetPlugins(&plugininventory.PluginInventoryFilter{
-			Name:          od.criteria.Name,
-			Target:        od.criteria.Target,
-			Version:       od.criteria.Version,
-			OS:            od.criteria.OS,
-			Arch:          od.criteria.Arch,
+			Name:          od.pluginCriteria.Name,
+			Target:        od.pluginCriteria.Target,
+			Version:       od.pluginCriteria.Version,
+			OS:            od.pluginCriteria.OS,
+			Arch:          od.pluginCriteria.Arch,
 			IncludeHidden: shouldIncludeHidden,
 		})
 		if err != nil {
@@ -138,7 +141,17 @@ func (od *DBBackedOCIDiscovery) listPluginsFromInventory() ([]Discovered, error)
 
 func (od *DBBackedOCIDiscovery) listGroupsFromInventory() ([]*plugininventory.PluginGroup, error) {
 	shouldIncludeHidden, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting))
+
+	if od.groupCriteria == nil {
+		return od.getInventory().GetPluginGroups(plugininventory.PluginGroupFilter{
+			IncludeHidden: shouldIncludeHidden,
+		})
+	}
+
 	return od.getInventory().GetPluginGroups(plugininventory.PluginGroupFilter{
+		Vendor:        od.groupCriteria.Vendor,
+		Publisher:     od.groupCriteria.Publisher,
+		Name:          od.groupCriteria.Name,
 		IncludeHidden: shouldIncludeHidden,
 	})
 }
