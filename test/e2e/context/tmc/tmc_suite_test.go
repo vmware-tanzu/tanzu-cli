@@ -21,13 +21,16 @@ func TestTmc(t *testing.T) {
 }
 
 var (
-	tf           *framework.Framework
-	clusterInfo  *framework.ClusterInfo
-	contextNames []string
-	ctxsStress   []string
+	tf             *framework.Framework
+	tmcClusterInfo *framework.ClusterInfo
+	k8sClusterInfo *framework.ClusterInfo
+	contextNames   []string
+	ctxsStress     []string
+	err            error
 )
 
 const prefix = "ctx-tmc-"
+const prefixK8s = "ctx-k8s-"
 const maxCtx = 25
 const ContextShouldNotExists = "the context %s should not exists"
 const ContextShouldExistsAsCreated = "the context %s should exists as its been created"
@@ -40,9 +43,20 @@ var _ = BeforeSuite(func() {
 	Expect(os.Getenv(framework.TanzuCliTmcUnstableURL)).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with TMC endpoint URL", framework.TanzuCliTmcUnstableURL))
 
 	// get TMC TANZU_CLI_TMC_UNSTABLE_URL and TANZU_API_TOKEN from environment variables
-	clusterInfo = framework.GetTMCClusterInfo()
-	Expect(clusterInfo.EndPoint).NotTo(Equal(""), "TMC cluster URL is must needed to create TMC context")
-	Expect(clusterInfo.APIKey).NotTo(Equal(""), "TMC API Key is must needed to create TMC context")
+	tmcClusterInfo = framework.GetTMCClusterInfo()
+	Expect(tmcClusterInfo.EndPoint).NotTo(Equal(""), "TMC cluster URL is must needed to create TMC context")
+	Expect(tmcClusterInfo.APIKey).NotTo(Equal(""), "TMC API Key is must needed to create TMC context")
 	contextNames = make([]string, 0)
 	ctxsStress = make([]string, 0)
+
+	// Create KIND cluster, which is used in test cases to create context's
+	k8sClusterInfo, err = framework.CreateKindCluster(tf, "context-e2e-"+framework.RandomNumber(4))
+	Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
+})
+
+// AfterSuite deletes the KIND cluster created in BeforeSuite
+var _ = AfterSuite(func() {
+	// delete the KIND cluster which was created in the suite setup
+	_, err := tf.KindCluster.DeleteCluster(k8sClusterInfo.Name)
+	Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
 })
