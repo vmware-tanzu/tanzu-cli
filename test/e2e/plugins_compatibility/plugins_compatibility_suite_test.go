@@ -19,7 +19,7 @@ import (
 
 func TestPluginsCompatibility(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "PluginsCompatibility Suite")
+	RunSpecs(t, "Plugins Compatibility E2E Test Suite")
 }
 
 var (
