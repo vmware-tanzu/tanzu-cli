@@ -111,60 +111,25 @@ func discoverSpecificPlugins(pd []configtypes.PluginDiscovery, criteria *discove
 }
 
 // discoverSpecificPluginGroups returns all the plugin groups found in the discoveries
-func discoverSpecificPluginGroups(pd []configtypes.PluginDiscovery, criteria *discovery.GroupDiscoveryCriteria) ([]*discovery.DiscoveredPluginGroups, error) {
-	var allDiscovered []*discovery.DiscoveredPluginGroups
+func discoverSpecificPluginGroups(pd []configtypes.PluginDiscovery, criteria *discovery.GroupDiscoveryCriteria) ([]*plugininventory.PluginGroup, error) {
+	var allGroups []*plugininventory.PluginGroup
 	for _, d := range pd {
 		groupDisc, err := discovery.CreateGroupDiscovery(d, criteria)
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to create group discovery")
 		}
 
-		groups, err := groupDisc.GetAllGroups()
+		groups, err := groupDisc.GetGroups()
 		if err != nil {
 			log.Warningf("unable to list groups from discovery '%v': %v", groupDisc.Name(), err.Error())
 			continue
 		}
 
 		if len(groups) > 0 {
-			allDiscovered = append(
-				allDiscovered,
-				&discovery.DiscoveredPluginGroups{
-					Source: groupDisc.Name(),
-					Groups: groups,
-				})
+			allGroups = append(allGroups, groups...)
 		}
 	}
-	return allDiscovered, nil
-}
-
-// discoverPluginGroup returns the one matching plugin group found in the discoveries
-func discoverPluginGroup(pd []configtypes.PluginDiscovery, groupID string) (*plugininventory.PluginGroup, error) {
-	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupID)
-	if groupIdentifier == nil {
-		return nil, fmt.Errorf("could not find group '%s'", groupID)
-	}
-	groupsByDiscovery, err := discoverSpecificPluginGroups(pd, &discovery.GroupDiscoveryCriteria{
-		Vendor:    groupIdentifier.Vendor,
-		Publisher: groupIdentifier.Publisher,
-		Name:      groupIdentifier.Name,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if len(groupsByDiscovery) == 0 {
-		return nil, nil
-	}
-
-	if len(groupsByDiscovery) > 1 {
-		var matchingDiscoveries []string
-		for _, disc := range groupsByDiscovery {
-			matchingDiscoveries = append(matchingDiscoveries, disc.Source)
-		}
-		log.Warningf("group '%s' was found in multiple discoveries: %v.  Using the first one.", groupID, matchingDiscoveries)
-	}
-
-	return groupsByDiscovery[0].Groups[0], nil
+	return mergeDuplicateGroups(allGroups), nil
 }
 
 // DiscoverStandalonePlugins returns the available standalone plugins
@@ -187,7 +152,7 @@ func DiscoverStandalonePlugins(criteria *discovery.PluginDiscoveryCriteria) ([]d
 }
 
 // DiscoverPluginGroups returns the available plugin groups
-func DiscoverPluginGroups(criteria *discovery.GroupDiscoveryCriteria) ([]*discovery.DiscoveredPluginGroups, error) {
+func DiscoverPluginGroups(criteria *discovery.GroupDiscoveryCriteria) ([]*plugininventory.PluginGroup, error) {
 	discoveries, err := getPluginDiscoveries()
 	if err != nil {
 		return nil, err
@@ -197,8 +162,6 @@ func DiscoverPluginGroups(criteria *discovery.GroupDiscoveryCriteria) ([]*discov
 	if err != nil {
 		return nil, err
 	}
-	// TODO(khouzam): merge groups as we do for plugins once we support group versions
-	// return mergeDuplicateGroups(groups), nil
 	return groups, err
 }
 
@@ -514,6 +477,58 @@ func mergeDuplicatePlugins(plugins []discovery.Discovered) []discovery.Discovere
 	return mergedPlugins
 }
 
+func mergeGroupEntries(group1, group2 *plugininventory.PluginGroup) *plugininventory.PluginGroup {
+	// For every version in the second group, if it doesn't already exist
+	// in the first group, add it.
+	for version := range group2.Versions {
+		_, exists := group1.Versions[version]
+		if !exists {
+			group1.Versions[version] = group2.Versions[version]
+		}
+	}
+
+	// Find the latest version
+	if len(group1.Versions) > 0 {
+		latestVersions := []string{group1.RecommendedVersion, group2.RecommendedVersion}
+		_ = utils.SortVersions(latestVersions)
+
+		// Set the recommended version to the highest version
+		group1.RecommendedVersion = latestVersions[1]
+	}
+
+	return group1
+}
+
+// mergeDuplicateGroups combines the same plugin groups to eliminate duplicates by merging the information
+// of multiple entries of the same group into a single entry.  For example, the Central Repository can
+// provide details about a plugin group, but an additional test discovery can provide other versions of the
+// same group.  This function will join all the information into one.
+// A group is determined by its vendor-publisher/name combination.
+// Note that if two versions of the same group are found more than once, it will be the first one
+// found that will be kept.  The order of the array "groups" therefore matters.
+// This merge operation is deterministic due to the sequence of sources/groups that we process always
+// being the same.
+func mergeDuplicateGroups(groups []*plugininventory.PluginGroup) []*plugininventory.PluginGroup {
+	mapOfSelectedGroups := make(map[string]*plugininventory.PluginGroup)
+	for _, newGroup := range groups {
+		// If group doesn't exist in the map then add it.
+		// Otherwise merge the two entries, giving priority to the first one found.
+		key := plugininventory.PluginGroupToID(newGroup)
+		existingGroup, exists := mapOfSelectedGroups[key]
+		if !exists {
+			mapOfSelectedGroups[key] = newGroup
+		} else {
+			mapOfSelectedGroups[key] = mergeGroupEntries(existingGroup, newGroup)
+		}
+	}
+
+	var mergedGroups []*plugininventory.PluginGroup
+	for key := range mapOfSelectedGroups {
+		mergedGroups = append(mergedGroups, mapOfSelectedGroups[key])
+	}
+	return mergedGroups
+}
+
 func getInstalledButNotDiscoveredStandalonePlugins(availablePlugins []discovery.Discovered, installedPlugins []cli.PluginInfo) []discovery.Discovered {
 	var newPlugins []discovery.Discovered
 	for i := range installedPlugins {
@@ -789,27 +804,50 @@ func UpgradePlugin(pluginName, version string, target configtypes.Target) error 
 	return InstallStandalonePlugin(pluginName, version, target)
 }
 
-// InstallPluginsFromGroup installs either the specified plugin or all plugins from the named group
-func InstallPluginsFromGroup(pluginName, groupID string) error {
+// InstallPluginsFromGroup installs either the specified plugin or all plugins from the specified group version
+func InstallPluginsFromGroup(pluginName, groupIDAndVersion string) error { //nolint:gocyclo
 	discoveries, err := getPluginDiscoveries()
 	if err != nil || len(discoveries) == 0 {
 		return err
 	}
 
-	group, err := discoverPluginGroup(discoveries, groupID)
+	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupIDAndVersion)
+	if groupIdentifier == nil {
+		return fmt.Errorf("could not find group '%s'", groupIDAndVersion)
+	}
+	if groupIdentifier.Version == "" {
+		// If the version is not specified to install from, we use the latest
+		groupIdentifier.Version = cli.VersionLatest
+	}
+	groups, err := discoverSpecificPluginGroups(discoveries, &discovery.GroupDiscoveryCriteria{
+		Vendor:    groupIdentifier.Vendor,
+		Publisher: groupIdentifier.Publisher,
+		Name:      groupIdentifier.Name,
+		Version:   groupIdentifier.Version,
+	})
 	if err != nil {
 		return err
 	}
 
-	if group == nil {
-		return fmt.Errorf("could not find group '%s'", groupID)
+	if len(groups) == 0 {
+		return errors.Errorf("unable to find plugin group %v", groupIDAndVersion)
+	}
+
+	if len(groups) > 1 {
+		log.Warningf("unexpected: group '%s' was found more than once.  Using the first one.", groupIDAndVersion)
+	}
+
+	pg := groups[0]
+	if groupIdentifier.Version == cli.VersionLatest {
+		// If we are installing the latest version, we should set the version we found
+		groupIdentifier.Version = pg.RecommendedVersion
 	}
 
 	numErrors := 0
 	numInstalled := 0
 	mandatoryPluginsExist := false
 	pluginExist := false
-	for _, plugin := range group.Plugins {
+	for _, plugin := range pg.Versions[groupIdentifier.Version] {
 		if pluginName == cli.AllPlugins || pluginName == plugin.Name {
 			pluginExist = true
 			if plugin.Mandatory {
@@ -826,22 +864,22 @@ func InstallPluginsFromGroup(pluginName, groupID string) error {
 	}
 
 	if !pluginExist {
-		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupID)
+		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
 	}
 
 	if !mandatoryPluginsExist {
 		if pluginName == cli.AllPlugins {
-			return fmt.Errorf("plugin group '%s' has no mandatory plugins to install", groupID)
+			return fmt.Errorf("plugin group '%s' has no mandatory plugins to install", groupIDAndVersion)
 		}
-		return fmt.Errorf("plugin '%s' from group '%s' is not mandatory to install", pluginName, groupID)
+		return fmt.Errorf("plugin '%s' from group '%s' is not mandatory to install", pluginName, groupIDAndVersion)
 	}
 
 	if numErrors > 0 {
-		return fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupID)
+		return fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupIDAndVersion)
 	}
 
 	if numInstalled == 0 {
-		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupID)
+		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
 	}
 
 	return nil

@@ -117,27 +117,43 @@ var hiddenPluginEntry = PluginInventoryEntry{
 }
 
 var pluginGroup1 = PluginGroup{
-	Name:      "v1.0.0",
-	Vendor:    "fakevendor",
-	Publisher: "fakepublisher",
-	Hidden:    false,
-	Plugins: []*PluginGroupPluginEntry{
-		{
-			PluginIdentifier: PluginIdentifier{Name: "management-cluster", Target: types.TargetK8s, Version: "v0.28.0"},
-			Mandatory:        false,
+	Name:        "default",
+	Vendor:      "fakevendor",
+	Publisher:   "fakepublisher",
+	Description: "Description for fakevendor-fakepublisher/default",
+	Hidden:      false,
+	Versions: map[string][]*PluginGroupPluginEntry{
+		"v2.0.0": {
+			{
+				PluginIdentifier: PluginIdentifier{Name: "management-cluster", Target: types.TargetK8s, Version: "v0.28.0"},
+				Mandatory:        true,
+			},
+			{
+				PluginIdentifier: PluginIdentifier{Name: "isolated-cluster", Target: types.TargetGlobal, Version: "v1.2.3"},
+				Mandatory:        true,
+			},
+		},
+		"v1.0.0": {
+			{
+				PluginIdentifier: PluginIdentifier{Name: "management-cluster", Target: types.TargetK8s, Version: "v0.28.0"},
+				Mandatory:        true,
+			},
 		},
 	},
 }
 
 var groupWithHiddenPlugin = PluginGroup{
-	Name:      "v1.0.0",
-	Vendor:    "fakevendor",
-	Publisher: "nothidden",
-	Hidden:    false,
-	Plugins: []*PluginGroupPluginEntry{
-		{
-			PluginIdentifier: PluginIdentifier{Name: "hidden-plugin", Target: types.TargetK8s, Version: "v0.0.1"},
-			Mandatory:        true,
+	Name:        "default",
+	Vendor:      "fakevendor",
+	Publisher:   "nothidden",
+	Description: "Description for fakevendor-nothidden/default",
+	Hidden:      false,
+	Versions: map[string][]*PluginGroupPluginEntry{
+		"v1.0.0": {
+			{
+				PluginIdentifier: PluginIdentifier{Name: "hidden-plugin", Target: types.TargetK8s, Version: "v0.0.1"},
+				Mandatory:        true,
+			},
 		},
 	},
 }
@@ -267,7 +283,9 @@ const createGroupsStmt = `
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
-	'2.1.0',
+	'default',
+	'v2.1.0',
+	'Description for vmware-tkg/default',
 	'management-cluster',
 	'kubernetes',
 	'v0.28.0',
@@ -276,7 +294,9 @@ INSERT INTO PluginGroups VALUES(
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
-	'2.1.0',
+	'default',
+	'v2.1.0',
+	'Description for vmware-tkg/default',
 	'package',
 	'kubernetes',
 	'v0.28.0',
@@ -285,7 +305,9 @@ INSERT INTO PluginGroups VALUES(
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
-	'2.1.0',
+	'default',
+	'v2.1.0',
+	'Description for vmware-tkg/default',
 	'feature',
 	'kubernetes',
 	'v0.28.0',
@@ -294,7 +316,9 @@ INSERT INTO PluginGroups VALUES(
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
-	'2.1.0',
+	'default',
+	'v2.1.0',
+	'Description for vmware-tkg/default',
 	'kubernetes-release',
 	'kubernetes',
 	'v0.28.0',
@@ -303,7 +327,9 @@ INSERT INTO PluginGroups VALUES(
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
-	'2.1.0',
+	'default',
+	'v2.1.0',
+	'Description for vmware-tkg/default',
 	'isolated-cluster',
 	'kubernetes',
 	'v0.28.0',
@@ -312,7 +338,9 @@ INSERT INTO PluginGroups VALUES(
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
-	'1.6.0',
+	'default',
+	'v1.6.0',
+	'Description for vmware-tkg/default',
 	'management-cluster',
 	'kubernetes',
 	'v0.26.0',
@@ -321,7 +349,9 @@ INSERT INTO PluginGroups VALUES(
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
-	'1.6.0',
+	'default',
+	'v1.6.0',
+	'Description for vmware-tkg/default',
 	'package',
 	'kubernetes',
 	'v0.26.0',
@@ -330,7 +360,9 @@ INSERT INTO PluginGroups VALUES(
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
-	'1.6.0',
+	'default',
+	'v1.6.0',
+	'Description for vmware-tkg/default',
 	'feature',
 	'kubernetes',
 	'v0.26.0',
@@ -339,7 +371,9 @@ INSERT INTO PluginGroups VALUES(
 INSERT INTO PluginGroups VALUES(
 	'vmware',
 	'tkg',
-	'1.6.0',
+	'default',
+	'v1.6.0',
+	'Description for vmware-tkg/default',
 	'kubernetes-release',
 	'kubernetes',
 	'v0.26.0',
@@ -349,6 +383,8 @@ INSERT INTO PluginGroups VALUES(
 	'independent',
 	'other',
 	'mygroup',
+	'v1.0.0',
+	'Description for independent-other/mygroup',
 	'plugin1',
 	'kubernetes',
 	'v0.1.0',
@@ -358,6 +394,8 @@ INSERT INTO PluginGroups VALUES(
 	'independent',
 	'other',
 	'mygroup',
+	'v1.0.0',
+	'Description for independent-other/mygroup',
 	'plugin2',
 	'mission-control',
 	'v0.2.0',
@@ -367,6 +405,8 @@ INSERT INTO PluginGroups VALUES(
     'independent',
     'other',
     'hidden',
+	'v2.0.0',
+	'Description for independent-other/hidden',
     'plugin2',
     'mission-control',
     'v0.3.0',
@@ -872,10 +912,10 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				os.RemoveAll(tmpDir)
 			})
 			Context("When getting all groups", func() {
-				It("should return a list of three groups with no error", func() {
+				It("should return a list of two groups with no error", func() {
 					groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
 					Expect(err).ToNot(HaveOccurred())
-					Expect(len(groups)).To(Equal(3))
+					Expect(len(groups)).To(Equal(2))
 
 					sort.Sort(pluginGroupSorter(groups))
 
@@ -883,8 +923,11 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("mygroup"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup"))
 
-					plugins := groups[i].Plugins
+					Expect(len(groups[i].Versions)).To(Equal(1))
+
+					plugins := groups[i].Versions["v1.0.0"]
 					Expect(len(plugins)).To(Equal(2))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j := 0
@@ -899,10 +942,12 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					i++
 					Expect(groups[i].Vendor).To(Equal("vmware"))
 					Expect(groups[i].Publisher).To(Equal("tkg"))
-					Expect(groups[i].Name).To(Equal("1.6.0"))
-					Expect(len(groups[i].Plugins)).To(Equal(4))
+					Expect(groups[i].Name).To(Equal("default"))
+					Expect(groups[i].Description).To(Equal("Description for vmware-tkg/default"))
 
-					plugins = groups[i].Plugins
+					Expect(len(groups[i].Versions)).To(Equal(2))
+
+					plugins = groups[i].Versions["v1.6.0"]
 					Expect(len(plugins)).To(Equal(4))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j = 0
@@ -922,13 +967,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
 					Expect(plugins[j].Version).To(Equal("v0.26.0"))
 
-					i++
-					Expect(groups[i].Vendor).To(Equal("vmware"))
-					Expect(groups[i].Publisher).To(Equal("tkg"))
-					Expect(groups[i].Name).To(Equal("2.1.0"))
-					Expect(len(groups[i].Plugins)).To(Equal(5))
-
-					plugins = groups[i].Plugins
+					plugins = groups[i].Versions["v2.1.0"]
 					Expect(len(plugins)).To(Equal(5))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j = 0
@@ -958,7 +997,8 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					groups, err := inventory.GetPluginGroups(PluginGroupFilter{
 						Vendor:    "vmware",
 						Publisher: "tkg",
-						Name:      "1.6.0",
+						Name:      "default",
+						Version:   "v1.6.0",
 					})
 					Expect(err).ToNot(HaveOccurred())
 					Expect(len(groups)).To(Equal(1))
@@ -968,10 +1008,12 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					i := 0
 					Expect(groups[i].Vendor).To(Equal("vmware"))
 					Expect(groups[i].Publisher).To(Equal("tkg"))
-					Expect(groups[i].Name).To(Equal("1.6.0"))
-					Expect(len(groups[i].Plugins)).To(Equal(4))
+					Expect(groups[i].Name).To(Equal("default"))
+					Expect(groups[i].Description).To(Equal("Description for vmware-tkg/default"))
 
-					plugins := groups[i].Plugins
+					Expect(len(groups[i].Versions)).To(Equal(1))
+
+					plugins := groups[i].Versions["v1.6.0"]
 					Expect(len(plugins)).To(Equal(4))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j := 0
@@ -1004,8 +1046,11 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("mygroup"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup"))
 
-					plugins := groups[i].Plugins
+					Expect(len(groups[i].Versions)).To(Equal(1))
+
+					plugins := groups[i].Versions["v1.0.0"]
 					Expect(len(plugins)).To(Equal(2))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j := 0
@@ -1019,10 +1064,10 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				})
 			})
 			Context("When getting all groups including hidden ones", func() {
-				It("should return a list of four groups with no error", func() {
+				It("should return a list of three groups with no error", func() {
 					groups, err := inventory.GetPluginGroups(PluginGroupFilter{IncludeHidden: true})
 					Expect(err).ToNot(HaveOccurred())
-					Expect(len(groups)).To(Equal(4))
+					Expect(len(groups)).To(Equal(3))
 
 					sort.Sort(pluginGroupSorter(groups))
 
@@ -1030,8 +1075,11 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("hidden"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/hidden"))
 
-					plugins := groups[i].Plugins
+					Expect(len(groups[i].Versions)).To(Equal(1))
+
+					plugins := groups[i].Versions["v2.0.0"]
 					Expect(len(plugins)).To(Equal(1))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j := 0
@@ -1043,8 +1091,11 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("mygroup"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup"))
 
-					plugins = groups[i].Plugins
+					Expect(len(groups[i].Versions)).To(Equal(1))
+
+					plugins = groups[i].Versions["v1.0.0"]
 					Expect(len(plugins)).To(Equal(2))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j = 0
@@ -1059,10 +1110,12 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					i++
 					Expect(groups[i].Vendor).To(Equal("vmware"))
 					Expect(groups[i].Publisher).To(Equal("tkg"))
-					Expect(groups[i].Name).To(Equal("1.6.0"))
-					Expect(len(groups[i].Plugins)).To(Equal(4))
+					Expect(groups[i].Name).To(Equal("default"))
+					Expect(groups[i].Description).To(Equal("Description for vmware-tkg/default"))
 
-					plugins = groups[i].Plugins
+					Expect(len(groups[i].Versions)).To(Equal(2))
+
+					plugins = groups[i].Versions["v1.6.0"]
 					Expect(len(plugins)).To(Equal(4))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j = 0
@@ -1082,13 +1135,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(plugins[j].Target).To(Equal(types.TargetK8s))
 					Expect(plugins[j].Version).To(Equal("v0.26.0"))
 
-					i++
-					Expect(groups[i].Vendor).To(Equal("vmware"))
-					Expect(groups[i].Publisher).To(Equal("tkg"))
-					Expect(groups[i].Name).To(Equal("2.1.0"))
-					Expect(len(groups[i].Plugins)).To(Equal(5))
-
-					plugins = groups[i].Plugins
+					plugins = groups[i].Versions["v2.1.0"]
 					Expect(len(plugins)).To(Equal(5))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j = 0
@@ -1128,8 +1175,11 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("hidden"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/hidden"))
 
-					plugins := groups[i].Plugins
+					Expect(len(groups[i].Versions)).To(Equal(1))
+
+					plugins := groups[i].Versions["v2.0.0"]
 					Expect(len(plugins)).To(Equal(1))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j := 0
@@ -1141,8 +1191,11 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("mygroup"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup"))
 
-					plugins = groups[i].Plugins
+					Expect(len(groups[i].Versions)).To(Equal(1))
+
+					plugins = groups[i].Versions["v1.0.0"]
 					Expect(len(plugins)).To(Equal(2))
 					sort.Sort(pluginGroupPluginEntrySorter(plugins))
 					j = 0
@@ -1153,7 +1206,6 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(plugins[j].Name).To(Equal("plugin2"))
 					Expect(plugins[j].Target).To(Equal(types.TargetTMC))
 					Expect(plugins[j].Version).To(Equal("v0.2.0"))
-
 				})
 			})
 		})
@@ -1300,18 +1352,21 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 		Context("When inserting plugin-group with plugin that doesn't exists in the database", func() {
 			It("should return error", func() {
 				pg := &PluginGroup{
-					Name:      "v1.0.0",
-					Vendor:    "fakevendor",
-					Publisher: "fakepublisher",
-					Hidden:    false,
-					Plugins: []*PluginGroupPluginEntry{
-						{
-							PluginIdentifier: PluginIdentifier{
-								Name:    "fake-plugin",
-								Target:  types.TargetGlobal,
-								Version: "v1.0.0",
+					Name:        "default",
+					Vendor:      "fakevendor",
+					Publisher:   "fakepublisher",
+					Description: "Description for fakevendor-fakepublisher/default",
+					Hidden:      false,
+					Versions: map[string][]*PluginGroupPluginEntry{
+						"v1.0.0": {
+							{
+								PluginIdentifier: PluginIdentifier{
+									Name:    "fake-plugin",
+									Target:  types.TargetGlobal,
+									Version: "v1.0.0",
+								},
+								Mandatory: false,
 							},
-							Mandatory: false,
 						},
 					},
 				}
@@ -1323,18 +1378,21 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 		Context("When inserting plugin-group with plugin which exists but specified version of the plugin doesn't exists in the database", func() {
 			It("should return error", func() {
 				pg := &PluginGroup{
-					Name:      "v1.0.0",
-					Vendor:    "fakevendor",
-					Publisher: "fakepublisher",
-					Hidden:    false,
-					Plugins: []*PluginGroupPluginEntry{
-						{
-							PluginIdentifier: PluginIdentifier{
-								Name:    "mission-control",
-								Target:  types.TargetK8s,
-								Version: "v1.0.0",
+					Name:        "default",
+					Vendor:      "fakevendor",
+					Publisher:   "fakepublisher",
+					Description: "Description for fakevendor-fakepublisher/default",
+					Hidden:      false,
+					Versions: map[string][]*PluginGroupPluginEntry{
+						"v1.0.0": {
+							{
+								PluginIdentifier: PluginIdentifier{
+									Name:    "mission-control",
+									Target:  types.TargetK8s,
+									Version: "v1.0.0",
+								},
+								Mandatory: false,
 							},
-							Mandatory: false,
 						},
 					},
 				}
@@ -1351,15 +1409,38 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(groups)).To(Equal(1))
-				Expect(groups[0].Name).To(Equal(pluginGroup1.Name))
-				Expect(groups[0].Vendor).To(Equal(pluginGroup1.Vendor))
-				Expect(groups[0].Publisher).To(Equal(pluginGroup1.Publisher))
-				Expect(groups[0].Hidden).To(Equal(pluginGroup1.Hidden))
-				Expect(len(groups[0].Plugins)).To(Equal(1))
-				Expect(groups[0].Plugins[0].Name).To(Equal(pluginGroup1.Plugins[0].Name))
-				Expect(groups[0].Plugins[0].Target).To(Equal(pluginGroup1.Plugins[0].Target))
-				Expect(groups[0].Plugins[0].Version).To(Equal(pluginGroup1.Plugins[0].Version))
-				Expect(groups[0].Plugins[0].Mandatory).To(Equal(pluginGroup1.Plugins[0].Mandatory))
+				group := groups[0]
+				Expect(group.Name).To(Equal(pluginGroup1.Name))
+				Expect(group.Vendor).To(Equal(pluginGroup1.Vendor))
+				Expect(group.Publisher).To(Equal(pluginGroup1.Publisher))
+				Expect(group.Description).To(Equal(pluginGroup1.Description))
+
+				Expect(group.Hidden).To(Equal(pluginGroup1.Hidden))
+				Expect(len(group.Versions)).To(Equal(2))
+
+				plugins := group.Versions["v2.0.0"]
+				Expect(len(plugins)).To(Equal(2))
+				sort.Sort(pluginGroupPluginEntrySorter(plugins))
+
+				expectedPlugins := pluginGroup1.Versions["v2.0.0"]
+				sort.Sort(pluginGroupPluginEntrySorter(expectedPlugins))
+				Expect(plugins[0].Name).To(Equal(expectedPlugins[0].Name))
+				Expect(plugins[0].Target).To(Equal(expectedPlugins[0].Target))
+				Expect(plugins[0].Version).To(Equal(expectedPlugins[0].Version))
+				Expect(plugins[0].Mandatory).To(Equal(expectedPlugins[0].Mandatory))
+
+				Expect(plugins[1].Name).To(Equal(expectedPlugins[1].Name))
+				Expect(plugins[1].Target).To(Equal(expectedPlugins[1].Target))
+				Expect(plugins[1].Version).To(Equal(expectedPlugins[1].Version))
+				Expect(plugins[1].Mandatory).To(Equal(expectedPlugins[1].Mandatory))
+
+				plugins = group.Versions["v1.0.0"]
+				Expect(len(plugins)).To(Equal(1))
+
+				Expect(plugins[0].Name).To(Equal(pluginGroup1.Versions["v1.0.0"][0].Name))
+				Expect(plugins[0].Target).To(Equal(pluginGroup1.Versions["v1.0.0"][0].Target))
+				Expect(plugins[0].Version).To(Equal(pluginGroup1.Versions["v1.0.0"][0].Version))
+				Expect(plugins[0].Mandatory).To(Equal(pluginGroup1.Versions["v1.0.0"][0].Mandatory))
 			})
 		})
 		Context("When inserting a plugin-group containing hidden plugins that are present in the database", func() {
@@ -1382,12 +1463,18 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(groups[0].Name).To(Equal(groupWithHiddenPlugin.Name))
 				Expect(groups[0].Vendor).To(Equal(groupWithHiddenPlugin.Vendor))
 				Expect(groups[0].Publisher).To(Equal(groupWithHiddenPlugin.Publisher))
+				Expect(groups[0].Description).To(Equal(groupWithHiddenPlugin.Description))
+
 				Expect(groups[0].Hidden).To(Equal(groupWithHiddenPlugin.Hidden))
-				Expect(len(groups[0].Plugins)).To(Equal(1))
-				Expect(groups[0].Plugins[0].Name).To(Equal(groupWithHiddenPlugin.Plugins[0].Name))
-				Expect(groups[0].Plugins[0].Target).To(Equal(groupWithHiddenPlugin.Plugins[0].Target))
-				Expect(groups[0].Plugins[0].Version).To(Equal(groupWithHiddenPlugin.Plugins[0].Version))
-				Expect(groups[0].Plugins[0].Mandatory).To(Equal(groupWithHiddenPlugin.Plugins[0].Mandatory))
+
+				Expect(len(groups[0].Versions)).To(Equal(1))
+
+				plugins := groups[0].Versions["v1.0.0"]
+				Expect(len(plugins)).To(Equal(1))
+				Expect(plugins[0].Name).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Name))
+				Expect(plugins[0].Target).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Target))
+				Expect(plugins[0].Version).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Version))
+				Expect(plugins[0].Mandatory).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Mandatory))
 			})
 		})
 		Context("When inserting a plugin-group which already exists in the database", func() {
@@ -1410,22 +1497,25 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			It("should not return error and GetPluginGroups should return the updated result", func() {
 				pluginGroupUpdated := pluginGroup1
 				pluginGroupUpdated.Hidden = false
-				pluginGroupUpdated.Plugins = []*PluginGroupPluginEntry{
-					{
-						PluginIdentifier: PluginIdentifier{
-							Name:    "management-cluster",
-							Target:  types.TargetTMC,
-							Version: "v0.0.1",
+				pluginGroupUpdated.Description = "Updated description"
+				pluginGroupUpdated.Versions = map[string][]*PluginGroupPluginEntry{
+					"v1.0.0": {
+						{
+							PluginIdentifier: PluginIdentifier{
+								Name:    "management-cluster",
+								Target:  types.TargetTMC,
+								Version: "v0.0.1",
+							},
+							Mandatory: true,
 						},
-						Mandatory: true,
-					},
-					{
-						PluginIdentifier: PluginIdentifier{
-							Name:    "isolated-cluster",
-							Target:  types.TargetGlobal,
-							Version: "v1.2.3",
+						{
+							PluginIdentifier: PluginIdentifier{
+								Name:    "isolated-cluster",
+								Target:  types.TargetGlobal,
+								Version: "v1.2.3",
+							},
+							Mandatory: false,
 						},
-						Mandatory: false,
 					},
 				}
 
@@ -1439,19 +1529,23 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(groups[0].Name).To(Equal(pluginGroupUpdated.Name))
 				Expect(groups[0].Vendor).To(Equal(pluginGroupUpdated.Vendor))
 				Expect(groups[0].Publisher).To(Equal(pluginGroupUpdated.Publisher))
+				Expect(groups[0].Description).To(Equal(pluginGroupUpdated.Description))
 				Expect(groups[0].Hidden).To(Equal(pluginGroupUpdated.Hidden))
-				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroupUpdated.Plugins)))
-				plugins := groups[0].Plugins
+
+				Expect(len(groups[0].Versions)).To(Equal(2))
+
+				plugins := groups[0].Versions["v1.0.0"]
+				Expect(len(plugins)).To(Equal(len(pluginGroupUpdated.Versions["v1.0.0"])))
 				sort.Sort(pluginGroupPluginEntrySorter(plugins))
-				sort.Sort(pluginGroupPluginEntrySorter(pluginGroupUpdated.Plugins))
-				Expect(plugins[0].Name).To(Equal(pluginGroupUpdated.Plugins[0].Name))
-				Expect(plugins[0].Target).To(Equal(pluginGroupUpdated.Plugins[0].Target))
-				Expect(plugins[0].Version).To(Equal(pluginGroupUpdated.Plugins[0].Version))
-				Expect(plugins[0].Mandatory).To(Equal(pluginGroupUpdated.Plugins[0].Mandatory))
-				Expect(plugins[1].Name).To(Equal(pluginGroupUpdated.Plugins[1].Name))
-				Expect(plugins[1].Target).To(Equal(pluginGroupUpdated.Plugins[1].Target))
-				Expect(plugins[1].Version).To(Equal(pluginGroupUpdated.Plugins[1].Version))
-				Expect(plugins[1].Mandatory).To(Equal(pluginGroupUpdated.Plugins[1].Mandatory))
+				sort.Sort(pluginGroupPluginEntrySorter(pluginGroupUpdated.Versions["v1.0.0"]))
+				Expect(plugins[0].Name).To(Equal(pluginGroupUpdated.Versions["v1.0.0"][0].Name))
+				Expect(plugins[0].Target).To(Equal(pluginGroupUpdated.Versions["v1.0.0"][0].Target))
+				Expect(plugins[0].Version).To(Equal(pluginGroupUpdated.Versions["v1.0.0"][0].Version))
+				Expect(plugins[0].Mandatory).To(Equal(pluginGroupUpdated.Versions["v1.0.0"][0].Mandatory))
+				Expect(plugins[1].Name).To(Equal(pluginGroupUpdated.Versions["v1.0.0"][1].Name))
+				Expect(plugins[1].Target).To(Equal(pluginGroupUpdated.Versions["v1.0.0"][1].Target))
+				Expect(plugins[1].Version).To(Equal(pluginGroupUpdated.Versions["v1.0.0"][1].Version))
+				Expect(plugins[1].Mandatory).To(Equal(pluginGroupUpdated.Versions["v1.0.0"][1].Mandatory))
 			})
 		})
 
@@ -1496,8 +1590,11 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(groups[0].Name).To(Equal(pluginGroup1.Name))
 				Expect(groups[0].Vendor).To(Equal(pluginGroup1.Vendor))
 				Expect(groups[0].Publisher).To(Equal(pluginGroup1.Publisher))
+				Expect(groups[0].Description).To(Equal(pluginGroup1.Description))
 				Expect(groups[0].Hidden).To(Equal(pluginGroup1.Hidden))
-				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroup1.Plugins)))
+				Expect(len(groups[0].Versions)).To(Equal(len(pluginGroup1.Versions)))
+				Expect(len(groups[0].Versions["v2.0.0"])).To(Equal(len(pluginGroup1.Versions["v2.0.0"])))
+				Expect(len(groups[0].Versions["v1.0.0"])).To(Equal(len(pluginGroup1.Versions["v1.0.0"])))
 			})
 			It("should not return error when the activation state has been updated and the GetPluginGroups should reflect the change", func() {
 				pluginGroupUpdated := pluginGroup1
@@ -1512,8 +1609,11 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(groups[0].Name).To(Equal(pluginGroupUpdated.Name))
 				Expect(groups[0].Vendor).To(Equal(pluginGroupUpdated.Vendor))
 				Expect(groups[0].Publisher).To(Equal(pluginGroupUpdated.Publisher))
+				Expect(groups[0].Description).To(Equal(pluginGroupUpdated.Description))
 				Expect(groups[0].Hidden).To(Equal(pluginGroupUpdated.Hidden))
-				Expect(len(groups[0].Plugins)).To(Equal(len(pluginGroupUpdated.Plugins)))
+				Expect(len(groups[0].Versions)).To(Equal(len(pluginGroup1.Versions)))
+				Expect(len(groups[0].Versions["v2.0.0"])).To(Equal(len(pluginGroup1.Versions["v2.0.0"])))
+				Expect(len(groups[0].Versions["v1.0.0"])).To(Equal(len(pluginGroup1.Versions["v1.0.0"])))
 			})
 		})
 
@@ -1527,7 +1627,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				pluginGroupUpdated.Name = "unknown"
 				err = inventory.UpdatePluginGroupActivationState(&pluginGroupUpdated)
 				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(ContainSubstring("unable to update plugin-group 'fakevendor-fakepublisher/unknown'. This might be possible because the provided plugin-group doesn't exists"))
+				Expect(err.Error()).To(ContainSubstring("unable to update plugin-group 'fakevendor-fakepublisher/unknown"))
 			})
 		})
 	})

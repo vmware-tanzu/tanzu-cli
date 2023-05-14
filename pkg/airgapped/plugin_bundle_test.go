@@ -89,16 +89,20 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 	}
 
 	pluginGroupEntry := &plugininventory.PluginGroup{
-		Vendor:    "fakevendor",
-		Publisher: "fakepublisher",
-		Name:      "default:v1.0.0",
-		Hidden:    false,
-		Plugins: []*plugininventory.PluginGroupPluginEntry{
-			{
-				PluginIdentifier: plugininventory.PluginIdentifier{
-					Name:    "bar",
-					Target:  "kubernetes",
-					Version: "v0.0.1",
+		Vendor:             "fakevendor",
+		Publisher:          "fakepublisher",
+		Name:               "default",
+		Description:        "Desc for plugin",
+		Hidden:             false,
+		RecommendedVersion: "v1.0.0",
+		Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
+			"v1.0.0": {
+				&plugininventory.PluginGroupPluginEntry{
+					PluginIdentifier: plugininventory.PluginIdentifier{
+						Name:    "bar",
+						Target:  "kubernetes",
+						Version: "v0.0.1",
+					},
 				},
 			},
 		},

@@ -18,10 +18,12 @@ CREATE TABLE IF NOT EXISTS "PluginGroups" (
 		"Vendor"             TEXT NOT NULL,
 		"Publisher"          TEXT NOT NULL,
 		"GroupName"          TEXT NOT NULL,
+		"GroupVersion"       TEXT NOT NULL,
+		"Description"        TEXT NOT NULL,
 		"PluginName"         TEXT NOT NULL,
 		"Target"             TEXT NOT NULL,
-		"Version"            TEXT NOT NULL,
+		"PluginVersion"      TEXT NOT NULL,
 		"Mandatory"          TEXT NOT NULL,
 		"Hidden"             TEXT NOT NULL,
-		PRIMARY KEY("Vendor", "Publisher", "GroupName", "PluginName", "Target", "Version")
+		PRIMARY KEY("Vendor", "Publisher", "GroupName", "GroupVersion", "PluginName", "Target")
 );

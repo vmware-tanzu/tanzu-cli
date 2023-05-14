@@ -148,15 +148,16 @@ addGroup() {
     local vendor=$1
     local publisher=$2
     local name=$3
-    local plugin=$4
-    local target=$5
-    local version=$6
+    local groupVersion=$4
+    local plugin=$5
+    local target=$6
+    local pluginVersion=$7
     local mandatory='true'
     local hidden='false'
 
-    echo "Adding $plugin/$target version $version to plugin group $vendor-$publisher/$name"
+    echo "Adding $plugin/$target version $pluginVersion to plugin group $vendor-$publisher/$name:$groupVersion"
 
-    local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$plugin','$target','$version', '$mandatory', '$hidden');"
+    local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$groupVersion','Desc for $vendor-$publisher/$name','$plugin','$target','$pluginVersion', '$mandatory', '$hidden');"
     if [ "$dry_run" = "echo" ]; then
         echo $sql_cmd
     else
@@ -180,14 +181,14 @@ done
 
 for name in ${k8sPlugins[*]}; do
     addPlugin $name kubernetes true
-    addGroup vmware tkg v0.0.1 $name kubernetes v0.0.1
-    addGroup vmware tkg v9.9.9 $name kubernetes v9.9.9
+    addGroup vmware tkg default v0.0.1 $name kubernetes v0.0.1
+    addGroup vmware tkg default v9.9.9 $name kubernetes v9.9.9
 done
 
 for name in ${tmcPlugins[*]}; do
     addPlugin $name mission-control true
-    addGroup vmware tmc v0.0.1 $name mission-control v0.0.1
-    addGroup vmware tmc v9.9.9 $name mission-control v9.9.9
+    addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1
+    addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
 done
 
 # Push small inventory file
@@ -233,12 +234,12 @@ cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 # Create a new version of the plugins for the sandbox repo
 for name in ${k8sPlugins[*]}; do
     addPlugin $name kubernetes true v11.11.11
-    addGroup vmware tkg v11.11.11 $name kubernetes v11.11.11
+    addGroup vmware tkg default v11.11.11 $name kubernetes v11.11.11
 done
 
 for name in ${tmcPlugins[*]}; do
     addPlugin $name mission-control true v11.11.11
-    addGroup vmware tmc v11.11.11 $name mission-control v11.11.11
+    addGroup vmware tmc tmc-user v11.11.11 $name mission-control v11.11.11
 done
 
 # Push sanbox inventory file
@@ -258,14 +259,14 @@ cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 # Create a new version of the plugins for the sandbox repo
 for name in ${k8sPlugins[*]}; do
     addPlugin $name kubernetes true v22.22.22
-    addGroup vmware tkg v22.22.22 $name kubernetes v22.22.22
+    addGroup vmware tkg default v22.22.22 $name kubernetes v22.22.22
     # Redefine a group that exists in the central repo
-    addGroup vmware tkg v9.9.9 $name kubernetes v22.22.22
+    addGroup vmware tkg default v9.9.9 $name kubernetes v22.22.22
 done
 
 for name in ${tmcPlugins[*]}; do
     addPlugin $name mission-control true v22.22.22
-    addGroup vmware tmc v22.22.22 $name mission-control v22.22.22
+    addGroup vmware tmc tmc-user v22.22.22 $name mission-control v22.22.22
 done
 
 # Push sandbox inventory file
@@ -289,15 +290,15 @@ done
 for name in ${k8sPlugins[0]}; do
     addPlugin $name kubernetes true v0.0.1
     addPlugin $name kubernetes true v9.9.9
-    addGroup vmware tkg v0.0.1 $name kubernetes v0.0.1
-    addGroup vmware tkg v9.9.9 $name kubernetes v9.9.9
+    addGroup vmware tkg default v0.0.1 $name kubernetes v0.0.1
+    addGroup vmware tkg default v9.9.9 $name kubernetes v9.9.9
 done
 
 for name in ${tmcPlugins[0]}; do
     addPlugin $name mission-control true v0.0.1
     addPlugin $name mission-control true v9.9.9
-    addGroup vmware tmc v0.0.1 $name mission-control v0.0.1
-    addGroup vmware tmc v9.9.9 $name mission-control v9.9.9
+    addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1
+    addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
 done
 
 # Push airgapped inventory file
@@ -321,15 +322,15 @@ done
 for name in ${k8sPlugins[*]}; do
     addPlugin $name kubernetes true v0.0.1
     addPlugin $name kubernetes true v9.9.9
-    addGroup vmware tkg v0.0.1 $name kubernetes v0.0.1
-    addGroup vmware tkg v9.9.9 $name kubernetes v9.9.9
+    addGroup vmware tkg default v0.0.1 $name kubernetes v0.0.1
+    addGroup vmware tkg default v9.9.9 $name kubernetes v9.9.9
 done
 
 for name in ${tmcPlugins[*]}; do
     addPlugin $name mission-control true v0.0.1
     addPlugin $name mission-control true v9.9.9
-    addGroup vmware tmc v0.0.1 $name mission-control v0.0.1
-    addGroup vmware tmc v9.9.9 $name mission-control v9.9.9
+    addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1
+    addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
 done
 
 # Push airgapped inventory file

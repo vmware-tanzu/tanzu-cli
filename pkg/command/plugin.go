@@ -68,7 +68,7 @@ func newPluginCmd() *cobra.Command {
 			// so let's panic so we notice immediately.
 			panic(err)
 		}
-		installPluginCmd.Flags().StringVar(&group, "group", "", "install the plugins specified in a plugin group")
+		installPluginCmd.Flags().StringVar(&group, "group", "", "install the plugins specified by a plugin-group version")
 	}
 
 	describePluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
@@ -295,7 +295,24 @@ func newInstallPluginCmd() *cobra.Command {
 			return nil
 		},
 	}
+	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
+		installCmd.Example = `
+    # Install all plugins of the vmware-tkg/default plugin group version v2.1.0
+    tanzu plugin install --group vmware-tkg/default:v2.1.0
 
+    # Install all plugins of the latest version of the vmware-tkg/default plugin group
+    tanzu plugin install --group vmware-tkg/default
+
+    # Install the latest version of plugin "myPlugin"
+	# If the plugin exists for more than one target, an error will be thrown
+    tanzu plugin install myPlugin
+
+    # Install the latest version of plugin "myPlugin" for target kubernetes
+    tanzu plugin install myPlugin --target k8s
+
+    # Install version v1.0.0 of plugin "myPlugin" 
+    tanzu plugin install myPlugin --version v1.0.0`
+	}
 	return installCmd
 }
 

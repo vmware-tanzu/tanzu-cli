@@ -47,12 +47,12 @@ const (
 	pluginOrderClause = "ORDER BY PluginName,Target,Version"
 
 	// groupSelectClause is the SELECT section of the query used to extract plugin groups from the PluginGroups table
-	groupSelectClause = "SELECT Vendor,Publisher,GroupName,PluginName,Target,Version,Mandatory,Hidden FROM PluginGroups"
+	groupSelectClause = "SELECT Vendor,Publisher,GroupName,GroupVersion,Description,PluginName,Target,PluginVersion,Mandatory,Hidden FROM PluginGroups"
 
 	// groupOrderClause is the ORDER section of the SQL query to be used when querying the inventory DB for groups.
 	// It MUST be used, as the order of the results is required by the functions processing the results.
 	// The column order must also match the order used in getGroupNextRow().
-	groupOrderClause = "ORDER by Vendor,Publisher,GroupName,PluginName"
+	groupOrderClause = "ORDER by Vendor,Publisher,GroupName,GroupVersion,PluginName,Target"
 )
 
 // Structure of each row of the PluginBinaries table within the SQLite database
@@ -73,14 +73,16 @@ type pluginDBRow struct {
 
 // Structure of each row of the PluginGroups table within the SQLite database
 type groupDBRow struct {
-	vendor     string
-	publisher  string
-	groupName  string
-	pluginName string
-	target     string
-	version    string
-	mandatory  string
-	hidden     string
+	vendor        string
+	publisher     string
+	groupName     string
+	groupVersion  string
+	description   string
+	pluginName    string
+	target        string
+	pluginVersion string
+	mandatory     string
+	hidden        string
 }
 
 // NewSQLiteInventory returns a new PluginInventory connected to the data found at 'inventoryFile'.
@@ -133,6 +135,26 @@ func (b *SQLiteInventory) GetPlugins(filter *PluginInventoryFilter) ([]*PluginIn
 }
 
 func (b *SQLiteInventory) GetPluginGroups(filter PluginGroupFilter) ([]*PluginGroup, error) {
+	// If the filter requires the latest version, we first look for it amongst all versions.
+	if filter.Version == cli.VersionLatest {
+		if filter.Name == "" {
+			return nil, fmt.Errorf("cannot get the recommended version of a group without a name")
+		}
+		// Ask for all versions
+		filter.Version = ""
+		groups, err := b.getGroupsFromDB(filter)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(groups) == 0 {
+			return groups, nil
+		}
+
+		// We can now use the RecommendedVersion field which was filled when parsing the DB.
+		filter.Version = groups[0].RecommendedVersion
+	}
+
 	return b.getGroupsFromDB(filter)
 }
 
@@ -330,6 +352,9 @@ func createGroupWhereClause(filter PluginGroupFilter) (string, error) {
 	if filter.Name != "" {
 		whereClause = fmt.Sprintf("%s GroupName='%s' AND", whereClause, filter.Name)
 	}
+	if filter.Version != "" {
+		whereClause = fmt.Sprintf("%s GroupVersion='%s' AND", whereClause, filter.Version)
+	}
 	if !filter.IncludeHidden {
 		// Unless we want to also get the hidden plugins, we only request the ones that are not hidden
 		whereClause = fmt.Sprintf("%s Hidden='false' AND", whereClause)
@@ -355,8 +380,10 @@ func createGroupWhereClause(filter PluginGroupFilter) (string, error) {
 // of PluginGroups based on the data extracted.
 func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup, error) {
 	currentGroupID := ""
+	currentVersion := ""
 	var currentGroup *PluginGroup
 	var allGroups []*PluginGroup
+	var versions map[string][]*PluginGroupPluginEntry
 	var pluginsOfGroup []*PluginGroupPluginEntry
 
 	for rows.Next() {
@@ -365,33 +392,52 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 			return allGroups, err
 		}
 
-		hidden, _ := strconv.ParseBool(row.hidden)
 		mandatory, _ := strconv.ParseBool(row.mandatory)
-		groupIDFromRow := fmt.Sprintf("%s-%s/%s", row.vendor, row.publisher, row.groupName)
+		groupIDFromRow := PluginGroupToID(&PluginGroup{
+			Vendor:    row.vendor,
+			Publisher: row.publisher,
+			Name:      row.groupName})
+
 		if currentGroupID != groupIDFromRow {
 			// Found a new group.
 			// Store the current one in the array and prepare the new one.
 			if currentGroup != nil {
-				currentGroup.Plugins = pluginsOfGroup
-				pluginsOfGroup = nil
-				allGroups = append(allGroups, currentGroup)
+				versions[currentVersion] = pluginsOfGroup
+				pluginsOfGroup = []*PluginGroupPluginEntry{}
+				currentGroup.Versions = versions
+				allGroups = appendGroup(allGroups, currentGroup)
 			}
 			currentGroupID = groupIDFromRow
 
 			currentGroup = &PluginGroup{
-				Vendor:    row.vendor,
-				Publisher: row.publisher,
-				Name:      row.groupName,
-				Hidden:    hidden,
-				Plugins:   nil,
+				Vendor:      row.vendor,
+				Publisher:   row.publisher,
+				Name:        row.groupName,
+				Description: row.description,
 			}
+			currentVersion = ""
+			versions = make(map[string][]*PluginGroupPluginEntry, 0)
+		}
+
+		// Check if we have a new version
+		if currentVersion != row.groupVersion {
+			// We know this is a new version of our current group since we have
+			// requested the list of plugins from the database ordered by version.
+
+			// Store the list of plugins for the previous version then start building
+			// the plugins list for the new version.
+			if currentVersion != "" {
+				versions[currentVersion] = pluginsOfGroup
+				pluginsOfGroup = []*PluginGroupPluginEntry{}
+			}
+			currentVersion = row.groupVersion
 		}
 
 		pge := PluginGroupPluginEntry{
 			PluginIdentifier: PluginIdentifier{
 				Name:    row.pluginName,
 				Target:  configtypes.StringToTarget(row.target),
-				Version: row.version,
+				Version: row.pluginVersion,
 			},
 			Mandatory: mandatory,
 		}
@@ -400,8 +446,9 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 	}
 	// Don't forget to store the very last group we were building
 	if currentGroup != nil {
-		currentGroup.Plugins = pluginsOfGroup
-		allGroups = append(allGroups, currentGroup)
+		versions[currentVersion] = pluginsOfGroup
+		currentGroup.Versions = versions
+		allGroups = appendGroup(allGroups, currentGroup)
 	}
 	return allGroups, rows.Err()
 }
@@ -437,9 +484,11 @@ func getGroupNextRow(rows *sql.Rows) (*groupDBRow, error) {
 		&row.vendor,
 		&row.publisher,
 		&row.groupName,
+		&row.groupVersion,
+		&row.description,
 		&row.pluginName,
 		&row.target,
-		&row.version,
+		&row.pluginVersion,
 		&row.mandatory,
 		&row.hidden,
 	)
@@ -464,6 +513,26 @@ func appendPlugin(allPlugins []*PluginInventoryEntry, plugin *PluginInventoryEnt
 	}
 	allPlugins = append(allPlugins, plugin)
 	return allPlugins
+}
+
+// appendGroup appends a PluginGroup to the specified array.
+// This function needs to be used to do post-processing on the new group before storing it.
+func appendGroup(allGroups []*PluginGroup, group *PluginGroup) []*PluginGroup {
+	// Now that we are done gathering the information for the plugin
+	// we need to compute the recommendedVersion if it wasn't provided
+	// by the database
+	if group.RecommendedVersion == "" && len(group.Versions) > 0 {
+		var versions []string
+		for v := range group.Versions {
+			versions = append(versions, v)
+		}
+		if err := utils.SortVersions(versions); err != nil {
+			fmt.Fprintf(os.Stderr, "error parsing versions for group %s: %v\n", PluginGroupToID(group), err)
+		}
+		group.RecommendedVersion = versions[len(versions)-1]
+	}
+	allGroups = append(allGroups, group)
+	return allGroups
 }
 
 // CreateSchema creates table schemas to the provided database.
@@ -526,37 +595,54 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 	}
 	defer db.Close()
 
+	description := pg.Description
+	if description == "" {
+		// A description is required unless the plugin already exists in the DB. Let's check.
+		existingGroup, err := b.GetPluginGroups(PluginGroupFilter{Vendor: pg.Vendor, Publisher: pg.Publisher, Name: pg.Name})
+		if err != nil || len(existingGroup) == 0 {
+			return fmt.Errorf("a description is required when creating a brand new plugin group")
+		}
+		// Re-use the same description
+		description = existingGroup[0].Description
+	}
+
 	if override {
-		_, err = db.Exec("DELETE FROM PluginGroups WHERE GroupName = ? AND Publisher = ? AND Vendor = ? ;", pg.Name, pg.Publisher, pg.Vendor)
-		if err != nil {
-			return errors.Wrapf(err, "unable to delete existing plugin-group")
+		for version := range pg.Versions {
+			_, err = db.Exec("DELETE FROM PluginGroups WHERE GroupName = ? AND Publisher = ? AND Vendor = ? AND GroupVersion = ?;", pg.Name, pg.Publisher, pg.Vendor, version)
+			if err != nil {
+				return errors.Wrapf(err, "unable to delete plugin-group version: '%s:%s'", PluginGroupToID(pg), version)
+			}
 		}
 	}
 
 	allowHiddenPlugins, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting))
-	for _, pi := range pg.Plugins {
-		// Verify that the plugin exists in the database before inserting it to the PluginGroup table.
-		// Allow including hidden plugins if the TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY is properly set.
-		pie, err := b.GetPlugins(&PluginInventoryFilter{Name: pi.Name, Target: pi.Target, Version: pi.Version, IncludeHidden: allowHiddenPlugins})
-		if err != nil {
-			return errors.Wrap(err, "error while verifying existence of the plugin in the database")
-		} else if len(pie) == 0 {
-			return errors.Errorf("specified plugin 'name:%s', 'target:%s', 'version:%s' is not present in the database", pi.Name, pi.Target, pi.Version)
-		}
+	for version, plugins := range pg.Versions {
+		for _, pi := range plugins {
+			// Verify that the plugin exists in the database before inserting it to the PluginGroup table.
+			// Allow including hidden plugins if the TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY is properly set.
+			pie, err := b.GetPlugins(&PluginInventoryFilter{Name: pi.Name, Target: pi.Target, Version: pi.Version, IncludeHidden: allowHiddenPlugins})
+			if err != nil {
+				return errors.Wrap(err, "error while verifying existence of the plugin in the database")
+			} else if len(pie) == 0 {
+				return errors.Errorf("specified plugin 'name:%s', 'target:%s', 'version:%s' is not present in the database", pi.Name, pi.Target, pi.Version)
+			}
 
-		row := groupDBRow{
-			vendor:     pg.Vendor,
-			publisher:  pg.Publisher,
-			groupName:  pg.Name,
-			pluginName: pi.Name,
-			target:     string(pi.Target),
-			version:    pi.Version,
-			mandatory:  strconv.FormatBool(pi.Mandatory),
-			hidden:     strconv.FormatBool(pg.Hidden),
-		}
-		_, err = db.Exec("INSERT INTO PluginGroups VALUES(?,?,?,?,?,?,?,?);", row.vendor, row.publisher, row.groupName, row.pluginName, row.target, row.version, row.mandatory, row.hidden)
-		if err != nil {
-			return errors.Wrapf(err, "unable to insert plugin-group row %v", row)
+			row := groupDBRow{
+				vendor:        pg.Vendor,
+				publisher:     pg.Publisher,
+				groupName:     pg.Name,
+				groupVersion:  version,
+				description:   description,
+				pluginName:    pi.Name,
+				target:        string(pi.Target),
+				pluginVersion: pi.Version,
+				mandatory:     strconv.FormatBool(pi.Mandatory),
+				hidden:        strconv.FormatBool(pg.Hidden),
+			}
+			_, err = db.Exec("INSERT INTO PluginGroups VALUES(?,?,?,?,?,?,?,?,?,?);", row.vendor, row.publisher, row.groupName, row.groupVersion, row.description, row.pluginName, row.target, row.pluginVersion, row.mandatory, row.hidden)
+			if err != nil {
+				return errors.Wrapf(err, "unable to insert plugin-group row %v", row)
+			}
 		}
 	}
 	return nil
@@ -590,14 +676,15 @@ func (b *SQLiteInventory) UpdatePluginGroupActivationState(pg *PluginGroup) erro
 	}
 	defer db.Close()
 
-	result, err := db.Exec("UPDATE PluginGroups SET hidden = ? WHERE GroupName = ? AND Publisher = ? AND Vendor = ?;", strconv.FormatBool(pg.Hidden), pg.Name, pg.Publisher, pg.Vendor)
-	if err != nil {
-		return errors.Wrapf(err, "unable to update plugin-group %v", pg.Name)
+	for version := range pg.Versions {
+		result, err := db.Exec("UPDATE PluginGroups SET hidden = ? WHERE GroupName = ? AND Publisher = ? AND Vendor = ? AND GroupVersion = ? ;", strconv.FormatBool(pg.Hidden), pg.Name, pg.Publisher, pg.Vendor, version)
+		if err != nil {
+			return errors.Wrapf(err, "unable to update plugin-group '%s:%s'", PluginGroupToID(pg), version)
+		}
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected == 0 {
+			return errors.Errorf("unable to update plugin-group '%s:%s'. This might be possible because the provided plugin-group version doesn't exists", PluginGroupToID(pg), version)
+		}
 	}
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
-		return errors.Errorf("unable to update plugin-group '%s-%s/%s'. This might be possible because the provided plugin-group doesn't exists", pg.Vendor, pg.Publisher, pg.Name)
-	}
-
 	return nil
 }

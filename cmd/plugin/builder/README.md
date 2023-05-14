@@ -301,6 +301,7 @@ Below are the flags available with the `tanzu builder inventory plugin-group add
 
 ```txt
       --deactivate                          mark plugin-group as deactivated
+      --description string                  a description for the plugin-group
   -h, --help                                help for add
       --manifest string                     manifest file specifying plugin-group details that needs to be processed
       --name string                         name of the plugin-group
@@ -309,13 +310,14 @@ Below are the flags available with the `tanzu builder inventory plugin-group add
       --publisher string                    name of the publisher
       --repository string                   repository to publish plugin inventory image
       --vendor string                       name of the vendor
+      --version string                      version of the plugin-group
 ```
 
 Below are some examples:
 
 ```shell
   # Add plugin-group entries to the inventory database based on the specified plugin-group manifest file
-  tanzu builder inventory plugin-group add --name v1.0.0 --repository project-stg.registry.vmware.com/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg --manifest ./artifacts/plugins/plugin_group_manifest.yaml
+  tanzu builder inventory plugin-group add --name default --version v1.0.0 --repository project-stg.registry.vmware.com/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg --manifest ./artifacts/plugins/plugin_group_manifest.yaml --description "Plugins required by Tanzu Kubernetes Grid"
 ```
 
 Here the `--manifest` flag is used to provide metadata about the plugin-group including which plugins to associate with the plugin-group.
@@ -343,19 +345,20 @@ Below are the flags available with `tanzu builder inventory plugin-group activat
 
 ```txt
   -h, --help                                help for activate
-      --name string                         name of the plugin group
+      --name string                         name of the plugin-group
       --plugin-inventory-image-tag string   tag to which plugin inventory image needs to be published (default "latest")
       --publisher string                    name of the publisher
       --repository string                   repository to publish plugin inventory image
       --vendor string                       name of the vendor
+      --version string                      version of the plugin-group
 ```
 
 Below are some examples:
 
 ```shell
   # Activate plugin-group in the inventory database
-  tanzu builder inventory plugin-group activate --name v1.0.0 --repository localhost:5002/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg1
+  tanzu builder inventory plugin-group activate --name default --version v1.0.0 --repository localhost:5002/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg1
 
   # Dectivate plugin-group in the inventory database
-  tanzu builder inventory plugin-group deactivate --name v1.0.0 --repository localhost:5002/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg1
+  tanzu builder inventory plugin-group deactivate --name default --version v1.0.0 --repository localhost:5002/test/v1/tanzu-cli/plugins --vendor vmware --publisher tkg1
 ```

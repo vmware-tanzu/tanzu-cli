@@ -74,7 +74,7 @@ func (b *SQLiteInventoryMetadata) InsertPluginGroupIdentifier(pgi *PluginGroupId
 	}
 	defer db.Close()
 
-	_, err = db.Exec("INSERT INTO AvailablePluginGroups VALUES(?,?,?);", pgi.Vendor, pgi.Publisher, pgi.Name)
+	_, err = db.Exec("INSERT INTO AvailablePluginGroups VALUES(?,?,?,?);", pgi.Vendor, pgi.Publisher, pgi.Name, pgi.Version)
 	if err != nil {
 		return errors.Wrapf(err, "unable to insert plugin group identifier %v", pgi)
 	}
@@ -91,7 +91,7 @@ func (b *SQLiteInventoryMetadata) MergeInventoryMetadataDatabase(additionalMetad
 	defer db.Close()
 
 	mergeQuery := `ATTACH ? as additionalMetadataDB;
-	INSERT OR REPLACE INTO AvailablePluginGroups SELECT Vendor,Publisher,GroupName FROM additionalMetadataDB.AvailablePluginGroups;
+	INSERT OR REPLACE INTO AvailablePluginGroups SELECT Vendor,Publisher,GroupName,GroupVersion FROM additionalMetadataDB.AvailablePluginGroups;
 	INSERT OR REPLACE INTO AvailablePluginBinaries SELECT PluginName,Target,Version FROM additionalMetadataDB.AvailablePluginBinaries;`
 
 	_, err = db.Exec(mergeQuery, additionalMetadataDBFilePath)
@@ -112,7 +112,7 @@ func (b *SQLiteInventoryMetadata) UpdatePluginInventoryDatabase(pluginInventoryD
 	defer db.Close()
 
 	updateQuery := `ATTACH ? as piDB;
-	DELETE FROM piDB.PluginGroups WHERE ROWID IN (SELECT a.ROWID FROM piDB.PluginGroups a LEFT JOIN AvailablePluginGroups b ON b.Vendor = a.Vendor AND b.Publisher = a.Publisher AND b.GroupName = a.GroupName WHERE b.GroupName IS null);
+	DELETE FROM piDB.PluginGroups WHERE ROWID IN (SELECT a.ROWID FROM piDB.PluginGroups a LEFT JOIN AvailablePluginGroups b ON b.Vendor = a.Vendor AND b.Publisher = a.Publisher AND b.GroupName = a.GroupName AND b.GroupVersion = a.GroupVersion WHERE b.GroupVersion IS null);
 	DELETE FROM piDB.PluginBinaries WHERE ROWID IN (SELECT a.ROWID FROM piDB.PluginBinaries a LEFT JOIN AvailablePluginBinaries b ON b.PluginName = a.PluginName AND b.Target = a.Target AND b.Version = a.Version WHERE b.PluginName IS null);`
 
 	_, err = db.Exec(updateQuery, pluginInventoryDBFilePath)

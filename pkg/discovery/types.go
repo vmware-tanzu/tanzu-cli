@@ -7,7 +7,6 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 )
 
 // Discovered defines discovered plugin resource
@@ -74,12 +73,4 @@ func (d DiscoveredSorter) Less(i, j int) bool {
 		return d[i].Target < d[j].Target
 	}
 	return d[i].Name < d[j].Name
-}
-
-type DiscoveredPluginGroups struct {
-	// Source is the name of the discovery source from where the plugin
-	// group was discovered.
-	Source string
-	// Groups is the list of plugin groups discovered in Source
-	Groups []*plugininventory.PluginGroup
 }

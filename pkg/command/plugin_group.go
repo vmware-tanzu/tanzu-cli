@@ -11,12 +11,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 var (
@@ -26,8 +26,8 @@ var (
 func newPluginGroupCmd() *cobra.Command {
 	var pluginGroupCmd = &cobra.Command{
 		Use:   "group",
-		Short: "Manage plugin groups",
-		Long:  "Manage plugin groups. A plugin group provides a list of plugins name/version combinations which can be installed in one step.",
+		Short: "Manage plugin-groups",
+		Long:  "Manage plugin-groups. A plugin-group provides a list of plugins name/version combinations which can be installed in one step.",
 	}
 	pluginGroupCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 
@@ -41,8 +41,8 @@ func newPluginGroupCmd() *cobra.Command {
 func newSearchCmd() *cobra.Command {
 	var searchCmd = &cobra.Command{
 		Use:   "search",
-		Short: "Search for available plugin groups",
-		Long:  "Search from the list of available plugin groups.  A plugin group provides a list of plugin name/version combinations which can be installed in one step.",
+		Short: "Search for available plugin-groups",
+		Long:  "Search from the list of available plugin-groups.  A plugin-group provides a list of plugin name/version combinations which can be installed in one step.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var criteria *discovery.GroupDiscoveryCriteria
 			if groupID != "" {
@@ -57,49 +57,88 @@ func newSearchCmd() *cobra.Command {
 					Name:      groupIdentifier.Name,
 				}
 			}
-			groupsByDiscovery, err := pluginmanager.DiscoverPluginGroups(criteria)
+			groups, err := pluginmanager.DiscoverPluginGroups(criteria)
 			if err != nil {
 				return err
 			}
 
-			displayGroupsFound(groupsByDiscovery, cmd.OutOrStdout())
-
+			if !showDetails {
+				displayGroupsFound(groups, cmd.OutOrStdout())
+			} else {
+				displayGroupDetails(groups, cmd.OutOrStdout())
+			}
 			return nil
 		},
 	}
 
 	f := searchCmd.Flags()
-	f.StringVarP(&groupID, "name", "n", "", "limit the search to the plugin group with the specified name")
+	f.StringVarP(&groupID, "name", "n", "", "limit the search to the plugin-group with the specified name")
+	f.BoolVar(&showDetails, "show-details", false, "show the details of the specified group, including all available versions")
 	f.StringVarP(&outputFormat, "output", "o", "", "output format (yaml|json|table)")
 
 	return searchCmd
 }
 
-func displayGroupsFound(groupsByDiscovery []*discovery.DiscoveredPluginGroups, writer io.Writer) {
-	output := component.NewOutputWriter(writer, outputFormat, "group")
+func displayGroupsFound(groups []*plugininventory.PluginGroup, writer io.Writer) {
+	output := component.NewOutputWriter(writer, outputFormat, "group", "description", "latest")
 
-	discoveriesByGroupID := make(map[string][]string)
-	for _, discAndGroups := range groupsByDiscovery {
-		for _, group := range discAndGroups.Groups {
-			id := plugininventory.PluginGroupToID(group)
-			output.AddRow(id)
-			discoveriesByGroupID[id] = append(discoveriesByGroupID[id], discAndGroups.Source)
-		}
-	}
-
-	// Check if one or more groups was discovered in different discoveries.
-	var duplicateMsg string
-	for id, discoveries := range discoveriesByGroupID {
-		if len(discoveries) > 1 {
-			// This group was found in multiple discoveries.
-			if duplicateMsg != "" {
-				duplicateMsg = fmt.Sprintf("%s, ", duplicateMsg)
-			}
-			duplicateMsg = fmt.Sprintf("%s%s was found in more than one source: %v", duplicateMsg, id, discoveries)
-		}
-	}
-	if duplicateMsg != "" {
-		log.Warning(duplicateMsg)
+	for _, pg := range groups {
+		id := plugininventory.PluginGroupToID(pg)
+		output.AddRow(id, pg.Description, pg.RecommendedVersion)
 	}
 	output.Render()
+}
+
+func displayGroupDetails(groups []*plugininventory.PluginGroup, writer io.Writer) {
+	// Create a specific object format so it gets printed properly in yaml or json
+	type detailedObject struct {
+		Name        string
+		Description string
+		Latest      string
+		Versions    []string
+	}
+
+	// For the table format, we will use individual yaml output for each group
+	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
+		first := true
+		for _, pg := range groups {
+			if !first {
+				fmt.Println()
+			}
+			first = false
+			var supportedVersions []string
+			for version := range pg.Versions {
+				supportedVersions = append(supportedVersions, version)
+			}
+			_ = utils.SortVersions(supportedVersions)
+			details := detailedObject{
+				Name:        plugininventory.PluginGroupToID(pg),
+				Description: pg.Description,
+				Latest:      pg.RecommendedVersion,
+				Versions:    supportedVersions,
+			}
+			component.NewObjectWriter(writer, string(component.YAMLOutputType), details).Render()
+		}
+
+		return
+	}
+
+	// Non-table format.
+	// Here we use an objectWriter so that the array of versions is printed as an array
+	// and not a long string.
+	var details []detailedObject
+	for _, pg := range groups {
+		var supportedVersions []string
+		for version := range pg.Versions {
+			supportedVersions = append(supportedVersions, version)
+		}
+		_ = utils.SortVersions(supportedVersions)
+		details = append(details, detailedObject{
+			Name:        plugininventory.PluginGroupToID(pg),
+			Description: pg.Description,
+			Latest:      pg.RecommendedVersion,
+			Versions:    supportedVersions,
+		})
+	}
+	component.NewObjectWriter(writer, outputFormat, details).Render()
 }

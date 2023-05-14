@@ -22,7 +22,9 @@ type PluginSearch struct {
 }
 
 type PluginGroup struct {
-	Group string `json:"group"`
+	Group       string `json:"group"`
+	Description string `json:"description"`
+	Latest      string `json:"latest"`
 }
 
 type PluginSourceInfo struct {

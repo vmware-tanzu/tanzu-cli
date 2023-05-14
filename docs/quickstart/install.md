@@ -61,8 +61,8 @@ This will be fixed very soon.
 sudo apt-get update
 sudo apt-get install -y ca-certificates
 echo "deb https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
-sudo apt update --allow-insecure-repositories
-sudo apt-get install tanzu-cli
+sudo apt-get update --allow-insecure-repositories
+sudo apt-get install -y tanzu-cli --allow-unauthenticated
 ```
 
 ### From yum/dnf (RHEL)
@@ -143,16 +143,31 @@ the following command:
 tanzu plugin download-bundle --to-tar /tmp/plugin_bundle_complete.tar.gz
 ```
 
-However, If you want to just migrate plugins within specific plugin groups
-(e.g. `vmware-tkg/default:v2.1.0`) you can run the below command to download
-the plugin bundle containing only plugins from specified groups:
+However, if you only want to migrate plugins within a specific plugin group version
+(e.g. `vmware-tkg/default:v2.1.0`) you can run the following command to download
+the plugin bundle containing only the plugins from specified group version:
 
 ```sh
 tanzu plugin download-bundle --group vmware-tkg/default:v2.1.0 --to-tar /tmp/plugin_bundle_tkg_v2_1_0.tar.gz
 ```
 
-To migrate plugins from the specific plugin repository and not use the default
-plugin repository you can provide a `--image` flag with the above command. Example:
+Note that multiple group versions can be specified at once.  For example:
+
+```sh
+tanzu plugin download-bundle --group vmware-tkg/default:v2.1.0,vmware-tkg/default:v1.6.0 --to-tar /tmp/plugin_bundle_tkg_v2_1_0.tar.gz
+
+# or, if you prefer repeating the --group flag
+tanzu plugin download-bundle --group vmware-tkg/default:v2.1.0 --group vmware-tkg/default:v1.6.0 --to-tar /tmp/plugin_bundle_tkg_v2_1_0.tar.gz
+```
+
+If you do not specify a group's version, the latest version available for the group will be used:
+
+```sh
+tanzu plugin download-bundle --group vmware-tkg/default --to-tar /tmp/plugin_bundle_tkg_latest.tar.gz
+```
+
+To migrate plugins from a specific plugin repository and not use the default
+plugin repository you can provide a `--image` flag with the above command, for example:
 
 ```sh
 tanzu plugin download-bundle
