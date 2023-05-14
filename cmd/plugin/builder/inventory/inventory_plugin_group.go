@@ -25,6 +25,8 @@ type InventoryPluginGroupUpdateOptions struct {
 	Publisher               string
 	Vendor                  string
 	GroupName               string
+	GroupVersion            string
+	Description             string
 	DeactivatePluginGroup   bool
 	Override                bool
 
@@ -75,11 +77,12 @@ func (ipuo *InventoryPluginGroupUpdateOptions) PluginGroupAdd() error {
 
 func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*plugininventory.PluginGroup, error) {
 	pg := plugininventory.PluginGroup{
-		Vendor:    ipuo.Vendor,
-		Publisher: ipuo.Publisher,
-		Name:      ipuo.GroupName,
-		Hidden:    ipuo.DeactivatePluginGroup,
-		Plugins:   make([]*plugininventory.PluginGroupPluginEntry, 0),
+		Vendor:      ipuo.Vendor,
+		Publisher:   ipuo.Publisher,
+		Name:        ipuo.GroupName,
+		Description: ipuo.Description,
+		Hidden:      ipuo.DeactivatePluginGroup,
+		Versions:    make(map[string][]*plugininventory.PluginGroupPluginEntry, 0),
 	}
 
 	pluginGroupManifest, err := helpers.ReadPluginGroupManifest(ipuo.PluginGroupManifestFile)
@@ -87,6 +90,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*pl
 		return nil, err
 	}
 
+	var plugins []*plugininventory.PluginGroupPluginEntry
 	for _, plugin := range pluginGroupManifest.Plugins {
 		pge := plugininventory.PluginGroupPluginEntry{
 			PluginIdentifier: plugininventory.PluginIdentifier{
@@ -96,8 +100,9 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*pl
 			},
 			Mandatory: !plugin.IsContextScoped,
 		}
-		pg.Plugins = append(pg.Plugins, &pge)
+		plugins = append(plugins, &pge)
 	}
+	pg.Versions[ipuo.GroupVersion] = plugins
 
 	return &pg, nil
 }
@@ -126,6 +131,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) UpdatePluginGroupActivationState(
 		Publisher: ipuo.Publisher,
 		Name:      ipuo.GroupName,
 		Hidden:    ipuo.DeactivatePluginGroup,
+		Versions:  map[string][]*plugininventory.PluginGroupPluginEntry{ipuo.GroupVersion: {}},
 	}
 
 	// Insert PluginGroup to the database

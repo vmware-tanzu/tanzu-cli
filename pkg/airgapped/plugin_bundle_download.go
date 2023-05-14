@@ -14,6 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -122,8 +123,8 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 	} else {
 		// If groups were provided as argument select only provided plugin groups and
 		// plugins available from the specified plugin groups
-		for _, groupName := range o.Groups {
-			pluginGroups, pluginEntries, err := o.getAllPluginGroupsAndPluginEntriesFromPluginGroupName(groupName, pi)
+		for _, groupID := range o.Groups {
+			pluginGroups, pluginEntries, err := o.getAllPluginGroupsAndPluginEntriesFromPluginGroupVersion(groupID, pi)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -134,16 +135,20 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 	return selectedPluginEntries, selectedPluginGroups, nil
 }
 
-func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPluginGroupName(pgName string, pi plugininventory.PluginInventory) ([]*plugininventory.PluginGroup, []*plugininventory.PluginInventoryEntry, error) {
-	pgi := plugininventory.PluginGroupIdentifierFromID(pgName)
+func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPluginGroupVersion(pgID string, pi plugininventory.PluginInventory) ([]*plugininventory.PluginGroup, []*plugininventory.PluginInventoryEntry, error) {
+	pgi := plugininventory.PluginGroupIdentifierFromID(pgID)
 	if pgi == nil {
-		return nil, nil, errors.Errorf("incorrect plugin group %q specified", pgName)
+		return nil, nil, errors.Errorf("incorrect plugin group %q specified", pgID)
+	}
+	if pgi.Version == "" {
+		pgi.Version = cli.VersionLatest
 	}
 	pgFilter := plugininventory.PluginGroupFilter{
 		IncludeHidden: true, // Include the hidden plugin groups during plugin migration
 		Vendor:        pgi.Vendor,
 		Publisher:     pgi.Publisher,
 		Name:          pgi.Name,
+		Version:       pgi.Version,
 	}
 	pluginGroups, err := pi.GetPluginGroups(pgFilter)
 	if err != nil {
@@ -151,23 +156,25 @@ func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPlug
 	}
 
 	if len(pluginGroups) == 0 {
-		return nil, nil, errors.Errorf("incorrect plugin group %q specified", pgName)
+		return nil, nil, errors.Errorf("incorrect plugin group %q specified", pgID)
 	}
 
 	var allPluginEntries []*plugininventory.PluginInventoryEntry
 	for _, pg := range pluginGroups {
-		for _, p := range pg.Plugins {
-			pif := &plugininventory.PluginInventoryFilter{
-				Name:          p.Name,
-				Target:        p.Target,
-				Version:       p.Version,
-				IncludeHidden: true, // Include the hidden plugins during plugin migration
+		for _, plugins := range pg.Versions {
+			for _, p := range plugins {
+				pif := &plugininventory.PluginInventoryFilter{
+					Name:          p.Name,
+					Target:        p.Target,
+					Version:       p.Version,
+					IncludeHidden: true, // Include the hidden plugins during plugin migration
+				}
+				pluginEntries, err := pi.GetPlugins(pif)
+				if err != nil {
+					return nil, nil, errors.Wrapf(err, "unable to get plugins in plugin group %v", plugininventory.PluginGroupToID(pg))
+				}
+				allPluginEntries = append(allPluginEntries, pluginEntries...)
 			}
-			pluginEntries, err := pi.GetPlugins(pif)
-			if err != nil {
-				return nil, nil, errors.Wrapf(err, "unable to get plugins in plugin group %v", plugininventory.PluginGroupToID(pg))
-			}
-			allPluginEntries = append(allPluginEntries, pluginEntries...)
 		}
 	}
 	return pluginGroups, allPluginEntries, nil
@@ -280,9 +287,11 @@ func (o *DownloadPluginBundleOptions) savePluginInventoryMetadata(pgs []*plugini
 		}
 	}
 	for _, pg := range pgs {
-		err := inventoryMetadataDB.InsertPluginGroupIdentifier(&plugininventory.PluginGroupIdentifier{Vendor: pg.Vendor, Publisher: pg.Publisher, Name: pg.Name})
-		if err != nil {
-			return nil, err
+		for version := range pg.Versions {
+			err := inventoryMetadataDB.InsertPluginGroupIdentifier(&plugininventory.PluginGroupIdentifier{Vendor: pg.Vendor, Publisher: pg.Publisher, Name: pg.Name, Version: version})
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 

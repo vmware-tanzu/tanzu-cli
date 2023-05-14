@@ -31,8 +31,8 @@ type GroupDiscovery interface {
 	// Name of the discovery
 	Name() string
 
-	// GetAllGroups returns all plugin groups defined in the discovery
-	GetAllGroups() ([]*plugininventory.PluginGroup, error)
+	// GetGroups returns the plugin groups defined in the discovery
+	GetGroups() ([]*plugininventory.PluginGroup, error)
 }
 
 // PluginDiscoveryCriteria provides criteria to look for plugins
@@ -59,9 +59,8 @@ type GroupDiscoveryCriteria struct {
 	Publisher string
 	// Name of the group
 	Name string
-	// Version is the version for the plugin
-	// TODO(khouzam): add when we support group versions
-	// Version string
+	// Version is the version for the group
+	Version string
 }
 
 // CreateDiscoveryFromV1alpha1 creates discovery interface from v1alpha1 API

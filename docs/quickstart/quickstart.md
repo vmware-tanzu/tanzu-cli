@@ -60,16 +60,16 @@ To find out more about how to set up autocompletion for your specific shell, run
 
 ```console
 $ tanzu plugin group search
-  GROUP
-  vmware-tap/default:v1.4.0
-  vmware-tkg/default:v2.1.0
-  vmware-tmc/default:v0.0.1
+  GROUP                DESCRIPTION                             LATEST
+  vmware-tap/default   Plugins for Tanzu Application Platform  v1.4.0
+  vmware-tkg/default   Plugins for Tanzu Kubernetes Grid       v2.1.0
+  vmware-tmc/tmc-user  Plugins for Tanzu Mission-Control       v0.0.1
 ```
 
 ### Install all plugins in a group
 
 ```console
-$ tanzu plugin install all --group vmware-tkg/default:v2.1.0
+$ tanzu plugin install --group vmware-tkg/default:v2.1.0
 [i] Installing plugin 'isolated-cluster:v0.28.0' with target 'global'
 [i] Installing plugin 'management-cluster:v0.28.0' with target 'kubernetes'
 [i] Installing plugin 'package:v0.28.0' with target 'kubernetes'
@@ -80,8 +80,8 @@ $ tanzu plugin install all --group vmware-tkg/default:v2.1.0
 ```
 
 The above command fetches, validates and installs a set of plugins defined by
-the `vmware-tkg/default:v2.1.0` group, which in turn is required for using the TKG 2.1.0
-product.
+the `vmware-tkg/default:v2.1.0` group version, which in turn is required for
+using the TKG 2.1.0 product.
 
 ### Plugins are now installed and available for use
 
@@ -252,12 +252,12 @@ Given that these recommended plugin versions are synched automatically, the
 installed ones. To find other plugins available for installation, use
 `tanzu plugin search` instead.
 
-### discovery sources
+### Discovery sources
 
 Existing discovery sources configured using previous versions of the CLI will be
 ignored since the default plugin repository will be consulted.
 
-### using the legacy version of the CLI alongside the new Tanzu CLI
+### Using the legacy version of the CLI alongside the new Tanzu CLI
 
 If the user wishes to retain the use of the legacy CLI for whatever reason, it
 is the user's responsibility to ensure that the new CLI installation does not

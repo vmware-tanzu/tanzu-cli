@@ -44,8 +44,8 @@ TANZU_CLI_E2E_AIRGAPPED_REPO = localhost:6001/tanzu-cli/plugins/
 endif
 
 # Set the plugin group name for the plugins used to execute E2E test cases.
-E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_TMC ?= vmware-tmc/v9.9.9
-E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_K8S ?= vmware-tkg/v9.9.9
+E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_TMC ?= vmware-tmc/tmc-user:v9.9.9
+E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_K8S ?= vmware-tkg/default:v9.9.9
 
 .PHONY: e2e-cli-core-all ## Execute all CLI Core E2E Tests
 e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-plugin-compatibility-tests e2e-plugin-lifecycle-tests  e2e-plugin-sync-tmc e2e-plugin-sync-k8s e2e-context-tmc-tests e2e-context-k8s-tests e2e-airgapped-tests

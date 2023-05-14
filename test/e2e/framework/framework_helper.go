@@ -67,11 +67,11 @@ func LegacyPluginListToMap(pluginsList []*PluginInfo) map[string]*PluginInfo {
 	return m
 }
 
-// PluginGroupToMap converts the given slice of PluginGroups to map (PluginGroup name is the key) and PluginGroup is the value
+// PluginGroupToMap converts the given slice of PluginGroups to map (PluginGroup name:version is the key) and PluginGroup is the value
 func PluginGroupToMap(pluginGroups []*PluginGroup) map[string]*PluginGroup {
 	m := make(map[string]*PluginGroup)
 	for i := range pluginGroups {
-		m[(pluginGroups)[i].Group] = pluginGroups[i]
+		m[pluginGroups[i].Group+":"+pluginGroups[i].Latest] = pluginGroups[i]
 	}
 	return m
 }
@@ -191,19 +191,19 @@ func IsAllPluginGroupsExists(superList, subList []*PluginGroup) bool {
 // MapPluginsToPluginGroups takes the plugins info (output of: tanzu plugin search) and
 // plugins group info (output of: tanzu plugin group search),
 // maps the plugins to plugin group, plugin is mapped to plugin group based on plugin target
-// (kubernetes to tkg, mission-control to tmc) and version, group name would be vmware-<target>/<versions>
+// (kubernetes to tkg, mission-control to tmc) and version, group name would be vmware-<target>/default:<version>
 func MapPluginsToPluginGroups(list []*PluginInfo, pg []*PluginGroup) map[string][]*PluginInfo {
 	m := make(map[string][]*PluginInfo)
 	for _, pluginGroup := range pg {
-		m[pluginGroup.Group] = make([]*PluginInfo, 0)
+		m[pluginGroup.Group+":"+pluginGroup.Latest] = make([]*PluginInfo, 0)
 	}
 	for i := range list {
 		plugin := list[i]
 		key := "vmware-"
 		if plugin.Target == string(types.TargetK8s) {
-			key += TKG + "/"
+			key += TKG + "/default:"
 		} else if plugin.Target == string(types.TargetTMC) {
-			key += TMC + "/"
+			key += TMC + "/tmc-user:"
 		}
 		key += plugin.Version
 		pluginList, ok := m[key]
@@ -359,8 +359,9 @@ func GetPluginsList(tf *Framework, installedOnly bool) ([]*PluginInfo, error) {
 // returns first plugin group which starts with the given prefix
 func GetPluginGroupWhichStartsWithGivenPrefix(pgs []*PluginGroup, prefix string) string {
 	for _, pg := range pgs {
-		if strings.Contains(pg.Group, prefix) {
-			return pg.Group
+		groupID := pg.Group + ":" + pg.Latest
+		if strings.Contains(groupID, prefix) {
+			return groupID
 		}
 	}
 	return ""

@@ -38,15 +38,15 @@ user, or proceed to install plugins.
 
 Plugin groups define a list of plugin/version combinations that are applicable
 together. Plugin groups aim to facilitate an efficient installation of sets of
-plugins that pertain to a particular product that user wants to interact with.
+plugins that pertain to a particular product that a user wants to interact with.
 
 Plugin groups are stored in the same SQLite DB as plugins and the CLI proceeds
 in the same fashion to obtain plugin group information for the
-`tanzu plugin group search` and `tanzu plugin install --group <groupName>`
+`tanzu plugin group search` and `tanzu plugin install --group <groupName>:<groupVersion>`
 commands.
 
 ### SQlite database schemas
 
 The database schema used for the plugin inventory and the one for the plugin
-group inventory can be seen in the `sqlite_inventory.go` file within this
-repository.
+group inventory can be seen in the `pkg/plugininventory/data/sqlite/create_tables.sql`
+file within this repository.

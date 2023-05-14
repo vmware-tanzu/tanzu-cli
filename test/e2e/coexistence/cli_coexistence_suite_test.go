@@ -92,5 +92,5 @@ var _ = ginkgo.BeforeSuite(func() {
 		},
 	}
 
-	PluginGroupsForNewTanzuCLICoexistenceTests = []*framework.PluginGroup{{Group: "vmware-tmc/v2.1.0"}, {Group: "vmware-tkg/v2.1.0"}}
+	PluginGroupsForNewTanzuCLICoexistenceTests = []*framework.PluginGroup{{Group: "vmware-tmc/tmc-user", Latest: "v2.1.0", Description: "Desc for vmware-tmc/tmc-user:v2.1.0"}, {Group: "vmware-tkg/default", Latest: "v2.1.0", Description: "Desc for vmware-tkg/default:v2.1.0"}}
 })
