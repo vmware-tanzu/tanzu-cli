@@ -35,8 +35,6 @@ through the following package managers:
 
 ### Homebrew (MacOS)
 
-(Available at the first alpha release)
-
 ```console
 brew update
 brew install vmware-tanzu/tanzu/tanzu-cli
@@ -44,15 +42,13 @@ brew install vmware-tanzu/tanzu/tanzu-cli
 
 ### Chocolatey (Windows)
 
-The Chocolatey package is not available yet.
+NOTE: The Chocolatey package is not available yet.
 
 ```console
 choco install tanzu-cli
 ```
 
 ### Apt (Debian/Ubuntu)
-
-(Available at the first alpha release)
 
 Note: The current APT package is not signed and will cause security warnings.
 This will be fixed very soon.
@@ -66,8 +62,6 @@ sudo apt-get install -y tanzu-cli --allow-unauthenticated
 ```
 
 ### From yum/dnf (RHEL)
-
-(Available at the first alpha release)
 
 Note: The current yum/dnf package is not signed and will cause security warnings.
 This will be fixed very soon.
@@ -84,6 +78,18 @@ EOF
 sudo yum install tanzu-cli # dnf install can also be used
 ```
 
+### Note on installation paths
+
+Package managers have opinions on locations to which binaries are installed.
+If the location of the CLI (e.g `$(brew --prefix)/bin/tanzu` by HomeBrew,
+`/usr/bin/tanzu` by apt) conflicts with an existing CLI that needs to be
+retained for any reason, the existing binary should be moved to another
+location before installation with package managers.
+
+In addition, to ensure the CLI installed is used, ensure that the PATH setting
+is such that it is picked up by default. Commands like `which tanzu` and
+`tanzu version` will be useful to check that the right CLI binary is being used.
+
 ## Automatic Prompts, and Potential Mitigations
 
 At the first suitable opportunity, (and on subsequent CLI use until the EULA is
@@ -91,9 +97,12 @@ accepted), the CLI will present the following prompts to solicit inputs from
 the CLI user:
 
 ****EULA Prompt**** :
-The Tanzu CLI prompts the user to review and agree to the VMware General terms.
+The Tanzu CLI prompts the user to review and agree to the VMware General Terms.
 Agreeing to the terms is a prerequisite to being able to install or update plugins
 available in the default central plugin repository.
+
+Note: to review the Terms and decide again on the acceptance, this same
+prompt can also be explicitly invoked with `tanzu config eula show`.
 
 ****Customer Experience Improvement Program (CEIP) Prompt**** :
 The Tanzu CLI prompts the user to accept participation in CEIP or not.
@@ -109,9 +118,18 @@ above by running the following before any other CLI commands:
 
 ### Installing the Tanzu CLI
 
-You can install the Tanzu CLI in the internet-restricted environments by downloading the Tanzu CLI Binary
-from Github Release and copy it to the internet-restricted environment. Once copied follow the steps
-mentioned [here](#from-the-binary-releases-in-the-github-project) to install the Tanzu CLI.
+You can install the Tanzu CLI in internet-restricted environments by
+downloading the Tanzu CLI Binary from a Github Release and copy it to the
+internet-restricted environment. Once copied follow the steps mentioned
+[here](#from-the-binary-releases-in-the-github-project) to install the Tanzu
+CLI.
+
+There are also different solutions to enabling the use of Package Managers
+within internet-restricted environments. The advantage of leveraging the
+Package Managers is that upgrades of the CLI itself will be more
+straightforward. Since these solutions are somewhat specific to the Package
+Management system and user's environments, please contact your system
+administrator to find out if any exist.
 
 ### Installing Tanzu CLI plugins in internet-restricted environments
 
