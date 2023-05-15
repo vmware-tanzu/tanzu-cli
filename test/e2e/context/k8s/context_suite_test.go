@@ -15,7 +15,7 @@ import (
 
 func TestContext(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Context-K8S Suite")
+	RunSpecs(t, "Context K8S E2E Test Suite")
 }
 
 var (

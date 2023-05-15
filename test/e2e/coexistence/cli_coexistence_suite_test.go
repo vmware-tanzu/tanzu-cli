@@ -16,7 +16,7 @@ import (
 
 func TestCliCoexistence(t *testing.T) {
 	gomega.RegisterFailHandler(ginkgo.Fail)
-	ginkgo.RunSpecs(t, "CLI Coexistence Tests involving legacy Tanzu CLI and new Tanzu CLI")
+	ginkgo.RunSpecs(t, "CLI Coexistence E2E Test Suite")
 }
 
 var (

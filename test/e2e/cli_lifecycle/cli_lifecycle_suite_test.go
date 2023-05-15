@@ -12,5 +12,5 @@ import (
 
 func TestCliLifecycle(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "CliLifecycle Suite")
+	RunSpecs(t, "CLI lifecycle E2E Test Suite")
 }
