@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
@@ -33,6 +35,7 @@ func newPluginGroupCmd() *cobra.Command {
 
 	pluginGroupCmd.AddCommand(
 		newSearchCmd(),
+		newGetCmd(),
 	)
 
 	return pluginGroupCmd
@@ -48,7 +51,7 @@ func newSearchCmd() *cobra.Command {
 			if groupID != "" {
 				groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupID)
 				if groupIdentifier == nil {
-					return errors.Errorf("incorrect plugin group %q specified", groupID)
+					return errors.Errorf("incorrect plugin-group %q specified", groupID)
 				}
 
 				criteria = &discovery.GroupDiscoveryCriteria{
@@ -77,6 +80,56 @@ func newSearchCmd() *cobra.Command {
 	f.StringVarP(&outputFormat, "output", "o", "", "output format (yaml|json|table)")
 
 	return searchCmd
+}
+
+func newGetCmd() *cobra.Command {
+	var getCmd = &cobra.Command{
+		Use:   "get <group>",
+		Short: "Get the content of the specified plugin-group",
+		Long:  "Get the content of the specified plugin-group.  A plugin-group provides a list of plugin name/version combinations which can be installed in one step.  This command allows to see the list of plugins included in the specified group.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			groupID := args[0]
+
+			groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupID)
+			if groupIdentifier == nil {
+				return errors.Errorf("incorrect plugin-group %q specified", groupID)
+			}
+
+			if groupIdentifier.Version == "" {
+				groupIdentifier.Version = cli.VersionLatest
+			}
+
+			groups, err := pluginmanager.DiscoverPluginGroups(&discovery.GroupDiscoveryCriteria{
+				Vendor:    groupIdentifier.Vendor,
+				Publisher: groupIdentifier.Publisher,
+				Name:      groupIdentifier.Name,
+				Version:   groupIdentifier.Version,
+			})
+			if err != nil {
+				return err
+			}
+			if len(groups) == 0 {
+				return errors.Errorf("plugin-group %q cannot be found", groupID)
+			}
+
+			if len(groups) > 1 {
+				log.Warningf("unexpectedly found %d entries for group %q. Using the first one", len(groups), groupID)
+			}
+
+			if outputFormat == "" || outputFormat == string(component.TableOutputType) {
+				displayGroupContentAsTable(groups[0], cmd.OutOrStdout())
+			} else {
+				displayGroupContentAsList(groups[0], cmd.OutOrStdout())
+			}
+			return nil
+		},
+	}
+
+	f := getCmd.Flags()
+	f.StringVarP(&outputFormat, "output", "o", "", "output format (yaml|json|table)")
+
+	return getCmd
 }
 
 func displayGroupsFound(groups []*plugininventory.PluginGroup, writer io.Writer) {
@@ -141,4 +194,28 @@ func displayGroupDetails(groups []*plugininventory.PluginGroup, writer io.Writer
 		})
 	}
 	component.NewObjectWriter(writer, outputFormat, details).Render()
+}
+
+func displayGroupContentAsTable(group *plugininventory.PluginGroup, writer io.Writer) {
+	cyanBold := color.New(color.FgCyan).Add(color.Bold)
+	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
+	output := component.NewOutputWriter(writer, outputFormat, "Name", "Target", "Latest")
+
+	groupID := plugininventory.PluginGroupToID(group)
+	_, _ = cyanBold.Println("Plugins in Group: ", cyanBoldItalic.Sprintf("%s:%s", groupID, group.RecommendedVersion))
+
+	for _, plugin := range group.Versions[group.RecommendedVersion] {
+		output.AddRow(plugin.Name, plugin.Target, plugin.Version)
+	}
+	output.Render()
+}
+
+func displayGroupContentAsList(group *plugininventory.PluginGroup, writer io.Writer) {
+	output := component.NewOutputWriter(writer, outputFormat, "Group", "PluginName", "PluginTarget", "PluginVersion")
+
+	groupID := fmt.Sprintf("%s:%s", plugininventory.PluginGroupToID(group), group.RecommendedVersion)
+	for _, plugin := range group.Versions[group.RecommendedVersion] {
+		output.AddRow(groupID, plugin.Name, plugin.Target, plugin.Version)
+	}
+	output.Render()
 }
