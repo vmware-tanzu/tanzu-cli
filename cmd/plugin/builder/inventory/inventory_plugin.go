@@ -19,6 +19,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 // InventoryPluginUpdateOptions defines options for inserting plugin to the inventory database
@@ -28,6 +29,7 @@ type InventoryPluginUpdateOptions struct {
 	ManifestFile      string
 	Publisher         string
 	Vendor            string
+	InventoryDBFile   string
 	DeactivatePlugins bool
 	ValidateOnly      bool
 
@@ -64,26 +66,17 @@ func (ipuo *InventoryPluginUpdateOptions) UpdatePluginActivationState() error {
 }
 
 func (ipuo *InventoryPluginUpdateOptions) genericInventoryUpdater(inventoryUpdater func(string, *plugininventory.PluginInventoryEntry) error) error {
-	// create plugin inventory database image path
-	pluginInventoryDBImage := fmt.Sprintf("%s/%s:%s", ipuo.Repository, helpers.PluginInventoryDBImageName, ipuo.InventoryImageTag)
-
-	dir, err := os.MkdirTemp("", "")
+	// Get inventory database file
+	dbFile, err := ipuo.getInventoryDBFile()
 	if err != nil {
-		return errors.Wrap(err, "unable to create temporary directory")
+		return err
 	}
 
-	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
-	err = ipuo.ImgpkgOptions.PullImage(pluginInventoryDBImage, dir)
-	if err != nil {
-		return errors.Wrapf(err, "error while pulling database from the image: %q", pluginInventoryDBImage)
-	}
-
-	dbFile := filepath.Join(dir, plugininventory.SQliteDBFileName)
+	// Create plugin inventory entries and update the database
 	pluginInventoryEntries, err := ipuo.preparePluginInventoryEntriesFromManifest()
 	if err != nil {
 		return errors.Wrap(err, "error while updating plugin inventory database")
 	}
-
 	for i := range pluginInventoryEntries {
 		err := inventoryUpdater(dbFile, pluginInventoryEntries[i])
 		if err != nil {
@@ -91,20 +84,8 @@ func (ipuo *InventoryPluginUpdateOptions) genericInventoryUpdater(inventoryUpdat
 		}
 	}
 
-	if ipuo.ValidateOnly {
-		log.Info("plugin insert validation successful")
-		return nil
-	}
-
-	// Publish the database to the remote repository
-	log.Info("publishing plugin inventory database")
-	err = ipuo.ImgpkgOptions.PushImage(pluginInventoryDBImage, dbFile)
-	if err != nil {
-		return errors.Wrapf(err, "error while publishing inventory database to the repository as image: %q", pluginInventoryDBImage)
-	}
-	log.Infof("successfully published plugin inventory database at: %q", pluginInventoryDBImage)
-
-	return nil
+	// Publish inventory database file if needed and return
+	return ipuo.putInventoryDBFile(dbFile)
 }
 
 func (ipuo *InventoryPluginUpdateOptions) preparePluginInventoryEntriesFromManifest() ([]*plugininventory.PluginInventoryEntry, error) {
@@ -134,11 +115,14 @@ func (ipuo *InventoryPluginUpdateOptions) preparePluginInventoryEntriesFromManif
 }
 
 func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInventoryEntry *plugininventory.PluginInventoryEntry, plugin cli.Plugin, osArch cli.Arch, version string) (*plugininventory.PluginInventoryEntry, error) {
+	var err error
+	var digest string
+
 	log.Infof("validating plugin '%s_%s_%s_%s'", plugin.Name, plugin.Target, osArch.String(), version)
 
 	pluginImageBasePath := fmt.Sprintf("%s/%s/%s/%s/%s/%s:%s", ipuo.Vendor, ipuo.Publisher, osArch.OS(), osArch.Arch(), plugin.Target, plugin.Name, version)
 	pluginImage := fmt.Sprintf("%s/%s", ipuo.Repository, pluginImageBasePath)
-	digest, err := ipuo.ImgpkgOptions.GetFileDigestFromImage(pluginImage, cli.MakeArtifactName(plugin.Name, osArch))
+	digest, err = ipuo.ImgpkgOptions.GetFileDigestFromImage(pluginImage, cli.MakeArtifactName(plugin.Name, osArch))
 	if err != nil && !ipuo.ValidateOnly {
 		return nil, errors.Wrapf(err, "error while getting plugin binary digest from the image %q", pluginImage)
 	}
@@ -167,4 +151,66 @@ func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInven
 	}
 	pluginInventoryEntry.Artifacts[version] = append(pluginInventoryEntry.Artifacts[version], artifact)
 	return pluginInventoryEntry, nil
+}
+
+func (ipuo *InventoryPluginUpdateOptions) getPluginInventoryDBImage() string {
+	return fmt.Sprintf("%s/%s:%s", ipuo.Repository, helpers.PluginInventoryDBImageName, ipuo.InventoryImageTag)
+}
+
+func (ipuo *InventoryPluginUpdateOptions) getInventoryDBFile() (string, error) {
+	if ipuo.InventoryDBFile != "" {
+		log.Infof("using local plugin inventory database file: %q", ipuo.InventoryDBFile)
+		if ipuo.ValidateOnly {
+			tempFile, err := os.CreateTemp("", "*.db")
+			if err != nil {
+				return "", err
+			}
+			err = utils.CopyFile(ipuo.InventoryDBFile, tempFile.Name())
+			if err != nil {
+				return "", err
+			}
+			return tempFile.Name(), nil
+		}
+		return ipuo.InventoryDBFile, nil
+	}
+
+	// get plugin inventory database image path
+	pluginInventoryDBImage := ipuo.getPluginInventoryDBImage()
+
+	dir, err := os.MkdirTemp("", "")
+	if err != nil {
+		return "", errors.Wrap(err, "unable to create temporary directory")
+	}
+
+	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
+	err = ipuo.ImgpkgOptions.PullImage(pluginInventoryDBImage, dir)
+	if err != nil {
+		return "", errors.Wrapf(err, "error while pulling database from the image: %q", pluginInventoryDBImage)
+	}
+	return filepath.Join(dir, plugininventory.SQliteDBFileName), nil
+}
+
+func (ipuo *InventoryPluginUpdateOptions) putInventoryDBFile(dbFile string) error {
+	pluginInventoryDBImage := ipuo.getPluginInventoryDBImage()
+
+	// If validateOnly option was provided return validation as successful
+	if ipuo.ValidateOnly {
+		log.Info("validation successful")
+		return nil
+	}
+
+	// If local inventory database file was provided nothing to publish just return
+	if ipuo.InventoryDBFile != "" {
+		log.Infof("successfully updated plugin inventory database file at: %q", ipuo.InventoryDBFile)
+		return nil
+	}
+
+	// Publish the database to the remote repository
+	log.Info("publishing plugin inventory database")
+	err := ipuo.ImgpkgOptions.PushImage(pluginInventoryDBImage, dbFile)
+	if err != nil {
+		return errors.Wrapf(err, "error while publishing inventory database to the repository as image: %q", pluginInventoryDBImage)
+	}
+	log.Infof("successfully published plugin inventory database at: %q", pluginInventoryDBImage)
+	return nil
 }

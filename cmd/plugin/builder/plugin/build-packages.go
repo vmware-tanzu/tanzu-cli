@@ -81,11 +81,7 @@ func (bpo *BuildPluginPackageOptions) BuildPluginPackages() error {
 
 				log.Infof("Generating plugin package for 'plugin:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 
-<<<<<<< HEAD
-				err = bpo.ImgpkgOptions.PushImage(image, pluginBinaryFilePath)
-=======
 				err = bpo.DockerOptions.BuildImage(image, dockerTemplateFile, filepath.Dir(pluginBinaryFilePath))
->>>>>>> Use docker interface to build plugin oci images
 				if err != nil {
 					return errors.Wrapf(err, "unable to build package for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 				}

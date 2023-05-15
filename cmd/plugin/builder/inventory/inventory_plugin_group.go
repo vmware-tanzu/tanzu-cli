@@ -27,6 +27,7 @@ type InventoryPluginGroupUpdateOptions struct {
 	GroupName               string
 	GroupVersion            string
 	Description             string
+	InventoryDBFile         string
 	DeactivatePluginGroup   bool
 	Override                bool
 
@@ -37,18 +38,9 @@ type InventoryPluginGroupUpdateOptions struct {
 // the database from the repository, updating it locally and
 // publishing the inventory database as OCI image on the remote repository
 func (ipuo *InventoryPluginGroupUpdateOptions) PluginGroupAdd() error {
-	// create plugin inventory database image path
-	pluginInventoryDBImage := fmt.Sprintf("%s/%s:%s", ipuo.Repository, helpers.PluginInventoryDBImageName, ipuo.InventoryImageTag)
-
-	tempDir, err := os.MkdirTemp("", "")
+	dbFile, err := ipuo.getInventoryDBFile()
 	if err != nil {
-		return errors.Wrap(err, "unable to create temporary directory")
-	}
-
-	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
-	dbFile, err := inventoryDBDownload(ipuo.ImgpkgOptions, pluginInventoryDBImage, tempDir)
-	if err != nil {
-		return errors.Wrapf(err, "error while downloading inventory database from the repository as image: %q", pluginInventoryDBImage)
+		return err
 	}
 
 	// Get the PluginGroup object from the plugin-group manifest file
@@ -65,14 +57,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) PluginGroupAdd() error {
 		return errors.Wrapf(err, "error while inserting plugin group '%s'", pg.Name)
 	}
 
-	// Publish the database to the remote repository
-	log.Info("publishing plugin inventory database")
-	err = inventoryDBUpload(ipuo.ImgpkgOptions, pluginInventoryDBImage, dbFile)
-	if err != nil {
-		return errors.Wrapf(err, "error while publishing inventory database to the repository as image: %q", pluginInventoryDBImage)
-	}
-	log.Infof("successfully published plugin inventory database at: %q", pluginInventoryDBImage)
-	return nil
+	return ipuo.putInventoryDBFile(dbFile)
 }
 
 func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*plugininventory.PluginGroup, error) {
@@ -111,18 +96,9 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*pl
 // downloading the database from the repository, updating it locally and publishing the
 // inventory database as OCI image on the remote repository
 func (ipuo *InventoryPluginGroupUpdateOptions) UpdatePluginGroupActivationState() error {
-	// create plugin inventory database image path
-	pluginInventoryDBImage := fmt.Sprintf("%s/%s:%s", ipuo.Repository, helpers.PluginInventoryDBImageName, ipuo.InventoryImageTag)
-
-	tempDir, err := os.MkdirTemp("", "")
+	dbFile, err := ipuo.getInventoryDBFile()
 	if err != nil {
-		return errors.Wrap(err, "unable to create temporary directory")
-	}
-
-	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
-	dbFile, err := inventoryDBDownload(ipuo.ImgpkgOptions, pluginInventoryDBImage, tempDir)
-	if err != nil {
-		return errors.Wrapf(err, "error while downloading inventory database from the repository as image: %q", pluginInventoryDBImage)
+		return err
 	}
 
 	// Create plugin-group object
@@ -142,9 +118,48 @@ func (ipuo *InventoryPluginGroupUpdateOptions) UpdatePluginGroupActivationState(
 		return errors.Wrapf(err, "error while updating activation state of plugin group '%s'", pg.Name)
 	}
 
+	return ipuo.putInventoryDBFile(dbFile)
+}
+
+func (ipuo *InventoryPluginGroupUpdateOptions) getPluginInventoryDBImage() string {
+	return fmt.Sprintf("%s/%s:%s", ipuo.Repository, helpers.PluginInventoryDBImageName, ipuo.InventoryImageTag)
+}
+
+func (ipuo *InventoryPluginGroupUpdateOptions) getInventoryDBFile() (string, error) {
+	if ipuo.InventoryDBFile != "" {
+		log.Infof("using local plugin inventory database file: %q", ipuo.InventoryDBFile)
+		return ipuo.InventoryDBFile, nil
+	}
+
+	// get plugin inventory database image path
+	pluginInventoryDBImage := ipuo.getPluginInventoryDBImage()
+
+	tempDir, err := os.MkdirTemp("", "")
+	if err != nil {
+		return "", errors.Wrap(err, "unable to create temporary directory")
+	}
+
+	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
+	dbFile, err := inventoryDBDownload(ipuo.ImgpkgOptions, pluginInventoryDBImage, tempDir)
+	if err != nil {
+		return "", errors.Wrapf(err, "error while downloading inventory database from the repository as image: %q", pluginInventoryDBImage)
+	}
+
+	return dbFile, nil
+}
+
+func (ipuo *InventoryPluginGroupUpdateOptions) putInventoryDBFile(dbFile string) error {
+	pluginInventoryDBImage := ipuo.getPluginInventoryDBImage()
+
+	// If local inventory database file was provided nothing to publish just return
+	if ipuo.InventoryDBFile != "" {
+		log.Infof("successfully updated plugin inventory database file at: %q", ipuo.InventoryDBFile)
+		return nil
+	}
+
 	// Publish the database to the remote repository
 	log.Info("publishing plugin inventory database")
-	err = inventoryDBUpload(ipuo.ImgpkgOptions, pluginInventoryDBImage, dbFile)
+	err := inventoryDBUpload(ipuo.ImgpkgOptions, pluginInventoryDBImage, dbFile)
 	if err != nil {
 		return errors.Wrapf(err, "error while publishing inventory database to the repository as image: %q", pluginInventoryDBImage)
 	}

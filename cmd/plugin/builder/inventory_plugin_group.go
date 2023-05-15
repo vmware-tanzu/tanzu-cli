@@ -38,6 +38,7 @@ type inventoryPluginGroupAddFlags struct {
 	ManifestFile          string
 	Publisher             string
 	Vendor                string
+	InventoryDBFile       string
 	DeactivatePluginGroup bool
 	Override              bool
 }
@@ -60,6 +61,7 @@ func newInventoryPluginGroupAddCmd() *cobra.Command {
 				PluginGroupManifestFile: ipgaFlags.ManifestFile,
 				Vendor:                  ipgaFlags.Vendor,
 				Publisher:               ipgaFlags.Publisher,
+				InventoryDBFile:         ipgaFlags.InventoryDBFile,
 				DeactivatePluginGroup:   ipgaFlags.DeactivatePluginGroup,
 				Override:                ipgaFlags.Override,
 				ImgpkgOptions:           imgpkg.NewImgpkgCLIWrapper(),
@@ -76,12 +78,12 @@ func newInventoryPluginGroupAddCmd() *cobra.Command {
 	pluginGroupAddCmd.Flags().StringVarP(&ipgaFlags.ManifestFile, "manifest", "", "", "manifest file specifying plugin-group details that needs to be processed")
 	pluginGroupAddCmd.Flags().StringVarP(&ipgaFlags.Vendor, "vendor", "", "", "name of the vendor")
 	pluginGroupAddCmd.Flags().StringVarP(&ipgaFlags.Publisher, "publisher", "", "", "name of the publisher")
+	pluginGroupAddCmd.Flags().StringVarP(&ipgaFlags.InventoryDBFile, "plugin-inventory-db-file", "", "", "local file for the inventory database")
 	pluginGroupAddCmd.Flags().BoolVarP(&ipgaFlags.DeactivatePluginGroup, "deactivate", "", false, "mark plugin-group as deactivated")
 	pluginGroupAddCmd.Flags().BoolVarP(&ipgaFlags.Override, "override", "", false, "overwrite the plugin-group version if it already exists")
 
 	_ = pluginGroupAddCmd.MarkFlagRequired("name")
 	_ = pluginGroupAddCmd.MarkFlagRequired("version")
-	_ = pluginGroupAddCmd.MarkFlagRequired("repository")
 	_ = pluginGroupAddCmd.MarkFlagRequired("vendor")
 	_ = pluginGroupAddCmd.MarkFlagRequired("publisher")
 	_ = pluginGroupAddCmd.MarkFlagRequired("manifest")
@@ -97,6 +99,7 @@ type inventoryPluginGroupActivateDeactivateFlags struct {
 	ManifestFile      string
 	Publisher         string
 	Vendor            string
+	InventoryDBFile   string
 }
 
 func newInventoryPluginGroupActivateCmd() *cobra.Command { //nolint:dupl
@@ -112,6 +115,7 @@ func newInventoryPluginGroupActivateCmd() *cobra.Command { //nolint:dupl
 			InventoryImageTag:     flags.InventoryImageTag,
 			Vendor:                flags.Vendor,
 			Publisher:             flags.Publisher,
+			InventoryDBFile:       flags.InventoryDBFile,
 			DeactivatePluginGroup: false,
 			ImgpkgOptions:         imgpkg.NewImgpkgCLIWrapper(),
 		}
@@ -133,6 +137,7 @@ func newInventoryPluginGroupDeactivateCmd() *cobra.Command { //nolint:dupl
 			InventoryImageTag:     flags.InventoryImageTag,
 			Vendor:                flags.Vendor,
 			Publisher:             flags.Publisher,
+			InventoryDBFile:       flags.InventoryDBFile,
 			DeactivatePluginGroup: true,
 			ImgpkgOptions:         imgpkg.NewImgpkgCLIWrapper(),
 		}
@@ -153,10 +158,10 @@ func getPluginGroupActivateDeactivateBaseCmd() (*cobra.Command, *inventoryPlugin
 	activateDeactivateCmd.Flags().StringVarP(&flags.InventoryImageTag, "plugin-inventory-image-tag", "", "latest", "tag to which plugin inventory image needs to be published")
 	activateDeactivateCmd.Flags().StringVarP(&flags.Vendor, "vendor", "", "", "name of the vendor")
 	activateDeactivateCmd.Flags().StringVarP(&flags.Publisher, "publisher", "", "", "name of the publisher")
+	activateDeactivateCmd.Flags().StringVarP(&flags.InventoryDBFile, "plugin-inventory-db-file", "", "", "local file for the inventory database")
 
 	_ = activateDeactivateCmd.MarkFlagRequired("name")
 	_ = activateDeactivateCmd.MarkFlagRequired("version")
-	_ = activateDeactivateCmd.MarkFlagRequired("repository")
 	_ = activateDeactivateCmd.MarkFlagRequired("vendor")
 	_ = activateDeactivateCmd.MarkFlagRequired("publisher")
 
