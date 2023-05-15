@@ -177,7 +177,7 @@ func getAdditionalTestPluginDiscoveries() []configtypes.PluginDiscovery {
 	for idx, image := range testDiscoveryImages {
 		testDiscoveries = append(testDiscoveries, configtypes.PluginDiscovery{
 			OCI: &configtypes.OCIDiscovery{
-				Name:  fmt.Sprintf("test_%d", idx),
+				Name:  fmt.Sprintf("disc_%d", idx),
 				Image: image,
 			},
 		})
