@@ -158,10 +158,19 @@ func GetTrustedRegistries() []string {
 	return trustedRegistries
 }
 
+// GetAdditionalTestDiscoveryImages would return the private discovery images or test discovery images.
+// The private discovery images("TANZU_CLI_PRIVATE_PLUGIN_DISCOVERY_IMAGES") was introduced to support
+// the backward compatibility where if there are customers using CLIPlugin CR to point to their private repository.
+// It would be deprecated once we confirm there are no users using it but will continue supporting additional testing plugin discoveries.
+// It would be mutually exclusive with "TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY" environment
+// variable. Users can use only one of them and "TANZU_CLI_PRIVATE_PLUGIN_DISCOVERY_IMAGES" takes the priority
 func GetAdditionalTestDiscoveryImages() []string {
 	var additionalImages []string
-	testDiscoveryImages := strings.Split(os.Getenv(constants.ConfigVariableAdditionalDiscoveryForTesting), ",")
-	for _, image := range testDiscoveryImages {
+	additionalDiscoveryImages := os.Getenv(constants.ConfigVariableAdditionalPrivateDiscoveryImages)
+	if additionalDiscoveryImages == "" {
+		additionalDiscoveryImages = os.Getenv(constants.ConfigVariableAdditionalDiscoveryForTesting)
+	}
+	for _, image := range strings.Split(additionalDiscoveryImages, ",") {
 		image = strings.TrimSpace(image)
 		if image != "" {
 			additionalImages = append(additionalImages, image)

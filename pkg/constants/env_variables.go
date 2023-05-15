@@ -11,6 +11,7 @@ const (
 const (
 	AllowedRegistries                                 = "ALLOWED_REGISTRY"
 	ConfigVariableAdditionalDiscoveryForTesting       = "TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY"
+	ConfigVariableAdditionalPrivateDiscoveryImages    = "TANZU_CLI_PRIVATE_PLUGIN_DISCOVERY_IMAGES"
 	ConfigVariableIncludeDeactivatedPluginsForTesting = "TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY"
 	ConfigVariableStandaloneOverContextPlugins        = "TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS"
 	// PluginDiscoveryImageSignatureVerificationSkipList is a comma separated list of discovery image urls

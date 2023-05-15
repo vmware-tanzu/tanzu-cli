@@ -17,6 +17,12 @@ import (
 
 var _ = Describe("defaults test cases", func() {
 	Context("default locations and repositories", func() {
+		const (
+			testHost1    = "registry1.vmware.com"
+			testHost2    = "registry2.vmware.com"
+			privateHost1 = "registry1.private.vmware.com"
+			privateHost2 = "registry2.private.vmware.com"
+		)
 		It("should initialize ClientOptions", func() {
 			artLocations := GetTrustedArtifactLocations()
 			Expect(artLocations).NotTo(BeNil())
@@ -93,9 +99,7 @@ var _ = Describe("defaults test cases", func() {
 				Expect(trustedRegis).Should(ContainElement(testHost2))
 			})
 		})
-		It("trusted registries should include hostname of additional discoveries", func() {
-			testHost1 := "registry1.vmware.com"
-			testHost2 := "registry2.vmware.com"
+		It("trusted registries should include hostname of additional discoveries for test if provided", func() {
 			oldValue := os.Getenv(constants.ConfigVariableAdditionalDiscoveryForTesting)
 			err := os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting,
 				testHost1+"/test/path, "+testHost2+"/another/test/image")
@@ -107,6 +111,44 @@ var _ = Describe("defaults test cases", func() {
 			Expect(trustedRegis).Should(ContainElement(testHost2))
 
 			err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, oldValue)
+			Expect(err).To(BeNil())
+		})
+		It("trusted registries should include hostname of additional private discoveries if provided", func() {
+			oldValue := os.Getenv(constants.ConfigVariableAdditionalPrivateDiscoveryImages)
+			err := os.Setenv(constants.ConfigVariableAdditionalPrivateDiscoveryImages,
+				privateHost1+"/private/path, "+privateHost2+"/another/private/image")
+			Expect(err).To(BeNil())
+
+			trustedRegis := GetTrustedRegistries()
+			Expect(trustedRegis).NotTo(BeNil())
+			Expect(trustedRegis).Should(ContainElement(privateHost1))
+			Expect(trustedRegis).Should(ContainElement(privateHost2))
+
+			err = os.Setenv(constants.ConfigVariableAdditionalPrivateDiscoveryImages, oldValue)
+			Expect(err).To(BeNil())
+		})
+		It("trusted registries should include hostname of additional private discoveries only, if both additional private plugin discoveries and additional test plugin discoveries are provided", func() {
+			oldTestDiscValue := os.Getenv(constants.ConfigVariableAdditionalDiscoveryForTesting)
+			err := os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting,
+				testHost1+"/test/path, "+testHost2+"/another/test/image")
+			Expect(err).To(BeNil())
+
+			oldPrivateDiscValue := os.Getenv(constants.ConfigVariableAdditionalPrivateDiscoveryImages)
+			err = os.Setenv(constants.ConfigVariableAdditionalPrivateDiscoveryImages,
+				privateHost1+"/private/path, "+privateHost2+"/another/private/image")
+			Expect(err).To(BeNil())
+
+			trustedRegis := GetTrustedRegistries()
+			Expect(trustedRegis).NotTo(BeNil())
+			Expect(trustedRegis).Should(ContainElement(privateHost1))
+			Expect(trustedRegis).Should(ContainElement(privateHost2))
+			Expect(trustedRegis).ShouldNot(ContainElement(testHost1))
+			Expect(trustedRegis).ShouldNot(ContainElement(testHost2))
+
+			err = os.Setenv(constants.ConfigVariableAdditionalPrivateDiscoveryImages, oldPrivateDiscValue)
+			Expect(err).To(BeNil())
+
+			err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, oldTestDiscValue)
 			Expect(err).To(BeNil())
 		})
 	})
