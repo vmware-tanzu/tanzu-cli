@@ -26,5 +26,5 @@ _output/
 # Output of the go coverage tool, specifically when used with LiteIDE
 coverage.txt
 *.out
-test/e2e/coexistence/coexistence-tests.json
-e2e-test-output.txt
+test/e2e/coexistence/
+test/e2e/testresults/

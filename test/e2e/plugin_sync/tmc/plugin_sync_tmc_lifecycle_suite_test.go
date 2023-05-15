@@ -20,7 +20,7 @@ import (
 
 func TestPluginSyncLifecycle(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Plugin-Sync-TMC-Lifecycle E2E Test Suite")
+	RunSpecs(t, "Plugin-Sync K8S Lifecycle E2E Test Suite")
 }
 
 var (

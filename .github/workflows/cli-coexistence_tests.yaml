@@ -62,5 +62,5 @@ jobs:
       - name: Tests Results Summary
         if: always()
         run: |
-          TEST_RESULTS_MD=$(./hack/scripts/process-ginkgo-test-results.sh test/e2e/coexistence/coexistence-tests.json)
+          TEST_RESULTS_MD=$(./hack/scripts/process-ginkgo-test-results.sh test/e2e/coexistence)
           echo "$TEST_RESULTS_MD" >> $GITHUB_STEP_SUMMARY

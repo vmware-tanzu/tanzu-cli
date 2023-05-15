@@ -17,7 +17,7 @@ import (
 
 func TestTmc(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Context-TMC Suite")
+	RunSpecs(t, "Context TMC E2E Test Suite")
 }
 
 var (

@@ -1,4 +1,4 @@
-name: Tanzu CLI Core Tests
+name: Tanzu CLI Core E2E Tests
 
 on:
   pull_request:
@@ -44,9 +44,15 @@ jobs:
         run: |
           make start-test-central-repo
 
-      - name: E2E Tests
+      - name: Run CLI E2E Tests
         env:
           TANZU_API_TOKEN: ${{ secrets.TANZU_API_TOKEN }}
           TANZU_CLI_TMC_UNSTABLE_URL: ${{ secrets.TANZU_CLI_TMC_UNSTABLE_URL }}
         run: |
           make e2e-cli-core
+
+      - name: Tests Results Summary
+        if: always()
+        run: |
+          TEST_RESULTS_MD=$(./hack/scripts/process-ginkgo-test-results.sh ./test/e2e/testresults)
+          echo "$TEST_RESULTS_MD" >> $GITHUB_STEP_SUMMARY

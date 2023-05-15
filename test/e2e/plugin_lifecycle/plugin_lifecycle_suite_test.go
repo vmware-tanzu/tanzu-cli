@@ -17,7 +17,7 @@ import (
 
 func TestPluginLifecycle(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Plugin-Lifecycle E2E Test Suite")
+	RunSpecs(t, "Plugin Lifecycle E2E Test Suite")
 }
 
 var (
