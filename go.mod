@@ -34,7 +34,7 @@ require (
 	github.com/vmware-tanzu/carvel-imgpkg v0.36.1
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230415084831-9331f55d2999
-	github.com/vmware-tanzu/tanzu-plugin-runtime v1.0.0-dev.0.20230511155710-9131cb986ae8
+	github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.2
 	go.pinniped.dev v0.20.0
 	go.uber.org/multierr v1.8.0
 	golang.org/x/mod v0.9.0
