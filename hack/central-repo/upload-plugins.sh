@@ -37,6 +37,10 @@ echoImages() {
     echo "=> localhost:9876/tanzu-cli/plugins/airgapped:large"
     echo "    - all plugins matching product plugin names"
     echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
+    echo "=> localhost:9876/tanzu-cli/plugins/shas:small"
+    echo "    - a small amount of plugins matching product plugin names"
+    echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
+    echo "    - SHAs are used to reference the v9.9.9 plugin binaries and tags for v0.0.1"
 }
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     usage
@@ -64,6 +68,7 @@ sanboxImage1=sandbox1:small
 sanboxImage2=sandbox2:small
 smallAirgappedImage=airgapped:small
 largeAirgappedImage=airgapped:large
+smallImageUsingSHAs=shas:small
 database=/tmp/plugin_inventory.db
 publisher="vmware/tkg"
 
@@ -91,6 +96,7 @@ addPlugin() {
     local target=$2
     local pushBinary=$3
     local versions=$4
+    local useSHAs=$5
 
     local tmpPluginPhase1="/tmp/fakeplugin1.sh"
     local tmpPluginPhase2="/tmp/fakeplugin2.sh"
@@ -124,20 +130,26 @@ addPlugin() {
 
                 local image_path=$publisher/$os/$arch/$target/$name
 
-                local sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$recommended','$version','false','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_path:$version');"
-                if [ "$dry_run" = "echo" ]; then
-                    echo $sql_cmd
-                else
-                    echo $sql_cmd | sqlite3 -batch $database
-                fi
-
                 # For efficiency, only push the plugin binaries that have requested it, and for
                 # those, still only push versions v0.0.1 (to match real TMC plugins) and v9.9.9
                 if [ $pushBinary = "true" ]; then
                     if [ $version = "v0.0.1" ] || [ $version = "v9.9.9" ] || [ $version = "v11.11.11" ] || [ $version = "v22.22.22" ]; then
                         echo "Pushing binary for $name version $version for target $target, $os-$arch"
-                        ${dry_run} imgpkg push -i $repoBasePath/$image_path:$version -f $tmpPluginPhase2 --registry-verify-certs=false
+                        if [ "$dry_run" = "echo" ]; then
+                            sha="12345"
+                        else
+                            sha=$(imgpkg push -i $repoBasePath/$image_path:$version -f $tmpPluginPhase2 --registry-verify-certs=false --json | grep sha256 | cut -d@ -f2 | cut -d\' -f1)
+                        fi
                     fi
+                fi
+
+                local image_ref="$image_path:$version"
+                [ -n "$useSHAs" ] && image_ref="$image_path@$sha"
+                local sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$recommended','$version','false','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_ref');"
+                if [ "$dry_run" = "echo" ]; then
+                    echo $sql_cmd
+                else
+                    echo $sql_cmd | sqlite3 -batch $database
                 fi
             done
         done
@@ -336,5 +348,37 @@ done
 # Push airgapped inventory file
 ${dry_run} imgpkg push -i $repoBasePath/$largeAirgappedImage -f $database --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry  -y $repoBasePath/$largeAirgappedImage
+
+echo "======================================"
+echo "Creating small test Central Repository using SHAs: $repoBasePath/$smallImageUsingSHAs"
+echo "======================================"
+# Reset the DB
+rm -f $database
+touch $database
+# Create the DB table
+cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
+
+for name in ${globalPlugins[0]}; do
+    addPlugin $name global true v0.0.1
+    addPlugin $name global true v9.9.9 useSha
+done
+
+for name in ${k8sPlugins[0]}; do
+    addPlugin $name kubernetes true v0.0.1
+    addPlugin $name kubernetes true v9.9.9 useSha
+    addGroup vmware tkg default v0.0.1 $name kubernetes v0.0.1
+    addGroup vmware tkg default v9.9.9 $name kubernetes v9.9.9
+done
+
+for name in ${tmcPlugins[0]}; do
+    addPlugin $name mission-control true v0.0.1
+    addPlugin $name mission-control true v9.9.9 useSha
+    addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1
+    addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
+done
+
+# Push airgapped inventory file
+${dry_run} imgpkg push -i $repoBasePath/$smallImageUsingSHAs -f $database --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$smallImageUsingSHAs
 
 rm -f $database

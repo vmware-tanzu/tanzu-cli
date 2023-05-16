@@ -28,10 +28,15 @@ func GetPluginInventoryMetadataImage(pluginInventoryImage string) (string, error
 // basePath as `fake.repo.com/plugin` it should return
 // `database/plugin-inventory:latest` if withTag is true and
 // `database/plugin-inventory` if withTag is false
+// This function also supports tags in the form of digests (SHAs),
+// e.g., fake.repo.com/plugin/database/vmware/tkg/darwin/amd64/mission-control/account@sha256:69dc17b84e77d0844c36c11f1191f47bb3cec4ca61e06950a3884e34b3ecb6eb
 func GetImageRelativePath(image, basePath string, withTag bool) string {
 	relativePath := strings.TrimPrefix(image, basePath)
 	if withTag {
 		return relativePath
+	}
+	if idx := strings.LastIndex(relativePath, "@"); idx != -1 {
+		return relativePath[:idx]
 	}
 	if idx := strings.LastIndex(relativePath, ":"); idx != -1 {
 		return relativePath[:idx]
