@@ -242,3 +242,9 @@ interacting with the registry.
 Users can update or delete the certificate configuration using the `tanzu config cert update`
 and `tanzu config cert delete` commands.
 Also, users can list the certificate configuration using the `tanzu config cert list` command.
+
+#### Proxy CA certificate
+
+If the user configured a proxy between the Tanzu CLI and the central repository and if the proxy certificate
+needs to be configured, the user should set the environment variable `PROXY_CA_CERT` with base64 value of
+proxy CA certificate.

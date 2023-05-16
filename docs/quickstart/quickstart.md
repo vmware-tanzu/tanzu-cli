@@ -301,3 +301,12 @@ functionality available to the legacy CLI will function as before.
 
 Note that running `tanzu plugin sync` with the legacy CLI may undo certain
 plugin installation actions performed with the new CLI
+
+### Configuring the Registry and Proxy CA certificate
+
+Tanzu CLI would not be honoring existing environment variables `TKG_CUSTOM_IMAGE_REPOSITORY_CA_CERTIFICATE`
+and `TKG_PROXY_CA_CERT`.
+If the user is interacting with a central repository hosted on a registry with self-signed CA, please
+refer to the section `Interacting with a central repository hosted on a registry with self-signed CA or with expired CA`
+in [installation doc](install.md)
+for configuration steps
