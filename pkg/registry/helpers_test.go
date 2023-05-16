@@ -242,3 +242,17 @@ var _ = Describe("GetRegistryCertOptions", func() {
 	})
 
 })
+
+var _ = Describe("GetRegistryName() tests", func() {
+	const host = "localhost:9876"
+	It("should return the host name when the image path uses a tag", func() {
+		name, err := GetRegistryName(host + "/tanzu-cli/plugins/builder:v0.90.0")
+		Expect(err).To(BeNil())
+		Expect(name).To(Equal(host))
+	})
+	It("should return the host name when the image path uses a digest", func() {
+		name, err := GetRegistryName(host + "/tanzu-cli/plugins/builder@sha256:429a5f3ac8d7dc3ed3068dc86f5fa6727b3a86f7d4b010b5b6102e96889699c2")
+		Expect(err).To(BeNil())
+		Expect(name).To(Equal(host))
+	})
+})

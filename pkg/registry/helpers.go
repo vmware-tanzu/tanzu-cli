@@ -97,12 +97,14 @@ func AddRegistryTrustedRootCertsFileForWindows(registryCertOpts *CertOptions) er
 
 // GetRegistryName extracts the registry name from the image name with/without image tag
 // (e.g. localhost:9876/tanzu-cli/plugins/central:small => localhost:9876)
+// It also supports a digest format:
+// (e.g. localhost:9876/tanzu-cli/plugins/plugin@sha256:3925a7a0e78ec439529c4bc9e26b4bbe95a01645325a8b2f66334be7e6b37ab6)
 func GetRegistryName(imageName string) (string, error) {
-	tag, err := regname.NewTag(imageName)
+	ref, err := regname.ParseReference(imageName)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to fetch registry name from image %q", imageName)
 	}
-	return tag.Registry.Name(), nil
+	return ref.Context().RegistryStr(), nil
 }
 
 // checkForProxyConfigAndUpdateCert checks if user has configured proxy CA cert data using "PROXY_CA_CERT" environment variable
