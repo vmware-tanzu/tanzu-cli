@@ -1,28 +1,27 @@
 ## tanzu plugin search
 
-Search for a keyword or regex in the list of available plugins
+Search for available plugins
 
 ### Synopsis
 
 Search provides the ability to search for plugins that can be installed.
-Without an argument, the command lists all plugins currently available.
-The search command can also be used with a keyword filter to filter the
-list of available plugins. If the filter is flanked with slashes, the
-filter will be treated as a regex.
+The command lists all plugins currently available for installation.
+The search command also provides flags to limit the scope of the search.
 
 
 ```
-tanzu plugin search [keyword|/regex/] [flags]
+tanzu plugin search [flags]
 ```
 
 ### Options
 
 ```
   -h, --help            help for search
-      --list-versions   show the long listing, with each available version of plugins
   -l, --local string    path to local plugin source
-  -o, --output string   Output format (yaml|json|table)
-  -t, --target string   list plugins for the specified target (kubernetes[k8s]/mission-control[tmc])
+  -n, --name string     limit the search to plugins with the specified name
+  -o, --output string   output format (yaml|json|table)
+      --show-details    show the details of the specified plugin, including all available versions
+  -t, --target string   limit the search to plugins of the specified target (kubernetes[k8s]/mission-control[tmc]/global)
 ```
 
 ### SEE ALSO

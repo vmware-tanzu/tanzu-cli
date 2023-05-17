@@ -11,7 +11,7 @@ tanzu plugin source delete [name] [flags]
 ```
 
     # Delete a discovery source
-    tanzu plugin discovery delete standalone-oci
+    tanzu plugin discovery delete default
 ```
 
 ### Options

@@ -13,9 +13,6 @@ tanzu context create [flags]
 	# Create a TKG management cluster context using endpoint
 	tanzu context create --endpoint "https://k8s.example.com" --name mgmt-cluster
 
-	# Create a TMC self-managed context using endpoint
-	tanzu context create --self-managed --endpoint "https://k8s.example.com" --name test-context
-
 	# Create a TKG management cluster context using kubeconfig path and context
 	tanzu context create --kubeconfig path/to/kubeconfig --kubecontext kubecontext --name mgmt-cluster
 
@@ -38,7 +35,6 @@ tanzu context create [flags]
       --kubeconfig string    path to the kubeconfig file; valid only if user doesn't choose 'endpoint' option.(See [*])
       --kubecontext string   the context in the kubeconfig to use; valid only if user doesn't choose 'endpoint' option.(See [*]) 
       --name string          name of the context
-  -l, --self-managed         indicate the context is for a self-managed TMC
 ```
 
 ### SEE ALSO

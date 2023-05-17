@@ -10,11 +10,12 @@ tanzu builder inventory plugin-group activate [flags]
 
 ```
   -h, --help                                help for activate
-      --name string                         name of the plugin group
+      --name string                         name of the plugin-group
       --plugin-inventory-image-tag string   tag to which plugin inventory image needs to be published (default "latest")
       --publisher string                    name of the publisher
       --repository string                   repository to publish plugin inventory image
       --vendor string                       name of the vendor
+      --version string                      version of the plugin-group
 ```
 
 ### SEE ALSO

@@ -10,14 +10,16 @@ tanzu builder inventory plugin-group add [flags]
 
 ```
       --deactivate                          mark plugin-group as deactivated
+      --description string                  a description for the plugin-group
   -h, --help                                help for add
       --manifest string                     manifest file specifying plugin-group details that needs to be processed
-      --name string                         name of the plugin group
-      --override                            override the plugin-group if already exists
+      --name string                         name of the plugin-group
+      --override                            overwrite the plugin-group version if it already exists
       --plugin-inventory-image-tag string   tag to which plugin inventory image needs to be published (default "latest")
       --publisher string                    name of the publisher
       --repository string                   repository to publish plugin inventory image
       --vendor string                       name of the vendor
+      --version string                      version of the plugin-group
 ```
 
 ### SEE ALSO

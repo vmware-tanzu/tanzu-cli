@@ -12,7 +12,7 @@ Initialize a new plugin repository with scaffolding for:
 * A Makefile
 
 ```
-tanzu builder init PLUGIN_NAME [flags]
+tanzu builder init REPO_NAME [flags]
 ```
 
 ### Options

@@ -10,6 +10,7 @@ tanzu plugin describe [name] [flags]
 
 ```
   -h, --help            help for describe
+  -o, --output string   Output format (yaml|json|table)
   -t, --target string   target of the plugin (kubernetes[k8s]/mission-control[tmc])
 ```
 

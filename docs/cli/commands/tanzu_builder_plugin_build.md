@@ -23,6 +23,7 @@ tanzu builder plugin build [flags]
 
 ```
       --binary-artifacts string                path to output artifacts directory (default "./artifacts")
+      --goflags string                         goflags to set on build
   -h, --help                                   help for build
       --ldflags string                         ldflags to set on build
       --match string                           match a plugin name to build, supports globbing (default "*")
