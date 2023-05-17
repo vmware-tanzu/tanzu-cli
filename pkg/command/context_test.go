@@ -5,6 +5,7 @@ package command
 import (
 	"bytes"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -31,16 +32,21 @@ func TestCliCmdSuite(t *testing.T) {
 	RunSpecs(t, "cli core command suite")
 }
 
+const (
+	targetK8s       = "k8s"
+	existingContext = "test-mc"
+	testUseContext  = "test-use-context"
+	jsonStr         = "json"
+	testmc          = "test-mc"
+	missionControl  = "mission-control"
+)
+
 var _ = Describe("Test tanzu context command", func() {
 	var (
 		tkgConfigFile   *os.File
 		tkgConfigFileNG *os.File
 		err             error
 		buf             bytes.Buffer
-	)
-	const (
-		targetK8s       = "k8s"
-		existingContext = "test-mc"
 	)
 
 	Describe("tanzu context list", func() {
@@ -88,7 +94,7 @@ var _ = Describe("Test tanzu context command", func() {
 			Expect(err).To(BeNil())
 			Expect(buf.String()).To(ContainSubstring("test-mc  true      test-endpoint  test-path       test-mc-context"))
 			Expect(buf.String()).ToNot(ContainSubstring("test-tmc-context"))
-			Expect(buf.String()).ToNot(ContainSubstring("test-use-context"))
+			Expect(buf.String()).ToNot(ContainSubstring(testUseContext))
 
 		})
 		It("should return contexts in yaml format if tanzu config file has contexts available", func() {
@@ -105,7 +111,7 @@ var _ = Describe("Test tanzu context command", func() {
   type: kubernetes`
 			Expect(buf.String()).To(ContainSubstring(expectedYaml))
 			Expect(buf.String()).ToNot(ContainSubstring("test-tmc-context"))
-			Expect(buf.String()).ToNot(ContainSubstring("test-use-context"))
+			Expect(buf.String()).ToNot(ContainSubstring(testUseContext))
 		})
 
 	})
@@ -232,16 +238,139 @@ clusterOpts:
 
 		})
 		It("should set the context as the current-context if the config file has context available", func() {
-			targetStr = "mission-control"
-			err = useCtx(cmd, []string{"test-use-context"})
+			targetStr = missionControl
+			err = useCtx(cmd, []string{testUseContext})
 			Expect(err).To(BeNil())
 
 			cctx, err := config.GetCurrentContext(configtypes.Target(targetStr))
 			Expect(err).To(BeNil())
-			Expect(cctx.Name).To(ContainSubstring("test-use-context"))
+			Expect(cctx.Name).To(ContainSubstring(testUseContext))
+		})
+	})
+
+	Describe("tanzu context unset", func() {
+		cmd := &cobra.Command{}
+		BeforeEach(func() {
+			tkgConfigFile, err = os.CreateTemp("", "config")
+			Expect(err).To(BeNil())
+			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
+			Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
+			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+
+			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
+			Expect(err).To(BeNil())
+			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
+			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
+			targetStr = ""
+			cmd.SetOut(&buf)
+		})
+		AfterEach(func() {
+			os.Unsetenv("TANZU_CONFIG")
+			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+			os.RemoveAll(tkgConfigFile.Name())
+			os.RemoveAll(tkgConfigFileNG.Name())
+			resetContextCommandFlags()
+			buf.Reset()
+		})
+		// incorrect context name (not exists)
+		It("should return error when context is not exists", func() {
+			name = "not-exists"
+			err = unsetCtx(cmd, []string{name})
+			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(contextNotActiveOrNotExists, name)))
+		})
+		// correct context name but not active
+		It("should return error when context is not active", func() {
+			name = testUseContext
+			err = unsetCtx(cmd, []string{name})
+			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(contextNotActiveOrNotExists, name)))
+		})
+		// correct context name and active
+		It("should not return error when given context is active", func() {
+			name = testmc
+			err = unsetCtx(cmd, []string{name})
+			Expect(err).To(BeNil())
+		})
+		// correct context name and but incorrect target
+		It("should return error when target is invalid", func() {
+			name = testmc
+			targetStr = "incorrect"
+			err = unsetCtx(cmd, []string{name})
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring(invalidTarget))
+		})
+		// correct context name and target, but context not active
+		It("should return error when given context not active", func() {
+			name = testUseContext
+			targetStr = missionControl
+			err = unsetCtx(cmd, []string{name})
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(contextNotExistsForTarget, name, targetStr)))
+		})
+		// correct context name and target, for tmc target, make sure context set inactive
+		It("should not return error and context should set inactive", func() {
+			name = "test-tmc-context"
+			targetStr = missionControl
+			err = unsetCtx(cmd, []string{name})
+			Expect(err).To(BeNil())
+
+			outputFormat = jsonStr
+			buf.Reset()
+			err = listCtx(cmd, nil)
+			Expect(err).To(BeNil())
+			list, err := StringToJSON[ContextListInfo](buf.String())
+			Expect(err).To(BeNil())
+			exists := false
+			for i := range list {
+				if list[i].Name == name {
+					exists = true
+					Expect(list[i].Iscurrent).To(Equal("false"))
+				}
+			}
+			Expect(exists).To(BeTrue(), "context should exist")
+		})
+
+		// correct context name and target, for k8s target, make sure context set inactive
+		It("should not return error and context should set inactive", func() {
+			name = "test-mc"
+			targetStr = "k8s"
+			err = unsetCtx(cmd, []string{name})
+			Expect(err).To(BeNil())
+			outputFormat = jsonStr
+
+			buf.Reset()
+			err = listCtx(cmd, nil)
+			Expect(err).To(BeNil())
+			list, err := StringToJSON[ContextListInfo](buf.String())
+			Expect(err).To(BeNil())
+			exists := false
+			for i := range list {
+				if list[i].Name == name {
+					exists = true
+					Expect(list[i].Iscurrent).To(Equal("false"))
+				}
+			}
+			Expect(exists).To(BeTrue(), "context should exist")
 		})
 	})
 })
+
+// StringToJSON is a generic function to convert given json string to struct type
+func StringToJSON[T ContextListInfo](jsonStr string) ([]*T, error) {
+	var list []*T
+	err := json.Unmarshal([]byte(jsonStr), &list)
+	return list, err
+}
+
+type ContextListInfo struct {
+	Endpoint            string `json:"endpoint"`
+	Iscurrent           string `json:"iscurrent"`
+	Ismanagementcluster string `json:"ismanagementcluster"`
+	Kubeconfigpath      string `json:"kubeconfigpath"`
+	Kubecontext         string `json:"kubecontext"`
+	Name                string `json:"name"`
+	Type                string `json:"type"`
+}
 
 var _ = Describe("create new context", func() {
 	const (
@@ -350,7 +479,7 @@ var _ = Describe("create new context", func() {
 				ctx, err = createNewContext()
 				Expect(err).To(BeNil())
 				Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
-				Expect(string(ctx.Target)).To(ContainSubstring("mission-control"))
+				Expect(string(ctx.Target)).To(ContainSubstring(missionControl))
 				Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
 			})
 		})
@@ -486,7 +615,7 @@ var _ = Describe("create new context", func() {
 					ctx, err = createNewContext()
 					Expect(err).To(BeNil())
 					Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
-					Expect(string(ctx.Target)).To(ContainSubstring("mission-control"))
+					Expect(string(ctx.Target)).To(ContainSubstring(missionControl))
 					Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
 				})
 			})

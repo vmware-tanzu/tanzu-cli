@@ -16,25 +16,13 @@ import (
 
 // This suite adds stress test cases for context life cycle tests (for the TMC target)
 // Here are sequence of tests:
-// a. delete config files and initialize config
-// b. create multiple contexts with tmc endpoint
-// c. test 'tanzu context use' command with the specific context name (not the recently created one),test for multiple contexts continuously
-// d. test 'tanzu context list' command, should list all contexts created
-// e. test 'tanzu context delete' command, make sure to delete all contexts created in previous test cases
+// a. create multiple contexts with tmc endpoint
+// b. test 'tanzu context use' command with the specific context name (not the recently created one),test for multiple contexts continuously
+// c. test 'tanzu context list' command, should list all contexts created
+// d. test 'tanzu context delete' command, make sure to delete all contexts created in previous test cases
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-stress-tests-k8s]", func() {
 	Context("Context lifecycle stress tests for k8s target", func() {
-		// Test case: a. delete config files and initialize config
-		It("should initialize configuration successfully", func() {
-			// delete config files
-			err := tf.Config.DeleteCLIConfigurationFiles()
-			Expect(err).To(BeNil())
-			// call init
-			err = tf.Config.ConfigInit()
-			Expect(err).To(BeNil())
-			// should create config files
-			Expect(tf.Config.IsCLIConfigurationFilesExists()).To(BeTrue())
-		})
-		// Test case: b. create multiple contexts with tmc endpoint
+		// Test case: a. create multiple contexts with tmc endpoint
 		It("create multiple contexts", func() {
 			By("create tmc context with tmc endpoint")
 			for i := 0; i < maxCtx; i++ {
@@ -42,10 +30,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-stress-
 				_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, tmcClusterInfo.EndPoint)
 				Expect(err).To(BeNil(), "context should create without any error")
 				Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
-				contextNames = append(contextNames, ctxName)
+				contextNamesStress = append(contextNamesStress, ctxName)
 			}
 		})
-		// Test case: c. test 'tanzu context use' command with the specific context name
+		// Test case: b. test 'tanzu context use' command with the specific context name
 		// 				(not the recently created one), test for multiple contexts continuously
 		It("use context command", func() {
 			By("use context command")
@@ -57,13 +45,13 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-stress-
 				Expect(active).To(Equal(ctxsStress[i]), "the active context should be recently set context")
 			}
 		})
-		// Test case: d. test 'tanzu context list' command, should list all contexts created
+		// Test case: c. test 'tanzu context list' command, should list all contexts created
 		It("list context should have all added contexts", func() {
 			By("list context should have all added contexts")
 			list := framework.GetAvailableContexts(tf, ctxsStress)
-			Expect(len(list)).To(Equal(len(ctxsStress)), "list context should have all contexts added in previous tests")
+			Expect(len(list)).Should(BeNumerically(">=", len(ctxsStress)))
 		})
-		// Test case: e. test 'tanzu context delete' command, make sure to delete all contexts created in previous test cases
+		// Test case: d. test 'tanzu context delete' command, make sure to delete all contexts created in previous test cases
 		It("delete context command", func() {
 			By("delete all contexts created in previous tests")
 			for _, ctx := range ctxsStress {

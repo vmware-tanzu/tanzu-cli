@@ -86,15 +86,20 @@ const (
 	CreateContextWithKubeconfigFile        = "%s context create --kubeconfig %s --kubecontext %s --name %s"
 	CreateContextWithDefaultKubeconfigFile = "%s context create --kubecontext %s --name %s"
 	UseContext                             = "%s context use %s"
+	UnsetContext                           = "%s context unset"
 	GetContext                             = "%s context get %s"
 	ListContextOutputInJSON                = "%s context list -o json"
 	DeleteContext                          = "%s context delete %s --yes"
 	TanzuAPIToken                          = "TANZU_API_TOKEN" //nolint:gosec
 	TanzuCliTmcUnstableURL                 = "TANZU_CLI_TMC_UNSTABLE_URL"
 
-	// context logs
-	ContextShouldNotExists       = "the context %s should not exists"
-	ContextShouldExistsAsCreated = "the context %s should exists as its been created"
+	// context specific
+	ContextShouldNotExists         = "the context %s should not exists"
+	ContextShouldExistsAsCreated   = "the context %s should exists as its been created"
+	ContextNotExistsForTarget      = "The provided context %v does not exist or is not active for the given target %v"
+	NoActiveContextExistsForTarget = "There is no active context for the given target %v"
+	ContextNotActiveOrNotExists    = "The provided context %v is not active or does not exist"
+	ContextForTargetSetInactive    = "The context %v for the target %v has been set as inactive"
 
 	KindClusterCreate = "kind create cluster --name %s"
 	KindClusterStatus = "kubectl cluster-info --context %s"

@@ -28,6 +28,8 @@ type ContextCmdOps interface {
 	GetActiveContext(targetType string, opts ...E2EOption) (string, error)
 	// GetActiveContexts returns all active contexts
 	GetActiveContexts(opts ...E2EOption) ([]*ContextListInfo, error)
+	// UnsetContext unsets the given context with 'tanzu context unset' and returns stdOut, stdErr and error
+	UnsetContext(contextName string, opts ...E2EOption) (stdOutStr, stdErrStr string, err error)
 }
 
 // contextCmdOps implements the interface ContextCmdOps
@@ -47,6 +49,15 @@ func (cc *contextCmdOps) UseContext(contextName string, opts ...E2EOption) error
 	useContextCmd := fmt.Sprintf(UseContext, "%s", contextName)
 	_, _, err := cc.cmdExe.TanzuCmdExec(useContextCmd, opts...)
 	return err
+}
+
+func (cc *contextCmdOps) UnsetContext(contextName string, opts ...E2EOption) (string, string, error) {
+	unsetCmd := UnsetContext
+	if contextName != "" {
+		unsetCmd += " " + contextName
+	}
+	stdOut, stdErr, err := cc.cmdExe.TanzuCmdExec(unsetCmd, opts...)
+	return stdOut.String(), stdErr.String(), err
 }
 
 func (cc *contextCmdOps) GetContext(contextName string, opts ...E2EOption) (ContextInfo, error) {
@@ -76,7 +87,7 @@ func (cc *contextCmdOps) GetActiveContext(targetType string, opts ...E2EOption) 
 	}
 	activeCtx := ""
 	for _, context := range list {
-		if context.Iscurrent == "true" && context.Type == targetType {
+		if context.Iscurrent == True && context.Type == targetType {
 			if activeCtx != "" {
 				return "", errors.New("more than one context is active")
 			}
@@ -93,7 +104,7 @@ func (cc *contextCmdOps) GetActiveContexts(opts ...E2EOption) ([]*ContextListInf
 		return contexts, err
 	}
 	for i, _ := range list {
-		if list[i].Iscurrent == "true" {
+		if list[i].Iscurrent == True {
 			contexts = append(contexts, list[i])
 		}
 	}
