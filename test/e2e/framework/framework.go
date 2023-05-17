@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/onsi/ginkgo/v2"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 )
 
 const (
@@ -128,7 +130,7 @@ const (
 	UnableToFindPluginForTarget                   = "unable to find plugin '%s' with version '%s'"
 	UnableToFindPluginWithVersionForTarget        = "unable to find plugin '%s' with version '%s' for target '%s'"
 	UnableToFindPlugin                            = "unable to find plugin '%s'"
-	InvalidTargetSpecified                        = "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'"
+	InvalidTargetSpecified                        = "invalid target specified. Please specify a correct value for the `--target/-t` flag from '" + common.TargetList + "'"
 	InvalidTargetGlobal                           = "invalid target for plugin: global"
 	DiscoverySourceNotFound                       = "discovery %q does not exist"
 	ErrorLogForCommandWithErrStdErrAndStdOut      = "error while executing command:'%s', error:'%s' stdErr:'%s' stdOut: '%s'"
