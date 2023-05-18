@@ -26,6 +26,8 @@ type ContextCmdOps interface {
 	DeleteContext(contextName string, opts ...E2EOption) error
 	// GetActiveContext returns current active context
 	GetActiveContext(targetType string, opts ...E2EOption) (string, error)
+	// GetActiveContexts returns all active contexts
+	GetActiveContexts(opts ...E2EOption) ([]*ContextListInfo, error)
 }
 
 // contextCmdOps implements the interface ContextCmdOps
@@ -82,6 +84,20 @@ func (cc *contextCmdOps) GetActiveContext(targetType string, opts ...E2EOption) 
 		}
 	}
 	return activeCtx, nil
+}
+
+func (cc *contextCmdOps) GetActiveContexts(opts ...E2EOption) ([]*ContextListInfo, error) {
+	list, err := cc.ListContext(opts...)
+	contexts := make([]*ContextListInfo, 0)
+	if err != nil {
+		return contexts, err
+	}
+	for i, _ := range list {
+		if list[i].Iscurrent == "true" {
+			contexts = append(contexts, list[i])
+		}
+	}
+	return contexts, nil
 }
 
 func (cc *contextCmdOps) DeleteContext(contextName string, opts ...E2EOption) error {

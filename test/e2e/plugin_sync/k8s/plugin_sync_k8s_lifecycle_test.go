@@ -14,6 +14,14 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
+// Below Use cases executed in this test suite
+// cleanup and initialize the config files
+// Use case 1: create a KIND cluster, don't apply CRD and CRs, create context, make sure no plugins are installed
+// Use case 2: Create kind cluster, apply CRD and CRs, create context, should install all plugins, uninstall the specific plugin, and perform plugin sync
+// Use case 3: Test plugin sync when central repo does not have all plugin CRs being applied in KIND cluster
+// Use case 4: test delete context use case, it should uninstall plugins installed for the context
+// Use case 5: test switch context use case, make installed plugins should be updated as per the context
+
 var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 
 	// cleanup and initialize the config files

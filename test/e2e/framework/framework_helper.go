@@ -560,3 +560,12 @@ func CleanConfigFiles(tf *Framework) error {
 func GetJsonOutputFormatAdditionalFlagFunction() E2EOption {
 	return AddAdditionalFlagAndValue(JSONOtuput)
 }
+
+// ContextInfoToMap takes the contexts list, and returns the map with context name as key and context info as value
+func ContextInfoToMap(ctxs []*ContextListInfo) map[string]*ContextListInfo {
+	m := make(map[string]*ContextListInfo)
+	for i := range ctxs {
+		m[ctxs[i].Name] = ctxs[i]
+	}
+	return m
+}
