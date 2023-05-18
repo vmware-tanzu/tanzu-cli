@@ -47,7 +47,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 		// Test case: b. Create context for TMC target with TMC cluster URL as endpoint
 		It("create tmc context with endpoint", func() {
 			ctxName := prefix + framework.RandomString(4)
-			_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
+			_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, tmcClusterInfo.EndPoint)
 			Expect(err).To(BeNil(), "context should create without any error")
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
@@ -65,18 +65,18 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc]", 
 			err := os.Setenv(framework.TanzuAPIToken, framework.RandomString(4))
 			Expect(err).To(BeNil(), "There should not be any error in setting environment variables.")
 			ctxName := framework.RandomString(4)
-			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
-			os.Setenv(framework.TanzuAPIToken, clusterInfo.APIKey)
+			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, tmcClusterInfo.EndPoint)
+			os.Setenv(framework.TanzuAPIToken, tmcClusterInfo.APIKey)
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists, ctxName))
-			err = os.Setenv(framework.TanzuAPIToken, clusterInfo.APIKey)
+			err = os.Setenv(framework.TanzuAPIToken, tmcClusterInfo.APIKey)
 			Expect(err).To(BeNil(), "There should not be any error in setting environment variables.")
 		})
 		// Test case: e. Create context for TMC target with TMC cluster URL as endpoint, and validate the active context, should be recently create context
 		It("create tmc context with endpoint and check active context", func() {
 			ctxName := prefix + framework.RandomString(4)
-			_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, clusterInfo.EndPoint)
+			_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(ctxName, tmcClusterInfo.EndPoint)
 			Expect(err).To(BeNil(), "context should create without any error")
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
