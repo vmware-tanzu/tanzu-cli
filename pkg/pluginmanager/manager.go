@@ -492,8 +492,12 @@ func mergeGroupEntries(group1, group2 *plugininventory.PluginGroup) *plugininven
 		latestVersions := []string{group1.RecommendedVersion, group2.RecommendedVersion}
 		_ = utils.SortVersions(latestVersions)
 
-		// Set the recommended version to the highest version
-		group1.RecommendedVersion = latestVersions[1]
+		// Set the recommended version and the description to the ones from the highest version group
+		if group2.RecommendedVersion == latestVersions[1] {
+			// If it is group2 that has the highest version, replace the RecommendedVersion and Description
+			group1.RecommendedVersion = group2.RecommendedVersion
+			group1.Description = group2.Description
+		}
 	}
 
 	return group1

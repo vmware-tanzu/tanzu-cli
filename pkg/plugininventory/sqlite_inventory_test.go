@@ -120,7 +120,7 @@ var pluginGroup1 = PluginGroup{
 	Name:        "default",
 	Vendor:      "fakevendor",
 	Publisher:   "fakepublisher",
-	Description: "Description for fakevendor-fakepublisher/default",
+	Description: "Description for fakevendor-fakepublisher/default:v2.0.0",
 	Hidden:      false,
 	Versions: map[string][]*PluginGroupPluginEntry{
 		"v2.0.0": {
@@ -146,7 +146,7 @@ var groupWithHiddenPlugin = PluginGroup{
 	Name:        "default",
 	Vendor:      "fakevendor",
 	Publisher:   "nothidden",
-	Description: "Description for fakevendor-nothidden/default",
+	Description: "Description for fakevendor-nothidden/default:v1.0.0",
 	Hidden:      false,
 	Versions: map[string][]*PluginGroupPluginEntry{
 		"v1.0.0": {
@@ -285,7 +285,7 @@ INSERT INTO PluginGroups VALUES(
 	'tkg',
 	'default',
 	'v2.1.0',
-	'Description for vmware-tkg/default',
+	'Description for vmware-tkg/default:v2.1.0',
 	'management-cluster',
 	'kubernetes',
 	'v0.28.0',
@@ -296,7 +296,7 @@ INSERT INTO PluginGroups VALUES(
 	'tkg',
 	'default',
 	'v2.1.0',
-	'Description for vmware-tkg/default',
+	'Description for vmware-tkg/default:v2.1.0',
 	'package',
 	'kubernetes',
 	'v0.28.0',
@@ -307,7 +307,7 @@ INSERT INTO PluginGroups VALUES(
 	'tkg',
 	'default',
 	'v2.1.0',
-	'Description for vmware-tkg/default',
+	'Description for vmware-tkg/default:v2.1.0',
 	'feature',
 	'kubernetes',
 	'v0.28.0',
@@ -318,7 +318,7 @@ INSERT INTO PluginGroups VALUES(
 	'tkg',
 	'default',
 	'v2.1.0',
-	'Description for vmware-tkg/default',
+	'Description for vmware-tkg/default:v2.1.0',
 	'kubernetes-release',
 	'kubernetes',
 	'v0.28.0',
@@ -329,7 +329,7 @@ INSERT INTO PluginGroups VALUES(
 	'tkg',
 	'default',
 	'v2.1.0',
-	'Description for vmware-tkg/default',
+	'Description for vmware-tkg/default:v2.1.0',
 	'isolated-cluster',
 	'kubernetes',
 	'v0.28.0',
@@ -340,7 +340,7 @@ INSERT INTO PluginGroups VALUES(
 	'tkg',
 	'default',
 	'v1.6.0',
-	'Description for vmware-tkg/default',
+	'Description for vmware-tkg/default:v1.6.0',
 	'management-cluster',
 	'kubernetes',
 	'v0.26.0',
@@ -351,7 +351,7 @@ INSERT INTO PluginGroups VALUES(
 	'tkg',
 	'default',
 	'v1.6.0',
-	'Description for vmware-tkg/default',
+	'Description for vmware-tkg/default:v1.6.0',
 	'package',
 	'kubernetes',
 	'v0.26.0',
@@ -362,7 +362,7 @@ INSERT INTO PluginGroups VALUES(
 	'tkg',
 	'default',
 	'v1.6.0',
-	'Description for vmware-tkg/default',
+	'Description for vmware-tkg/default:v1.6.0',
 	'feature',
 	'kubernetes',
 	'v0.26.0',
@@ -373,7 +373,7 @@ INSERT INTO PluginGroups VALUES(
 	'tkg',
 	'default',
 	'v1.6.0',
-	'Description for vmware-tkg/default',
+	'Description for vmware-tkg/default:v1.6.0',
 	'kubernetes-release',
 	'kubernetes',
 	'v0.26.0',
@@ -384,7 +384,7 @@ INSERT INTO PluginGroups VALUES(
 	'other',
 	'mygroup',
 	'v1.0.0',
-	'Description for independent-other/mygroup',
+	'Description for independent-other/mygroup:v1.0.0',
 	'plugin1',
 	'kubernetes',
 	'v0.1.0',
@@ -395,7 +395,7 @@ INSERT INTO PluginGroups VALUES(
 	'other',
 	'mygroup',
 	'v1.0.0',
-	'Description for independent-other/mygroup',
+	'Description for independent-other/mygroup:v1.0.0',
 	'plugin2',
 	'mission-control',
 	'v0.2.0',
@@ -406,7 +406,7 @@ INSERT INTO PluginGroups VALUES(
     'other',
     'hidden',
 	'v2.0.0',
-	'Description for independent-other/hidden',
+	'Description for independent-other/hidden:v2.0.0',
     'plugin2',
     'mission-control',
     'v0.3.0',
@@ -923,7 +923,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("mygroup"))
-					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup:v1.0.0"))
 
 					Expect(len(groups[i].Versions)).To(Equal(1))
 
@@ -943,7 +943,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("vmware"))
 					Expect(groups[i].Publisher).To(Equal("tkg"))
 					Expect(groups[i].Name).To(Equal("default"))
-					Expect(groups[i].Description).To(Equal("Description for vmware-tkg/default"))
+					Expect(groups[i].Description).To(Equal("Description for vmware-tkg/default:v2.1.0"))
 
 					Expect(len(groups[i].Versions)).To(Equal(2))
 
@@ -1009,7 +1009,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("vmware"))
 					Expect(groups[i].Publisher).To(Equal("tkg"))
 					Expect(groups[i].Name).To(Equal("default"))
-					Expect(groups[i].Description).To(Equal("Description for vmware-tkg/default"))
+					Expect(groups[i].Description).To(Equal("Description for vmware-tkg/default:v1.6.0"))
 
 					Expect(len(groups[i].Versions)).To(Equal(1))
 
@@ -1046,7 +1046,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("mygroup"))
-					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup:v1.0.0"))
 
 					Expect(len(groups[i].Versions)).To(Equal(1))
 
@@ -1075,7 +1075,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("hidden"))
-					Expect(groups[i].Description).To(Equal("Description for independent-other/hidden"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/hidden:v2.0.0"))
 
 					Expect(len(groups[i].Versions)).To(Equal(1))
 
@@ -1091,7 +1091,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("mygroup"))
-					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup:v1.0.0"))
 
 					Expect(len(groups[i].Versions)).To(Equal(1))
 
@@ -1111,7 +1111,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("vmware"))
 					Expect(groups[i].Publisher).To(Equal("tkg"))
 					Expect(groups[i].Name).To(Equal("default"))
-					Expect(groups[i].Description).To(Equal("Description for vmware-tkg/default"))
+					Expect(groups[i].Description).To(Equal("Description for vmware-tkg/default:v2.1.0"))
 
 					Expect(len(groups[i].Versions)).To(Equal(2))
 
@@ -1175,7 +1175,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("hidden"))
-					Expect(groups[i].Description).To(Equal("Description for independent-other/hidden"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/hidden:v2.0.0"))
 
 					Expect(len(groups[i].Versions)).To(Equal(1))
 
@@ -1191,7 +1191,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(groups[i].Vendor).To(Equal("independent"))
 					Expect(groups[i].Publisher).To(Equal("other"))
 					Expect(groups[i].Name).To(Equal("mygroup"))
-					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup"))
+					Expect(groups[i].Description).To(Equal("Description for independent-other/mygroup:v1.0.0"))
 
 					Expect(len(groups[i].Versions)).To(Equal(1))
 
@@ -1355,7 +1355,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Name:        "default",
 					Vendor:      "fakevendor",
 					Publisher:   "fakepublisher",
-					Description: "Description for fakevendor-fakepublisher/default",
+					Description: "Description for fakevendor-fakepublisher/default:v1.0.0",
 					Hidden:      false,
 					Versions: map[string][]*PluginGroupPluginEntry{
 						"v1.0.0": {
@@ -1381,7 +1381,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Name:        "default",
 					Vendor:      "fakevendor",
 					Publisher:   "fakepublisher",
-					Description: "Description for fakevendor-fakepublisher/default",
+					Description: "Description for fakevendor-fakepublisher/default:v1.0.0",
 					Hidden:      false,
 					Versions: map[string][]*PluginGroupPluginEntry{
 						"v1.0.0": {
@@ -1497,6 +1497,8 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			It("should not return error and GetPluginGroups should return the updated result", func() {
 				pluginGroupUpdated := pluginGroup1
 				pluginGroupUpdated.Hidden = false
+				// This description should not be returned since it being applied to the v1.0.0 version.
+				// Instead, GetPluginGroups should choose the description of the latest group version.
 				pluginGroupUpdated.Description = "Updated description"
 				pluginGroupUpdated.Versions = map[string][]*PluginGroupPluginEntry{
 					"v1.0.0": {
@@ -1526,10 +1528,10 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(groups)).To(Equal(1))
-				Expect(groups[0].Name).To(Equal(pluginGroupUpdated.Name))
-				Expect(groups[0].Vendor).To(Equal(pluginGroupUpdated.Vendor))
-				Expect(groups[0].Publisher).To(Equal(pluginGroupUpdated.Publisher))
-				Expect(groups[0].Description).To(Equal(pluginGroupUpdated.Description))
+				Expect(groups[0].Name).To(Equal(pluginGroup1.Name))
+				Expect(groups[0].Vendor).To(Equal(pluginGroup1.Vendor))
+				Expect(groups[0].Publisher).To(Equal(pluginGroup1.Publisher))
+				Expect(groups[0].Description).To(Equal(pluginGroup1.Description))
 				Expect(groups[0].Hidden).To(Equal(pluginGroupUpdated.Hidden))
 
 				Expect(len(groups[0].Versions)).To(Equal(2))

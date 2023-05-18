@@ -169,7 +169,7 @@ addGroup() {
 
     echo "Adding $plugin/$target version $pluginVersion to plugin group $vendor-$publisher/$name:$groupVersion"
 
-    local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$groupVersion','Desc for $vendor-$publisher/$name','$plugin','$target','$pluginVersion', '$mandatory', '$hidden');"
+    local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$groupVersion','Desc for $vendor-$publisher/$name:$groupVersion','$plugin','$target','$pluginVersion', '$mandatory', '$hidden');"
     if [ "$dry_run" = "echo" ]; then
         echo $sql_cmd
     else
