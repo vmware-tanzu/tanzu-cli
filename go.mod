@@ -33,7 +33,7 @@ require (
 	github.com/verybluebot/tarinator-go v0.0.0-20190613183509-5ab4e1193986
 	github.com/vmware-tanzu/carvel-imgpkg v0.36.1
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
-	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230415084831-9331f55d2999
+	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230512211247-ed2b7d48e0de
 	github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.2
 	go.pinniped.dev v0.20.0
 	go.uber.org/multierr v1.8.0
@@ -104,7 +104,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/docker/cli v20.10.20+incompatible // indirect
-	github.com/docker/distribution v2.8.1+incompatible // indirect
+	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v20.10.24+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -222,7 +222,8 @@ require (
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	github.com/vito/go-interact v1.0.1 // indirect
 	github.com/vmware-tanzu/carvel-vendir v0.26.0 // indirect
-	github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20221207131309-7323ca04b86c // indirect
+	github.com/vmware-tanzu/tanzu-framework/apis/core v0.0.0-20230419030809-7081502ebf68 // indirect
+	github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20230419030809-7081502ebf68 // indirect
 	github.com/xanzy/go-gitlab v0.73.1 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
