@@ -121,10 +121,14 @@ func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInven
 	log.Infof("validating plugin '%s_%s_%s_%s'", plugin.Name, plugin.Target, osArch.String(), version)
 
 	pluginImageBasePath := fmt.Sprintf("%s/%s/%s/%s/%s/%s:%s", ipuo.Vendor, ipuo.Publisher, osArch.OS(), osArch.Arch(), plugin.Target, plugin.Name, version)
-	pluginImage := fmt.Sprintf("%s/%s", ipuo.Repository, pluginImageBasePath)
-	digest, err = ipuo.ImgpkgOptions.GetFileDigestFromImage(pluginImage, cli.MakeArtifactName(plugin.Name, osArch))
-	if err != nil && !ipuo.ValidateOnly {
-		return nil, errors.Wrapf(err, "error while getting plugin binary digest from the image %q", pluginImage)
+	if !ipuo.ValidateOnly {
+		// If we are only validating the plugin's existence, we don't need to waste
+		// resources downloading the image to get the digest which won't actually be used.
+		pluginImage := fmt.Sprintf("%s/%s", ipuo.Repository, pluginImageBasePath)
+		digest, err = ipuo.ImgpkgOptions.GetFileDigestFromImage(pluginImage, cli.MakeArtifactName(plugin.Name, osArch))
+		if err != nil {
+			return nil, errors.Wrapf(err, "error while getting plugin binary digest from the image %q", pluginImage)
+		}
 	}
 
 	if pluginInventoryEntry == nil {
