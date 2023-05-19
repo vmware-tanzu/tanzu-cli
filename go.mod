@@ -222,6 +222,7 @@ require (
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	github.com/vito/go-interact v1.0.1 // indirect
 	github.com/vmware-tanzu/carvel-vendir v0.26.0 // indirect
+	github.com/vmware-tanzu/tanzu-framework/apis/core v0.0.0-20230419030809-7081502ebf68 // indirect
 	github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20230419030809-7081502ebf68 // indirect
 	github.com/xanzy/go-gitlab v0.73.1 // indirect
 	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
