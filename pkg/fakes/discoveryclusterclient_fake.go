@@ -7,6 +7,7 @@ import (
 	openapi_v2 "github.com/google/gnostic/openapiv2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/openapi"
 	"k8s.io/client-go/rest"
 
@@ -123,6 +124,11 @@ type DiscoveryClient struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *DiscoveryClient) WithLegacy() discovery.DiscoveryInterface {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (fake *DiscoveryClient) OpenAPISchema() (*openapi_v2.Document, error) {
