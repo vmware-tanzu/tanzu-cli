@@ -331,8 +331,9 @@ github.com/dimchansky/utfbom v1.1.1 h1:vV6w1AhK4VMnhBno/TPVCoK9U/LP0PkLCS9tbxHdi
 github.com/dimchansky/utfbom v1.1.1/go.mod h1:SxdoEBH5qIqFocHMyGOXVAybYJdr71b1Q/j0mACtrfE=
 github.com/docker/cli v20.10.20+incompatible h1:lWQbHSHUFs7KraSN2jOJK7zbMS2jNCHI4mt4xUFUVQ4=
 github.com/docker/cli v20.10.20+incompatible/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
-github.com/docker/distribution v2.8.1+incompatible h1:Q50tZOPR6T/hjNsyc9g8/syEs6bk8XXApsHjKukMl68=
 github.com/docker/distribution v2.8.1+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
+github.com/docker/distribution v2.8.2+incompatible h1:T3de5rq0dB1j30rp0sA2rER+m322EBzniBPB6ZIzuh8=
+github.com/docker/distribution v2.8.2+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/docker v20.10.24+incompatible h1:Ugvxm7a8+Gz6vqQYQQ2W7GYq5EUPaAiuPgIfVyI3dYE=
 github.com/docker/docker v20.10.24+incompatible/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker-credential-helpers v0.6.3/go.mod h1:WRaJzqw3CTB9bk10avuGsjVBZsD05qeibJ1/TYlvc0Y=
@@ -1285,10 +1286,12 @@ github.com/vmware-tanzu/carvel-vendir v0.26.0 h1:Q98tPnH9WUAWE2vJSAP0lsHGsfwGjfW
 github.com/vmware-tanzu/carvel-vendir v0.26.0/go.mod h1:JcuNNVONFbZTbm/GjtGiWUfFrt17YBQzeGT9+gY1+yY=
 github.com/vmware-tanzu/carvel-ytt v0.40.0 h1:WUWTtwvfqV9CN9v207oDt2xfhmuWHGwc4MMaXJAqIEE=
 github.com/vmware-tanzu/carvel-ytt v0.40.0/go.mod h1:crDcKbS1GM4Q34puoVxdrajWOXrxjOxvUCwtsNV5Etc=
-github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20221207131309-7323ca04b86c h1:w1b5UNbfqUetv4f32qqkbh2ESV+0iZCpMlq72zfyDqs=
-github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20221207131309-7323ca04b86c/go.mod h1:ukZpKQ0hf5bjWdJLjn2M6qXP+9giZWQPxt8nOfrCR+o=
-github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230415084831-9331f55d2999 h1:WITDH+wpdl/clw1hwy+2jtq4Pt//i/Mq9lQXGwg3q4c=
-github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230415084831-9331f55d2999/go.mod h1:umFZBUfJ8VI3p0VO/xocuE+4fO9s9QbytEiOqFcH/Tw=
+github.com/vmware-tanzu/tanzu-framework/apis/core v0.0.0-20230419030809-7081502ebf68 h1:Y8E52wUIFNY5UAMoSWRqXnkgMQAQ7yzCvxGaYlSFDA0=
+github.com/vmware-tanzu/tanzu-framework/apis/core v0.0.0-20230419030809-7081502ebf68/go.mod h1:TmKXkKBVKBu3/7mZeHSr17RH4pUzlcAHuU7gdKYw34U=
+github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20230419030809-7081502ebf68 h1:DMsg44rX3xSBDCoKYU7zfJGzs9dfPkMYmM7C5fFx7Es=
+github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20230419030809-7081502ebf68/go.mod h1:e1Uef+Ux5BIHpYwqbeP2ZZmOzehBcez2vUEWXHe+xHE=
+github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230512211247-ed2b7d48e0de h1:DorAdwty69ZpvWZwNoKf7XpzaIY1HO/BRgjjGuxb8SY=
+github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230512211247-ed2b7d48e0de/go.mod h1:jlEH/6vQ45+wfnI2jEdcvUNHzQAkGOZEkDr4/yxSxEo=
 github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.2 h1:FSX6vxceyWJWE5v1P42dr7ncxDLMjsDM8wJXDWgTDMQ=
 github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.2/go.mod h1:FlvOcF26rX4EA+ADjYTJdFh6WVur6O4jh25FDP9Lp7E=
 github.com/xanzy/go-gitlab v0.31.0/go.mod h1:sPLojNBn68fMUWSxIJtdVVIP8uSBYqesTfDUseX11Ug=
