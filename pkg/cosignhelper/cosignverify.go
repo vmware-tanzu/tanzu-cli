@@ -59,12 +59,17 @@ func (vo *CosignVerifyOptions) Verify(ctx context.Context, images []string) erro
 	if err != nil {
 		return errors.Wrapf(err, "creating registry HTTP transport")
 	}
+	// TODO: Investigate If CLI need transparency log verification, and add support for RekorURL
+	// The Rekor Transparency log verification was experimental in v1.13.1 and regular feature in v2.x.x
+	// Using Rekor Default URL and Rekor public Keys (downloaded from online by default) not be feasible for air-gapped environment
+	ignoreTlog := true
 
 	co := &cosign.CheckOpts{
 		RegistryClientOpts: []ociremote.Option{
 			ociremote.WithRemoteOptions(remote.WithContext(ctx)),
 			ociremote.WithRemoteOptions(remote.WithTransport(httpTrans)),
 		},
+		IgnoreTlog: ignoreTlog,
 	}
 
 	switch {
