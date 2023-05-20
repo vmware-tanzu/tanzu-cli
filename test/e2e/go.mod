@@ -11,8 +11,8 @@ require (
 	github.com/vmware-tanzu/tanzu-cli v0.0.0-00010101000000-000000000000
 	github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.1
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/apimachinery v0.25.4
-	k8s.io/client-go v0.25.4
+	k8s.io/apimachinery v0.26.1
+	k8s.io/client-go v0.26.1
 )
 
 require (
