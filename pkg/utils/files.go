@@ -56,3 +56,19 @@ func PathExists(dir string) bool {
 	}
 	return true
 }
+
+// IsFileEmpty returns true if file/directory is empty otherwise returns false
+func IsFileEmpty(filename string) (bool, error) {
+	// Get the file info
+	info, err := os.Stat(filename)
+	if err != nil {
+		return false, err
+	}
+
+	// Check the size
+	if info.Size() <= 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
