@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
@@ -37,7 +38,7 @@ func newSearchPluginCmd() *cobra.Command {
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !configtypes.IsValidTarget(targetStr, true, true) {
-				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
+				return errors.New(invalidTargetMsg)
 			}
 
 			var err error
@@ -78,7 +79,7 @@ func newSearchPluginCmd() *cobra.Command {
 	f.StringVarP(&pluginName, "name", "n", "", "limit the search to plugins with the specified name")
 	f.StringVarP(&outputFormat, "output", "o", "", "output format (yaml|json|table)")
 	f.StringVarP(&local, "local", "l", "", "path to local plugin source")
-	f.StringVarP(&targetStr, "target", "t", "", "limit the search to plugins of the specified target (kubernetes[k8s]/mission-control[tmc]/global)")
+	f.StringVarP(&targetStr, "target", "t", "", fmt.Sprintf("limit the search to plugins of the specified target (%s)", common.TargetList))
 
 	searchCmd.MarkFlagsMutuallyExclusive("local", "name")
 	searchCmd.MarkFlagsMutuallyExclusive("local", "target")

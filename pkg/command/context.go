@@ -69,7 +69,7 @@ func init() {
 
 	initCreateCtxCmd()
 
-	listCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "list only contexts associated with the specified target (kubernetes[k8s]|mission-control[tmc])")
+	listCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc])")
 	listCtxCmd.Flags().BoolVar(&onlyCurrent, "current", false, "list only current active contexts")
 	listCtxCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "output format: table|yaml|json")
 

@@ -28,5 +28,10 @@ const (
 	DistributionTypeLocal = "local"
 )
 
+// Shared strings
+const (
+	TargetList = "kubernetes[k8s]/mission-control[tmc]/global"
+)
+
 // CoreName is the name of the core binary.
 const CoreName = "core"
