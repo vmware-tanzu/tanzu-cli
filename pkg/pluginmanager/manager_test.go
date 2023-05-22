@@ -1766,7 +1766,7 @@ func TestMergeDuplicateGroups(t *testing.T) {
 			Name:        "default",
 			Vendor:      "fakevendor",
 			Publisher:   "fakepublisher",
-			Description: "Description for fakevendor-fakepublisher/default",
+			Description: "Description for fakevendor-fakepublisher/default:v2.0.0",
 			Hidden:      false,
 			Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
 				"v2.0.0": {
@@ -1791,7 +1791,7 @@ func TestMergeDuplicateGroups(t *testing.T) {
 			Name:        "default",
 			Vendor:      "fakevendor",
 			Publisher:   "fakepublisher",
-			Description: "Description for fakevendor-fakepublisher/default",
+			Description: "Description for fakevendor-fakepublisher/default:v3.0.0",
 			Hidden:      false,
 			Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
 				"v3.0.0": {
@@ -1812,7 +1812,7 @@ func TestMergeDuplicateGroups(t *testing.T) {
 		Name:        "default",
 		Vendor:      "fakevendor",
 		Publisher:   "fakepublisher",
-		Description: "Description for fakevendor-fakepublisher/default",
+		Description: "Description for fakevendor-fakepublisher/default:v3.0.0",
 		Hidden:      false,
 		Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
 			"v2.0.0": {
@@ -1857,7 +1857,7 @@ func TestMergeDuplicateGroupsWithReplacedVersion(t *testing.T) {
 			Name:        "default",
 			Vendor:      "fakevendor",
 			Publisher:   "fakepublisher",
-			Description: "Description for fakevendor-fakepublisher/default",
+			Description: "Description for fakevendor-fakepublisher/default:v2.0.0",
 			Hidden:      false,
 			Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
 				"v2.0.0": {
@@ -1882,7 +1882,7 @@ func TestMergeDuplicateGroupsWithReplacedVersion(t *testing.T) {
 			Name:        "default",
 			Vendor:      "fakevendor",
 			Publisher:   "fakepublisher",
-			Description: "Description for fakevendor-fakepublisher/default",
+			Description: "Description for fakevendor-fakepublisher/default:v3.0.0",
 			Hidden:      false,
 			Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
 				// Same version as the other group.  This version should be ignored while we keep the one from the other group.
@@ -1914,7 +1914,7 @@ func TestMergeDuplicateGroupsWithReplacedVersion(t *testing.T) {
 		Name:        "default",
 		Vendor:      "fakevendor",
 		Publisher:   "fakepublisher",
-		Description: "Description for fakevendor-fakepublisher/default",
+		Description: "Description for fakevendor-fakepublisher/default:v3.0.0",
 		Hidden:      false,
 		Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
 			"v2.0.0": {

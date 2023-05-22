@@ -385,6 +385,7 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 	var allGroups []*PluginGroup
 	var versions map[string][]*PluginGroupPluginEntry
 	var pluginsOfGroup []*PluginGroupPluginEntry
+	var versionDescriptions map[string]string
 
 	for rows.Next() {
 		row, err := getGroupNextRow(rows)
@@ -405,18 +406,18 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 				versions[currentVersion] = pluginsOfGroup
 				pluginsOfGroup = []*PluginGroupPluginEntry{}
 				currentGroup.Versions = versions
-				allGroups = appendGroup(allGroups, currentGroup)
+				allGroups = appendGroup(allGroups, currentGroup, versionDescriptions)
 			}
 			currentGroupID = groupIDFromRow
 
 			currentGroup = &PluginGroup{
-				Vendor:      row.vendor,
-				Publisher:   row.publisher,
-				Name:        row.groupName,
-				Description: row.description,
+				Vendor:    row.vendor,
+				Publisher: row.publisher,
+				Name:      row.groupName,
 			}
 			currentVersion = ""
 			versions = make(map[string][]*PluginGroupPluginEntry, 0)
+			versionDescriptions = make(map[string]string, 0)
 		}
 
 		// Check if we have a new version
@@ -431,6 +432,7 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 				pluginsOfGroup = []*PluginGroupPluginEntry{}
 			}
 			currentVersion = row.groupVersion
+			versionDescriptions[currentVersion] = row.description
 		}
 
 		pge := PluginGroupPluginEntry{
@@ -448,7 +450,7 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 	if currentGroup != nil {
 		versions[currentVersion] = pluginsOfGroup
 		currentGroup.Versions = versions
-		allGroups = appendGroup(allGroups, currentGroup)
+		allGroups = appendGroup(allGroups, currentGroup, versionDescriptions)
 	}
 	return allGroups, rows.Err()
 }
@@ -517,7 +519,7 @@ func appendPlugin(allPlugins []*PluginInventoryEntry, plugin *PluginInventoryEnt
 
 // appendGroup appends a PluginGroup to the specified array.
 // This function needs to be used to do post-processing on the new group before storing it.
-func appendGroup(allGroups []*PluginGroup, group *PluginGroup) []*PluginGroup {
+func appendGroup(allGroups []*PluginGroup, group *PluginGroup, versionDesc map[string]string) []*PluginGroup {
 	// Now that we are done gathering the information for the plugin
 	// we need to compute the recommendedVersion if it wasn't provided
 	// by the database
@@ -530,6 +532,8 @@ func appendGroup(allGroups []*PluginGroup, group *PluginGroup) []*PluginGroup {
 			fmt.Fprintf(os.Stderr, "error parsing versions for group %s: %v\n", PluginGroupToID(group), err)
 		}
 		group.RecommendedVersion = versions[len(versions)-1]
+		// Set the description to the one specified by the latest version found for the group
+		group.Description = versionDesc[group.RecommendedVersion]
 	}
 	allGroups = append(allGroups, group)
 	return allGroups
