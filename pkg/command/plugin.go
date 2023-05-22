@@ -37,6 +37,10 @@ var (
 	group        string
 )
 
+const (
+	invalidTargetMsg = "invalid target specified. Please specify a correct value for the `--target/-t` flag from '" + common.TargetList + "'"
+)
+
 func newPluginCmd() *cobra.Command {
 	var pluginCmd = &cobra.Command{
 		Use:   "plugin",
@@ -87,10 +91,11 @@ func newPluginCmd() *cobra.Command {
 	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "delete the plugin without asking for confirmation")
 
 	if config.IsFeatureActivated(constants.FeatureContextCommand) {
-		installPluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", "target of the plugin (kubernetes[k8s]/mission-control[tmc])")
-		upgradePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", "target of the plugin (kubernetes[k8s]/mission-control[tmc])")
-		deletePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", "target of the plugin (kubernetes[k8s]/mission-control[tmc])")
-		describePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", "target of the plugin (kubernetes[k8s]/mission-control[tmc])")
+		targetFlagDesc := fmt.Sprintf("target of the plugin (%s)", common.TargetList)
+		installPluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+		upgradePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+		deletePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+		describePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
 	}
 
 	pluginCmd.AddCommand(
@@ -201,7 +206,7 @@ func newDescribePluginCmd() *cobra.Command {
 			pluginName := args[0]
 
 			if !configtypes.IsValidTarget(targetStr, true, true) {
-				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
+				return errors.New(invalidTargetMsg)
 			}
 
 			pd, err := pluginmanager.DescribePlugin(pluginName, getTarget())
@@ -228,7 +233,7 @@ func newInstallPluginCmd() *cobra.Command {
 			var pluginName string
 
 			if !configtypes.IsValidTarget(targetStr, true, true) {
-				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
+				return errors.New(invalidTargetMsg)
 			}
 
 			if config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
@@ -379,7 +384,7 @@ func newUpgradePluginCmd() *cobra.Command {
 			pluginName := args[0]
 
 			if !configtypes.IsValidTarget(targetStr, true, true) {
-				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
+				return errors.New(invalidTargetMsg)
 			}
 
 			var pluginVersion string
@@ -417,7 +422,7 @@ func newDeletePluginCmd() *cobra.Command {
 			pluginName := args[0]
 
 			if !configtypes.IsValidTarget(targetStr, true, true) {
-				return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'")
+				return errors.New(invalidTargetMsg)
 			}
 
 			deletePluginOptions := pluginmanager.DeletePluginOptions{

@@ -49,6 +49,8 @@ const (
 	PluginManifestFileName = "plugin_manifest.yaml"
 	// PluginFileName is the file name for the plugin info.
 	PluginFileName = "plugin.yaml"
+	// String used to request the user to use the --target flag
+	missingTargetStr = "unable to uniquely identify plugin '%v'. Please specify the target (" + common.TargetList + ") of the plugin using the `--target` flag"
 )
 
 var execCommand = exec.Command
@@ -651,7 +653,7 @@ func DescribePlugin(pluginName string, target configtypes.Target) (info *cli.Plu
 		}
 	}
 
-	return nil, errors.Errorf("unable to uniquely identify plugin '%v'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag", pluginName)
+	return nil, errors.Errorf(missingTargetStr, pluginName)
 }
 
 // InitializePlugin initializes the plugin configuration
@@ -759,7 +761,7 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 		}
 	}
 
-	return errors.Errorf("unable to uniquely identify plugin '%v'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag", pluginName)
+	return errors.Errorf(missingTargetStr, pluginName)
 }
 
 // legacyInstallPlugin installs a plugin by name, version and target.
@@ -794,7 +796,7 @@ func legacyPluginInstall(pluginName, version string, target configtypes.Target) 
 		}
 	}
 
-	return errors.Errorf("unable to uniquely identify plugin '%v'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag", pluginName)
+	return errors.Errorf(missingTargetStr, pluginName)
 }
 
 // UpgradePlugin upgrades a plugin from the given repository.
@@ -915,7 +917,7 @@ func GetRecommendedVersionOfPlugin(pluginName string, target configtypes.Target)
 			return matchedPlugins[i].RecommendedVersion, nil
 		}
 	}
-	return "", errors.Errorf("unable to uniquely identify plugin '%v'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag", pluginName)
+	return "", errors.Errorf(missingTargetStr, pluginName)
 }
 
 func installOrUpgradePlugin(p *discovery.Discovered, version string, installTestPlugin bool) error {
@@ -1083,7 +1085,7 @@ func DeletePlugin(options DeletePluginOptions) error {
 	uniqueTarget := matchedPlugins[0].Target
 	for i := range matchedPlugins {
 		if matchedPlugins[i].Target != uniqueTarget {
-			return errors.Errorf("unable to uniquely identify plugin '%v'. Please specify correct Target(kubernetes[k8s]/mission-control[tmc]) of the plugin with `--target` flag", options.PluginName)
+			return errors.Errorf(missingTargetStr, options.PluginName)
 		}
 	}
 

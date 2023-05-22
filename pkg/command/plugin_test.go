@@ -342,7 +342,7 @@ func TestInstallPlugin(t *testing.T) {
 			centralRepoDisabled: "false",
 			args:                []string{"plugin", "install", "--target", "invalid", "myplugin"},
 			expectedFailure:     true,
-			expectedErrorMsg:    "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'",
+			expectedErrorMsg:    invalidTargetMsg,
 		},
 		{
 			test:                "no --group and --local together",
@@ -423,7 +423,7 @@ func TestUpgradePlugin(t *testing.T) {
 			test:             "invalid target",
 			args:             []string{"plugin", "upgrade", "--target", "invalid", "myplugin"},
 			expectedFailure:  true,
-			expectedErrorMsg: "invalid target specified. Please specify correct value of `--target` or `-t` flag from 'global/kubernetes/k8s/mission-control/tmc'",
+			expectedErrorMsg: invalidTargetMsg,
 		},
 	}
 
