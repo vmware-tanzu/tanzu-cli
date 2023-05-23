@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -123,15 +122,26 @@ var _ = BeforeSuite(func() {
 	Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
 	Expect(len(pluginsSearchList)).Should(BeNumerically(">", 0))
 
-	// Map plugins to their respective plugin groups.
-	pluginGroupToPluginListMap = framework.MapPluginsToPluginGroups(pluginsSearchList, framework.PluginGroupsForLifeCycleTests)
-	for pluginGroupLatest := range framework.PluginGroupsLatestToOldVersions {
-		framework.CopyPluginsBetweenPluginGroupsAndUpdatePluginsVersion(pluginGroupToPluginListMap, pluginGroupLatest, framework.PluginGroupsLatestToOldVersions[pluginGroupLatest], strings.Split(strings.Split(framework.PluginGroupsLatestToOldVersions[pluginGroupLatest], "/")[1], ":")[1])
-	}
+	pluginGroupToPluginListMap = make(map[string][]*framework.PluginInfo)
+	for _, pg := range framework.PluginGroupsForLifeCycleTests {
+		// Setup plugin list for both versions of the group
+		for _, v := range []string{"v9.9.9", "v0.0.1"} {
+			pg.Latest = v
+			plugins, err := helper.GetAllPluginsFromGroup(tf, pg)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupGet)
 
-	// Check that for every plugin group listed in framework.PluginGroupsForLifeCycleTests, there are available plugins.
-	for pg := range pluginGroupToPluginListMap {
-		Expect(len(pluginGroupToPluginListMap[pg])).Should(BeNumerically(">", 0), "there should be at least one plugin available for each plugin group in plugin group life cycle list")
+			key := pg.Group + ":" + pg.Latest
+			pluginGroupToPluginListMap[key] = make([]*framework.PluginInfo, 0)
+			for _, p := range plugins {
+				pluginGroupToPluginListMap[key] = append(pluginGroupToPluginListMap[key], &framework.PluginInfo{
+					Name:    p.PluginName,
+					Target:  p.PluginTarget,
+					Version: p.PluginVersion,
+				})
+			}
+			// check for every plugin group (in framework.PluginGroupsForLifeCycleTests) there should be plugins available
+			Expect(len(pluginGroupToPluginListMap[key])).Should(BeNumerically(">", 0), "there should be at least one plugin available for each plugin group in plugin group life cycle list")
+		}
 	}
 })
 

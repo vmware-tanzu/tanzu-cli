@@ -41,6 +41,7 @@ const (
 	ListPluginsCmdWithJSONOutputFlag    = "%s plugin list -o json"
 	SearchPluginsCmd                    = "%s plugin search"
 	SearchPluginGroupsCmd               = "%s plugin group search"
+	GetPluginGroupCmd                   = "%s plugin group get %s"
 	InstallPluginCmd                    = "%s plugin install %s"
 	InstallPluginFromGroupCmd           = "%s plugin install %s --group %s"
 	InstallAllPluginsFromGroupCmd       = "%s plugin install --group %s"
@@ -137,6 +138,7 @@ const (
 	FailedToConstructJSONNodeFromOutputAndErrInfo = "failed to construct json node from output:'%s' error:'%s' "
 	FailedToConstructJSONNodeFromOutput           = "failed to construct json node from output:'%s'"
 	NoErrorForPluginGroupSearch                   = "should not get any error for plugin group search"
+	NoErrorForPluginGroupGet                      = "should not get any error for plugin group get"
 	NoErrorForPluginSearch                        = "should not get any error for plugin search"
 	UnableToSync                                  = "unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually"
 	PluginDescribeShouldNotThrowErr               = "should not get any error for plugin describe"
@@ -205,11 +207,6 @@ var PluginsForLifeCycleTests []*PluginInfo
 
 // PluginGroupsForLifeCycleTests is list of plugin groups (which are published in local central repo) used in plugin group life cycle test cases
 var PluginGroupsForLifeCycleTests []*PluginGroup
-
-// PluginGroupsLatestToOldVersions is plugin group names mapping latest version to old version, of same target,
-// we are mapping because the 'tanzu plugin search' is not displaying plugins for old versions, showing only latest version of plugins
-// we need this mapping for plugin sync test cases, we want to install same plugins but for different versions
-var PluginGroupsLatestToOldVersions map[string]string
 
 // CLICoreDescribe annotates the test with the CLICore label.
 func CLICoreDescribe(text string, body func()) bool {
@@ -315,8 +312,4 @@ func init() {
 
 	// TODO:cpamuluri: need to move Plugin Groups to configuration file with positive and negative use cases - github issue: https://github.com/vmware-tanzu/tanzu-cli/issues/122
 	PluginGroupsForLifeCycleTests = []*PluginGroup{{Group: "vmware-tkg/default", Latest: "v9.9.9", Description: "Desc for vmware-tkg/default:v9.9.9"}, {Group: "vmware-tmc/tmc-user", Latest: "v9.9.9", Description: "Desc for vmware-tmc/tmc-user:v9.9.9"}}
-
-	PluginGroupsLatestToOldVersions = make(map[string]string)
-	PluginGroupsLatestToOldVersions["vmware-tmc/tmc-user:v9.9.9"] = "vmware-tmc/tmc-user:v0.0.1"
-	PluginGroupsLatestToOldVersions["vmware-tkg/default:v9.9.9"] = "vmware-tkg/default:v0.0.1"
 }

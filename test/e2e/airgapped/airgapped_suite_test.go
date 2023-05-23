@@ -30,7 +30,6 @@ var (
 	e2eAirgappedCentralRepoImage string
 	pluginsSearchList            []*framework.PluginInfo
 	pluginGroups                 []*framework.PluginGroup
-	pluginGroupToPluginListMap   map[string][]*framework.PluginInfo
 	pluginSourceName             string
 	tempDir                      string
 	err                          error

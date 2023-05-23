@@ -107,7 +107,7 @@ func GetHomeDir() string {
 }
 
 // ExecuteCmdAndBuildJSONOutput is generic function to execute given command and build JSON output and return
-func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | PluginSourceInfo | types.ClientConfig | Server | ContextListInfo | CertDetails | PluginDescribe](cmdExe CmdOps, cmd string, opts ...E2EOption) ([]*T, string, string, error) {
+func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | PluginGroupGet | PluginSourceInfo | types.ClientConfig | Server | ContextListInfo | CertDetails | PluginDescribe](cmdExe CmdOps, cmd string, opts ...E2EOption) ([]*T, string, string, error) {
 	out, stdErr, err := cmdExe.TanzuCmdExec(cmd, opts...)
 	outStr := ""
 	stdErrStr := ""
@@ -186,48 +186,6 @@ func IsAllPluginGroupsExists(superList, subList []*PluginGroup) bool {
 		}
 	}
 	return true
-}
-
-// MapPluginsToPluginGroups takes the plugins info (output of: tanzu plugin search) and
-// plugins group info (output of: tanzu plugin group search),
-// maps the plugins to plugin group, plugin is mapped to plugin group based on plugin target
-// (kubernetes to tkg, mission-control to tmc) and version, group name would be vmware-<target>/default:<version>
-func MapPluginsToPluginGroups(list []*PluginInfo, pg []*PluginGroup) map[string][]*PluginInfo {
-	m := make(map[string][]*PluginInfo)
-	for _, pluginGroup := range pg {
-		m[pluginGroup.Group+":"+pluginGroup.Latest] = make([]*PluginInfo, 0)
-	}
-	for i := range list {
-		plugin := list[i]
-		key := "vmware-"
-		if plugin.Target == string(types.TargetK8s) {
-			key += TKG + "/default:"
-		} else if plugin.Target == string(types.TargetTMC) {
-			key += TMC + "/tmc-user:"
-		}
-		key += plugin.Version
-		pluginList, ok := m[key]
-		if ok {
-			pluginList = append(pluginList, plugin)
-			m[key] = pluginList
-		}
-	}
-	return m
-}
-
-// CopyPluginsBetweenPluginGroupsAndUpdatePluginsVersion copies list of plugins from fromPluginGroup to toPluginGroup in the map pluginGroupToPluginsMap
-// and it does updates the each plugin Version value with pluginsNewVersion
-func CopyPluginsBetweenPluginGroupsAndUpdatePluginsVersion(pluginGroupToPluginsMap map[string][]*PluginInfo, fromPluginGroup, toPluginGroup, pluginsNewVersion string) {
-	pluginGroupToPluginsMap[toPluginGroup] = make([]*PluginInfo, 0)
-	if plugins, ok := pluginGroupToPluginsMap[fromPluginGroup]; ok {
-		newPluginList := pluginGroupToPluginsMap[toPluginGroup]
-		for _, plugin := range plugins {
-			newPlugin := *plugin
-			newPlugin.Version = pluginsNewVersion
-			newPluginList = append(newPluginList, &newPlugin)
-		}
-		pluginGroupToPluginsMap[toPluginGroup] = newPluginList
-	}
 }
 
 // CreateTemporaryCRsForPluginsInGivenPluginGroup takes list of Plugins info and generates temporary CR files(under $FullPathForTempDir), and returns plugins list, CR files and error if any while creating the CR files

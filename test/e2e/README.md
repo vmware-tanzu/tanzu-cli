@@ -126,6 +126,10 @@ type PluginGroupOps interface {
     // input: flagsWithValues - flags and values if any
     SearchPluginGroups(flagsWithValues string) ([]*PluginGroup, error)
 
+    // GetPluginGroup performs plugin group get
+    // input: flagsWithValues - flags and values if any
+    GetPluginGroup(groupName string, flagsWithValues string, opts ...E2EOption) ([]*PluginGroupGet, error)
+
     // InstallPluginsFromGroup a plugin or all plugins from the given plugin group
     InstallPluginsFromGroup(pluginNameORAll, groupName string) error
 }
