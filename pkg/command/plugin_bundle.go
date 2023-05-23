@@ -23,7 +23,8 @@ func newDownloadBundlePluginCmd() *cobra.Command {
 	var downloadBundleCmd = &cobra.Command{
 		Use:   "download-bundle",
 		Short: "Download plugin bundle to the local system",
-		Long:  "Download plugin bundle to the local system",
+		Long: `Download a plugin bundle to the local file system to be used when migrating plugins
+to an internet-restricted environment. Please also see the "upload-bundle" command.`,
 		Example: `
 # Download a plugin bundle for a specific group version from the default discovery source
 tanzu plugin download-bundle --to-tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --group vmware-tkg/default:v1.0.0
@@ -63,7 +64,8 @@ func newUploadBundlePluginCmd() *cobra.Command {
 	var uploadBundleCmd = &cobra.Command{
 		Use:   "upload-bundle",
 		Short: "Upload plugin bundle to a repository",
-		Long:  "Upload plugin bundle to a repository",
+		Long: `Upload a plugin bundle to an alternate container registry for use in an internet-restricted
+environment. The plugin bundle is obtained using the "download-bundle" command.`,
 		Example: `
 # Upload the plugin bundle to the remote repository
 tanzu plugin upload-bundle --tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/
