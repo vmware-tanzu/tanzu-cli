@@ -64,6 +64,23 @@ Homepage: https://github.com/vmware-tanzu/tanzu-cli
 Description: The core Tanzu CLI" \
       > ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/DEBIAN/control
 
+   # Add a postinstall script to setup shell completion
+   echo "#!/bin/bash
+
+mkdir -p /usr/share/bash-completion/completions
+tanzu completion bash > /usr/share/bash-completion/completions/tanzu
+chmod a+r /usr/share/bash-completion/completions/tanzu
+
+mkdir -p /usr/local/share/zsh/site-functions
+tanzu completion zsh > /usr/local/share/zsh/site-functions/_tanzu
+chmod a+r /usr/local/share/zsh/site-functions/_tanzu
+
+mkdir -p /usr/share/fish/vendor_completions.d
+tanzu completion fish > /usr/share/fish/vendor_completions.d/tanzu.fish
+chmod a+r /usr/share/fish/vendor_completions.d/tanzu.fish" \
+      > ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/DEBIAN/postinst
+   chmod a+x ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/DEBIAN/postinst
+
    # Create the .deb package
    dpkg-deb --build -Zgzip ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}
 
