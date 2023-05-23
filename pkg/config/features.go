@@ -63,7 +63,6 @@ func addFeatureFlag(c *configtypes.ClientConfig, plugin, flag string, flagValue 
 // and returns TRUE if any were added (so the config can be written out to disk, if the caller wants to)
 func AddDefaultFeatureFlagsIfMissing(config *configtypes.ClientConfig, defaultFeatureFlags map[string]bool) bool {
 	added := false
-
 	for featurePath, activated := range defaultFeatureFlags {
 		plugin, feature, err := config.SplitFeaturePath(featurePath)
 		if err == nil && !containsFeatureFlag(config, plugin, feature) {

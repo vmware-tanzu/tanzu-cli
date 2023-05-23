@@ -520,7 +520,7 @@ func promptAPIToken() (apiToken string, err error) {
 }
 
 func k8sLogin(c *configtypes.Context) error {
-	if c.ClusterOpts.Path != "" && c.ClusterOpts.Context != "" {
+	if c != nil && c.ClusterOpts != nil && c.ClusterOpts.Path != "" && c.ClusterOpts.Context != "" {
 		_, err := tkgauth.GetServerKubernetesVersion(c.ClusterOpts.Path, c.ClusterOpts.Context)
 		if err != nil {
 			err := fmt.Errorf("failed to create context %q for a kubernetes cluster, %v", c.Name, err)
@@ -634,7 +634,7 @@ func promptCtx() (*configtypes.Context, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(cfg.KnownContexts) == 0 {
+	if cfg == nil || len(cfg.KnownContexts) == 0 {
 		return nil, errors.New("no contexts found")
 	}
 	return getCtxPromptMessage(cfg.KnownContexts)
@@ -661,7 +661,7 @@ func getCtxPromptMessage(ctxs []*configtypes.Context) (*configtypes.Context, err
 		if err != nil {
 			return nil, err
 		}
-		if info == "" && ctx.Target == configtypes.TargetK8s {
+		if info == "" && ctx.Target == configtypes.TargetK8s && ctx.ClusterOpts != nil {
 			info = fmt.Sprintf("%s:%s", ctx.ClusterOpts.Path, ctx.ClusterOpts.Context)
 		}
 
@@ -860,9 +860,11 @@ func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.W
 		case configtypes.TargetTMC:
 			ep = ctx.GlobalOpts.Endpoint
 		default:
-			ep = ctx.ClusterOpts.Endpoint
-			path = ctx.ClusterOpts.Path
-			context = ctx.ClusterOpts.Context
+			if ctx.ClusterOpts != nil {
+				ep = ctx.ClusterOpts.Endpoint
+				path = ctx.ClusterOpts.Path
+				context = ctx.ClusterOpts.Context
+			}
 		}
 		op.AddRow(ctx.Name, ctx.Target, isMgmtCluster, isCurrent, ep, path, context)
 	}
@@ -886,12 +888,18 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 		var ep, path, context string
 		switch ctx.Target {
 		case configtypes.TargetTMC:
-			ep = ctx.GlobalOpts.Endpoint
+			if ctx.GlobalOpts != nil {
+				ep = ctx.GlobalOpts.Endpoint
+			}
+
 			outputWriterTMCTarget.AddRow(ctx.Name, isCurrent, ep)
 		default:
-			ep = ctx.ClusterOpts.Endpoint
-			path = ctx.ClusterOpts.Path
-			context = ctx.ClusterOpts.Context
+			if ctx.ClusterOpts != nil {
+				ep = ctx.ClusterOpts.Endpoint
+				path = ctx.ClusterOpts.Path
+				context = ctx.ClusterOpts.Context
+			}
+
 			outputWriterK8sTarget.AddRow(ctx.Name, isCurrent, ep, path, context)
 		}
 	}
