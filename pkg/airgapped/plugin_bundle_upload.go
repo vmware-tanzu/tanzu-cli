@@ -4,7 +4,6 @@
 package airgapped
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -82,7 +81,7 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	}
 
 	log.Infof("---------------------------")
-	log.Infof("successfully published all plugin images to %q", fmt.Sprintf("%s%s", o.DestinationRepo, manifest.RelativeInventoryImagePathWithTag))
+	log.Infof("successfully published all plugin images to %q", filepath.Join(o.DestinationRepo, manifest.RelativeInventoryImagePathWithTag))
 
 	return nil
 }
