@@ -42,5 +42,21 @@ rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_bindir}
 mv tanzu-cli-linux_%{arch} $RPM_BUILD_ROOT/%{_bindir}/tanzu
 
+%post
+# Setup bash completion
+mkdir -p /usr/share/bash-completion/completions
+tanzu completion bash > /usr/share/bash-completion/completions/tanzu
+chmod a+r /usr/share/bash-completion/completions/tanzu
+
+# Setup zsh completion
+mkdir -p /usr/local/share/zsh/site-functions
+tanzu completion zsh > /usr/local/share/zsh/site-functions/_tanzu
+chmod a+r /usr/local/share/zsh/site-functions/_tanzu
+
+# Setup fish completion
+mkdir -p /usr/share/fish/vendor_completions.d
+tanzu completion fish > /usr/share/fish/vendor_completions.d/tanzu.fish
+chmod a+r /usr/share/fish/vendor_completions.d/tanzu.fish
+
 %files
 %{_bindir}/tanzu
