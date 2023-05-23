@@ -199,7 +199,7 @@ func displayGroupDetails(groups []*plugininventory.PluginGroup, writer io.Writer
 func displayGroupContentAsTable(group *plugininventory.PluginGroup, writer io.Writer) {
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
-	output := component.NewOutputWriter(writer, outputFormat, "Name", "Target", "Latest")
+	output := component.NewOutputWriter(writer, outputFormat, "Name", "Target", "Version")
 
 	groupID := plugininventory.PluginGroupToID(group)
 	_, _ = cyanBold.Println("Plugins in Group: ", cyanBoldItalic.Sprintf("%s:%s", groupID, group.RecommendedVersion))
