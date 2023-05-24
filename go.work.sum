@@ -1971,6 +1971,8 @@ github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc/go.mod h1:ZjcWmF
 github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df/go.mod h1:JP3t17pCcGlemwknint6hfoeCVQrEMVwxRLRjXpq+BU=
 github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
 github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
+github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0-alpha.2/go.mod h1:FlvOcF26rX4EA+ADjYTJdFh6WVur6O4jh25FDP9Lp7E=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.0.0-dev.0/go.mod h1:wMK/qpJjU7hytDAGt3FX5/iGdlUK8TsJLu36pCr+Zvk=
 github.com/weppos/publicsuffix-go v0.20.1-0.20221031080346-e4081aa8a6de h1:eR9jm8DVMdrDUuVji4eOxPK4r/dANDlDBdISSUUV96s=
 github.com/willf/bitset v1.1.11-0.20200630133818-d5bec3311243/go.mod h1:RjeCKbqT1RxIR/KWY6phxZiaY1IyutSBfGjNPySAYV4=
 github.com/willf/bitset v1.1.11/go.mod h1:83CECat5yLh5zVOf4P1ErAgKA5UDvKtgyUABdr3+MjI=

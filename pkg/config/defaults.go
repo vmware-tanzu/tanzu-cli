@@ -41,7 +41,7 @@ const CoreRepositoryName = "core"
 var CoreBucketName = "tanzu-cli-framework"
 
 // DefaultVersionSelector is to only use stable versions of plugins
-const DefaultVersionSelector = configtypes.NoUnstableVersions
+const DefaultVersionSelector = configtypes.NoUnstableVersions // nolint:staticcheck // Deprecated
 
 // DefaultEdition is the edition assumed when there is no value in the local config file
 const DefaultEdition = "tkg"
