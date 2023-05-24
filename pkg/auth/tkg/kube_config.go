@@ -61,8 +61,8 @@ type DiscoveryStrategy struct {
 }
 
 // KubeconfigWithPinnipedAuthLoginPlugin prepares the kubeconfig with tanzu pinniped-auth login as client-go exec plugin
-func KubeconfigWithPinnipedAuthLoginPlugin(endpoint string, options *KubeConfigOptions, discoveryStrategy DiscoveryStrategy) (mergeFilePath, currentContext string, err error) {
-	clusterInfo, err := GetClusterInfoFromCluster(endpoint, discoveryStrategy.ClusterInfoConfigMap)
+func KubeconfigWithPinnipedAuthLoginPlugin(endpoint string, options *KubeConfigOptions, discoveryStrategy DiscoveryStrategy, endpointCACertPath string, skipTLSVerify bool) (mergeFilePath, currentContext string, err error) {
+	clusterInfo, err := GetClusterInfoFromCluster(endpoint, discoveryStrategy.ClusterInfoConfigMap, endpointCACertPath, skipTLSVerify)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get cluster-info")
 		return
@@ -91,24 +91,7 @@ func KubeconfigWithPinnipedAuthLoginPlugin(endpoint string, options *KubeConfigO
 		return
 	}
 
-	mergeFilePath = ""
-	if options != nil && options.MergeFilePath != "" {
-		mergeFilePath = options.MergeFilePath
-	} else {
-		mergeFilePath, err = TanzuLocalKubeConfigPath()
-		if err != nil {
-			err = errors.Wrap(err, "unable to get the Tanzu local kubeconfig path")
-			return
-		}
-	}
-
-	err = kubeutils.MergeKubeConfigWithoutSwitchContext(kubeconfigBytes, mergeFilePath)
-	if err != nil {
-		err = errors.Wrap(err, "unable to merge cluster kubeconfig to the Tanzu local kubeconfig path")
-		return
-	}
-	currentContext = config.CurrentContext
-	return mergeFilePath, currentContext, err
+	return MergeAndSaveKubeconfigBytes(kubeconfigBytes, options)
 }
 
 // GetServerKubernetesVersion uses the kubeconfig to get the server k8s version.
@@ -222,4 +205,29 @@ func TanzuLocalKubeConfigPath() (path string, err error) {
 	configFilePath := filepath.Join(path, TanzuKubeconfigFile)
 
 	return configFilePath, nil
+}
+
+func MergeAndSaveKubeconfigBytes(kubeconfigBytes []byte, options *KubeConfigOptions) (mergeFilePath, currentContext string, err error) {
+	mergeFilePath = ""
+	if options != nil && options.MergeFilePath != "" {
+		mergeFilePath = options.MergeFilePath
+	} else {
+		mergeFilePath, err = TanzuLocalKubeConfigPath()
+		if err != nil {
+			err = errors.Wrap(err, "unable to get the Tanzu local kubeconfig path")
+			return
+		}
+	}
+
+	err = kubeutils.MergeKubeConfigWithoutSwitchContext(kubeconfigBytes, mergeFilePath)
+	if err != nil {
+		err = errors.Wrap(err, "unable to merge cluster kubeconfig to the Tanzu local kubeconfig path")
+		return
+	}
+	config, err := clientcmd.Load(kubeconfigBytes)
+	if err != nil {
+		return "", "", errors.Wrap(err, "unable to load kubeconfig")
+	}
+	currentContext = config.CurrentContext
+	return mergeFilePath, currentContext, err
 }

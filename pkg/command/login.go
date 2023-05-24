@@ -21,7 +21,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
-	wcpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -51,15 +50,24 @@ func init() {
 	loginCmd.Flags().BoolVar(&stderrOnly, "stderr-only", false, "send all output to stderr rather than stdout")
 	loginCmd.Flags().BoolVar(&forceCSP, "force-csp", false, "force the endpoint to be logged in as a csp server")
 	loginCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
+	loginCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
+	loginCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
 	loginCmd.Flags().MarkHidden("stderr-only") // nolint
 	loginCmd.Flags().MarkHidden("force-csp")   // nolint
 	loginCmd.Flags().MarkHidden("staging")     // nolint
 	loginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
+	loginCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
 	command.DeprecateCommandWithAlternative(loginCmd, "1.2.0", "context")
 
 	loginCmd.Example = `
 	# Login to TKG management cluster using endpoint
 	tanzu login --endpoint "https://login.example.com"  --name mgmt-cluster
+
+ 	#  Login to TKG management cluster by using the provided CA Bundle for TLS verification:
+    tanzu login --endpoint https://k8s.example.com[:port] --endpoint-ca-certificate /path/to/ca/ca-cert
+
+ 	# Login to TKG management cluster by explicit request to skip TLS verification, which is insecure:
+  	tanzu login --endpoint https://k8s.example.com[:port] --insecure-skip-tls-verify
 
 	# Login to TKG management cluster by using kubeconfig path and context for the management cluster
 	tanzu login --kubeconfig path/to/kubeconfig --context path/to/context --name mgmt-cluster
@@ -328,30 +336,10 @@ func createServerWithEndpoint() (server *configtypes.Server, err error) { // nol
 			GlobalOpts: &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 		}
 	} else {
-		// While this would add an extra HTTP round trip, it avoids the need to
-		// add extra provider specific login flags.
-		isVSphereSupervisor, err := wcpauth.IsVSphereSupervisor(endpoint, getDiscoveryHTTPClient())
-		// Fall back to assuming non vSphere supervisor.
+		tkf := NewTKGKubeconfigFetcher(endpoint, endpointCACertPath, skipTLSVerify)
+		kubeConfig, kubeContext, err = tkf.GetPinnipedKubeconfig()
 		if err != nil {
-			err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
-			log.Error(err, "")
-			return nil, err
-		}
-		if isVSphereSupervisor {
-			log.Info("Detected a vSphere Supervisor being used")
-			kubeConfig, kubeContext, err = vSphereSupervisorLogin(endpoint)
-			if err != nil {
-				err := fmt.Errorf("error logging in to vSphere Supervisor: %v", err)
-				log.Error(err, "")
-				return nil, err
-			}
-		} else {
-			kubeConfig, kubeContext, err = tkgauth.KubeconfigWithPinnipedAuthLoginPlugin(endpoint, nil, tkgauth.DiscoveryStrategy{ClusterInfoConfigMap: tkgauth.DefaultClusterInfoConfigMap})
-			if err != nil {
-				err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
-				log.Error(err, "")
-				return nil, err
-			}
+			return
 		}
 
 		server = &configtypes.Server{ // nolint:staticcheck // Deprecated
