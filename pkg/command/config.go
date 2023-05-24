@@ -176,6 +176,7 @@ func setEnvs(cfg *configtypes.ClientConfig, paramArray []string, value string) e
 	return nil
 }
 
+// Deprecated: This method is deprecated
 func setUnstableVersions(cfg *configtypes.ClientConfig, value string) error {
 	optionKey := configtypes.VersionSelectorLevel(value)
 
@@ -184,19 +185,20 @@ func setUnstableVersions(cfg *configtypes.ClientConfig, value string) error {
 		configtypes.AlphaUnstableVersions,
 		configtypes.ExperimentalUnstableVersions,
 		configtypes.NoUnstableVersions:
-		cfg.SetUnstableVersionSelector(optionKey) // nolint:staticcheck // Deprecated
+		cfg.SetUnstableVersionSelector(optionKey)
 	default:
 		return fmt.Errorf("unknown unstable-versions setting: %s; should be one of [all, none, alpha, experimental]", optionKey)
 	}
 	return nil
 }
 
+// Deprecated: This method is deprecated
 func setEdition(cfg *configtypes.ClientConfig, edition string) error {
 	editionOption := configtypes.EditionSelector(edition)
 
 	switch editionOption {
 	case configtypes.EditionCommunity, configtypes.EditionStandard:
-		cfg.SetEditionSelector(editionOption) // nolint:staticcheck // Deprecated
+		cfg.SetEditionSelector(editionOption)
 	default:
 		return fmt.Errorf("unknown edition: %s; should be one of [%s, %s]", editionOption, configtypes.EditionStandard, configtypes.EditionCommunity)
 	}
@@ -262,9 +264,9 @@ var listServersCmd = &cobra.Command{
 		}
 
 		output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "Name", "Type", "Endpoint", "Path", "Context")
-		for _, server := range cfg.KnownServers { // nolint:staticcheck // Deprecated
+		for _, server := range cfg.KnownServers {
 			var endpoint, path, context string
-			if server.IsGlobal() { // nolint:staticcheck // Deprecated
+			if server.IsGlobal() {
 				endpoint = server.GlobalOpts.Endpoint
 			} else {
 				endpoint = server.ManagementClusterOpts.Endpoint
@@ -296,13 +298,13 @@ var deleteServersCmd = &cobra.Command{
 
 		if isAborted == nil {
 			log.Infof("Deleting entry for cluster %s", args[0])
-			serverExists, err := configlib.ServerExists(args[0]) // nolint:staticcheck // Deprecated
+			serverExists, err := configlib.ServerExists(args[0])
 			if err != nil {
 				return err
 			}
 
 			if serverExists {
-				err := configlib.RemoveServer(args[0]) // nolint:staticcheck // Deprecated
+				err := configlib.RemoveServer(args[0])
 				if err != nil {
 					return err
 				}
