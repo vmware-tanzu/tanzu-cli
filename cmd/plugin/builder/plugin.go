@@ -8,7 +8,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/docker"
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/plugin"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
@@ -44,6 +43,7 @@ type pluginBuildFlags struct {
 type pluginBuildPackageFlags struct {
 	BinaryArtifactDir  string
 	PackageArtifactDir string
+	localOCIRepository string
 }
 
 type pluginPublishPackageFlags struct {
@@ -112,7 +112,6 @@ func newPluginBuildPackageCmd() *cobra.Command {
 			bppArgs := &plugin.BuildPluginPackageOptions{
 				BinaryArtifactDir:  pbpFlags.BinaryArtifactDir,
 				PackageArtifactDir: pbpFlags.PackageArtifactDir,
-				ImgpkgOptions:      imgpkg.NewImgpkgCLIWrapper(),
 				DockerOptions:      docker.NewDockerCLIWrapper(),
 			}
 			return bppArgs.BuildPluginPackages()
@@ -121,6 +120,11 @@ func newPluginBuildPackageCmd() *cobra.Command {
 
 	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.BinaryArtifactDir, "binary-artifacts", "", "./artifacts/plugins", "plugin binary artifact directory")
 	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.PackageArtifactDir, "package-artifacts", "", "./artifacts/packages", "plugin package artifacts directory")
+
+	// Marked as hidden because `build-package` command does not rely on the --oci-registry flag any more kept it for backward compatibility
+	// To be removed in future releases
+	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.localOCIRepository, "oci-registry", "", "", "local oci-registry to use for generating packages")
+	_ = pluginBuildPackageCmd.Flags().MarkHidden("oci-registry")
 
 	return pluginBuildPackageCmd
 }
@@ -140,7 +144,6 @@ func newPluginPublishPackageCmd() *cobra.Command {
 				Vendor:             pppFlags.Vendor,
 				Repository:         pppFlags.Repository,
 				DryRun:             pppFlags.DryRun,
-				ImgpkgOptions:      imgpkg.NewImgpkgCLIWrapper(),
 				DockerOptions:      docker.NewDockerCLIWrapper(),
 			}
 			return bppArgs.PublishPluginPackages()

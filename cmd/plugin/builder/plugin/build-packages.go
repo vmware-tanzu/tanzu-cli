@@ -15,7 +15,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/docker"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
@@ -23,7 +22,6 @@ import (
 type BuildPluginPackageOptions struct {
 	BinaryArtifactDir  string
 	PackageArtifactDir string
-	ImgpkgOptions      imgpkg.ImgpkgWrapper
 	DockerOptions      docker.DockerWrapper
 
 	pluginManifestFile string

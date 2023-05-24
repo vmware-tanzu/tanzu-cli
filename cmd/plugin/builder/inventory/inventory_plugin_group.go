@@ -121,7 +121,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) UpdatePluginGroupActivationState(
 	return ipuo.putInventoryDBFile(dbFile)
 }
 
-func (ipuo *InventoryPluginGroupUpdateOptions) getPluginInventoryDBImage() string {
+func (ipuo *InventoryPluginGroupUpdateOptions) getPluginInventoryDBImagePath() string {
 	return fmt.Sprintf("%s/%s:%s", ipuo.Repository, helpers.PluginInventoryDBImageName, ipuo.InventoryImageTag)
 }
 
@@ -132,7 +132,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getInventoryDBFile() (string, err
 	}
 
 	// get plugin inventory database image path
-	pluginInventoryDBImage := ipuo.getPluginInventoryDBImage()
+	pluginInventoryDBImage := ipuo.getPluginInventoryDBImagePath()
 
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -149,7 +149,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getInventoryDBFile() (string, err
 }
 
 func (ipuo *InventoryPluginGroupUpdateOptions) putInventoryDBFile(dbFile string) error {
-	pluginInventoryDBImage := ipuo.getPluginInventoryDBImage()
+	pluginInventoryDBImage := ipuo.getPluginInventoryDBImagePath()
 
 	// If local inventory database file was provided nothing to publish just return
 	if ipuo.InventoryDBFile != "" {

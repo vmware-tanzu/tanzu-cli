@@ -13,7 +13,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/docker"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
@@ -24,7 +23,6 @@ type PublishPluginPackageOptions struct {
 	Vendor             string
 	Repository         string
 	DryRun             bool
-	ImgpkgOptions      imgpkg.ImgpkgWrapper
 	DockerOptions      docker.DockerWrapper
 
 	pluginManifestFile string
@@ -58,7 +56,9 @@ func (ppo *PublishPluginPackageOptions) PublishPluginPackages() error {
 				log.Infof("publishing plugin 'name:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 
 				if ppo.DryRun {
-					log.Infof("command: 'imgpkg copy --tar %s --to-repo %s", pluginTarFilePath, imageToPush)
+					log.Infof("command: 'docker load -i %s'", pluginTarFilePath)
+					log.Infof("command: 'docker tag %s %s'", imageAfterLoad, imageToPush)
+					log.Infof("command: 'docker push %s'", imageToPush)
 				} else {
 					err := ppo.DockerOptions.LoadImage(pluginTarFilePath)
 					if err != nil {

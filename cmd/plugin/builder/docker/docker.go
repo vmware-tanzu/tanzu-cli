@@ -17,7 +17,8 @@ type DockerOptions struct{}
 
 // BuildImage invokes `docker build -t <image> -f <template> <dirpath>` command
 func (do *DockerOptions) BuildImage(image, template, dirPath string) error {
-	output, err := exec.Command("docker", "build", "-t", image, "-f", template, dirPath).CombinedOutput()
+	cmd := fmt.Sprintf("docker build -t %s -f %s %s", image, template, dirPath)
+	output, err := exec.Command("bash", "-c", cmd).CombinedOutput()
 	return errors.Wrapf(err, "output: %s", string(output))
 }
 

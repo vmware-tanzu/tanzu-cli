@@ -105,8 +105,7 @@ plugin-build-%:
 plugin-build-packages: ## Build plugin packages
 	$(BUILDER_PLUGIN) plugin build-package \
 		--binary-artifacts $(PLUGIN_BINARY_ARTIFACTS_DIR) \
-		--package-artifacts $(PLUGIN_PACKAGE_ARTIFACTS_DIR) \
-		--oci-registry $(REGISTRY_ENDPOINT)
+		--package-artifacts $(PLUGIN_PACKAGE_ARTIFACTS_DIR)
 
 .PHONY: plugin-publish-packages
 plugin-publish-packages: plugin-build-packages plugin-local-registry ## Publish plugin packages

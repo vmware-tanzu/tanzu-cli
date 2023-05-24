@@ -153,7 +153,7 @@ func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInven
 	return pluginInventoryEntry, nil
 }
 
-func (ipuo *InventoryPluginUpdateOptions) getPluginInventoryDBImage() string {
+func (ipuo *InventoryPluginUpdateOptions) getPluginInventoryDBImagePath() string {
 	return fmt.Sprintf("%s/%s:%s", ipuo.Repository, helpers.PluginInventoryDBImageName, ipuo.InventoryImageTag)
 }
 
@@ -175,7 +175,7 @@ func (ipuo *InventoryPluginUpdateOptions) getInventoryDBFile() (string, error) {
 	}
 
 	// get plugin inventory database image path
-	pluginInventoryDBImage := ipuo.getPluginInventoryDBImage()
+	pluginInventoryDBImage := ipuo.getPluginInventoryDBImagePath()
 
 	dir, err := os.MkdirTemp("", "")
 	if err != nil {
@@ -191,7 +191,7 @@ func (ipuo *InventoryPluginUpdateOptions) getInventoryDBFile() (string, error) {
 }
 
 func (ipuo *InventoryPluginUpdateOptions) putInventoryDBFile(dbFile string) error {
-	pluginInventoryDBImage := ipuo.getPluginInventoryDBImage()
+	pluginInventoryDBImage := ipuo.getPluginInventoryDBImagePath()
 
 	// If validateOnly option was provided return validation as successful
 	if ipuo.ValidateOnly {
