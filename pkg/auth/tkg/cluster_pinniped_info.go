@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -47,7 +48,7 @@ type clusterInfoConfig struct {
 }
 
 // GetClusterInfoFromCluster gets the cluster Info by accessing the cluster-info configMap in kube-public namespace
-func GetClusterInfoFromCluster(clusterAPIServerURL, configmapName string) (*clientcmdapi.Cluster, error) {
+func GetClusterInfoFromCluster(clusterAPIServerURL, configmapName, endpointCACertPath string, skipTLSVerify bool) (*clientcmdapi.Cluster, error) {
 	clusterAPIServerURL = strings.TrimSpace(clusterAPIServerURL)
 	if !strings.HasPrefix(clusterAPIServerURL, "https://") && !strings.HasPrefix(clusterAPIServerURL, "http://") {
 		clusterAPIServerURL = "https://" + clusterAPIServerURL
@@ -60,15 +61,16 @@ func GetClusterInfoFromCluster(clusterAPIServerURL, configmapName string) (*clie
 	clusterAPIServerURL = strings.TrimRight(clusterAPIServerURL, " /")
 	clusterInfoURL := clusterAPIServerURL + fmt.Sprintf("/api/v1/namespaces/%s/configmaps/%s", KubePublicNamespace, configmapName)
 	req, _ := http.NewRequest("GET", clusterInfoURL, http.NoBody)
-	// To get the cluster ca certificate first time, we need to use skip verify the server certificate,
-	// all the later communications to cluster would be using CA after this call
+
+	tlsConfig, err := GetTLSConfig(endpointCACertPath, skipTLSVerify)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get the TLS configuration")
+	}
+
 	clusterClient := &http.Client{
 		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			// #nosec
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
+			Proxy:           http.ProxyFromEnvironment,
+			TLSClientConfig: tlsConfig,
 		},
 		Timeout: time.Second * 10,
 	}
@@ -163,4 +165,30 @@ func GetPinnipedInfoFromCluster(clusterInfo *clientcmdapi.Cluster, discoveryPort
 	}
 
 	return &pinnipedConfigMapInfo, nil
+}
+
+func GetTLSConfig(caCertPath string, skipTLSVerify bool) (*tls.Config, error) {
+	// This condition should not occur as CLI options for 'endpoint-ca-certificate' and 'insecure-skip-tls-verify' are mutual exclusive
+	if caCertPath != "" && skipTLSVerify {
+		return nil, errors.New("do not provide a cert when skipping TLS verification")
+	}
+
+	pool, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, err
+	}
+	if caCertPath != "" {
+		if certs, err := os.ReadFile(caCertPath); err != nil {
+			return nil, errors.Wrapf(err, "failed reading CA certificates from '%s' ", caCertPath)
+		} else if ok := pool.AppendCertsFromPEM(certs); !ok {
+			return nil, fmt.Errorf("failed adding CA certificates from '%s'", caCertPath)
+		}
+	}
+	return &tls.Config{
+		RootCAs:    pool,
+		MinVersion: tls.VersionTLS12,
+		// nolint:gosec
+		// skipTLSVerify: true is only possible if the user has explicitly enabled insecure-skip-tls-verify.
+		InsecureSkipVerify: skipTLSVerify,
+	}, nil
 }

@@ -28,7 +28,7 @@ docker build -t ${IMAGE} ${ROOT_DIR} -f - <<- EOF
         install /tmp/carvel/imgpkg /usr/bin
 
     RUN mkdir /tmp/cosign/ && \
-        curl -L https://github.com/sigstore/cosign/releases/download/v2.0.0/cosign-linux-amd64 -o /tmp/cosign/cosign && \
+        curl -L https://github.com/sigstore/cosign/releases/download/v2.0.2/cosign-linux-amd64 -o /tmp/cosign/cosign && \
         install /tmp/cosign/cosign /usr/bin
 
    WORKDIR /work

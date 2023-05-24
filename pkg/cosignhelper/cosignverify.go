@@ -146,7 +146,7 @@ func (vo *CosignVerifyOptions) newHTTPTransport() (*http.Transport, error) {
 			if certs, err := os.ReadFile(path); err != nil {
 				return nil, errors.Wrapf(err, "failed reading CA certificates from '%s' ", path)
 			} else if ok := pool.AppendCertsFromPEM(certs); !ok {
-				return nil, errors.Wrapf(err, "failed adding CA certificates from '%s'", path)
+				return nil, fmt.Errorf("failed adding CA certificates from '%s'", path)
 			}
 		}
 	}
