@@ -45,7 +45,14 @@ const (
 	knownGlobalHost                        = "cloud.vmware.com"
 	apiTokenType                           = "api-token"
 	idTokenType                            = "id-token"
-	ControlPlaneEndPointTypeSelfManagedTMC = "self-managed-tmc"
+	controlPlaneEndPointTypeSelfManagedTMC = "self-managed-tmc"
+
+	contextNotExistsForTarget      = "The provided context %v does not exist or is not active for the given target %v"
+	noActiveContextExistsForTarget = "There is no active context for the given target %v"
+	contextNotActiveOrNotExists    = "The provided context %v is not active or does not exist"
+	contextForTargetSetInactive    = "The context %v for the target %v has been set as inactive"
+
+	invalidTarget = "invalid target specified. Please specify a correct value for the `--target/-t` flag from 'kubernetes[k8s]/mission-control[tmc]"
 )
 
 var contextCmd = &cobra.Command{
@@ -65,6 +72,7 @@ func init() {
 		getCtxCmd,
 		deleteCtxCmd,
 		useCtxCmd,
+		unsetCtxCmd,
 	)
 
 	initCreateCtxCmd()
@@ -76,6 +84,8 @@ func init() {
 	getCtxCmd.Flags().StringVarP(&getOutputFmt, "output", "o", "yaml", "output format: yaml|json")
 
 	deleteCtxCmd.Flags().BoolVarP(&unattended, "yes", "y", false, "delete the context entry without confirmation")
+
+	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc])")
 }
 
 var createCtxCmd = &cobra.Command{
@@ -121,7 +131,7 @@ func initCreateCtxCmd() {
 func createCtx(_ *cobra.Command, _ []string) (err error) {
 	controlPlaneEPType := os.Getenv(constants.ControlPlaneEndpointType)
 	if controlPlaneEPType != "" {
-		if strings.EqualFold(controlPlaneEPType, ControlPlaneEndPointTypeSelfManagedTMC) {
+		if strings.EqualFold(controlPlaneEPType, controlPlaneEndPointTypeSelfManagedTMC) {
 			selfManaged = true
 		}
 	}
@@ -581,7 +591,7 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 	}
 
 	if !configtypes.IsValidTarget(targetStr, false, true) {
-		return errors.New("invalid target specified. Please specify correct value of `--target` or `-t` flag from 'kubernetes/k8s/mission-control/tmc'")
+		return errors.New(invalidTarget)
 	}
 
 	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
@@ -627,10 +637,26 @@ func promptCtx() (*configtypes.Context, error) {
 	if len(cfg.KnownContexts) == 0 {
 		return nil, errors.New("no contexts found")
 	}
+	return getCtxPromptMessage(cfg.KnownContexts)
+}
 
+// promptActiveCtx prompts with active list of contexts for user selection.
+func promptActiveCtx() (*configtypes.Context, error) {
+	currentCtxMap, err := config.GetAllCurrentContextsMap()
+	if err != nil {
+		return nil, err
+	}
+	if len(currentCtxMap) == 0 {
+		return nil, errors.New("no active contexts found")
+	}
+	return getCtxPromptMessage(getValues(currentCtxMap))
+}
+
+// getCtxPromptMessage prompts with a given list of contexts for user selection.
+func getCtxPromptMessage(ctxs []*configtypes.Context) (*configtypes.Context, error) {
 	promptOpts := getPromptOpts()
 	contexts := make(map[string]*configtypes.Context)
-	for _, ctx := range cfg.KnownContexts {
+	for _, ctx := range ctxs {
 		info, err := config.EndpointFromContext(ctx)
 		if err != nil {
 			return nil, err
@@ -646,7 +672,7 @@ func promptCtx() (*configtypes.Context, error) {
 
 	ctxKeys := getKeys(contexts)
 	ctxKey := ctxKeys[0]
-	err = component.Prompt(
+	err := component.Prompt(
 		&component.PromptConfig{
 			Message: "Select a context",
 			Options: ctxKeys,
@@ -673,6 +699,14 @@ func getKeys(m map[string]*configtypes.Context) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+func getValues(m map[configtypes.Target]*configtypes.Context) []*configtypes.Context {
+	values := make([]*configtypes.Context, 0, len(m))
+	for _, value := range m {
+		values = append(values, value)
+	}
+	return values
 }
 
 var deleteCtxCmd = &cobra.Command{
@@ -736,6 +770,74 @@ func useCtx(_ *cobra.Command, args []string) error {
 	// Sync all required plugins
 	_ = syncContextPlugins()
 
+	return nil
+}
+
+var unsetCtxCmd = &cobra.Command{
+	Use:   "unset CONTEXT_NAME",
+	Short: "Unset the active context so that it is not used by default.",
+	Args:  cobra.MaximumNArgs(1),
+	RunE:  unsetCtx,
+}
+
+func unsetCtx(_ *cobra.Command, args []string) error {
+	var name string
+	if !configtypes.IsValidTarget(targetStr, false, true) {
+		return errors.New(invalidTarget)
+	}
+	target := getTarget()
+	if len(args) > 0 {
+		name = args[0]
+	}
+	if name == "" && target == "" {
+		ctx, err := promptActiveCtx()
+		if err != nil {
+			return err
+		}
+		name = ctx.Name
+	}
+	return unsetGivenContext(name, target)
+}
+
+func unsetGivenContext(name string, target configtypes.Target) error {
+	var err error
+	var unset bool
+	currentCtxMap, err := config.GetAllCurrentContextsMap()
+	if target != "" && name != "" {
+		ctx, ok := currentCtxMap[target]
+		if ok && ctx.Name == name {
+			err = config.RemoveCurrentContext(target)
+			unset = true
+		} else {
+			return errors.Errorf(contextNotExistsForTarget, name, target)
+		}
+	} else if target != "" {
+		ctx, ok := currentCtxMap[target]
+		if ok {
+			name = ctx.Name
+			err = config.RemoveCurrentContext(target)
+			unset = true
+		} else {
+			log.Warningf(noActiveContextExistsForTarget, target)
+		}
+	} else if name != "" {
+		for t, ctx := range currentCtxMap {
+			if ctx.Name == name {
+				target = t
+				err = config.RemoveCurrentContext(t)
+				unset = true
+				break
+			}
+		}
+		if !unset {
+			return errors.Errorf(contextNotActiveOrNotExists, name)
+		}
+	}
+	if err != nil {
+		return err
+	} else if unset {
+		log.Outputf(contextForTargetSetInactive, name, target)
+	}
 	return nil
 }
 

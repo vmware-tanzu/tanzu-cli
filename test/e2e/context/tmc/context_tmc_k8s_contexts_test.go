@@ -14,26 +14,13 @@ import (
 	types "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
-// Test suite tests the context life cycle use cases for the TMC target
+// This Test suite has the context life cycle tests with k8s and tmc contexts co-existing
 // Here are sequence of test cases in this suite:
-// Use case 1: delete all contexts if any available
-// Use case 2: create both tmc and k8s contexts, make sure both are active
-// Use case 3: create multiple tmc and k8s contexts, make sure most recently created contexts for both tmc and k8s are active
+// Use case 1: create both tmc and k8s contexts, make sure both are active
+// Use case 2: create multiple tmc and k8s contexts, make sure most recently created contexts for both tmc and k8s are active
 
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc-k8s]", func() {
-
-	// Use case 1: delete config files and initialize config
-	It("should initialize configuration successfully", func() {
-		// delete config files
-		err := tf.Config.DeleteCLIConfigurationFiles()
-		Expect(err).To(BeNil())
-		// call init
-		err = tf.Config.ConfigInit()
-		Expect(err).To(BeNil())
-		// should create config files
-		Expect(tf.Config.IsCLIConfigurationFilesExists()).To(BeTrue())
-	})
-	// use case 2: create both tmc and k8s contexts, make sure both are active
+	// use case 1: create both tmc and k8s contexts, make sure both are active
 	// Test case: a. create tmc context
 	// Test case: b. create k8s context, make sure its active
 	// Test case: c. list all active contexts, make both tmc and k8s contexts are active
@@ -85,7 +72,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc-k8s
 			Expect(framework.IsContextExists(tf, tmcCtx)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists+" as been deleted", tmcCtx))
 		})
 	})
-	// Use case 3: create multiple tmc and k8s contexts, make sure most recently created contexts for both tmc and k8s are active
+
+	// Use case 2: create multiple tmc and k8s contexts, make sure most recently created contexts for both tmc and k8s are active
 	// Test case: a. create tmc contexts
 	// Test case: b. create k8s contexts
 	// Test case: c. list all active contexts, make both tmc and k8s contexts are active
