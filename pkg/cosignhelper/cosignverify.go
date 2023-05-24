@@ -22,6 +22,7 @@ import (
 	sigs "github.com/sigstore/cosign/v2/pkg/signature"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 )
 
 // RegistryOptions registry options used while interacting with registry
@@ -53,7 +54,7 @@ func NewCosignVerifier(publicKeyPath string, registryOpts *RegistryOptions) Cosi
 
 // Verify verifies the signature on the images
 func (vo *CosignVerifyOptions) Verify(ctx context.Context, images []string) error {
-	var pubKey signature.Verifier
+	var pubKeys []signature.Verifier
 	var err error
 	httpTrans, err := vo.newHTTPTransport()
 	if err != nil {
@@ -64,40 +65,33 @@ func (vo *CosignVerifyOptions) Verify(ctx context.Context, images []string) erro
 	// Using Rekor Default URL and Rekor public Keys (downloaded from online by default) not be feasible for air-gapped environment
 	ignoreTlog := true
 
-	co := &cosign.CheckOpts{
-		RegistryClientOpts: []ociremote.Option{
-			ociremote.WithRemoteOptions(remote.WithContext(ctx)),
-			ociremote.WithRemoteOptions(remote.WithTransport(httpTrans)),
-		},
-		IgnoreTlog: ignoreTlog,
-	}
-
 	switch {
 	// If PublicKeyPath is provided(custom public key) use it, else use the embedded public key
 	case vo.PublicKeyPath != "":
-		pubKey, err = sigs.PublicKeyFromKeyRefWithHashAlgo(ctx, vo.PublicKeyPath, crypto.SHA256)
+		pubKey, err := sigs.PublicKeyFromKeyRefWithHashAlgo(ctx, vo.PublicKeyPath, crypto.SHA256)
 		if err != nil {
 			return fmt.Errorf("loading custom public key: %w", err)
 		}
+		pubKeys = append(pubKeys, pubKey)
 		pkcs11Key, ok := pubKey.(*pkcs11key.Key)
 		if ok {
 			defer pkcs11Key.Close()
 		}
 
 	default:
-		// use the default embedded cert
-		raw := tanzuCLIPluginDBImageSignPublicKey
-		// PEM encoded file.
-		key, err := cryptoutils.UnmarshalPEMToPublicKey(raw)
-		if err != nil {
-			return fmt.Errorf("failed unmarshalling PEM encoded default public key: %w", err)
-		}
-		pubKey, err = signature.LoadVerifier(key, crypto.SHA256)
-		if err != nil {
-			return fmt.Errorf("loading default public key: %w", err)
+		for _, raw := range [][]byte{tanzuCLIPluginDBImageSignPublicKey, tanzuCLIPluginDBImageSignPublicKeyOfficial} {
+			// PEM encoded file.
+			key, err := cryptoutils.UnmarshalPEMToPublicKey(raw)
+			if err != nil {
+				return fmt.Errorf("failed unmarshalling PEM encoded default public key: %w", err)
+			}
+			pubKey, err := signature.LoadVerifier(key, crypto.SHA256)
+			if err != nil {
+				return fmt.Errorf("loading default public key: %w", err)
+			}
+			pubKeys = append(pubKeys, pubKey)
 		}
 	}
-	co.SigVerifier = pubKey
 
 	var nameOpts []name.Option
 	if vo.RegistryOpts.AllowInsecure {
@@ -109,11 +103,32 @@ func (vo *CosignVerifyOptions) Verify(ctx context.Context, images []string) erro
 		if err != nil {
 			return fmt.Errorf("parsing reference: %w", err)
 		}
-		_, _, err = cosign.VerifyImageSignatures(ctx, ref, co)
-		if err != nil {
-			return fmt.Errorf("failed validating the signature of the image %s :%w", img, err)
+
+		var arrErr []error
+		for _, verifier := range pubKeys {
+			co := &cosign.CheckOpts{
+				RegistryClientOpts: []ociremote.Option{
+					ociremote.WithRemoteOptions(remote.WithContext(ctx)),
+					ociremote.WithRemoteOptions(remote.WithTransport(httpTrans)),
+				},
+				IgnoreTlog:  ignoreTlog,
+				SigVerifier: verifier,
+			}
+
+			_, _, err = cosign.VerifyImageSignatures(ctx, ref, co)
+			if err == nil {
+				break // if signature verification successful break the loop
+			} else {
+				arrErr = append(arrErr, fmt.Errorf("failed validating the signature of the image %s :%w", img, err))
+			}
+		}
+		// If all the verifier has returned error then mark the verification as failed
+		// and return the error
+		if len(arrErr) == len(pubKeys) {
+			return kerrors.NewAggregate(arrErr)
 		}
 	}
+
 	return nil
 }
 
