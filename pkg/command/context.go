@@ -37,8 +37,8 @@ import (
 )
 
 var (
-	stderrOnly, forceCSP, staging, onlyCurrent, selfManaged            bool
-	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt string
+	stderrOnly, forceCSP, staging, onlyCurrent, selfManaged, skipTLSVerify                 bool
+	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath string
 )
 
 const (
@@ -94,10 +94,16 @@ var createCtxCmd = &cobra.Command{
 	RunE:  createCtx,
 	Example: `
 	# Create a TKG management cluster context using endpoint
-	tanzu context create --endpoint "https://k8s.example.com" --name mgmt-cluster
+	tanzu context create --endpoint "https://k8s.example.com[:port]" --name mgmt-cluster
 
 	# Create a TKG management cluster context using kubeconfig path and context
 	tanzu context create --kubeconfig path/to/kubeconfig --kubecontext kubecontext --name mgmt-cluster
+
+ 	#  Create a TKG management cluster context by using the provided CA Bundle for TLS verification:
+    tanzu context create --endpoint https://k8s.example.com[:port] --endpoint-ca-certificate /path/to/ca/ca-cert
+
+ 	# Create a TKG management cluster context by explicit request to skip TLS verification, which is insecure:
+  	tanzu context create --endpoint https://k8s.example.com[:port] --insecure-skip-tls-verify
 
 	# Create a TKG management cluster context using default kubeconfig path and a kubeconfig context
 	tanzu context create --kubecontext kubecontext --name mgmt-cluster
@@ -119,6 +125,8 @@ func initCreateCtxCmd() {
 	createCtxCmd.Flags().BoolVar(&stderrOnly, "stderr-only", false, "send all output to stderr rather than stdout")
 	createCtxCmd.Flags().BoolVar(&forceCSP, "force-csp", false, "force the context to use CSP auth")
 	createCtxCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
+	createCtxCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
+	createCtxCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
 
 	_ = createCtxCmd.Flags().MarkHidden("api-token")
 	_ = createCtxCmd.Flags().MarkHidden("stderr-only")
@@ -126,6 +134,7 @@ func initCreateCtxCmd() {
 	_ = createCtxCmd.Flags().MarkHidden("staging")
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint", "kubecontext")
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint", "kubeconfig")
+	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
 }
 
 func createCtx(_ *cobra.Command, _ []string) (err error) {
@@ -332,30 +341,11 @@ func createContextWithEndpoint() (context *configtypes.Context, err error) {
 			GlobalOpts: &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 		}
 	} else {
-		// While this would add an extra HTTP round trip, it avoids the need to
-		// add extra provider specific login flags.
-		isVSphereSupervisor, err := wcpauth.IsVSphereSupervisor(endpoint, getDiscoveryHTTPClient())
-		// Fall back to assuming non vSphere supervisor.
+		// TKGKubeconfigFetcher would detect the endpoint is TKGm/TKGs and then fetch the pinniped kubeconfig to create a context
+		tkf := NewTKGKubeconfigFetcher(endpoint, endpointCACertPath, skipTLSVerify)
+		kubeConfig, kubeContext, err = tkf.GetPinnipedKubeconfig()
 		if err != nil {
-			err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
-			log.Error(err, "")
-			return nil, err
-		}
-		if isVSphereSupervisor {
-			log.Info("Detected a vSphere Supervisor being used")
-			kubeConfig, kubeContext, err = vSphereSupervisorLogin(endpoint)
-			if err != nil {
-				err := fmt.Errorf("error logging in to vSphere Supervisor: %v", err)
-				log.Error(err, "")
-				return nil, err
-			}
-		} else {
-			kubeConfig, kubeContext, err = tkgauth.KubeconfigWithPinnipedAuthLoginPlugin(endpoint, nil, tkgauth.DiscoveryStrategy{ClusterInfoConfigMap: tkgauth.DefaultClusterInfoConfigMap})
-			if err != nil {
-				err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
-				log.Error(err, "")
-				return nil, err
-			}
+			return
 		}
 
 		context = &configtypes.Context{
@@ -554,13 +544,9 @@ func getDefaultKubeconfigPath() string {
 	return kubeConfigPath
 }
 
-func getDiscoveryHTTPClient() *http.Client {
-	// XXX: Insecure, but follows the existing tanzu login discovery patterns. If
-	// there's something tracking not TOFUing, it might be good to follow that
-	// eventually.
+func getDiscoveryHTTPClient(tlsConfig *tls.Config) *http.Client {
 	tr := &http.Transport{
-		// #nosec
-		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig:     tlsConfig,
 		Proxy:               http.ProxyFromEnvironment,
 		TLSHandshakeTimeout: 5 * time.Second,
 	}
@@ -569,7 +555,8 @@ func getDiscoveryHTTPClient() *http.Client {
 
 func vSphereSupervisorLogin(endpoint string) (mergeFilePath, currentContext string, err error) {
 	port := 443
-	kubeCfg, kubeCtx, err := tkgauth.KubeconfigWithPinnipedAuthLoginPlugin(endpoint, nil, tkgauth.DiscoveryStrategy{DiscoveryPort: &port, ClusterInfoConfigMap: wcpauth.SupervisorVIPConfigMapName})
+	kubeCfg, kubeCtx, err := tkgauth.KubeconfigWithPinnipedAuthLoginPlugin(endpoint, nil,
+		tkgauth.DiscoveryStrategy{DiscoveryPort: &port, ClusterInfoConfigMap: wcpauth.SupervisorVIPConfigMapName}, endpointCACertPath, skipTLSVerify)
 	if err != nil {
 		err := fmt.Errorf("error creating kubeconfig with tanzu pinniped-auth login plugin: %v", err)
 		log.Error(err, "")

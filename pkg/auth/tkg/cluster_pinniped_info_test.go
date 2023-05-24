@@ -19,9 +19,10 @@ import (
 )
 
 const (
-	fakeIssuer  = "https://fakeissuer.com"
-	fakeCluster = "fake-cluster"
-	fakeCAData  = "fakeCAData"
+	fakeIssuer     = "https://fakeissuer.com"
+	fakeCluster    = "fake-cluster"
+	fakeCAData     = "fakeCAData"
+	fakeCAcertPath = "../../fakes/certs/fake-ca.crt"
 )
 
 var _ = Describe("Kubeconfig Tests", func() {
@@ -53,7 +54,7 @@ var _ = Describe("Kubeconfig Tests", func() {
 						ghttp.RespondWith(http.StatusNotFound, "not found"),
 					),
 				)
-				_, err = GetClusterInfoFromCluster(endpoint, "cluster-info")
+				_, err = GetClusterInfoFromCluster(endpoint, "cluster-info", fakeCAcertPath, false)
 			})
 			It("should return the error", func() {
 				Expect(err).To(HaveOccurred())
@@ -68,7 +69,7 @@ var _ = Describe("Kubeconfig Tests", func() {
 						ghttp.RespondWith(http.StatusOK, "fake-format-value"),
 					),
 				)
-				_, err = GetClusterInfoFromCluster(endpoint, "cluster-info")
+				_, err = GetClusterInfoFromCluster(endpoint, "cluster-info", "", true)
 			})
 			It("should return the error", func() {
 				Expect(err).To(HaveOccurred())
@@ -85,7 +86,7 @@ var _ = Describe("Kubeconfig Tests", func() {
 						ghttp.RespondWith(http.StatusOK, clusterInfo),
 					),
 				)
-				cluster, err = GetClusterInfoFromCluster(endpoint, "cluster-info")
+				cluster, err = GetClusterInfoFromCluster(endpoint, "cluster-info", "", true)
 			})
 			It("should return the cluster information", func() {
 				Expect(err).ToNot(HaveOccurred())
@@ -102,7 +103,7 @@ var _ = Describe("Kubeconfig Tests", func() {
 						ghttp.RespondWith(http.StatusOK, clusterInfo),
 					),
 				)
-				cluster, err = GetClusterInfoFromCluster(endpoint, "vip-cluster-info")
+				cluster, err = GetClusterInfoFromCluster(endpoint, "vip-cluster-info", "", true)
 			})
 			It("should return the cluster information", func() {
 				Expect(err).ToNot(HaveOccurred())

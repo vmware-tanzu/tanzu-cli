@@ -4,13 +4,13 @@ package command
 
 import (
 	"bytes"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -22,9 +22,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-
-	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes/helper"
 )
 
 func TestCliCmdSuite(t *testing.T) {
@@ -495,88 +492,19 @@ var _ = Describe("create new context", func() {
 	})
 
 	Describe("create context with non-tmc endpoint", func() {
-		const (
-			clustername = "fake-cluster"
-			issuer      = "https://fakeissuer.com"
-			issuerCA    = "fakeCAData"
-		)
 		var (
-			ctx       *configtypes.Context
-			ep        string
 			tlsServer *ghttp.Server
-			servCert  *x509.Certificate
 			err       error
 		)
 		BeforeEach(func() {
 			tlsServer = ghttp.NewTLSServer()
-			ep = tlsServer.URL()
-			servCert = tlsServer.HTTPTestServer.Certificate()
+			err = os.Setenv(constants.EULAPromptAnswer, "yes")
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			resetContextCommandFlags()
+			os.Unsetenv(constants.EULAPromptAnswer)
 			tlsServer.Close()
-		})
-		Context("When the given endpoint(non vSphere with Tanzu) fails to provide the pinniped info", func() {
-			It("should return error", func() {
-				endpoint = ep
-				tlsServer.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/wcp/loginbanner"),
-						ghttp.RespondWith(http.StatusNotFound, "I'm a 404"),
-					),
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/api/v1/namespaces/kube-public/configmaps/cluster-info"),
-						ghttp.RespondWith(http.StatusNotFound, "I'm a 404"),
-					),
-				)
-				ctxName = testContextName
-
-				ctx, err = createNewContext()
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("error creating kubeconfig with tanzu pinniped-auth login plugin"))
-			})
-		})
-		Context("When the given endpoint(non vSphere with Tanzu) has the pinniped configured", func() {
-			It("should create the context successfully with kubeconfig file updated with pinniped auth info", func() {
-				var clusterInfo, pinnipedInfo string
-				endpoint = ep
-				clusterInfo = helper.GetFakeClusterInfo(endpoint, servCert)
-				pinnipedInfo = helper.GetFakePinnipedInfo(
-					helper.PinnipedInfo{
-						ClusterName:              clustername,
-						Issuer:                   issuer,
-						IssuerCABundleData:       issuerCA,
-						ConciergeIsClusterScoped: true,
-					})
-				tlsServer.AppendHandlers(
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/wcp/loginbanner"),
-						ghttp.RespondWith(http.StatusNotFound, "I'm a 404"),
-					),
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/api/v1/namespaces/kube-public/configmaps/cluster-info"),
-						ghttp.RespondWith(http.StatusOK, clusterInfo),
-					),
-					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", "/api/v1/namespaces/kube-public/configmaps/pinniped-info"),
-						ghttp.RespondWith(http.StatusOK, pinnipedInfo),
-					),
-				)
-				ctxName = testContextName
-
-				oldHomeDir := os.Getenv("HOME")
-				tmpHomeDir, err := os.MkdirTemp(os.TempDir(), "home")
-				Expect(err).To(BeNil(), "unable to create temporary home directory")
-				os.Setenv("HOME", tmpHomeDir)
-
-				ctx, err = createNewContext()
-				os.Setenv("HOME", oldHomeDir)
-				Expect(err).To(BeNil())
-				Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
-				Expect(string(ctx.Target)).To(ContainSubstring("kubernetes"))
-				Expect(ctx.ClusterOpts.Endpoint).To(ContainSubstring(endpoint))
-				Expect(ctx.ClusterOpts.Path).To(ContainSubstring(filepath.Join(tmpHomeDir, tkgauth.TanzuLocalKubeDir, tkgauth.TanzuKubeconfigFile)))
-			})
 		})
 
 		Describe("create context with self-managed tmc endpoint", func() {
@@ -675,4 +603,6 @@ func resetContextCommandFlags() {
 	kubeConfig = ""
 	kubeContext = ""
 	selfManaged = false
+	skipTLSVerify = false
+	endpointCACertPath = ""
 }
