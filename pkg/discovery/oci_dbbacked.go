@@ -162,7 +162,11 @@ func (od *DBBackedOCIDiscovery) listGroupsFromInventory() ([]*plugininventory.Pl
 func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 	// check the cache to see if downloaded plugin inventory database is up-to-date or not
 	// by comparing the image digests
-	newCacheHashFileForInventoryImage, newCacheHashFileForMetadataImage := od.checkImageCache()
+	newCacheHashFileForInventoryImage, newCacheHashFileForMetadataImage, err := od.checkImageCache()
+	if err != nil {
+		return err
+	}
+
 	if newCacheHashFileForInventoryImage == "" && newCacheHashFileForMetadataImage == "" {
 		// The cache can be re-used. We are done.
 		return nil
@@ -172,7 +176,7 @@ func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 	log.Infof("Reading plugin inventory for %q, this will take a few seconds.", od.image)
 
 	// Verify the inventory image signature before downloading the plugin inventory database
-	err := sigverifier.VerifyInventoryImageSignature(od.image)
+	err = sigverifier.VerifyInventoryImageSignature(od.image)
 	if err != nil {
 		return err
 	}
@@ -244,7 +248,7 @@ func (od *DBBackedOCIDiscovery) downloadInventoryDatabase() error {
 // It returns an empty string if the cache can be used.  Otherwise
 // it returns the name of the digest file that must be created once
 // the new DB image has been downloaded.
-func (od *DBBackedOCIDiscovery) checkImageCache() (string, string) {
+func (od *DBBackedOCIDiscovery) checkImageCache() (string, string, error) {
 	// Get the latest digest of the discovery image.
 	// If the cache already contains the image with this digest
 	// we do not need to verify its signature nor to download it again.
@@ -252,8 +256,7 @@ func (od *DBBackedOCIDiscovery) checkImageCache() (string, string) {
 	if err != nil {
 		// This will happen when the user has configured an invalid image discovery URI
 		log.Warningf("Unable to resolve the plugin discovery image: %v", err)
-		// We force abort execution here to make sure a stale image left in the cache is not used by mistake.
-		log.Fatal(nil, fmt.Sprintf("Fatal: plugins discovery image resolution failed. Please check that the repository image URL %q is correct ", od.image))
+		return "", "", fmt.Errorf("plugins discovery image resolution failed. Please check that the repository image URL %q is correct ", od.image)
 	}
 
 	correctHashFileForInventoryImage := od.checkDigestFileExistence(hashHexValInventoryImage, "")
@@ -272,7 +275,7 @@ func (od *DBBackedOCIDiscovery) checkImageCache() (string, string) {
 	// 	the DB content in the air-gapped scenario, we have to invalidate the cache.
 	correctHashFileForMetadataImage := od.checkDigestFileExistence(hashHexValMetadataImage, "metadata.")
 
-	return correctHashFileForInventoryImage, correctHashFileForMetadataImage
+	return correctHashFileForInventoryImage, correctHashFileForMetadataImage, nil
 }
 
 // checkDigestFileExistence check the digest file already exists in the cache or not

@@ -44,11 +44,12 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		It("update previously created plugin source URL", func() {
 			newImage := framework.RandomString(5)
 			_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: pluginSourceName, SourceType: framework.SourceType, URI: newImage})
-			Expect(err).To(BeNil(), "should not get any error for plugin source update")
+			Expect(err).ToNot(BeNil(), "should get an error for an invalid image for plugin source update")
 			list, err := tf.PluginCmd.ListPluginSources()
 			Expect(err).To(BeNil(), "should not get any error for plugin source list")
 			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeTrue())
-			Expect(list[0].Image).To(Equal(newImage))
+			// The plugin source should note have changed
+			Expect(list[0].Image).To(Equal(e2eTestLocalCentralRepoURL))
 		})
 		// Test case: (negative test) delete plugin source which is not exists
 		It("negative test case: delete plugin source which is not exists", func() {
