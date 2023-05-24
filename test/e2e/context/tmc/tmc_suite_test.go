@@ -21,12 +21,13 @@ func TestTmc(t *testing.T) {
 }
 
 var (
-	tf             *framework.Framework
-	tmcClusterInfo *framework.ClusterInfo
-	k8sClusterInfo *framework.ClusterInfo
-	contextNames   []string
-	ctxsStress     []string
-	err            error
+	tf                 *framework.Framework
+	tmcClusterInfo     *framework.ClusterInfo
+	k8sClusterInfo     *framework.ClusterInfo
+	contextNames       []string
+	contextNamesStress []string
+	ctxsStress         []string
+	err                error
 )
 
 const prefix = "ctx-tmc-"
@@ -35,6 +36,10 @@ const maxCtx = 25
 const ContextShouldNotExists = "the context %s should not exists"
 const ContextShouldExistsAsCreated = "the context %s should exists as its been created"
 
+// This suite has below e2e tests:
+// 1. context (for tmc target) life cycle tests
+// 2. context life cycle tests with k8s and tmc contexts co-existing
+// 3. context stress tests for tmc target
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
 
@@ -52,6 +57,15 @@ var _ = BeforeSuite(func() {
 	// Create KIND cluster, which is used in test cases to create context's
 	k8sClusterInfo, err = framework.CreateKindCluster(tf, "context-e2e-"+framework.RandomNumber(4))
 	Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
+
+	// delete config files
+	err = tf.Config.DeleteCLIConfigurationFiles()
+	Expect(err).To(BeNil())
+	// call init
+	err = tf.Config.ConfigInit()
+	Expect(err).To(BeNil())
+	// should create config files
+	Expect(tf.Config.IsCLIConfigurationFilesExists()).To(BeTrue())
 })
 
 // AfterSuite deletes the KIND cluster created in BeforeSuite
