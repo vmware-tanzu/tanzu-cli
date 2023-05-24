@@ -10,6 +10,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -274,7 +275,20 @@ func createDiscoverySource(dsType, dsName, uri string) (configtypes.PluginDiscov
 	default:
 		return pluginDiscoverySource, errors.Errorf("unknown discovery source type '%s'", dsType)
 	}
-	return pluginDiscoverySource, nil
+
+	err := checkDiscoverySource(pluginDiscoverySource)
+	return pluginDiscoverySource, err
+}
+
+// checkDiscoverySource attempts to access the content of the discovery to
+// confirm it is valid
+func checkDiscoverySource(source configtypes.PluginDiscovery) error {
+	discObject, err := discovery.CreateDiscoveryFromV1alpha1(source, nil)
+	if err != nil {
+		return err
+	}
+	_, err = discObject.List()
+	return err
 }
 
 func createLocalDiscoverySource(discoveryName, uri string) *configtypes.LocalDiscovery {

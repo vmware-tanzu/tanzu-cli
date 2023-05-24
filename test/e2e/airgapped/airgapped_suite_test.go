@@ -51,10 +51,6 @@ var _ = BeforeSuite(func() {
 
 	os.Setenv(framework.TanzuCliPluginDiscoverySignatureVerificationSkipList, e2eAirgappedCentralRepoImage)
 
-	// setup the test central repo
-	_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoImage})
-	Expect(err).To(BeNil(), "should not get any error for plugin source update")
-
 	e2eTestLocalCentralRepoPluginHost := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryHost)
 	Expect(e2eTestLocalCentralRepoPluginHost).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository host", framework.TanzuCliE2ETestLocalCentralRepositoryHost))
 
@@ -70,6 +66,10 @@ var _ = BeforeSuite(func() {
 	e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath)
 	Expect(e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository discovery image signature public key path", framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath))
 	os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
+
+	// setup the test central repo
+	_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoImage})
+	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
 	// search plugin groups and make sure there plugin groups available
 	pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)

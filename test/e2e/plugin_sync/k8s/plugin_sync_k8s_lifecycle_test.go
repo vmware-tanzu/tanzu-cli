@@ -30,16 +30,16 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			err := f.CleanConfigFiles(tf)
 			Expect(err).To(BeNil())
 
-			// update plugin discovery source
-			err = f.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
-			Expect(err).To(BeNil(), "should not get any error for plugin source update")
-
 			// Add Cert
 			_, err = tf.Config.ConfigCertAdd(&f.CertAddOptions{Host: e2eTestLocalCentralRepoPluginHost, CACertificatePath: e2eTestLocalCentralRepoCACertPath, SkipCertVerify: "false", Insecure: "false"})
 			Expect(err).To(BeNil(), "should not be any error for cert add")
 			list, err := tf.Config.ConfigCertList()
 			Expect(err).To(BeNil(), "should not be any error for cert list")
 			Expect(len(list)).To(Equal(1), "should not be any error for cert list")
+
+			// update plugin discovery source
+			err = f.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
+			Expect(err).To(BeNil(), "should not get any error for plugin source update")
 		})
 	})
 
