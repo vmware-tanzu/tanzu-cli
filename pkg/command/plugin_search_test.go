@@ -28,7 +28,7 @@ func TestPluginSearch(t *testing.T) {
 			test:                "no 'plugin search' without central repo",
 			centralRepoDisabled: "true",
 			args:                []string{"plugin", "search"},
-			expected:            "Manage CLI plugins",
+			expected:            "Provides all lifecycle operations for plugins",
 		},
 		{
 			test:            "invalid target",

@@ -45,6 +45,7 @@ func newPluginCmd() *cobra.Command {
 	var pluginCmd = &cobra.Command{
 		Use:   "plugin",
 		Short: "Manage CLI plugins",
+		Long:  "Provides all lifecycle operations for plugins",
 		Annotations: map[string]string{
 			"group": string(plugin.SystemCmdGroup),
 		},
@@ -129,7 +130,8 @@ func newPluginCmd() *cobra.Command {
 func newListPluginCmd() *cobra.Command {
 	var listCmd = &cobra.Command{
 		Use:   "list",
-		Short: "List available plugins",
+		Short: "List installed plugins",
+		Long:  "List all currently installed plugins",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 				if local != "" {
@@ -198,6 +200,7 @@ func newDescribePluginCmd() *cobra.Command {
 	var describeCmd = &cobra.Command{
 		Use:   "describe [name]",
 		Short: "Describe a plugin",
+		Long:  "Displays detailed information for a plugin",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "name", "description", "version", "buildSHA", "digest", "group", "docURL", "completionType", "installationPath", "discovery", "scope", "status", "discoveredRecommendedVersion", "target", "defaultFeatureFlags")
 			if len(args) != 1 {
@@ -317,6 +320,7 @@ func newInstallPluginCmd() *cobra.Command {
 
     # Install version v1.0.0 of plugin "myPlugin" 
     tanzu plugin install myPlugin --version v1.0.0`
+		installCmd.Long = "Install a specific plugin by name or specify all to install all plugins of a group"
 	}
 	return installCmd
 }
@@ -377,6 +381,7 @@ func newUpgradePluginCmd() *cobra.Command {
 	var upgradeCmd = &cobra.Command{
 		Use:   "upgrade [name]",
 		Short: "Upgrade a plugin",
+		Long:  "Installs the latest version available for the specified plugin",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			if len(args) != 1 {
 				return fmt.Errorf("must provide plugin name as positional argument")
@@ -415,6 +420,7 @@ func newDeletePluginCmd() *cobra.Command {
 	var deleteCmd = &cobra.Command{
 		Use:   "delete [name]",
 		Short: "Delete a plugin",
+		Long:  "Uninstalls the specified plugin",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			if len(args) != 1 {
 				return fmt.Errorf("must provide plugin name as positional argument")
@@ -447,6 +453,7 @@ func newCleanPluginCmd() *cobra.Command {
 	var cleanCmd = &cobra.Command{
 		Use:   "clean",
 		Short: "Clean the plugins",
+		Long:  "Remove all installed plugins from the system",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			err = pluginmanager.Clean()
 			if err != nil {
@@ -462,7 +469,9 @@ func newCleanPluginCmd() *cobra.Command {
 func newSyncPluginCmd() *cobra.Command {
 	var syncCmd = &cobra.Command{
 		Use:   "sync",
-		Short: "Sync the plugins",
+		Short: "Installs all plugins recommended by the active contexts",
+		Long: `Installs all plugins recommended by the active contexts.
+Plugins installed with this command will only be available while the context remains active.`,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			err = pluginmanager.SyncPlugins()
 			if err != nil {
