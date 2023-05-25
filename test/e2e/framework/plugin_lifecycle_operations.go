@@ -60,6 +60,10 @@ type PluginGroupOps interface {
 	// input: flagsWithValues - flags and values if any
 	SearchPluginGroups(flagsWithValues string, opts ...E2EOption) ([]*PluginGroup, error)
 
+	// GetPluginGroup performs plugin group get
+	// input: flagsWithValues - flags and values if any
+	GetPluginGroup(groupName string, flagsWithValues string, opts ...E2EOption) ([]*PluginGroupGet, error)
+
 	// InstallPluginsFromGroup a plugin or all plugins from the given plugin group
 	InstallPluginsFromGroup(pluginNameORAll, groupName string, opts ...E2EOption) error
 }
@@ -197,6 +201,15 @@ func (po *pluginCmdOps) SearchPluginGroups(flagsWithValues string, opts ...E2EOp
 	}
 	list, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginGroup](po.cmdExe, searchPluginGroupCmdWithOptions+JSONOutput, opts...)
 	return list, err
+}
+
+func (po *pluginCmdOps) GetPluginGroup(groupName string, flagsWithValues string, opts ...E2EOption) ([]*PluginGroupGet, error) {
+	getPluginGroupCmdWithOptions := fmt.Sprintf(GetPluginGroupCmd, "%s", groupName)
+	if len(strings.TrimSpace(flagsWithValues)) > 0 {
+		getPluginGroupCmdWithOptions = getPluginGroupCmdWithOptions + " " + strings.TrimSpace(flagsWithValues)
+	}
+	pluginList, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginGroupGet](po.cmdExe, getPluginGroupCmdWithOptions+JSONOutput, opts...)
+	return pluginList, err
 }
 
 func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string, opts ...E2EOption) error {
