@@ -32,7 +32,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 		// Test case: validate that the updating the discovery source to point to new airgapped repository works
 		It("update discovery source to point to new airgapped repository discovery image", func() {
-			_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eAirgappedCentralRepoImage})
+			err := framework.UpdatePluginDiscoverySource(tf, e2eAirgappedCentralRepoImage)
 			Expect(err).To(BeNil(), "should not get any error for plugin source update")
 			// Also set the skip signature verification for the airgapped repository discovery image
 			os.Setenv(constants.PluginDiscoveryImageSignatureVerificationSkipList, e2eAirgappedCentralRepoImage)
