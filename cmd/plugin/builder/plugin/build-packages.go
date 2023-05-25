@@ -57,12 +57,25 @@ func (bpo *BuildPluginPackageOptions) BuildPluginPackages() error {
 					continue
 				}
 
+				// Check whether the binary exec file is valid
+				valid, err := helpers.ValidatePluginBinary(pluginBinaryFilePath)
+
+				// Return err if plugin binary file validation fails
+				if err != nil {
+					return err
+				}
+
+				// Return err if plugin binary file is not valid
+				if !valid {
+					return fmt.Errorf("invalid plugin binary :%v", pluginBinaryFilePath)
+				}
+
 				pluginTarFilePath := filepath.Join(bpo.PackageArtifactDir, helpers.GetPluginArchiveRelativePath(pluginManifest.Plugins[i], osArch, version))
 				image := fmt.Sprintf("%s/plugins/%s/%s/%s:%s", bpo.LocalOCIRegistry, osArch.OS(), osArch.Arch(), pluginManifest.Plugins[i].Name, version)
 
 				log.Infof("Generating plugin package for 'plugin:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 
-				err := bpo.ImgpkgOptions.PushImage(image, pluginBinaryFilePath)
+				err = bpo.ImgpkgOptions.PushImage(image, pluginBinaryFilePath)
 				if err != nil {
 					return errors.Wrapf(err, "unable to push package to temporary registry for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 				}

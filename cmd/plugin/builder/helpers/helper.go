@@ -12,9 +12,12 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+
 	"gopkg.in/yaml.v3"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // ReadPluginManifest reads the PluginManifest file and returns Manifest object
@@ -66,4 +69,19 @@ func GetDigest(filePath string) (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
+// ValidatePluginBinary validates the plugin binary file
+// Checks the binary file size if its empty
+// returns true if file is not empty and false if file is empty
+func ValidatePluginBinary(pluginBinaryFilePath string) (bool, error) {
+	log.Infof("Validating Plugin Binary file: %v", pluginBinaryFilePath)
+	// Check whether the plugin binary is empty by verifying if size is zero
+	fileEmpty, err := utils.IsFileEmpty(pluginBinaryFilePath)
+
+	if err != nil {
+		return false, err
+	}
+
+	return !fileEmpty, nil
 }
