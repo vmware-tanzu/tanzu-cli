@@ -66,7 +66,7 @@ var _ = BeforeSuite(func() {
 	os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 	// set up the test central repo
-	_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
+	err = framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
 	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
 	// search plugin groups and make sure there plugin groups available

@@ -33,7 +33,7 @@ var _ = BeforeSuite(func() {
 
 	// setup the test central repo
 	centralURI := os.Getenv(framework.TanzuCliE2ETestCentralRepositoryURL)
-	_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: centralURI})
+	err := framework.UpdatePluginDiscoverySource(tf, centralURI)
 	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
 	// get all plugins with name prefix "test-plugin-"

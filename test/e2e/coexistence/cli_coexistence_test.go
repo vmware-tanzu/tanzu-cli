@@ -172,7 +172,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 			ginkgo.By("Update plugin discovery source with test central repo")
-			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
+			err = framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin source update")
 
 			ginkgo.By("Search plugins and make sure there are plugins available using new Tanzu CLI")
@@ -244,7 +244,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 			ginkgo.By("Update plugin discovery source with test central repo")
-			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
+			err = framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin source update")
 
 			ginkgo.By("Search plugins and make sure there are plugins available using new Tanzu CLI")
@@ -406,7 +406,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 			ginkgo.By("Update plugin discovery source with test central repo")
-			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
+			err = framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin source update")
 
 			ginkgo.By("search plugins and make sure there are plugins available using new Tanzu CLI")
