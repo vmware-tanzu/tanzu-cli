@@ -35,6 +35,7 @@ type inventoryPluginAddFlags struct {
 	ManifestFile      string
 	Publisher         string
 	Vendor            string
+	InventoryDBFile   string
 	DeactivatePlugins bool
 	ValidateOnly      bool
 }
@@ -55,6 +56,7 @@ func newInventoryPluginAddCmd() *cobra.Command {
 				Vendor:            ipaFlags.Vendor,
 				Publisher:         ipaFlags.Publisher,
 				DeactivatePlugins: ipaFlags.DeactivatePlugins,
+				InventoryDBFile:   ipaFlags.InventoryDBFile,
 				ValidateOnly:      ipaFlags.ValidateOnly,
 				ImgpkgOptions:     imgpkg.NewImgpkgCLIWrapper(),
 			}
@@ -67,6 +69,7 @@ func newInventoryPluginAddCmd() *cobra.Command {
 	pluginAddCmd.Flags().StringVarP(&ipaFlags.ManifestFile, "manifest", "", "", "manifest file specifying plugin details that needs to be processed")
 	pluginAddCmd.Flags().StringVarP(&ipaFlags.Vendor, "vendor", "", "", "name of the vendor")
 	pluginAddCmd.Flags().StringVarP(&ipaFlags.Publisher, "publisher", "", "", "name of the publisher")
+	pluginAddCmd.Flags().StringVarP(&ipaFlags.InventoryDBFile, "plugin-inventory-db-file", "", "", "local file for the inventory database")
 	pluginAddCmd.Flags().BoolVarP(&ipaFlags.DeactivatePlugins, "deactivate", "", false, "mark plugins as deactivated")
 	pluginAddCmd.Flags().BoolVarP(&ipaFlags.ValidateOnly, "validate", "", false, "validate whether plugins already exists in the plugin inventory or not")
 
@@ -84,9 +87,10 @@ type inventoryPluginActivateDeactivateFlags struct {
 	ManifestFile      string
 	Publisher         string
 	Vendor            string
+	InventoryDBFile   string
 }
 
-func newInventoryPluginActivateCmd() *cobra.Command {
+func newInventoryPluginActivateCmd() *cobra.Command { // nolint:dupl
 	pluginActivateCmd, flags := getActivateDeactivateBaseCmd()
 	pluginActivateCmd.Use = "activate" // nolint:goconst
 	pluginActivateCmd.Short = "Activate the existing plugin in the inventory database available on the remote repository"
@@ -98,6 +102,7 @@ func newInventoryPluginActivateCmd() *cobra.Command {
 			ManifestFile:      flags.ManifestFile,
 			Vendor:            flags.Vendor,
 			Publisher:         flags.Publisher,
+			InventoryDBFile:   flags.InventoryDBFile,
 			DeactivatePlugins: false,
 			ImgpkgOptions:     imgpkg.NewImgpkgCLIWrapper(),
 		}
@@ -106,7 +111,7 @@ func newInventoryPluginActivateCmd() *cobra.Command {
 	return pluginActivateCmd
 }
 
-func newInventoryPluginDeactivateCmd() *cobra.Command {
+func newInventoryPluginDeactivateCmd() *cobra.Command { // nolint:dupl
 	pluginDeactivateCmd, flags := getActivateDeactivateBaseCmd()
 	pluginDeactivateCmd.Use = "deactivate" // nolint:goconst
 	pluginDeactivateCmd.Short = "Deactivate the existing plugin in the inventory database available on the remote repository"
@@ -118,6 +123,7 @@ func newInventoryPluginDeactivateCmd() *cobra.Command {
 			ManifestFile:      flags.ManifestFile,
 			Vendor:            flags.Vendor,
 			Publisher:         flags.Publisher,
+			InventoryDBFile:   flags.InventoryDBFile,
 			DeactivatePlugins: true,
 			ImgpkgOptions:     imgpkg.NewImgpkgCLIWrapper(),
 		}
@@ -137,8 +143,8 @@ func getActivateDeactivateBaseCmd() (*cobra.Command, *inventoryPluginActivateDea
 	activateDeactivateCmd.Flags().StringVarP(&flags.ManifestFile, "manifest", "", "", "manifest file specifying plugin details that needs to be processed")
 	activateDeactivateCmd.Flags().StringVarP(&flags.Vendor, "vendor", "", "", "name of the vendor")
 	activateDeactivateCmd.Flags().StringVarP(&flags.Publisher, "publisher", "", "", "name of the publisher")
+	activateDeactivateCmd.Flags().StringVarP(&flags.InventoryDBFile, "plugin-inventory-db-file", "", "", "local file for the inventory database")
 
-	_ = activateDeactivateCmd.MarkFlagRequired("repository")
 	_ = activateDeactivateCmd.MarkFlagRequired("vendor")
 	_ = activateDeactivateCmd.MarkFlagRequired("publisher")
 	_ = activateDeactivateCmd.MarkFlagRequired("manifest")

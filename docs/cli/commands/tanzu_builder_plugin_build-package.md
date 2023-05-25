@@ -15,7 +15,6 @@ tanzu builder plugin build-package [flags]
 ```
       --binary-artifacts string    plugin binary artifact directory (default "./artifacts/plugins")
   -h, --help                       help for build-package
-      --oci-registry string        local oci-registry to use for generating packages
       --package-artifacts string   plugin package artifacts directory (default "./artifacts/packages")
 ```
 

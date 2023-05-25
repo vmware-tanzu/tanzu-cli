@@ -48,6 +48,7 @@ PUBLISHER ?= tzcli
 VENDOR ?= vmware
 PLUGIN_PUBLISH_REPOSITORY ?= $(REGISTRY_ENDPOINT)/test/v1/tanzu-cli/plugins
 PLUGIN_INVENTORY_IMAGE_TAG ?= latest
+PLUGIN_INVENTORY_DATABASE_FILE ?= ""
 
 PLUGIN_SCOPE_ASSOCIATION_FILE ?= $(PLUGIN_DIR)/plugin-scope-association.yaml
 PLUGIN_GROUP_NAME_VERSION ?= # e.g. default:v1.0.0, app-developer:v0.1.0
@@ -105,14 +106,13 @@ plugin-build-%:
 		--plugin-scope-association-file $(PLUGIN_SCOPE_ASSOCIATION_FILE)
 
 .PHONY: plugin-build-packages
-plugin-build-packages: plugin-local-registry ## Build plugin packages
+plugin-build-packages: ## Build plugin packages
 	$(BUILDER_PLUGIN) plugin build-package \
 		--binary-artifacts $(PLUGIN_BINARY_ARTIFACTS_DIR) \
-		--package-artifacts $(PLUGIN_PACKAGE_ARTIFACTS_DIR) \
-		--oci-registry $(REGISTRY_ENDPOINT)
+		--package-artifacts $(PLUGIN_PACKAGE_ARTIFACTS_DIR)
 
 .PHONY: plugin-publish-packages
-plugin-publish-packages: plugin-build-packages ## Publish plugin packages
+plugin-publish-packages: plugin-build-packages plugin-local-registry ## Publish plugin packages
 	$(BUILDER_PLUGIN) plugin publish-package \
 		--package-artifacts $(PLUGIN_PACKAGE_ARTIFACTS_DIR) \
 		--publisher $(PUBLISHER) \
@@ -136,7 +136,8 @@ inventory-plugin-add: ## Add plugins to the inventory database
 		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
 		--publisher $(PUBLISHER) \
 		--vendor $(VENDOR) \
-		--manifest $(PLUGIN_MANIFEST_FILE)
+		--manifest $(PLUGIN_MANIFEST_FILE) \
+		--plugin-inventory-db-file $(PLUGIN_INVENTORY_DATABASE_FILE)
 
 .PHONY: inventory-plugin-activate
 inventory-plugin-activate: ## Activate plugins in the inventory database
@@ -145,7 +146,8 @@ inventory-plugin-activate: ## Activate plugins in the inventory database
 		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
 		--publisher $(PUBLISHER) \
 		--vendor $(VENDOR) \
-		--manifest $(PLUGIN_MANIFEST_FILE)
+		--manifest $(PLUGIN_MANIFEST_FILE) \
+		--plugin-inventory-db-file $(PLUGIN_INVENTORY_DATABASE_FILE)
 
 .PHONY: inventory-plugin-deactivate
 inventory-plugin-deactivate: ## Deactivate plugins in the inventory database
@@ -154,10 +156,11 @@ inventory-plugin-deactivate: ## Deactivate plugins in the inventory database
 		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
 		--publisher $(PUBLISHER) \
 		--vendor $(VENDOR) \
-		--manifest $(PLUGIN_MANIFEST_FILE)
+		--manifest $(PLUGIN_MANIFEST_FILE) \
+		--plugin-inventory-db-file $(PLUGIN_INVENTORY_DATABASE_FILE)
 
 .PHONY: inventory-plugin-group-add
-inventory-plugin-group-add: ## Add plugin-group to the inventory database. Requires PLUGIN_GROUP_NAME_VERSION
+inventory-plugin-group-add: ## Add plugin-group to the inventory database. Requires PLUGIN_GROUP_NAME_VERSION, PLUGIN_GROUP_DESCRIPTION
 	$(BUILDER_PLUGIN) inventory plugin-group add \
 		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
 		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
@@ -166,6 +169,7 @@ inventory-plugin-group-add: ## Add plugin-group to the inventory database. Requi
 		--manifest $(PLUGIN_GROUP_MANIFEST_FILE) \
 		--name $(PLUGIN_GROUP_NAME) \
 		--version $(PLUGIN_GROUP_VERSION) \
+		--plugin-inventory-db-file $(PLUGIN_INVENTORY_DATABASE_FILE) \
 		$(PLUGIN_GROUP_DESCRIPTION_FLAG_AND_VALUE) \
 		$(OVERRIDE_FLAG)
 
@@ -177,7 +181,8 @@ inventory-plugin-group-activate: ## Activate plugin-group in the inventory datab
 		--publisher $(PUBLISHER) \
 		--vendor $(VENDOR) \
 		--name $(PLUGIN_GROUP_NAME) \
-		--version $(PLUGIN_GROUP_VERSION)
+		--version $(PLUGIN_GROUP_VERSION) \
+		--plugin-inventory-db-file $(PLUGIN_INVENTORY_DATABASE_FILE)
 
 .PHONY: inventory-plugin-group-deactivate
 inventory-plugin-group-deactivate: ## Deactivate plugin-group in the inventory database. Requires PLUGIN_GROUP_NAME_VERSION
@@ -187,7 +192,8 @@ inventory-plugin-group-deactivate: ## Deactivate plugin-group in the inventory d
 		--publisher $(PUBLISHER) \
 		--vendor $(VENDOR) \
 		--name $(PLUGIN_GROUP_NAME) \
-		--version $(PLUGIN_GROUP_VERSION)
+		--version $(PLUGIN_GROUP_VERSION) \
+		--plugin-inventory-db-file $(PLUGIN_INVENTORY_DATABASE_FILE)
 
 ## --------------------------------------
 ## docker
