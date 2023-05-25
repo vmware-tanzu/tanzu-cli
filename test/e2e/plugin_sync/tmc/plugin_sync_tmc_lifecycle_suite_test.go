@@ -70,8 +70,6 @@ var _ = BeforeSuite(func() {
 	// check E2E test central repo URL (TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) and update the same for plugin discovery
 	e2eTestLocalCentralRepoURL = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryURL)
 	Expect(e2eTestLocalCentralRepoURL).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository URL", framework.TanzuCliE2ETestLocalCentralRepositoryURL))
-	err = framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
-	Expect(err).To(BeNil(), "should not be any error while updating plugin discovery source")
 
 	// Check whether the TMC token is set and whether TANZU_CLI_E2E_TEST_ENVIRONMENT is set to skip HTTPS hardcoding when mocking TMC response.
 	Expect(os.Getenv(framework.TanzuAPIToken)).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with TMC API Token", framework.TanzuAPIToken))
@@ -84,10 +82,6 @@ var _ = BeforeSuite(func() {
 
 	// create a file to update http request/response mocking for every test case
 	tmcPluginsMockFilePath = filepath.Join(tmcMappingsDir, tmcPluginsMockFile)
-
-	// set up the test central repo
-	_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
-	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
 	e2eTestLocalCentralRepoPluginHost = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryHost)
 	Expect(e2eTestLocalCentralRepoPluginHost).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository host", framework.TanzuCliE2ETestLocalCentralRepositoryHost))
@@ -103,6 +97,10 @@ var _ = BeforeSuite(func() {
 	list, err := tf.Config.ConfigCertList()
 	Expect(err).To(BeNil(), "should not be any error for cert list")
 	Expect(len(list)).To(Equal(1), "should not be any error for cert list")
+
+	// set up the test central repo
+	err = framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
+	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
 	// Search for plugin groups and ensure that there are available plugin groups.
 	pluginGroups, err = helper.SearchAllPluginGroups(tf)
