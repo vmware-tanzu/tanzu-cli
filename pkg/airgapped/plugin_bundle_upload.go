@@ -8,11 +8,14 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+
 	"github.com/verybluebot/tarinator-go"
+
 	"gopkg.in/yaml.v3"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -81,7 +84,7 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	}
 
 	log.Infof("---------------------------")
-	log.Infof("successfully published all plugin images to %q", filepath.Join(o.DestinationRepo, manifest.RelativeInventoryImagePathWithTag))
+	log.Infof("successfully published all plugin images to %q", utils.JoinURL(o.DestinationRepo, manifest.RelativeInventoryImagePathWithTag))
 
 	return nil
 }
