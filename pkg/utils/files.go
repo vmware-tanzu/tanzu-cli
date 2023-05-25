@@ -72,3 +72,16 @@ func IsFileEmpty(filename string) (bool, error) {
 
 	return false, nil
 }
+
+// AppendFile appends data to the filePath. It creates the file if it doesn’t already exist.
+func AppendFile(filePath string, data []byte) error {
+	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, constants.ConfigFilePermissions)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if _, err := f.Write(data); err != nil {
+		return err
+	}
+	return nil
+}

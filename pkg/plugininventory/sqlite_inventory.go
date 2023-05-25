@@ -585,6 +585,9 @@ func (b *SQLiteInventory) InsertPlugin(pluginInventoryEntry *PluginInventoryEntr
 			if err != nil {
 				return errors.Wrapf(err, "unable to insert plugin row %v", row)
 			}
+
+			// Write sql statement logs if required
+			writeSQLStatementLogs(fmt.Sprintf("INSERT INTO PluginBinaries VALUES(%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v);\n", row.name, row.target, row.recommendedVersion, row.version, row.hidden, row.description, row.publisher, row.vendor, row.os, row.arch, row.digest, row.uri))
 		}
 	}
 	return nil
@@ -616,6 +619,8 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 			if err != nil {
 				return errors.Wrapf(err, "unable to delete plugin-group version: '%s:%s'", PluginGroupToID(pg), version)
 			}
+			// Write sql statement logs if required
+			writeSQLStatementLogs(fmt.Sprintf("DELETE FROM PluginGroups WHERE GroupName = %s AND Publisher = %s AND Vendor = %s AND GroupVersion = %s;", pg.Name, pg.Publisher, pg.Vendor, version))
 		}
 	}
 
@@ -647,6 +652,8 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 			if err != nil {
 				return errors.Wrapf(err, "unable to insert plugin-group row %v", row)
 			}
+			// Write sql statement logs if required
+			writeSQLStatementLogs(fmt.Sprintf("INSERT INTO PluginGroups VALUES(%v,%v,%v,%v,%v,%v,%v,%v,%v,%v);", row.vendor, row.publisher, row.groupName, row.groupVersion, row.description, row.pluginName, row.target, row.pluginVersion, row.mandatory, row.hidden))
 		}
 	}
 	return nil
@@ -669,7 +676,10 @@ func (b *SQLiteInventory) UpdatePluginActivationState(pluginInventoryEntry *Plug
 		if rowsAffected == 0 {
 			return errors.Errorf("unable to update plugin %v_%v", pluginInventoryEntry.Name, string(pluginInventoryEntry.Target))
 		}
+		// Write sql statement logs if required
+		writeSQLStatementLogs(fmt.Sprintf("UPDATE PluginBinaries SET hidden = %v WHERE PluginName = %v AND Target = %v AND Version = %v AND Publisher = %v AND Vendor = %v ;\n", strconv.FormatBool(pluginInventoryEntry.Hidden), pluginInventoryEntry.Name, string(pluginInventoryEntry.Target), version, pluginInventoryEntry.Publisher, pluginInventoryEntry.Vendor))
 	}
+
 	return nil
 }
 
@@ -689,6 +699,16 @@ func (b *SQLiteInventory) UpdatePluginGroupActivationState(pg *PluginGroup) erro
 		if rowsAffected == 0 {
 			return errors.Errorf("unable to update plugin-group '%s:%s'. This might be possible because the provided plugin-group version doesn't exists", PluginGroupToID(pg), version)
 		}
+		// Write sql statement logs if required
+		writeSQLStatementLogs(fmt.Sprintf("UPDATE PluginGroups SET hidden = %v WHERE GroupName = %v AND Publisher = %v AND Vendor = %v AND GroupVersion = %v ;", strconv.FormatBool(pg.Hidden), pg.Name, pg.Publisher, pg.Vendor, version))
 	}
+
 	return nil
+}
+
+func writeSQLStatementLogs(statements string) {
+	logFile := os.Getenv("SQL_STATEMENTS_LOG_FILE")
+	if logFile != "" {
+		_ = utils.AppendFile(logFile, []byte(statements))
+	}
 }

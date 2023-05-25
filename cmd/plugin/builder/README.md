@@ -164,7 +164,6 @@ Below are the flags available with `tanzu builder plugin build-package` command:
 ```txt
       --binary-artifacts string    plugin binary artifact directory (default "./artifacts/plugins")
   -h, --help                       help for build-package
-      --oci-registry string        local oci-registry to use for generating packages
       --package-artifacts string   plugin package artifacts directory (default "./artifacts/packages")
 ```
 
@@ -172,7 +171,7 @@ Below are the examples:
 
 ```shell
   # Build all plugin packages available under the './artifacts/plugins' directory
-  tanzu builder plugin build-package --oci-registry localhost:5001 --binary-artifacts ./artifacts/plugins
+  tanzu builder plugin build-package --binary-artifacts ./artifacts/plugins
 ```
 
 Once user generate the plugin packages, user can use `tanzu builder plugin publish-package` command to actually publish the generate packages to the remote repository as OCI image.
