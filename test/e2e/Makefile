@@ -6,7 +6,7 @@ E2E_TEST_TIMEOUT ?= 60m
 GOTEST_VERBOSE ?= -v
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 GO := go
-GINKGO := ginkgo
+GINKGO := ${ROOT_DIR}/hack/tools/bin/ginkgo
 
 ifndef TANZU_API_TOKEN
 TANZU_API_TOKEN = ""

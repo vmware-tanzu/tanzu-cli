@@ -27,6 +27,13 @@ type PluginGroup struct {
 	Latest      string `json:"latest"`
 }
 
+type PluginGroupGet struct {
+	Group         string `json:"group"`
+	PluginName    string `json:"pluginname"`
+	PluginTarget  string `json:"plugintarget"`
+	PluginVersion string `json:"pluginversion"`
+}
+
 type PluginSourceInfo struct {
 	Name  string `json:"name"`
 	Image string `json:"image"`

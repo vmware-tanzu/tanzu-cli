@@ -74,10 +74,21 @@ var _ = BeforeSuite(func() {
 	// check all required plugins (framework.PluginsForLifeCycleTests) for plugin life cycle e2e are available in plugin search output
 	Expect(framework.CheckAllPluginsExists(pluginsSearchList, framework.PluginsForLifeCycleTests)).To(BeTrue())
 
-	pluginGroupToPluginListMap = framework.MapPluginsToPluginGroups(pluginsSearchList, framework.PluginGroupsForLifeCycleTests)
+	pluginGroupToPluginListMap = make(map[string][]*framework.PluginInfo)
+	for _, pg := range framework.PluginGroupsForLifeCycleTests {
+		plugins, err := GetAllPluginsFromGroup(tf, pg)
+		Expect(err).To(BeNil(), framework.NoErrorForPluginGroupGet)
 
-	// check for every plugin group (in framework.PluginGroupsForLifeCycleTests) there should be plugin's available
-	for pg := range pluginGroupToPluginListMap {
-		Expect(len(pluginGroupToPluginListMap[pg])).Should(BeNumerically(">", 0), "there should be at least one plugin available for each plugin group in plugin group life cycle list")
+		key := pg.Group + ":" + pg.Latest
+		pluginGroupToPluginListMap[key] = make([]*framework.PluginInfo, 0)
+		for _, p := range plugins {
+			pluginGroupToPluginListMap[key] = append(pluginGroupToPluginListMap[key], &framework.PluginInfo{
+				Name:    p.PluginName,
+				Target:  p.PluginTarget,
+				Version: p.PluginVersion,
+			})
+		}
+		// check for every plugin group (in framework.PluginGroupsForLifeCycleTests) there should be plugins available
+		Expect(len(pluginGroupToPluginListMap[key])).Should(BeNumerically(">", 0), "there should be at least one plugin available for each plugin group in plugin group life cycle list")
 	}
 })
