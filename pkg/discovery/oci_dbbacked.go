@@ -21,11 +21,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
-// inventoryDirName is the name of the directory where the file(s) describing
-// the inventory of the discovery will be downloaded and stored.
-// It should be a sub-directory of the cache directory.
-const inventoryDirName = "plugin_inventory"
-
 // DBBackedOCIDiscovery is an artifact discovery utilizing an OCI image
 // which contains an SQLite database describing the content of the plugin
 // discovery.

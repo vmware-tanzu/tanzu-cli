@@ -11,10 +11,6 @@ import (
 )
 
 var (
-	// TODO(vuil): all directories prefixed with '_', but are expected to be
-	// reconsolidated back to their unprefixed equivalents once backward
-	// compatibility is achieved.
-
 	// DefaultPluginRoot is the default plugin root.
 	DefaultPluginRoot = filepath.Join(xdg.DataHome, "tanzu-cli")
 
@@ -24,4 +20,11 @@ var (
 	// DefaultLocalPluginDistroDir is the default Local plugin distribution root directory
 	// This directory will be used for local discovery and local distribute of plugins
 	DefaultLocalPluginDistroDir = filepath.Join(xdg.Home, ".config", "tanzu-plugins")
+)
+
+const (
+	// PluginInventoryDirName is the name of the directory where the file(s) describing
+	// the inventory of the discovery will be downloaded and stored.
+	// It should be used as a sub-directory of the cache directory (DefaultCacheDir).
+	PluginInventoryDirName = "plugin_inventory"
 )

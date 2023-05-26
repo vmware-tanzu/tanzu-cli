@@ -59,7 +59,7 @@ func newDBBackedOCIDiscovery(name, image string) *DBBackedOCIDiscovery {
 	// then the image prefix should be project.registry.vmware.com/tanzu-cli/plugins/
 	imagePrefix := path.Dir(image)
 	// The data for the inventory is stored in the cache
-	pluginDataDir := filepath.Join(common.DefaultCacheDir, inventoryDirName, name)
+	pluginDataDir := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, name)
 
 	inventory := plugininventory.NewSQLiteInventory(filepath.Join(pluginDataDir, plugininventory.SQliteDBFileName), imagePrefix)
 	return &DBBackedOCIDiscovery{
