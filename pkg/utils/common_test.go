@@ -27,4 +27,5 @@ var _ = Describe("Unit tests for the common utils", func() {
 		present := ContainsString(testStrings, "foobar")
 		Expect(present).To(BeFalse())
 	})
+
 })
