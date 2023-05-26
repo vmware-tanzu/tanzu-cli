@@ -5,6 +5,8 @@
 package clilifecycle
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -21,33 +23,33 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Command-completion]", fun
 			})
 			It("When the completion command is executed with bash as the input", func() {
 				out, _, err := tf.CliOps.CompletionCmd("bash")
-				Expect(err).To(BeNil(), "There should be no errors when using the completion command with bash as the shell input.")
+				Expect(err).To(BeNil(), fmt.Sprintf(noErrorForCompletionCmd, "bash"))
 				Expect(out).To(ContainSubstring(framework.CompletionOutputForBash))
 			})
 			It("When the completion command is executed with zsh as the input", func() {
 				out, _, err := tf.CliOps.CompletionCmd("zsh")
-				Expect(err).To(BeNil(), "There should be no errors when using the completion command with zsh as the shell input.")
+				Expect(err).To(BeNil(), fmt.Sprintf(noErrorForCompletionCmd, "zsh"))
 				Expect(out).To(ContainSubstring(framework.CompletionOutputForZsh))
 			})
 			It("When the completion command is executed with fish as the input", func() {
 				out, _, err := tf.CliOps.CompletionCmd("fish")
-				Expect(err).To(BeNil(), "There should be no errors when using the completion command with fish as the shell input.")
+				Expect(err).To(BeNil(), fmt.Sprintf(noErrorForCompletionCmd, "fish"))
 				Expect(out).To(ContainSubstring(framework.CompletionOutputForFish))
 			})
 			It("When the completion command is executed with powershell as the input", func() {
 				out, _, err := tf.CliOps.CompletionCmd("powershell")
-				Expect(err).To(BeNil(), "There should be no errors when using the completion command with powershell as the shell input.")
+				Expect(err).To(BeNil(), fmt.Sprintf(noErrorForCompletionCmd, "powershell"))
 				Expect(out).To(ContainSubstring(framework.CompletionOutputForPowershell))
 			})
 			It("When the completion command is executed with pwsh as the input", func() {
 				out, _, err := tf.CliOps.CompletionCmd("pwsh")
-				Expect(err).To(BeNil(), "There should be no errors when using the completion command with powershell as the shell input.")
+				Expect(err).To(BeNil(), fmt.Sprintf(noErrorForCompletionCmd, "pwsh"))
 				Expect(out).To(ContainSubstring(framework.CompletionOutputForPowershell))
 			})
 			It("When the cobra __complete command is executed", func() {
 				out, _, err := tf.Exec.TanzuCmdExec(framework.CobraCompleteCmd)
 				Expect(err).To(BeNil(), "There should be no errors when running cobra __complete command")
-				Expect(out).To(ContainSubstring("Completion ended with directive: ShellCompDirectiveNoFileComp"))
+				Expect(out).To(ContainSubstring(":4"))
 			})
 		})
 	})

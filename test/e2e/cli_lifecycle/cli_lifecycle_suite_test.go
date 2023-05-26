@@ -21,6 +21,8 @@ var (
 	tf *framework.Framework
 )
 
+const noErrorForCompletionCmd = "There should be no errors when using the completion command with %s as the shell input."
+
 // This suite has below e2e tests:
 // 1. version and init commands
 // 2. completion command
