@@ -13,11 +13,12 @@ import (
 const (
 	CliCore = "[CLI-Core]"
 
-	InitCmd       = "%s init"
-	VersionCmd    = "%s version"
-	CompletionCmd = "%s completion"
-	TanzuPrefix   = "tanzu"
-	TzPrefix      = "tz"
+	InitCmd          = "%s init"
+	VersionCmd       = "%s version"
+	CompletionCmd    = "%s completion"
+	CobraCompleteCmd = "%s __complete ''"
+	TanzuPrefix      = "tanzu"
+	TzPrefix         = "tz"
 
 	// Config commands
 	ConfigSet          = "%s config set "
@@ -153,6 +154,8 @@ const (
 	CompletionOutputForZsh        = "zsh completion for tanzu"
 	CompletionOutputForFish       = "fish completion for tanzu"
 	CompletionOutputForPowershell = "powershell completion for tanzu"
+	FailedToRunCompletionCmd      = "failed to run completion command: %s, stdout: %s"
+	FailedToRunCmd                = "failed to run command: %s, stdout: %s"
 
 	// config related constants
 	FailedToCreateContext           = "failed to create context"

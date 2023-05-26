@@ -39,6 +39,16 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Command-completion]", fun
 				Expect(err).To(BeNil(), "There should be no errors when using the completion command with powershell as the shell input.")
 				Expect(out).To(ContainSubstring(framework.CompletionOutputForPowershell))
 			})
+			It("When the completion command is executed with pwsh as the input", func() {
+				out, _, err := tf.CliOps.CompletionCmd("pwsh")
+				Expect(err).To(BeNil(), "There should be no errors when using the completion command with powershell as the shell input.")
+				Expect(out).To(ContainSubstring(framework.CompletionOutputForPowershell))
+			})
+			It("When the cobra __complete command is executed", func() {
+				out, _, err := tf.Exec.TanzuCmdExec(framework.CobraCompleteCmd)
+				Expect(err).To(BeNil(), "There should be no errors when running cobra __complete command")
+				Expect(out).To(ContainSubstring("Completion ended with directive: ShellCompDirectiveNoFileComp"))
+			})
 		})
 	})
 })

@@ -43,8 +43,8 @@ func (co *cliOps) CompletionCmd(shell string, opts ...E2EOption) (string, string
 	}
 	out, stdErr, err := co.cmdExe.TanzuCmdExec(completionCmdWithShell, opts...)
 	if err != nil {
-		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
-		return out.String(), stdErr.String(), errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
+		log.Info(fmt.Sprintf(FailedToRunCompletionCmd, completionCmdWithShell, out.String()))
+		return out.String(), stdErr.String(), errors.Wrap(err, fmt.Sprintf(FailedToRunCompletionCmd, completionCmdWithShell, out.String()))
 	}
 	return out.String(), stdErr.String(), err
 }
