@@ -19,13 +19,16 @@ import (
 )
 
 var (
-	configClient interfaces.ConfigClientWrapper
-	// TODO(prkalle): Update the below CEIP message if necessary
-	ceipPromptMsg = `VMware's Customer Experience Improvement Program ("CEIP") provides VMware with information that enables VMware to improve its products and services and fix problems. By choosing to participate in CEIP, you agree that VMware may collect technical information about your use of VMware products and services on a regular basis. This information does not personally identify you.
-For more details about the Program, please see http://www.vmware.com/trustvmware/ceip.html
+	configClient  interfaces.ConfigClientWrapper
+	ceipPromptMsg = `VMware's Customer Experience Improvement Program ("CEIP") provides VMware with
+information that enables VMware to improve its products and services and fix
+problems. By choosing to participate in CEIP, you agree that VMware may collect
+technical information about your use of VMware products and services on a
+regular basis. This information does not personally identify you.
 
-Do you agree to Participate in the Customer Experience Improvement Program? 
+For more details about the program, please see https://www.vmware.com/trustvmware/ceip.html
 
+Do you agree to participate in the Customer Experience Improvement Program?
 `
 
 	// TODO(vuil): Placeholder content, update to actual verbiage
