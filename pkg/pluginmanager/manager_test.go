@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -1949,4 +1950,64 @@ func TestMergeDuplicateGroupsWithReplacedVersion(t *testing.T) {
 	mergedGroup := mergeDuplicateGroups(preMergeGroups)
 	assertions.Equal(1, len(mergedGroup))
 	assertions.Equal(expectedGroup, mergedGroup[0])
+}
+
+func TestClean(t *testing.T) {
+	assertions := assert.New(t)
+
+	// Create a fake cache directory
+	cacheDir, err := os.MkdirTemp("", "test-cache")
+	assertions.Nil(err)
+	common.DefaultCacheDir = cacheDir
+	defer os.RemoveAll(cacheDir)
+
+	pluginDir, err := os.MkdirTemp("", "test-plugins")
+	assertions.Nil(err)
+	common.DefaultPluginRoot = pluginDir
+	defer os.RemoveAll(pluginDir)
+
+	// Add a catalog file to the cache
+	catalogFile := filepath.Join(common.DefaultCacheDir, "catalog.yaml")
+	_, err = os.Create(catalogFile)
+	assertions.Nil(err)
+
+	// Add a couple of plugin inventory directories with files inside
+	inventoryDir := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName)
+	err = os.Mkdir(inventoryDir, 0777)
+	assertions.Nil(err)
+	for _, dirName := range []string{config.DefaultStandaloneDiscoveryName, "disc_0", "disc_1"} {
+		dir := filepath.Join(inventoryDir, dirName)
+		err = os.Mkdir(dir, 0777)
+		assertions.Nil(err)
+
+		_, err = os.Create(filepath.Join(dir, plugininventory.SQliteDBFileName))
+		assertions.Nil(err)
+
+		_, err = os.Create(filepath.Join(
+			dir,
+			"digest.f7603fe167bfa39c23dc06dda1336cb5a3a0c86ecfc919612ebc7620fca4026a"))
+		assertions.Nil(err)
+	}
+
+	// Add a couple of fake plugin directories with a binary
+	for _, dirName := range []string{"builder", "cluster"} {
+		dir := filepath.Join(common.DefaultPluginRoot, dirName)
+		err = os.Mkdir(dir, 0777)
+		assertions.Nil(err)
+
+		_, err = os.Create(filepath.Join(dir, "v9.9.9_d5ae2d7b3bf9416e569fdf77c45d69ae21e793939ad5c42c97b0c83cc46cf55d_global"))
+		assertions.Nil(err)
+	}
+
+	// Now call ask the pluginmanager to clean those up
+	err = Clean()
+	assertions.Nil(err)
+
+	// Verify everything is gone
+	_, err = os.Stat(catalogFile)
+	assertions.True(errors.Is(err, os.ErrNotExist))
+	_, err = os.Stat(inventoryDir)
+	assertions.True(errors.Is(err, os.ErrNotExist))
+	_, err = os.Stat(common.DefaultPluginRoot)
+	assertions.True(errors.Is(err, os.ErrNotExist))
 }

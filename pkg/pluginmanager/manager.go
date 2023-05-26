@@ -1302,10 +1302,25 @@ func discoverPluginsFromLocalSource(localPath string) ([]discovery.Discovered, e
 
 // Clean deletes all plugins and tests.
 func Clean() error {
+	errorList := make([]error, 0)
+
+	// Clean the plugin catalog
 	if err := catalog.CleanCatalogCache(); err != nil {
-		return errors.Errorf("Failed to clean the catalog cache %v", err)
+		errorList = append(errorList, errors.Wrapf(err, "Failed to clean the catalog cache"))
 	}
-	return os.RemoveAll(common.DefaultPluginRoot)
+
+	// Clean plugin inventory cache
+	pluginDataDir := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName)
+	if err := os.RemoveAll(pluginDataDir); err != nil {
+		errorList = append(errorList, errors.Wrapf(err, "Failed to clean the plugin inventory cache"))
+	}
+
+	// Remove all plugin binaries
+	if err := os.RemoveAll(common.DefaultPluginRoot); err != nil {
+		errorList = append(errorList, errors.Wrapf(err, "Failed to clean the plugin binaries"))
+	}
+
+	return kerrors.NewAggregate(errorList)
 }
 
 // getCLIPluginResourceWithLocalDistroFromPluginInfo return cliv1alpha1.CLIPlugin resource from the pluginInfo
