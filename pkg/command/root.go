@@ -24,8 +24,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 )
 
-const cmdNameSet = "set"
-
 // NewRootCmd creates a root command.
 func NewRootCmd() (*cobra.Command, error) {
 	var rootCmd = newRootCmd()
@@ -127,31 +125,44 @@ func newRootCmd() *cobra.Command {
 		// Flag parsing must be deactivated because the root plugin won't know about all flags.
 		DisableFlagParsing: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Prompt user for EULA and CEIP agreement if necessary, except when
-			//   - performing shell completion (The shell completion setup is not interactive,
-			//     so it should not trigger a prompt)
-			//   - 'tanzu version'(common first command to run),
-			//   - 'config set' (would be a chicken and egg issue if user tries to set CEIP configuration
-			//      using "tanzu config set env.TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER yes")
-			//   - 'config eula xxx', 'ceip set' (auto prompting when running these commands is confusing)
-			if cmd.Name() != cobra.ShellCompRequestCmd && cmd.Name() != completionCmd.Name() &&
-				cmd.Name() != newVersionCmd().Name() &&
-				!(cmd.Name() == cmdNameSet && cmd.Parent().Name() == configCmd.Name()) {
-				if !(cmd.Parent().Name() == newEULACmd().Name()) &&
-					!(cmd.Name() == cmdNameSet && cmd.Parent().Name() == newCEIPParticipationCmd().Name()) {
-					if err := cliconfig.ConfigureEULA(false); err != nil {
-						return err
-					}
+			// Prompt user for EULA and CEIP agreement if necessary, except for
+			skipCommands := []string{
+				// The shell completion setup is not interactive, so it should not trigger a prompt
+				"tanzu __complete",
+				"tanzu completion",
+				// Common first command to run,
+				"tanzu version",
+				// It would be a chicken and egg issue if user tries to set CEIP configuration
+				// using "tanzu config set env.TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER yes"
+				"tanzu config set",
+				// Auto prompting when running these commands is confusing
+				"tanzu config eula",
+				"tanzu ceip-participation set",
+				// This command is being invoked by the kubectl exec binary where the user doesn't
+				// get to see the prompts and the kubectl command execution just gets stuck, and it
+				// is very hard for users to figure out what is going wrong
+				"tanzu pinniped-auth",
+			}
+			skipPrompts := false
+			for _, cmdPath := range skipCommands {
+				if strings.HasPrefix(cmd.CommandPath(), cmdPath) {
+					skipPrompts = true
+					break
+				}
+			}
+			if !skipPrompts {
+				if err := cliconfig.ConfigureEULA(false); err != nil {
+					return err
+				}
 
-					configVal, _ := config.GetEULAStatus()
-					if configVal != config.EULAStatusAccepted {
-						fmt.Fprintf(os.Stderr, "The Tanzu CLI is only usable with reduced functionality until the General Terms are agreed to.\nPlease use `tanzu config eula show` to review the terms, or `tanzu config eula accept` to accept them directly\n")
-						return errors.New("terms not accepted")
-					}
+				configVal, _ := config.GetEULAStatus()
+				if configVal != config.EULAStatusAccepted {
+					fmt.Fprintf(os.Stderr, "The Tanzu CLI is only usable with reduced functionality until the General Terms are agreed to.\nPlease use `tanzu config eula show` to review the terms, or `tanzu config eula accept` to accept them directly\n")
+					return errors.New("terms not accepted")
+				}
 
-					if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
-						return err
-					}
+				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
+					return err
 				}
 			}
 			return nil
