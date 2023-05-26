@@ -150,7 +150,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			Expect(len(installedPluginsList)).Should(Equal(len(latestPluginsInstalledList)), "number of plugins should be same as number of plugins CRs applied")
 			Expect(f.CheckAllPluginsExists(installedPluginsList, latestPluginsInstalledList)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 
-			_, err = tf.PluginCmd.Sync()
+			_, _, err = tf.PluginCmd.Sync()
 			Expect(err).To(BeNil(), "should not get any error for plugin sync")
 
 			installedPluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
@@ -229,7 +229,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		// Test case: e. run plugin sync and validate the plugin list
 		It("run plugin sync and validate err response in plugin sync, validate plugin list output", func() {
 			// sync should fail with error as there is a plugin which does not exists in repository with the given random version
-			_, err = tf.PluginCmd.Sync()
+			_, _, err = tf.PluginCmd.Sync()
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(f.UnableToFindPluginWithVersionForTarget, pluginsWithIncorrectVer[0].Name, pluginsWithIncorrectVer[0].Version, pluginsWithIncorrectVer[0].Target)))
 
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)

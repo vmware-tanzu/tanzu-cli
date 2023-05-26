@@ -135,6 +135,7 @@ func GetHomeDir() string {
 }
 
 // ExecuteCmdAndBuildJSONOutput is generic function to execute given command and build JSON output and return
+// the result, stdOut, stdErr and error
 func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | PluginGroupGet | PluginSourceInfo | types.ClientConfig | Server | ContextListInfo | CertDetails | PluginDescribe](cmdExe CmdOps, cmd string, opts ...E2EOption) ([]*T, string, string, error) {
 	out, stdErr, err := cmdExe.TanzuCmdExec(cmd, opts...)
 	outStr := ""
@@ -145,21 +146,22 @@ func ExecuteCmdAndBuildJSONOutput[T PluginInfo | PluginSearch | PluginGroup | Pl
 	if stdErr != nil {
 		stdErrStr = stdErr.String()
 	}
+
+	var list []*T
+	if outStr != "" {
+		unmarshalErr := json.Unmarshal([]byte(outStr), &list)
+		if unmarshalErr != nil {
+			log.Errorf(FailedToConstructJSONNodeFromOutputAndErrInfo, outStr, unmarshalErr.Error())
+			log.Errorf("trying with yaml unmarshal")
+			// try with yaml format unmarshal
+			err2 := yaml.Unmarshal([]byte(outStr), &list)
+			if err2 != nil {
+				return nil, outStr, stdErrStr, errors.Wrapf(unmarshalErr, FailedToConstructJSONNodeFromOutput, outStr)
+			}
+		}
+	}
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, cmd, err.Error(), stdErr.String(), out.String())
-		return nil, outStr, stdErrStr, err
-	}
-	jsonStr := out.String()
-	var list []*T
-	err = json.Unmarshal([]byte(jsonStr), &list)
-	if err != nil {
-		log.Errorf(FailedToConstructJSONNodeFromOutputAndErrInfo, jsonStr, err.Error())
-		log.Errorf("trying with yaml unmarshal")
-		// try with yaml format unmarshal
-		err2 := yaml.Unmarshal([]byte(jsonStr), &list)
-		if err2 != nil {
-			return nil, outStr, stdErrStr, errors.Wrapf(err, FailedToConstructJSONNodeFromOutput, jsonStr)
-		}
 	}
 	return list, outStr, stdErrStr, err
 }
@@ -329,7 +331,7 @@ func LogFile(file string) error {
 // GetPluginsList returns a list of plugins, either installed or both installed and uninstalled, based on the value of the installedOnly parameter.
 func GetPluginsList(tf *Framework, installedOnly bool) ([]*PluginInfo, error) {
 	out := make([]*PluginInfo, 0)
-	pluginListOutput, err := tf.PluginCmd.ListPlugins()
+	pluginListOutput, _, _, err := tf.PluginCmd.ListPlugins()
 	if err != nil {
 		return out, nil
 	}

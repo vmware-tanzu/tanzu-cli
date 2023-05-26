@@ -191,7 +191,7 @@ func (co *cliOps) RollbackToLegacyTanzuCLI(tf *Framework, opts ...E2EOption) err
 		return err
 	}
 
-	_, err = tf.PluginCmd.Sync(opts...)
+	_, _, err = tf.PluginCmd.Sync(opts...)
 
 	if err != nil {
 		return err

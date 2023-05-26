@@ -25,7 +25,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc-k8s
 	// Test case: b. create k8s context, make sure its active
 	// Test case: c. list all active contexts, make both tmc and k8s contexts are active
 	// Test case: d. delte both k8s and tmc contexts
-	Context("Context lifecycle tests for TMC target", func() {
+	Context("Context lifecycle tests for TMC and k8s targets", func() {
 		var k8sCtx, tmcCtx string
 		// Test case: a. create tmc context
 		It("create tmc context with endpoint and check active context", func() {
@@ -79,7 +79,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc-k8s
 	// Test case: c. list all active contexts, make both tmc and k8s contexts are active
 	// Test case: d. list all contexts
 	// Test case: e. delete all contexts
-	Context("Context lifecycle tests for TMC target", func() {
+	Context("Context lifecycle tests for TMC and k8s targets, with multiple contexts", func() {
 		var k8sCtx, tmcCtx string
 		k8sCtxs := make([]string, 0)
 		tmcCtxs := make([]string, 0)

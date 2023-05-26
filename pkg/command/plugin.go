@@ -13,6 +13,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -38,7 +39,9 @@ var (
 )
 
 const (
-	invalidTargetMsg = "invalid target specified. Please specify a correct value for the `--target/-t` flag from '" + common.TargetList + "'"
+	invalidTargetMsg                = "invalid target specified. Please specify a correct value for the `--target/-t` flag from '" + common.TargetList + "'"
+	errorWhileDiscoveringPlugins    = "there was an error while discovering plugins, error information: '%v'"
+	errorWhileGettingContextPlugins = "there was an error while getting installed context plugins, error information: '%v'"
 )
 
 func newPluginCmd() *cobra.Command {
@@ -133,6 +136,7 @@ func newListPluginCmd() *cobra.Command {
 		Short: "List installed plugins",
 		Long:  "List all currently installed plugins",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			errorList := make([]error, 0)
 			if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 				if local != "" {
 					return fmt.Errorf("the '--local' flag does not apply to this command. Please use 'tanzu plugin search --local'")
@@ -141,7 +145,8 @@ func newListPluginCmd() *cobra.Command {
 				// List installed standalone plugins
 				standalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
 				if err != nil {
-					return err
+					errorList = append(errorList, err)
+					log.Warningf("there was an error while getting installed standalone plugins, error information: '%v'", err.Error())
 				}
 				sort.Sort(cli.PluginInfoSorter(standalonePlugins))
 
@@ -150,7 +155,8 @@ func newListPluginCmd() *cobra.Command {
 				// active contexts, but are not installed.
 				installedContextPlugins, missingContextPlugins, err := getInstalledAndMissingContextPlugins()
 				if err != nil {
-					return err
+					errorList = append(errorList, err)
+					log.Warningf(errorWhileGettingContextPlugins, err.Error())
 				}
 				sort.Sort(discovery.DiscoveredSorter(installedContextPlugins))
 				sort.Sort(discovery.DiscoveredSorter(missingContextPlugins))
@@ -161,7 +167,7 @@ func newListPluginCmd() *cobra.Command {
 					displayInstalledAndMissingListView(standalonePlugins, installedContextPlugins, missingContextPlugins, cmd.OutOrStdout())
 				}
 
-				return nil
+				return kerrors.NewAggregate(errorList)
 			}
 
 			// Plugin listing before the Central Repository feature
@@ -179,7 +185,7 @@ func newListPluginCmd() *cobra.Command {
 			}
 
 			if err != nil {
-				return err
+				log.Warningf("there was an error while getting available plugins, error information: '%v'", err.Error())
 			}
 			sort.Sort(discovery.DiscoveredSorter(availablePlugins))
 
@@ -189,7 +195,7 @@ func newListPluginCmd() *cobra.Command {
 				displayPluginListOutputListView(availablePlugins, cmd.OutOrStdout())
 			}
 
-			return nil
+			return err
 		},
 	}
 
@@ -497,16 +503,19 @@ func getInstalledElseAvailablePluginVersion(p *discovery.Discovered) string {
 
 // getInstalledAndMissingContextPlugins returns any context plugins that are not installed
 func getInstalledAndMissingContextPlugins() (installed, missing []discovery.Discovered, err error) {
+	errorList := make([]error, 0)
 	serverPlugins, err := pluginmanager.DiscoverServerPlugins()
 	if err != nil {
-		return nil, nil, err
+		errorList = append(errorList, err)
+		log.Warningf(errorWhileDiscoveringPlugins, err.Error())
 	}
 
 	// Note that the plugins we get here don't know from which context they were installed.
 	// We need to cross-reference them with the discovered plugins.
 	installedPlugins, err := pluginsupplier.GetInstalledServerPlugins()
 	if err != nil {
-		return nil, nil, err
+		errorList = append(errorList, err)
+		log.Warningf(errorWhileGettingContextPlugins, err.Error())
 	}
 
 	for i := range serverPlugins {
@@ -529,7 +538,7 @@ func getInstalledAndMissingContextPlugins() (installed, missing []discovery.Disc
 			missing = append(missing, serverPlugins[i])
 		}
 	}
-	return installed, missing, nil
+	return installed, missing, kerrors.NewAggregate(errorList)
 }
 
 func displayPluginListOutputListView(availablePlugins []discovery.Discovered, writer io.Writer) {
