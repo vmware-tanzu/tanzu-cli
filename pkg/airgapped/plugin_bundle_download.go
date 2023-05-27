@@ -120,6 +120,11 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to read all plugins from database")
 		}
+		if len(selectedPluginEntries) == 1 {
+			log.Infof("will be downloading the one plugin from: %s", o.PluginInventoryImage)
+		} else {
+			log.Infof("will be downloading the %d plugins from: %s", len(selectedPluginEntries), o.PluginInventoryImage)
+		}
 	} else {
 		// If groups were provided as argument select only provided plugin groups and
 		// plugins available from the specified plugin groups
@@ -161,6 +166,7 @@ func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPlug
 
 	var allPluginEntries []*plugininventory.PluginInventoryEntry
 	for _, pg := range pluginGroups {
+		var groupPluginsCount int
 		for _, plugins := range pg.Versions {
 			for _, p := range plugins {
 				pif := &plugininventory.PluginInventoryFilter{
@@ -174,7 +180,14 @@ func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPlug
 					return nil, nil, errors.Wrapf(err, "unable to get plugins in plugin group %v", plugininventory.PluginGroupToID(pg))
 				}
 				allPluginEntries = append(allPluginEntries, pluginEntries...)
+				groupPluginsCount += len(pluginEntries)
 			}
+		}
+		groupIDWithVersion := fmt.Sprintf("%s:%s", plugininventory.PluginGroupToID(pg), pg.RecommendedVersion)
+		if groupPluginsCount == 1 {
+			log.Infof("will be downloading the one plugin from group: %s", groupIDWithVersion)
+		} else {
+			log.Infof("will be downloading the %d plugins from group: %s", groupPluginsCount, groupIDWithVersion)
 		}
 	}
 	return pluginGroups, allPluginEntries, nil
