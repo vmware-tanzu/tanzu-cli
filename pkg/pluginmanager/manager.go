@@ -810,16 +810,18 @@ func UpgradePlugin(pluginName, version string, target configtypes.Target) error 
 	return InstallStandalonePlugin(pluginName, version, target)
 }
 
-// InstallPluginsFromGroup installs either the specified plugin or all plugins from the specified group version
-func InstallPluginsFromGroup(pluginName, groupIDAndVersion string) error { //nolint:gocyclo
+// InstallPluginsFromGroup installs either the specified plugin or all plugins from the specified group version.
+// If the group version is not specified, the latest available version will be used.
+// The group identifier including the version used is returned.
+func InstallPluginsFromGroup(pluginName, groupIDAndVersion string) (string, error) { //nolint:gocyclo
 	discoveries, err := getPluginDiscoveries()
 	if err != nil || len(discoveries) == 0 {
-		return err
+		return "", err
 	}
 
 	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupIDAndVersion)
 	if groupIdentifier == nil {
-		return fmt.Errorf("could not find group '%s'", groupIDAndVersion)
+		return "", fmt.Errorf("could not find group '%s'", groupIDAndVersion)
 	}
 	if groupIdentifier.Version == "" {
 		// If the version is not specified to install from, we use the latest
@@ -832,11 +834,11 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string) error { //nol
 		Version:   groupIdentifier.Version,
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if len(groups) == 0 {
-		return errors.Errorf("unable to find plugin group %v", groupIDAndVersion)
+		return "", errors.Errorf("unable to find plugin group %v", groupIDAndVersion)
 	}
 
 	if len(groups) > 1 {
@@ -847,6 +849,7 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string) error { //nol
 	if groupIdentifier.Version == cli.VersionLatest {
 		// If we are installing the latest version, we should set the version we found
 		groupIdentifier.Version = pg.RecommendedVersion
+		groupIDAndVersion = fmt.Sprintf("%s:%s", groupIDAndVersion, pg.RecommendedVersion)
 	}
 
 	numErrors := 0
@@ -870,25 +873,25 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string) error { //nol
 	}
 
 	if !pluginExist {
-		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
+		return "", fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
 	}
 
 	if !mandatoryPluginsExist {
 		if pluginName == cli.AllPlugins {
-			return fmt.Errorf("plugin group '%s' has no mandatory plugins to install", groupIDAndVersion)
+			return "", fmt.Errorf("plugin group '%s' has no mandatory plugins to install", groupIDAndVersion)
 		}
-		return fmt.Errorf("plugin '%s' from group '%s' is not mandatory to install", pluginName, groupIDAndVersion)
+		return "", fmt.Errorf("plugin '%s' from group '%s' is not mandatory to install", pluginName, groupIDAndVersion)
 	}
 
 	if numErrors > 0 {
-		return fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupIDAndVersion)
+		return "", fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupIDAndVersion)
 	}
 
 	if numInstalled == 0 {
-		return fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
+		return "", fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
 	}
 
-	return nil
+	return groupIDAndVersion, nil
 }
 
 // GetRecommendedVersionOfPlugin returns recommended version of the plugin

@@ -252,14 +252,15 @@ func newInstallPluginCmd() *cobra.Command {
 					pluginName = args[0]
 				}
 
-				err = pluginmanager.InstallPluginsFromGroup(pluginName, group)
+				groupWithVersion, err := pluginmanager.InstallPluginsFromGroup(pluginName, group)
 				if err != nil {
 					return err
 				}
+
 				if pluginName == cli.AllPlugins {
-					log.Successf("successfully installed all plugins from group '%s'", group)
+					log.Successf("successfully installed all plugins from group '%s'", groupWithVersion)
 				} else {
-					log.Successf("successfully installed '%s' from group '%s'", pluginName, group)
+					log.Successf("successfully installed '%s' from group '%s'", pluginName, groupWithVersion)
 				}
 
 				return nil
