@@ -15,7 +15,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 const (
@@ -67,9 +66,8 @@ func (c *ContextCatalog) Upsert(plugin *cli.PluginInfo) error {
 	c.plugins[pluginNameTarget] = plugin.InstallationPath
 	c.sharedCatalog.IndexByPath[plugin.InstallationPath] = *plugin
 
-	if !utils.ContainsString(c.sharedCatalog.IndexByName[pluginNameTarget], plugin.InstallationPath) {
-		c.sharedCatalog.IndexByName[pluginNameTarget] = append(c.sharedCatalog.IndexByName[pluginNameTarget], plugin.InstallationPath)
-	}
+	pluginNameTargetVersion := PluginNameTargetVersion(plugin.Name, plugin.Target, plugin.Version)
+	c.sharedCatalog.IndexByVersionName[pluginNameTargetVersion] = plugin.InstallationPath
 
 	// The "unknown" target was previously used in two scenarios:
 	// 1- to represent the global target (>= v0.28 and < v0.90)
@@ -90,9 +88,12 @@ func (c *ContextCatalog) Upsert(plugin *cli.PluginInfo) error {
 
 func (c *ContextCatalog) deleteOldTargetEntries(key string) {
 	if oldInstallationPath, exists := c.plugins[key]; exists {
+		plugin := c.sharedCatalog.IndexByPath[oldInstallationPath]
+		pluginNameTargetVersion := PluginNameTargetVersion(plugin.Name, plugin.Target, plugin.Version)
+		delete(c.sharedCatalog.IndexByVersionName, pluginNameTargetVersion)
+
 		delete(c.sharedCatalog.IndexByPath, oldInstallationPath)
 		delete(c.plugins, key)
-		delete(c.sharedCatalog.IndexByName, key)
 	}
 }
 
@@ -148,10 +149,10 @@ func getCatalogCacheDir() (path string) {
 // newSharedCatalog creates an instance of the shared catalog file.
 func newSharedCatalog() (*Catalog, error) {
 	c := &Catalog{
-		IndexByPath:       map[string]cli.PluginInfo{},
-		IndexByName:       map[string][]string{},
-		StandAlonePlugins: map[string]string{},
-		ServerPlugins:     map[string]PluginAssociation{},
+		IndexByPath:        map[string]cli.PluginInfo{},
+		IndexByVersionName: map[string]string{},
+		StandAlonePlugins:  map[string]string{},
+		ServerPlugins:      map[string]PluginAssociation{},
 	}
 
 	err := ensureRoot()
@@ -181,8 +182,8 @@ func getCatalogCache() (catalog *Catalog, err error) {
 	if c.IndexByPath == nil {
 		c.IndexByPath = map[string]cli.PluginInfo{}
 	}
-	if c.IndexByName == nil {
-		c.IndexByName = map[string][]string{}
+	if c.IndexByVersionName == nil {
+		c.IndexByVersionName = map[string]string{}
 	}
 	if c.StandAlonePlugins == nil {
 		c.StandAlonePlugins = map[string]string{}
@@ -226,6 +227,20 @@ func CleanCatalogCache() error {
 	return nil
 }
 
+func GetPluginFromCache(name string, target configtypes.Target, version string) *cli.PluginInfo {
+	c, err := getCatalogCache()
+	if err != nil {
+		return nil
+	}
+
+	pluginNameTargetVersion := PluginNameTargetVersion(name, target, version)
+	if pluginVersionPath, exists := c.IndexByVersionName[pluginNameTargetVersion]; exists {
+		plugin := c.IndexByPath[pluginVersionPath]
+		return &plugin
+	}
+	return nil
+}
+
 // getCatalogCachePath gets the catalog cache path
 func getCatalogCachePath() string {
 	return filepath.Join(getCatalogCacheDir(), catalogCacheFileName)
@@ -253,4 +268,10 @@ func PluginNameTarget(pluginName string, target configtypes.Target) string {
 		return pluginName
 	}
 	return fmt.Sprintf("%s_%s", pluginName, target)
+}
+
+// PluginNameTargetVersion constructs a string to uniquely refer to a plugin associated
+// with a specific target and version
+func PluginNameTargetVersion(name string, target configtypes.Target, version string) string {
+	return fmt.Sprintf("%s_%s", PluginNameTarget(name, target), version)
 }

@@ -41,8 +41,8 @@ type Catalog struct {
 
 	// IndexByPath of PluginInfos for all installed plugins by installation path.
 	IndexByPath map[string]cli.PluginInfo `json:"indexByPath,omitempty" yaml:"indexByPath,omitempty"`
-	// IndeByName of all plugin installation paths by name.
-	IndexByName map[string][]string `json:"indexByName,omitempty" yaml:"indexByName,omitempty"`
+	// IndexByVersionName of all plugin installation paths by name.
+	IndexByVersionName map[string]string `json:"indexByVersionName,omitempty" yaml:"indexByVersionName,omitempty"`
 	// StandAlonePlugins is a set of stand-alone plugin installations aggregated across all context types.
 	// Note: Shall be reduced to only those stand-alone plugins that are common to all context types.
 	StandAlonePlugins PluginAssociation `json:"standAlonePlugins,omitempty" yaml:"standAlonePlugins,omitempty"`

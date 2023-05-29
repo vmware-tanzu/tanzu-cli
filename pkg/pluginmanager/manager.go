@@ -931,14 +931,25 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		log.Infof("Installing plugin '%v:%v' with target '%v'", p.Name, version, p.Target)
 	}
 
-	binary, err := fetchAndVerifyPlugin(p, version)
-	if err != nil {
-		return err
+	var plugin *cli.PluginInfo
+	if !installTestPlugin {
+		// If we need to install the test plugin we know we are doing a local
+		// installation.  In that case, we don't use the cache as the binary is
+		// already local to the machine.
+		plugin = catalog.GetPluginFromCache(p.Name, p.Target, version)
 	}
+	if plugin == nil {
+		binary, err := fetchAndVerifyPlugin(p, version)
+		if err != nil {
+			return err
+		}
 
-	plugin, err := installAndDescribePlugin(p, version, binary)
-	if err != nil {
-		return err
+		plugin, err = installAndDescribePlugin(p, version, binary)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Infof("Plugin binary for '%v:%v' found in cache", p.Name, version)
 	}
 
 	if installTestPlugin {
@@ -989,6 +1000,11 @@ func installAndDescribePlugin(p *discovery.Discovered, version string, binary []
 	if err := os.WriteFile(pluginPath, binary, 0755); err != nil {
 		return nil, errors.Wrap(err, "could not write file")
 	}
+
+	return describePlugin(p, pluginPath)
+}
+
+func describePlugin(p *discovery.Discovered, pluginPath string) (*cli.PluginInfo, error) {
 	bytesInfo, err := execCommand(pluginPath, "info").Output()
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not describe plugin %q", p.Name)
