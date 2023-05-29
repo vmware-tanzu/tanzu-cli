@@ -8,9 +8,33 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 )
 
 func TestCliLifecycle(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "CLI lifecycle E2E Test Suite")
 }
+
+var (
+	tf *framework.Framework
+)
+
+const noErrorForCompletionCmd = "There should be no errors when using the completion command with %s as the shell input."
+
+// This suite has below e2e tests:
+// 1. version and init commands
+// 2. completion command
+var _ = BeforeSuite(func() {
+	tf = framework.NewFramework()
+
+	// delete config files
+	err := tf.Config.DeleteCLIConfigurationFiles()
+	Expect(err).To(BeNil())
+	// call init
+	err = tf.Config.ConfigInit()
+	Expect(err).To(BeNil())
+	// should create config files
+	Expect(tf.Config.IsCLIConfigurationFilesExists()).To(BeTrue())
+})

@@ -1,7 +1,6 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// Package clilifecycle provides cli installation life cycle E2E test cases
 package clilifecycle
 
 import (
