@@ -48,7 +48,6 @@ func (cc *contextCreateOps) CreateContextWithEndPoint(contextName, endpoint stri
 func (cc *contextCreateOps) CreateContextWithEndPointStaging(contextName, endpoint string, opts ...E2EOption) (string, string, error) {
 	createContextCmd := fmt.Sprintf(CreateContextWithEndPointStaging, "%s", endpoint, contextName)
 	out, stdErr, err := cc.cmdExe.TanzuCmdExec(createContextCmd, opts...)
-	log.Infof("out:%s stdErr:%s", out.String(), stdErr.String())
 	if err != nil {
 		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
 		return out.String(), stdErr.String(), errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))

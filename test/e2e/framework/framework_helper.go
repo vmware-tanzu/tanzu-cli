@@ -24,6 +24,34 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
+// WithTanzuCommandPrefix is to set the tanzu command prefix; default is tanzu
+func WithTanzuCommandPrefix(prefix string) E2EOption {
+	return func(opts *E2EOptions) {
+		opts.TanzuCommandPrefix = prefix
+	}
+}
+
+// WithFilePath is the installation file path location
+func WithFilePath(filePath string) E2EOption {
+	return func(opts *E2EOptions) {
+		opts.FilePath = filePath
+	}
+}
+
+// WithOverride is to provide whether new Tanzu CLI overrides the installation of legacy Tanzu CLI
+func WithOverride(override bool) E2EOption {
+	return func(opts *E2EOptions) {
+		opts.Override = override
+	}
+}
+
+// AddAdditionalFlagAndValue is to add any additional flag with value (if any) to the end of tanzu command
+func AddAdditionalFlagAndValue(flagWithValue string) E2EOption {
+	return func(opts *E2EOptions) {
+		opts.AdditionalFlags = opts.AdditionalFlags + " " + flagWithValue
+	}
+}
+
 // SliceToSet converts the given slice to set type
 func SliceToSet(slice []string) map[string]struct{} {
 	set := make(map[string]struct{})
