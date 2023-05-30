@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -29,6 +30,7 @@ func GetCmdForPlugin(p *PluginInfo) *cobra.Command {
 		Annotations: map[string]string{
 			"group": string(p.Group),
 			"scope": p.Scope,
+			"type":  common.CommandTypePlugin,
 		},
 		Hidden:  p.Hidden,
 		Aliases: p.Aliases,
