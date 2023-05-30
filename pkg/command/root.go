@@ -16,6 +16,7 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
@@ -71,7 +72,8 @@ func NewRootCmd() (*cobra.Command, error) {
 		return nil, fmt.Errorf("failed to copy legacy configuration directory to new location: %w", err)
 	}
 
-	var maskedPlugins []string
+	var maskedPluginsWithPluginOverlap []string
+	var maskedPluginsWithCoreCmdOverlap []string
 
 	for i := range plugins {
 		// Only add plugins that should be available as root level command
@@ -86,20 +88,27 @@ func NewRootCmd() (*cobra.Command, error) {
 				// is `Context-Scoped` then the new context-scoped plugin gets higher precedence.
 				// We therefore replace the existing command with the new command by removing the old and
 				// adding the new one.
-				maskedPlugins = append(maskedPlugins, matchedCmd.Name())
+				maskedPluginsWithPluginOverlap = append(maskedPluginsWithPluginOverlap, matchedCmd.Name())
 				rootCmd.RemoveCommand(matchedCmd)
 				rootCmd.AddCommand(cmd)
 			} else if plugins[i].Name != "login" {
 				// As the `login` plugin is now part of the core Tanzu CLI command and not a plugin
 				// anymore, skip the `login` plugin from adding it to the maskedPlugins array to avoid
 				// the warning message from getting shown to the user on each command invocation.
-				maskedPlugins = append(maskedPlugins, plugins[i].Name)
+				if isPluginCommand(matchedCmd) {
+					maskedPluginsWithPluginOverlap = append(maskedPluginsWithPluginOverlap, plugins[i].Name)
+				} else {
+					maskedPluginsWithCoreCmdOverlap = append(maskedPluginsWithCoreCmdOverlap, plugins[i].Name)
+				}
 			}
 		}
 	}
 
-	if len(maskedPlugins) > 0 {
-		fmt.Fprintf(os.Stderr, "Warning, Masking commands for plugins %q because a core command or other plugin with that name already exists. \n", strings.Join(maskedPlugins, ", "))
+	if len(maskedPluginsWithPluginOverlap) > 0 {
+		catalog.DeleteIncorrectPluginEntriesFromCatalog()
+	}
+	if len(maskedPluginsWithCoreCmdOverlap) > 0 {
+		fmt.Fprintf(os.Stderr, "Warning, masking commands for plugins %q because a core command with that name already exists. \n", strings.Join(maskedPluginsWithCoreCmdOverlap, ", "))
 	}
 
 	duplicateAliasWarning(rootCmd)
@@ -207,6 +216,11 @@ func isPluginRootCmdTargeted(pluginInfo *cli.PluginInfo) bool {
 func isStandalonePluginCommand(cmd *cobra.Command) bool {
 	scope, exists := cmd.Annotations["scope"]
 	return exists && scope == common.PluginScopeStandalone
+}
+
+func isPluginCommand(cmd *cobra.Command) bool {
+	t, exists := cmd.Annotations["type"]
+	return exists && t == common.CommandTypePlugin
 }
 
 func duplicateAliasWarning(rootCmd *cobra.Command) {

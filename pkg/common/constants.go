@@ -35,3 +35,6 @@ const (
 
 // CoreName is the name of the core binary.
 const CoreName = "core"
+
+// CommandTypePlugin represents the command type is plugin
+const CommandTypePlugin = "plugin"
