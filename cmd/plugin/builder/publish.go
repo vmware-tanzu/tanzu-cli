@@ -4,6 +4,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command"
@@ -43,6 +45,8 @@ func NewPublishCmd() *cobra.Command {
 	_ = cmd.MarkFlagRequired("version")
 	_ = cmd.MarkFlagRequired("plugins")
 	_ = cmd.MarkFlagRequired("input-artifact-dir")
+
+	cmd.Deprecated = fmt.Sprintf("use %q and %q instead.", "tanzu builder build-packages", "tanzu builder publish-packages")
 
 	return cmd
 }

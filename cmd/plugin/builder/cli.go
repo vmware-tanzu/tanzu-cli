@@ -4,6 +4,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
@@ -57,6 +59,8 @@ func newCompileCmd() *cobra.Command {
 	cmd.Flags().StringVar(&compileArgs.SourcePath, "path", compileArgs.SourcePath, "Path of the plugins source directory")
 	cmd.Flags().StringVar(&compileArgs.ArtifactsDir, "artifacts", compileArgs.ArtifactsDir, "Path to output artifacts")
 	cmd.Flags().StringVar(&compileArgs.GoPrivate, "goprivate", "", "Comma-separated list of glob patterns of module path prefixes to set as GOPRIVATE on build")
+
+	cmd.Deprecated = fmt.Sprintf("use %q instead.", "tanzu builder plugin build")
 
 	return cmd
 }
