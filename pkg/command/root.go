@@ -220,7 +220,7 @@ func isStandalonePluginCommand(cmd *cobra.Command) bool {
 
 func isPluginCommand(cmd *cobra.Command) bool {
 	t, exists := cmd.Annotations["type"]
-	return exists && t == "plugin"
+	return exists && t == common.CommandTypePlugin
 }
 
 func duplicateAliasWarning(rootCmd *cobra.Command) {
