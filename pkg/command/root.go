@@ -108,7 +108,7 @@ func NewRootCmd() (*cobra.Command, error) {
 		catalog.DeleteIncorrectPluginEntriesFromCatalog()
 	}
 	if len(maskedPluginsWithCoreCmdOverlap) > 0 {
-		fmt.Fprintf(os.Stderr, "Warning, Masking commands for plugins %q because a core command with that name already exists. \n", strings.Join(maskedPluginsWithCoreCmdOverlap, ", "))
+		fmt.Fprintf(os.Stderr, "Warning, masking commands for plugins %q because a core command with that name already exists. \n", strings.Join(maskedPluginsWithCoreCmdOverlap, ", "))
 	}
 
 	duplicateAliasWarning(rootCmd)
