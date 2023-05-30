@@ -14,8 +14,9 @@ import (
 
 // PluginBasicOps helps to perform the plugin command operations
 type PluginBasicOps interface {
-	// ListPlugins lists all plugins by running 'tanzu plugin list' command
-	ListPlugins(opts ...E2EOption) ([]*PluginInfo, error)
+	// ListPlugins execytes 'tanzu plugin list' command and
+	// returns the output, stdOut, stdErr and error
+	ListPlugins(opts ...E2EOption) ([]*PluginInfo, string, string, error)
 	// ListInstalledPlugins lists all installed plugins
 	ListInstalledPlugins(opts ...E2EOption) ([]*PluginInfo, error)
 	// ListPluginsForGivenContext lists all plugins for a given context and either installed only or all
@@ -24,8 +25,8 @@ type PluginBasicOps interface {
 	SearchPlugins(filter string, opts ...E2EOption) ([]*PluginInfo, error)
 	// InstallPlugin installs given plugin and flags
 	InstallPlugin(pluginName, target, versions string, opts ...E2EOption) error
-	// Sync performs sync operation
-	Sync(opts ...E2EOption) (string, error)
+	// Sync performs sync operation and returns stdOut, stdErr and error
+	Sync(opts ...E2EOption) (string, string, error)
 	// DescribePlugin describes given plugin and flags, returns the plugin description as PluginDescribe
 	DescribePlugin(pluginName, target string, opts ...E2EOption) ([]*PluginDescribe, error)
 	// DescribePluginLegacy describes given plugin and flags, returns plugin description in string format
@@ -131,9 +132,9 @@ func (po *pluginCmdOps) InitPluginDiscoverySource(opts ...E2EOption) (string, er
 	return out.String(), err
 }
 
-func (po *pluginCmdOps) ListPlugins(opts ...E2EOption) ([]*PluginInfo, error) {
-	output, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
-	return output, err
+func (po *pluginCmdOps) ListPlugins(opts ...E2EOption) ([]*PluginInfo, string, string, error) {
+	output, stdOut, stdErr, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
+	return output, stdOut, stdErr, err
 }
 
 func (po *pluginCmdOps) ListInstalledPlugins(opts ...E2EOption) ([]*PluginInfo, error) {
@@ -164,12 +165,12 @@ func (po *pluginCmdOps) ListPluginsForGivenContext(context string, installedOnly
 	return contextSpecificPlugins, err
 }
 
-func (po *pluginCmdOps) Sync(opts ...E2EOption) (string, error) {
+func (po *pluginCmdOps) Sync(opts ...E2EOption) (string, string, error) {
 	out, stdErr, err := po.cmdExe.TanzuCmdExec(pluginSyncCmd, opts...)
 	if err != nil {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, pluginSyncCmd, err.Error(), stdErr.String(), out.String())
 	}
-	return out.String(), err
+	return out.String(), stdErr.String(), err
 }
 
 func (po *pluginCmdOps) SearchPlugins(filter string, opts ...E2EOption) ([]*PluginInfo, error) {

@@ -11,12 +11,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 var (
@@ -40,7 +42,7 @@ func newSearchPluginCmd() *cobra.Command {
 			if !configtypes.IsValidTarget(targetStr, true, true) {
 				return errors.New(invalidTargetMsg)
 			}
-
+			errorList := make([]error, 0)
 			var err error
 			var allPlugins []discovery.Discovered
 			if local != "" {
@@ -51,7 +53,8 @@ func newSearchPluginCmd() *cobra.Command {
 				}
 				allPlugins, err = pluginmanager.DiscoverPluginsFromLocalSource(local)
 				if err != nil {
-					return err
+					errorList = append(errorList, err)
+					log.Warningf("there was an error while discovering plugins from local source, error information: '%v'", err.Error())
 				}
 			} else {
 				// Show plugins found in the central repos
@@ -59,7 +62,8 @@ func newSearchPluginCmd() *cobra.Command {
 					Name:   pluginName,
 					Target: configtypes.StringToTarget(targetStr)})
 				if err != nil {
-					return err
+					errorList = append(errorList, err)
+					log.Warningf("there was an error while discovering standalone plugins, error information: '%v'", err.Error())
 				}
 			}
 			sort.Sort(discovery.DiscoveredSorter(allPlugins))
@@ -70,7 +74,7 @@ func newSearchPluginCmd() *cobra.Command {
 				displayPluginDetails(allPlugins, cmd.OutOrStdout())
 			}
 
-			return nil
+			return kerrors.NewAggregate(errorList)
 		},
 	}
 
