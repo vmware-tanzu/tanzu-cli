@@ -49,13 +49,21 @@ const numberOfPluginsSameAsNoOfPluginsInfoMocked = "number of plugins should be 
 const pluginsInstalledAndMockedShouldBeSame = "plugins being installed and plugins being mocked in tmc endpoint response should be same"
 const noErrorForMockResponseFileUpdate = "there should not be any error while updating the tmc endpoint mock response"
 const noErrorForMockResponsePreparation = "there should not be any error while preparing the tmc endpoint mock response"
+
 const deleteContextWithoutError = "context should be deleted without error"
 const mockServerShouldStartWithoutError = "mock server should start without error"
 const mockServerShouldStopWithoutError = "mock server should stop without error"
 const noErrorWhileCreatingContext = "context should create without any error"
 const activeContextShouldExists = "there should be a active context"
 const pluginGroupShouldExists = "plugin group should exist in the map"
+
 const noErrorForPluginList = "should not get any error for plugin list"
+const noErrorForPluginSearch = "should not get any error for plugin search"
+const noErrorForPluginDelete = "should not get any error for plugin delete"
+const noErrorForPluginInstall = "should not get any error for plugin install"
+const noErrorForPluginSync = "should not get any error for plugin sync"
+const shouldBeSomePluginsForPluginSearch = "there should be some plugins for plugin search"
+
 const activeContextShouldBeRecentlyAddedOne = "the active context should be recently added context"
 const testRepoDoesNotHaveEnoughPlugins = "test central repo does not have enough plugins to continue e2e tests"
 
@@ -69,6 +77,11 @@ var _ = BeforeSuite(func() {
 	// check E2E test central repo URL (TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) and update the same for plugin discovery
 	e2eTestLocalCentralRepoURL = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryURL)
 	Expect(e2eTestLocalCentralRepoURL).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository URL", framework.TanzuCliE2ETestLocalCentralRepositoryURL))
+
+	// set up the local central repository discovery image public key path
+	e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath)
+	Expect(e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository discovery image signature public key path", framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath))
+	os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 	// Check whether the TMC token is set and whether TANZU_CLI_E2E_TEST_ENVIRONMENT is set to skip HTTPS hardcoding when mocking TMC response.
 	Expect(os.Getenv(framework.TanzuAPIToken)).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with TMC API Token", framework.TanzuAPIToken))

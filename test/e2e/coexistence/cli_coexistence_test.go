@@ -76,7 +76,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			}
 
 			ginkgo.By("Verify the installed plugins using legacy Tanzu CLI")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err := tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list for legacy tanzu cli")
 			gomega.Expect(pluginlifecyclee2e.CheckAllLegacyPluginsExists(pluginsList, PluginsForLegacyTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using legacy tanzu cli is not same as the plugins being installed using legacy tanzu cli")
 
@@ -118,12 +118,12 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			}
 
 			ginkgo.By("Installing few plugins using new Tanzu CLI")
-			pluginsList, err = tf.PluginCmd.ListPlugins(framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins(framework.WithTanzuCommandPrefix(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list for new tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")
 
 			ginkgo.By("Verify the installed plugins using legacy Tanzu CLI")
-			pluginsList, err = tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list using legacy tanzu cli")
 			gomega.Expect(pluginlifecyclee2e.CheckAllLegacyPluginsExists(pluginsList, PluginsForLegacyTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using legacy tanzu cli is not same as the plugins being installed using legacy tanzu cli")
 		})
@@ -152,7 +152,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			}
 
 			ginkgo.By("Verify the installed plugins using legacy Tanzu CLI")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err := tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list")
 			gomega.Expect(pluginlifecyclee2e.CheckAllLegacyPluginsExists(pluginsList, PluginsForLegacyTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using legacy tanzu cli is not same as the plugins being installed using legacy tanzu cli")
 
@@ -195,7 +195,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			}
 
 			ginkgo.By("Verify the installed plugins using new Tanzu CLI")
-			pluginsList, err = tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list using new tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")
 		})
@@ -224,7 +224,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			}
 
 			ginkgo.By("Verify the installed plugins using legacy Tanzu CLI")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err := tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list")
 			gomega.Expect(pluginlifecyclee2e.CheckAllLegacyPluginsExists(pluginsList, PluginsForLegacyTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using legacy tanzu cli is not same as the plugins being installed using legacy tanzu cli")
 
@@ -266,7 +266,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			}
 
 			ginkgo.By("Verify the installed plugins using new Tanzu CLI")
-			pluginsList, err = tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list using new tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")
 
@@ -275,7 +275,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(err).To(gomega.BeNil())
 
 			ginkgo.By("Verify the installed plugins using reinstalled new Tanzu CLI")
-			pluginsList, err = tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list using new tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")
 			gomega.Expect(pluginlifecyclee2e.CheckAllLegacyPluginsExists(pluginsList, PluginsForLegacyTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using legacy tanzu cli")
@@ -305,7 +305,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			}
 
 			ginkgo.By("Verify the installed plugins using legacy Tanzu CLI")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err := tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list")
 			gomega.Expect(pluginlifecyclee2e.CheckAllLegacyPluginsExists(pluginsList, PluginsForLegacyTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using legacy tanzu cli is not same as the plugins being installed using legacy tanzu cli")
 
@@ -347,7 +347,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			}
 
 			ginkgo.By("Verify the installed plugins using new Tanzu CLI")
-			pluginsList, err = tf.PluginCmd.ListPlugins(framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins(framework.WithTanzuCommandPrefix(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list using new tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")
 
@@ -356,7 +356,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(err).To(gomega.BeNil())
 
 			ginkgo.By("Verify the installed plugins using reinstalled new Tanzu CLI")
-			pluginsList, err = tf.PluginCmd.ListPlugins(framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins(framework.WithTanzuCommandPrefix(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list using new tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")
 			gomega.Expect(pluginlifecyclee2e.CheckAllLegacyPluginsExists(pluginsList, PluginsForLegacyTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using legacy tanzu cli")
@@ -386,7 +386,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			}
 
 			ginkgo.By("Verify the installed plugins using legacy Tanzu CLI")
-			pluginsList, err := tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err := tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list")
 			gomega.Expect(pluginlifecyclee2e.CheckAllLegacyPluginsExists(pluginsList, PluginsForLegacyTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using legacy tanzu cli is not same as the plugins being installed using legacy tanzu cli")
 
@@ -428,7 +428,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			}
 
 			ginkgo.By("Verify the installed plugins using new Tanzu CLI")
-			pluginsList, err = tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list using new tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")
 
@@ -437,7 +437,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(err).To(gomega.BeNil())
 
 			ginkgo.By("Verify the installed plugins using legacy Tanzu CLI")
-			pluginsList, err = tf.PluginCmd.ListPlugins()
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins()
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list using legacy tanzu cli")
 			gomega.Expect(pluginlifecyclee2e.CheckAllLegacyPluginsExists(pluginsList, PluginsForLegacyTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using legacy tanzu cli is not same as the plugins being installed using legacy tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeFalse(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")

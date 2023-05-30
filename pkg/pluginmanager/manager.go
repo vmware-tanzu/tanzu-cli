@@ -50,7 +50,8 @@ const (
 	// PluginFileName is the file name for the plugin info.
 	PluginFileName = "plugin.yaml"
 	// String used to request the user to use the --target flag
-	missingTargetStr = "unable to uniquely identify plugin '%v'. Please specify the target (" + common.TargetList + ") of the plugin using the `--target` flag"
+	missingTargetStr             = "unable to uniquely identify plugin '%v'. Please specify the target (" + common.TargetList + ") of the plugin using the `--target` flag"
+	errorWhileDiscoveringPlugins = "there was an error while discovering plugins, error information: '%v'"
 )
 
 var execCommand = exec.Command
@@ -143,7 +144,7 @@ func DiscoverStandalonePlugins(criteria *discovery.PluginDiscoveryCriteria) ([]d
 
 	plugins, err := discoverSpecificPlugins(discoveries, criteria)
 	if err != nil {
-		return plugins, err
+		log.Warningf(errorWhileDiscoveringPlugins, err.Error())
 	}
 
 	for i := range plugins {
@@ -255,7 +256,7 @@ func discoverServerPluginsBasedOnCurrentServer() ([]discovery.Discovered, error)
 
 	plugins, err = discoverPlugins(discoverySources)
 	if err != nil {
-		return plugins, err
+		log.Warningf(errorWhileDiscoveringPlugins, err.Error())
 	}
 	for i := range plugins {
 		plugins[i].Scope = common.PluginScopeContext
@@ -715,7 +716,7 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 	}
 	availablePlugins, err := discoverSpecificPlugins(discoveries, criteria)
 	if err != nil {
-		return err
+		log.Warningf("There was an error while discovering plugins. Error information: '%v'", err.Error())
 	}
 
 	if len(availablePlugins) == 0 {
@@ -1177,6 +1178,7 @@ func SyncPlugins() error {
 	log.Info("Checking for required plugins...")
 	var plugins []discovery.Discovered
 	var err error
+	errList := make([]error, 0)
 	if !configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		// We no longer sync standalone plugins.
 		// With a centralized approach to discovering plugins, synchronizing
@@ -1189,7 +1191,7 @@ func SyncPlugins() error {
 		// need to be used.
 		plugins, err = DiscoverServerPlugins()
 		if err != nil {
-			return err
+			errList = append(errList, err)
 		}
 		if installedPlugins, err := pluginsupplier.GetInstalledServerPlugins(); err == nil {
 			setAvailablePluginsStatus(plugins, installedPlugins)
@@ -1197,13 +1199,11 @@ func SyncPlugins() error {
 	} else {
 		plugins, err = AvailablePlugins()
 		if err != nil {
-			return err
+			errList = append(errList, err)
 		}
 	}
 
 	installed := false
-
-	errList := make([]error, 0)
 	for idx := range plugins {
 		if plugins[idx].Status == common.PluginStatusNotInstalled {
 			installed = true
@@ -1334,7 +1334,7 @@ func discoverPluginsFromLocalSource(localPath string) ([]discovery.Discovered, e
 
 	plugins, err := discoverPlugins(pds)
 	if err != nil {
-		return plugins, err
+		log.Warningf(errorWhileDiscoveringPlugins, err.Error())
 	}
 
 	for i := range plugins {

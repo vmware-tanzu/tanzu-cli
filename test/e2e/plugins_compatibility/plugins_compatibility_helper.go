@@ -29,7 +29,7 @@ func PluginsForCompatibilityTesting(tf *framework.Framework) []*framework.Plugin
 
 // IsAllPluginsInstalled takes list of plugins and checks if all plugins are installed
 func IsAllPluginsInstalled(tf *framework.Framework, plugins []*framework.PluginInfo) bool {
-	pluginListOutput, err := tf.PluginCmd.ListPlugins()
+	pluginListOutput, _, _, err := tf.PluginCmd.ListPlugins()
 	gomega.Expect(err).To(gomega.BeNil(), "should not occur any error while listing plugins")
 	pluginMap := framework.PluginListToSet(plugins)
 	for _, pluginInfo := range pluginListOutput {
@@ -44,7 +44,7 @@ func IsAllPluginsInstalled(tf *framework.Framework, plugins []*framework.PluginI
 
 // IsAllPluginsUnInstalled takes list of plugins and checks if all plugins are uninstalled
 func IsAllPluginsUnInstalled(tf *framework.Framework, plugins []*framework.PluginInfo) bool {
-	pluginListOutput, err := tf.PluginCmd.ListPlugins()
+	pluginListOutput, _, _, err := tf.PluginCmd.ListPlugins()
 	gomega.Expect(err).To(gomega.BeNil(), "should not occur any error while listing plugins")
 	pluginMap := framework.PluginListToSet(plugins)
 	for _, pluginInfo := range pluginListOutput {
@@ -60,7 +60,7 @@ func IsAllPluginsUnInstalled(tf *framework.Framework, plugins []*framework.Plugi
 
 // UninstallPlugins lists plugins and uninstalls provided plugins if any plugins are installed
 func UninstallPlugins(tf *framework.Framework, plugins []*framework.PluginInfo) {
-	pluginListOutput, err := tf.PluginCmd.ListPlugins()
+	pluginListOutput, _, _, err := tf.PluginCmd.ListPlugins()
 	gomega.Expect(err).To(gomega.BeNil(), "should not occur any error while listing plugins")
 	pluginMap := framework.PluginListToSet(plugins)
 	for _, pluginInfo := range pluginListOutput {
