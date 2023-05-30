@@ -46,7 +46,7 @@ func NewPublishCmd() *cobra.Command {
 	_ = cmd.MarkFlagRequired("plugins")
 	_ = cmd.MarkFlagRequired("input-artifact-dir")
 
-	cmd.Deprecated = fmt.Sprintf("Use %q and %q instead.", "tanzu builder build-packages", "tanzu builder publish-packages")
+	cmd.Deprecated = fmt.Sprintf("use %q and %q instead.", "tanzu builder build-packages", "tanzu builder publish-packages")
 
 	return cmd
 }
