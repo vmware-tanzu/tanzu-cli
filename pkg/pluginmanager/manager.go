@@ -934,14 +934,25 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		log.Infof("Installing plugin '%v:%v' with target '%v'", p.Name, version, p.Target)
 	}
 
-	binary, err := fetchAndVerifyPlugin(p, version)
-	if err != nil {
-		return err
+	var plugin *cli.PluginInfo
+	if !installTestPlugin {
+		// If we need to install the test plugin we know we are doing a local
+		// installation.  In that case, we don't use the cache as the binary is
+		// already local to the machine.
+		plugin = getPluginFromCache(p, version)
 	}
+	if plugin == nil {
+		binary, err := fetchAndVerifyPlugin(p, version)
+		if err != nil {
+			return err
+		}
 
-	plugin, err := installAndDescribePlugin(p, version, binary)
-	if err != nil {
-		return err
+		plugin, err = installAndDescribePlugin(p, version, binary)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Infof("Plugin binary for '%v:%v' found in cache", p.Name, version)
 	}
 
 	if installTestPlugin {
@@ -951,6 +962,32 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 	}
 
 	return updatePluginInfoAndInitializePlugin(p, plugin)
+}
+
+func getPluginFromCache(p *discovery.Discovered, version string) *cli.PluginInfo {
+	pluginArtifact, err := p.Distribution.DescribeArtifact(version, runtime.GOOS, runtime.GOARCH)
+	if err != nil {
+		return nil
+	}
+
+	// TODO(khouzam): We should not be checking the presence of the binary directly here,
+	// as it bypasses the plugin catalog abstraction.  Instead, we should ask the plugin
+	// catalog to know if the plugin binary is present already.
+	pluginFileName := fmt.Sprintf("%s_%s_%s", version, pluginArtifact.Digest, p.Target)
+	pluginPath := filepath.Join(common.DefaultPluginRoot, p.Name, pluginFileName)
+
+	if cli.BuildArch().IsWindows() {
+		pluginPath += exe
+	}
+	if _, err := os.Stat(pluginPath); err != nil {
+		return nil
+	}
+
+	plugin, err := describePlugin(p, pluginPath)
+	if err != nil {
+		return nil
+	}
+	return plugin
 }
 
 func fetchAndVerifyPlugin(p *discovery.Discovered, version string) ([]byte, error) {
@@ -992,6 +1029,11 @@ func installAndDescribePlugin(p *discovery.Discovered, version string, binary []
 	if err := os.WriteFile(pluginPath, binary, 0755); err != nil {
 		return nil, errors.Wrap(err, "could not write file")
 	}
+
+	return describePlugin(p, pluginPath)
+}
+
+func describePlugin(p *discovery.Discovered, pluginPath string) (*cli.PluginInfo, error) {
 	bytesInfo, err := execCommand(pluginPath, "info").Output()
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not describe plugin %q", p.Name)
