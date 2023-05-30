@@ -21,7 +21,7 @@ func defaultDiscoverySourceBasedOnServer(server *configtypes.Server) []configtyp
 	// If current server type is management-cluster, then add
 	// the default kubernetes discovery endpoint pointing to the
 	// management-cluster kubeconfig
-	if server.Type == configtypes.ManagementClusterServerType && server.ManagementClusterOpts != nil { // nolint:staticcheck // Deprecated
+	if server != nil && server.Type == configtypes.ManagementClusterServerType && server.ManagementClusterOpts != nil { // nolint:staticcheck // Deprecated
 		defaultDiscoveries = append(defaultDiscoveries, defaultDiscoverySourceForK8sTargetedContext(server.Name, server.ManagementClusterOpts.Path, server.ManagementClusterOpts.Context))
 	}
 	return defaultDiscoveries

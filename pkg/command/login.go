@@ -391,7 +391,9 @@ func globalLoginUsingServer(s *configtypes.Server) (err error) { // nolint:stati
 	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
 	a.Expiration = expiresAt
 
-	s.GlobalOpts.Auth = a
+	if s != nil && s.GlobalOpts != nil {
+		s.GlobalOpts.Auth = a
+	}
 
 	err = config.PutServer(s, true) // nolint:staticcheck // Deprecated
 	if err != nil {
@@ -404,7 +406,7 @@ func globalLoginUsingServer(s *configtypes.Server) (err error) { // nolint:stati
 }
 
 func managementClusterLogin(s *configtypes.Server) error { // nolint:staticcheck // Deprecated
-	if s.ManagementClusterOpts.Path != "" && s.ManagementClusterOpts.Context != "" {
+	if s != nil && s.ManagementClusterOpts != nil && s.ManagementClusterOpts.Path != "" && s.ManagementClusterOpts.Context != "" {
 		_, err := tkgauth.GetServerKubernetesVersion(s.ManagementClusterOpts.Path, s.ManagementClusterOpts.Context)
 		if err != nil {
 			err := fmt.Errorf("failed to login to the management cluster %s, %v", s.Name, err)
