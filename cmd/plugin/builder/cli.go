@@ -60,7 +60,7 @@ func newCompileCmd() *cobra.Command {
 	cmd.Flags().StringVar(&compileArgs.ArtifactsDir, "artifacts", compileArgs.ArtifactsDir, "Path to output artifacts")
 	cmd.Flags().StringVar(&compileArgs.GoPrivate, "goprivate", "", "Comma-separated list of glob patterns of module path prefixes to set as GOPRIVATE on build")
 
-	cmd.Deprecated = fmt.Sprintf("Use %q instead.", "tanzu builder plugin build")
+	cmd.Deprecated = fmt.Sprintf("use %q instead.", "tanzu builder plugin build")
 
 	return cmd
 }
