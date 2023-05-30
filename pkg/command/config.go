@@ -266,9 +266,9 @@ var listServersCmd = &cobra.Command{
 		output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "Name", "Type", "Endpoint", "Path", "Context")
 		for _, server := range cfg.KnownServers {
 			var endpoint, path, context string
-			if server.IsGlobal() {
+			if server.GlobalOpts != nil && server.IsGlobal() {
 				endpoint = server.GlobalOpts.Endpoint
-			} else {
+			} else if server.ManagementClusterOpts != nil {
 				endpoint = server.ManagementClusterOpts.Endpoint
 				path = server.ManagementClusterOpts.Path
 				context = server.ManagementClusterOpts.Context

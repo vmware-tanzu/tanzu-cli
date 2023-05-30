@@ -66,29 +66,35 @@ func (c *configSource) Token() (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
+	if g == nil {
+		return nil, fmt.Errorf("current server is nil")
+	}
 	if !g.IsGlobal() { // nolint:staticcheck // Deprecated
 		return nil, fmt.Errorf("trying to fetch token for non global server")
 	}
-	if !IsExpired(g.GlobalOpts.Auth.Expiration) {
-		tok := &oauth2.Token{
-			AccessToken: g.GlobalOpts.Auth.AccessToken,
-			Expiry:      g.GlobalOpts.Auth.Expiration,
+	var expiration time.Time
+	token := &Token{}
+	if g.GlobalOpts != nil {
+		if !IsExpired(g.GlobalOpts.Auth.Expiration) {
+			tok := &oauth2.Token{
+				AccessToken: g.GlobalOpts.Auth.AccessToken,
+				Expiry:      g.GlobalOpts.Auth.Expiration,
+			}
+			return tok.WithExtra(map[string]interface{}{
+				ExtraIDToken: g.GlobalOpts.Auth.IDToken,
+			}), nil
 		}
-		return tok.WithExtra(map[string]interface{}{
-			ExtraIDToken: g.GlobalOpts.Auth.IDToken,
-		}), nil
+		token, err = GetAccessTokenFromAPIToken(g.GlobalOpts.Auth.RefreshToken, ProdIssuer)
+		if err != nil {
+			return nil, err
+		}
+		g.GlobalOpts.Auth.Type = apiToken
+		expiration = time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
+		g.GlobalOpts.Auth.Expiration = expiration
+		g.GlobalOpts.Auth.RefreshToken = token.RefreshToken
+		g.GlobalOpts.Auth.AccessToken = token.AccessToken
+		g.GlobalOpts.Auth.IDToken = token.IDToken
 	}
-	token, err := GetAccessTokenFromAPIToken(g.GlobalOpts.Auth.RefreshToken, ProdIssuer)
-	if err != nil {
-		return nil, err
-	}
-
-	g.GlobalOpts.Auth.Type = apiToken
-	expiration := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
-	g.GlobalOpts.Auth.Expiration = expiration
-	g.GlobalOpts.Auth.RefreshToken = token.RefreshToken
-	g.GlobalOpts.Auth.AccessToken = token.AccessToken
-	g.GlobalOpts.Auth.IDToken = token.IDToken
 
 	// Acquire tanzu config lock
 	configClientWrapper.AcquireTanzuConfigLock()

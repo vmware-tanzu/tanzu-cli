@@ -109,7 +109,7 @@ func (co *configOps) ConfigGetFeatureFlag(path string, opts ...E2EOption) (strin
 	}
 	featureName := strings.Split(path, ".")[len(strings.Split(path, "."))-1]
 	pluginName := strings.Split(path, ".")[len(strings.Split(path, "."))-2]
-	if cnf != nil && cnf.ClientOptions.Features[pluginName] != nil {
+	if cnf != nil && cnf.ClientOptions != nil && cnf.ClientOptions.Features[pluginName] != nil {
 		return cnf.ClientOptions.Features[pluginName][featureName], nil
 	}
 	return "", err
