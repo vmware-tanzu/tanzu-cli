@@ -18,5 +18,5 @@ const (
 
 	// TanzuCLIDefaultCentralPluginDiscoveryImage defines the default discovery image
 	// from where the CLI will discover the plugins
-	TanzuCLIDefaultCentralPluginDiscoveryImage = "projects.registry.vmware.com/tanzu_cli_stage/plugins/plugin-inventory:latest"
+	TanzuCLIDefaultCentralPluginDiscoveryImage = "projects.registry.vmware.com/tanzu_cli/plugins/plugin-inventory:latest"
 )
