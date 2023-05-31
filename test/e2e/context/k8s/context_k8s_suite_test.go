@@ -19,11 +19,9 @@ func TestContext(t *testing.T) {
 }
 
 var (
-	tf                 *framework.Framework
-	clusterInfo        *framework.ClusterInfo
-	contextNames       []string
-	contextNamesStress []string
-	err                error
+	tf          *framework.Framework
+	clusterInfo *framework.ClusterInfo
+	err         error
 )
 
 const ContextCreateLimit = 100
@@ -31,11 +29,19 @@ const ContextCreateLimit = 100
 // BeforeSuite created KIND cluster
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
+
+	err := tf.Config.DeleteCLIConfigurationFiles()
+	Expect(err).To(BeNil())
+	// call init
+	err = tf.Config.ConfigInit()
+	Expect(err).To(BeNil())
+	// should create config files
+	Expect(tf.Config.IsCLIConfigurationFilesExists()).To(BeTrue())
+
 	// Create KIND cluster, which is used in test cases to create context's
 	clusterInfo, err = framework.CreateKindCluster(tf, "context-e2e-"+framework.RandomNumber(4))
 	Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
-	contextNames = make([]string, 0)
-	contextNamesStress = make([]string, 0)
+
 })
 
 // AfterSuite deletes the KIND cluster created in BeforeSuite

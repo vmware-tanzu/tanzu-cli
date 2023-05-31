@@ -21,13 +21,10 @@ func TestTmc(t *testing.T) {
 }
 
 var (
-	tf                 *framework.Framework
-	tmcClusterInfo     *framework.ClusterInfo
-	k8sClusterInfo     *framework.ClusterInfo
-	contextNames       []string
-	contextNamesStress []string
-	ctxsStress         []string
-	err                error
+	tf             *framework.Framework
+	tmcClusterInfo *framework.ClusterInfo
+	k8sClusterInfo *framework.ClusterInfo
+	err            error
 )
 
 const prefix = "ctx-tmc-"
@@ -51,8 +48,6 @@ var _ = BeforeSuite(func() {
 	tmcClusterInfo = framework.GetTMCClusterInfo()
 	Expect(tmcClusterInfo.EndPoint).NotTo(Equal(""), "TMC cluster URL is must needed to create TMC context")
 	Expect(tmcClusterInfo.APIKey).NotTo(Equal(""), "TMC API Key is must needed to create TMC context")
-	contextNames = make([]string, 0)
-	ctxsStress = make([]string, 0)
 
 	// Create KIND cluster, which is used in test cases to create context's
 	k8sClusterInfo, err = framework.CreateKindCluster(tf, "context-e2e-"+framework.RandomNumber(4))
