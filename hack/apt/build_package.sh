@@ -23,8 +23,10 @@ BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output
 
 # Install build dependencies
-apt-get update
-apt-get install -y curl reprepro
+if ! command -v curl &> /dev/null; then
+   apt-get update
+   apt-get install -y curl
+fi
 
 # Clean any old packages
 rm -rf ${OUTPUT_DIR}
@@ -84,15 +86,13 @@ chmod a+r /usr/share/fish/vendor_completions.d/tanzu.fish" \
    # Create the .deb package
    dpkg-deb --build -Zgzip ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}
 
-   # Create repository
-   reprepro -b ${OUTPUT_DIR}/apt includedeb tanzu-cli-jessie ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb
-
-   # Cleanup
-   rm -f tanzu-cli-linux-${arch}.tar.gz
-   rm -f ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb
    rm -rf ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}
 done
 
-# Global cleanup
-rm -rf ${OUTPUT_DIR}/apt/conf
-rm -rf ${OUTPUT_DIR}/apt/db
+if [[ ! -z "${DEB_SIGNER}" ]]; then
+   for deb in `find ${OUTPUT_DIR} -name "*.deb"`; do
+      ${DEB_SIGNER} $deb
+   done
+else
+   echo skip debsigning
+fi
