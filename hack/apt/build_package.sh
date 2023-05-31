@@ -29,10 +29,16 @@ apt-get install -y curl reprepro
 # Clean any old packages
 rm -rf ${OUTPUT_DIR}
 
+SIGN_LINE="#SignWith: NOTSIGNED"
+if [[ ! -z "${GPGKEY}" ]]; then
+  SIGN_LINE="SignWith: ${GPGKEY}"
+fi
+
 # Prepare repository that will be published
 mkdir -p ${OUTPUT_DIR}/apt/conf
 echo "Codename: tanzu-cli-jessie
 Components: main
+${SIGN_LINE}
 Architectures: amd64 arm64" \
    > ${OUTPUT_DIR}/apt/conf/distributions 
 
