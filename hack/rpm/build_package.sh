@@ -30,7 +30,9 @@ BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output/rpm/tanzu-cli
 
 # Install build dependencies
-$DNF install -y rpmdevtools rpmlint createrepo
+if ! command -v rpmlint &> /dev/null; then
+   $DNF install -y rpmdevtools rpmlint createrepo rpm-build rpm-sign
+fi
 
 rpmlint ${BASE_DIR}/tanzu-cli.spec
 
@@ -48,5 +50,19 @@ mv ${HOME}/rpmbuild/RPMS/x86_64/* ${OUTPUT_DIR}/
 rpmbuild --define "package_version ${PACKAGE_VERSION}" --define "release_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target aarch64
 mv ${HOME}/rpmbuild/RPMS/aarch64/* ${OUTPUT_DIR}/
 
+if [[ ! -z "${RPM_SIGNER}" ]]; then
+  ${RPM_SIGNER} ${OUTPUT_DIR}/tanzu-cli*aarch64.rpm
+  ${RPM_SIGNER} ${OUTPUT_DIR}/tanzu-cli*x86_64.rpm
+else
+  echo skip rpmsigning packages
+fi
+
 # Create the repository metadata
 createrepo ${OUTPUT_DIR}
+
+if [[ ! -z "${RPM_SIGNER}" ]]; then
+ # instead of ... gpg --detach-sign --armor repodata/repomd.xml
+ ${RPM_SIGNER} ${OUTPUT_DIR}/repodata/repomd.xml
+else
+  echo skip rpmsigning repo
+fi

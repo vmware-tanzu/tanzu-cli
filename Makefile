@@ -64,6 +64,21 @@ LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Date=$(BUILD_DAT
 LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.SHA=$(BUILD_SHA)'
 LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Version=$(BUILD_VERSION)'
 
+APT_IMAGE=ubuntu
+ifdef APT_BUILDER_IMAGE
+APT_IMAGE=$(APT_BUILDER_IMAGE)
+endif
+
+RPM_IMAGE=fedora
+ifdef RPM_BUILDER_IMAGE
+RPM_IMAGE=$(RPM_BUILDER_IMAGE)
+endif
+
+CHOCO_IMAGE=chocolatey/choco:v1.4.0
+ifdef CHOCO_BUILDER_IMAGE
+CHOCO_IMAGE=$(CHOCO_BUILDER_IMAGE)
+endif
+
 # Add supported OS-ARCHITECTURE combinations here
 ENVS ?= linux-amd64 windows-amd64 darwin-amd64
 
@@ -133,13 +148,29 @@ prepare-builder: ## Build Tanzu CLI builder plugin
 ## --------------------------------------
 ## OS Packages
 ## --------------------------------------
-.PHONY: apt-package
-apt-package: ## Build a debian package to use with APT
+.PHONY: apt-package-only
+apt-package-only: ## Build a debian package
 	@if [ "$$(command -v docker)" == "" ]; then \
 		echo "Docker required to build apt package" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) -v $(ROOT_DIR):$(ROOT_DIR) ubuntu $(ROOT_DIR)/hack/apt/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) -e DEB_SIGNER=$(DEB_SIGNER) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package.sh
+
+.PHONY: apt-package-repo
+apt-package-repo: ## Build a debian package repo
+	@if [ "$$(command -v docker)" == "" ]; then \
+		echo "Docker required to build apt package" ;\
+		exit 1 ;\
+	fi
+	docker run --rm -e VERSION=$(BUILD_VERSION) -e DEB_SIGNER=$(DEB_SIGNER) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package_repo.sh
+
+.PHONY: apt-package-in-docker
+apt-package-in-docker: ## Build a debian package from within a container already
+	VERSION=$(BUILD_VERSION) $(ROOT_DIR)/hack/apt/build_package.sh
+	VERSION=$(BUILD_VERSION) $(ROOT_DIR)/hack/apt/build_package_repo.sh
+
+.PHONY: apt-package
+apt-package: apt-package-only apt-package-repo  ## Build a debian package to use with APT
 
 .PHONY: rpm-package
 rpm-package: ## Build an RPM package
@@ -147,7 +178,11 @@ rpm-package: ## Build an RPM package
 		echo "Docker required to build rpm package" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) -v $(ROOT_DIR):$(ROOT_DIR) fedora $(ROOT_DIR)/hack/rpm/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) -e RPM_SIGNER=$(RPM_SIGNER) -v $(ROOT_DIR):$(ROOT_DIR) $(RPM_IMAGE) $(ROOT_DIR)/hack/rpm/build_package.sh
+
+.PHONY: rpm-package-in-docker
+rpm-package-in-docker: ## Build an RPM package from within a container already
+	VERSION=$(BUILD_VERSION) $(ROOT_DIR)/hack/rpm/build_package.sh
 
 .PHONY: choco-package
 choco-package: ## Build a Chocolatey package
@@ -165,7 +200,7 @@ choco-package: ## Build a Chocolatey package
 	fi
 	@# The nuspec file uses a variable but variables don't seem to work anymore
 	@# with chocolatey 2.0.0 so we continue using version 1.4.0
-	docker run --rm -e VERSION=$(BUILD_VERSION) -e SHA_FOR_CHOCO=$(SHA_FOR_CHOCO) -v $(ROOT_DIR):$(ROOT_DIR) chocolatey/choco:v1.4.0 $(ROOT_DIR)/hack/choco/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) -e SHA_FOR_CHOCO=$(SHA_FOR_CHOCO) -v $(ROOT_DIR):$(ROOT_DIR) $(CHOCO_IMAGE) $(ROOT_DIR)/hack/choco/build_package.sh
 
 ## --------------------------------------
 ## Testing
