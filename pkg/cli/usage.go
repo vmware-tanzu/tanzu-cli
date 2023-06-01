@@ -50,25 +50,12 @@ func (u *MainUsage) GenerateDescriptor(c *cobra.Command, w io.Writer) error {
 		cmdMap[group] = g
 	}
 
-	serverString := "Not logged in"
-
-	// TODO(vuil): Re-add server endpoint access.
-	//nolint
-	/*
-		s, err := config.GetCurrentServer()
-		if err == nil {
-			serverString = fmt.Sprintf("Logged in to %s", component.Underline(s.Name))
-		}
-	*/
-
 	d := struct {
 		*cobra.Command
-		CmdMap       CmdMap
-		ServerString string
+		CmdMap CmdMap
 	}{
 		c,
 		cmdMap,
-		serverString,
 	}
 
 	t := template.Must(template.New("usage").Funcs(TemplateFuncs).Parse(u.Template()))
@@ -96,9 +83,7 @@ func (u *MainUsage) Template() string {
 {{ bold "Flags:" }}
 {{.LocalFlags.FlagUsages  | trimTrailingWhitespaces}}
 
-Use "{{.CommandPath}} [command] --help" for more information about a command. {{ if ne .ServerString "" }}
-
-{{ .ServerString }}{{end}}
+Use "{{.CommandPath}} [command] --help" for more information about a command.
 `
 }
 
