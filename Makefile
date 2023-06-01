@@ -64,12 +64,20 @@ LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Date=$(BUILD_DAT
 LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.SHA=$(BUILD_SHA)'
 LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Version=$(BUILD_VERSION)'
 
-ifdef MOUNT_DOCKER_SOCKET
-DND_MOUNT_FLAG = -v /var/run/docker.sock:/var/run/docker.sock
-else
-DND_MOUNT_FLAG =
+APT_IMAGE=ubuntu
+ifdef APT_BUILDER_IMAGE
+APT_IMAGE=$(APT_BUILDER_IMAGE)
 endif
 
+RPM_IMAGE=fedora
+ifdef RPM_BUILDER_IMAGE
+RPM_IMAGE=$(RPM_BUILDER_IMAGE)
+endif
+
+CHOCO_IMAGE=chocolatey/choco
+ifdef CHOCO_BUILDER_IMAGE
+CHOCO_IMAGE=$(CHOCO_BUILDER_IMAGE)
+endif
 
 # Add supported OS-ARCHITECTURE combinations here
 ENVS ?= linux-amd64 windows-amd64 darwin-amd64
@@ -146,7 +154,7 @@ apt-package: ## Build a debian package to use with APT
 		echo "Docker required to build apt package" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) ubuntu $(ROOT_DIR)/hack/apt/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package.sh
 
 .PHONY: rpm-package
 rpm-package: ## Build an RPM package
@@ -154,7 +162,7 @@ rpm-package: ## Build an RPM package
 		echo "Docker required to build rpm package" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) fedora $(ROOT_DIR)/hack/rpm/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) $(RPM_IMAGE) $(ROOT_DIR)/hack/rpm/build_package.sh
 
 .PHONY: choco-package
 choco-package: ## Build a Chocolatey package
@@ -168,7 +176,7 @@ choco-package: ## Build a Chocolatey package
 		echo "Can only build chocolatey package on an amd64 machine at the moment" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) chocolatey/choco $(ROOT_DIR)/hack/choco/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) $(CHOCO_IMAGE) $(ROOT_DIR)/hack/choco/build_package.sh
 
 ## --------------------------------------
 ## Testing
