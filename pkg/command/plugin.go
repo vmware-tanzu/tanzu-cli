@@ -134,7 +134,7 @@ func newListPluginCmd() *cobra.Command {
 	var listCmd = &cobra.Command{
 		Use:   "list",
 		Short: "List installed plugins",
-		Long:  "List all currently installed plugins",
+		Long:  "List installed standalone plugins or plugins recommended by the contexts being used",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			errorList := make([]error, 0)
 			if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
