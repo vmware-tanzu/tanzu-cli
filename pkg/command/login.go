@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/command"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -57,7 +56,10 @@ func init() {
 	loginCmd.Flags().MarkHidden("staging")     // nolint
 	loginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 	loginCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
-	command.DeprecateCommandWithAlternative(loginCmd, "1.2.0", "context")
+
+	// TODO: Update the plugin-runtime library with the new format and use the library method
+	msg := fmt.Sprintf("this was done in the %q release, it will be removed following the deprecation policy (6 months). Use the %q command instead.\n", "v0.90.0", "context")
+	loginCmd.Deprecated = msg
 
 	loginCmd.Example = `
 	# Login to TKG management cluster using endpoint

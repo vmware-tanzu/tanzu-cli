@@ -35,7 +35,7 @@ func (u *MainUsage) UsageFunc() func(*cobra.Command) error {
 func (u *MainUsage) GenerateDescriptor(c *cobra.Command, w io.Writer) error {
 	cmdMap := CmdMap{}
 	for _, cmd := range c.Commands() {
-		if cmd.Hidden {
+		if cmd.Hidden || cmd.Deprecated != "" {
 			continue
 		}
 		group := cmd.Annotations["group"]
