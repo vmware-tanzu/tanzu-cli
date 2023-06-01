@@ -209,4 +209,36 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			}
 		})
 	})
+
+	// use case: test plugin commands help message
+	// a. plugin install help message
+	// b. plugin describe help message
+	// c. plugin upgrade help message
+	// d. plugin delete help message
+	Context("plugin use cases: negative test cases for plugin install and plugin delete commands", func() {
+		// Test case: a. plugin install help message
+		It("tanzu plugin install help message", func() {
+			out, _, err := tf.PluginCmd.RunPluginCmd("install -h")
+			Expect(err).To(BeNil())
+			Expect(out).To(ContainSubstring("tanzu plugin install [PLUGIN_NAME] [flags]"))
+		})
+		// Test case: b. plugin describe help message
+		It("tanzu plugin describe help message", func() {
+			out, _, err := tf.PluginCmd.RunPluginCmd("describe -h")
+			Expect(err).To(BeNil())
+			Expect(out).To(ContainSubstring("tanzu plugin describe PLUGIN_NAME [flags]"))
+		})
+		// Test case: c. plugin upgrade help message
+		It("tanzu plugin upgrade help message", func() {
+			out, _, err := tf.PluginCmd.RunPluginCmd("upgrade -h")
+			Expect(err).To(BeNil())
+			Expect(out).To(ContainSubstring("tanzu plugin upgrade PLUGIN_NAME [flags]"))
+		})
+		// Test case: d. plugin delete help message
+		It("tanzu plugin delete help message", func() {
+			out, _, err := tf.PluginCmd.RunPluginCmd("delete -h")
+			Expect(err).To(BeNil())
+			Expect(out).To(ContainSubstring("tanzu plugin delete PLUGIN_NAME [flags]"))
+		})
+	})
 })

@@ -49,6 +49,7 @@ const (
 	pluginSyncCmd                       = "%s plugin sync"
 	PluginDownloadBundleCmd             = "%s plugin download-bundle"
 	PluginUploadBundleCmd               = "%s plugin upload-bundle"
+	PluginCmdWithOptions                = "%s plugin "
 	JSONOutput                          = " -o json"
 	TestPluginsPrefix                   = "test-plugin-"
 	PluginSubCommand                    = "%s %s"

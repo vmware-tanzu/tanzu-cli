@@ -42,6 +42,7 @@ const (
 	invalidTargetMsg                = "invalid target specified. Please specify a correct value for the `--target/-t` flag from '" + common.TargetList + "'"
 	errorWhileDiscoveringPlugins    = "there was an error while discovering plugins, error information: '%v'"
 	errorWhileGettingContextPlugins = "there was an error while getting installed context plugins, error information: '%v'"
+	pluginNameCaps                  = "PLUGIN_NAME"
 )
 
 func newPluginCmd() *cobra.Command {
@@ -204,7 +205,7 @@ func newListPluginCmd() *cobra.Command {
 
 func newDescribePluginCmd() *cobra.Command {
 	var describeCmd = &cobra.Command{
-		Use:   "describe [name]",
+		Use:   "describe " + pluginNameCaps,
 		Short: "Describe a plugin",
 		Long:  "Displays detailed information for a plugin",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -234,7 +235,7 @@ func newDescribePluginCmd() *cobra.Command {
 
 func newInstallPluginCmd() *cobra.Command {
 	var installCmd = &cobra.Command{
-		Use:   "install [name]",
+		Use:   "install [" + pluginNameCaps + "]",
 		Short: "Install a plugin",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -386,7 +387,7 @@ func legacyPluginInstall(cmd *cobra.Command, args []string) error {
 
 func newUpgradePluginCmd() *cobra.Command {
 	var upgradeCmd = &cobra.Command{
-		Use:   "upgrade [name]",
+		Use:   "upgrade " + pluginNameCaps,
 		Short: "Upgrade a plugin",
 		Long:  "Installs the latest version available for the specified plugin",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -425,7 +426,7 @@ func newUpgradePluginCmd() *cobra.Command {
 
 func newDeletePluginCmd() *cobra.Command {
 	var deleteCmd = &cobra.Command{
-		Use:   "delete [name]",
+		Use:   "delete " + pluginNameCaps,
 		Short: "Delete a plugin",
 		Long:  "Uninstalls the specified plugin",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
