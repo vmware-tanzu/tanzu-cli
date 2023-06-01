@@ -147,7 +147,7 @@ func newAddCertCmd() *cobra.Command {
 
 func newUpdateCertCmd() *cobra.Command {
 	var updateCertCmd = &cobra.Command{
-		Use:   "update [host]",
+		Use:   "update HOST",
 		Short: "Update certificate configuration for a host",
 		Args:  cobra.ExactArgs(1),
 		Example: `
@@ -201,7 +201,7 @@ func newUpdateCertCmd() *cobra.Command {
 
 func newDeleteCertCmd() *cobra.Command {
 	var deleteCertCmd = &cobra.Command{
-		Use:   "delete [host]",
+		Use:   "delete HOST",
 		Short: "Delete certificate configuration for a host",
 		Args:  cobra.ExactArgs(1),
 		Example: `
