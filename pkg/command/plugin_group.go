@@ -22,7 +22,8 @@ import (
 )
 
 var (
-	groupID string
+	groupID          string
+	showNonMandatory bool
 )
 
 func newPluginGroupCmd() *cobra.Command {
@@ -128,6 +129,8 @@ func newGetCmd() *cobra.Command {
 
 	f := getCmd.Flags()
 	f.StringVarP(&outputFormat, "output", "o", "", "output format (yaml|json|table)")
+	f.BoolVarP(&showNonMandatory, "all", "", false, "include the non-mandatory plugins")
+	_ = f.MarkHidden("all")
 
 	return getCmd
 }
@@ -205,7 +208,9 @@ func displayGroupContentAsTable(group *plugininventory.PluginGroup, writer io.Wr
 	_, _ = cyanBold.Println("Plugins in Group: ", cyanBoldItalic.Sprintf("%s:%s", groupID, group.RecommendedVersion))
 
 	for _, plugin := range group.Versions[group.RecommendedVersion] {
-		output.AddRow(plugin.Name, plugin.Target, plugin.Version)
+		if showNonMandatory || plugin.Mandatory {
+			output.AddRow(plugin.Name, plugin.Target, plugin.Version)
+		}
 	}
 	output.Render()
 }
@@ -215,7 +220,9 @@ func displayGroupContentAsList(group *plugininventory.PluginGroup, writer io.Wri
 
 	groupID := fmt.Sprintf("%s:%s", plugininventory.PluginGroupToID(group), group.RecommendedVersion)
 	for _, plugin := range group.Versions[group.RecommendedVersion] {
-		output.AddRow(groupID, plugin.Name, plugin.Target, plugin.Version)
+		if showNonMandatory || plugin.Mandatory {
+			output.AddRow(groupID, plugin.Name, plugin.Target, plugin.Version)
+		}
 	}
 	output.Render()
 }
