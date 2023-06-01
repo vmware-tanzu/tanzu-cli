@@ -57,6 +57,8 @@ func newDiscoverySourceCmd() *cobra.Command {
 		// The "add" and "delete" plugin source commands are not needed for the central repo
 		addDiscoverySourceCmd := newAddDiscoverySourceCmd()
 
+		// TODO: when reactivating the "plugin source add" command, we need to replace the --name flag
+		// with a argument for consistency with other commands
 		addDiscoverySourceCmd.Flags().StringVarP(&discoverySourceName, "name", "n", "", "name of discovery source")
 		addDiscoverySourceCmd.Flags().StringVarP(&discoverySourceType, "type", "t", "", "type of discovery source")
 		addDiscoverySourceCmd.Flags().StringVarP(&uri, "uri", "u", "", "URI for discovery source. The URI format might be different based on the type of discovery source")

@@ -83,10 +83,10 @@ const (
 	JSONOtuput   = "-o json"
 
 	// Context commands
-	CreateContextWithEndPoint              = "%s context create --endpoint %s --name %s"
-	CreateContextWithEndPointStaging       = "%s context create --endpoint %s --name %s --staging"
-	CreateContextWithKubeconfigFile        = "%s context create --kubeconfig %s --kubecontext %s --name %s"
-	CreateContextWithDefaultKubeconfigFile = "%s context create --kubecontext %s --name %s"
+	CreateContextWithEndPoint              = "%s context create --endpoint %s %s"
+	CreateContextWithEndPointStaging       = "%s context create --endpoint %s --staging %s"
+	CreateContextWithKubeconfigFile        = "%s context create --kubeconfig %s --kubecontext %s %s"
+	CreateContextWithDefaultKubeconfigFile = "%s context create --kubecontext %s %s"
 	UseContext                             = "%s context use %s"
 	UnsetContext                           = "%s context unset"
 	GetContext                             = "%s context get %s"

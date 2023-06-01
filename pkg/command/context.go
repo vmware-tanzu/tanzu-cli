@@ -89,15 +89,16 @@ func init() {
 }
 
 var createCtxCmd = &cobra.Command{
-	Use:   "create",
+	Use:   "create CONTEXT_NAME",
 	Short: "Create a Tanzu CLI context",
+	Args:  cobra.MaximumNArgs(1),
 	RunE:  createCtx,
 	Example: `
 	# Create a TKG management cluster context using endpoint
-	tanzu context create --endpoint "https://k8s.example.com[:port]" --name mgmt-cluster
+	tanzu context create mgmt-cluster --endpoint "https://k8s.example.com[:port]"
 
 	# Create a TKG management cluster context using kubeconfig path and context
-	tanzu context create --kubeconfig path/to/kubeconfig --kubecontext kubecontext --name mgmt-cluster
+	tanzu context create mgmt-cluster --kubeconfig path/to/kubeconfig --kubecontext kubecontext
 
  	#  Create a TKG management cluster context by using the provided CA Bundle for TLS verification:
     tanzu context create --endpoint https://k8s.example.com[:port] --endpoint-ca-certificate /path/to/ca/ca-cert
@@ -106,7 +107,7 @@ var createCtxCmd = &cobra.Command{
   	tanzu context create --endpoint https://k8s.example.com[:port] --insecure-skip-tls-verify
 
 	# Create a TKG management cluster context using default kubeconfig path and a kubeconfig context
-	tanzu context create --kubecontext kubecontext --name mgmt-cluster
+	tanzu context create mgmt-cluster --kubecontext kubecontext
 
 	[*] : User has two options to create a kubernetes cluster context. User can choose the control
 	plane option by providing 'endpoint', or use the kubeconfig for the cluster by providing
@@ -118,6 +119,8 @@ var createCtxCmd = &cobra.Command{
 
 func initCreateCtxCmd() {
 	createCtxCmd.Flags().StringVar(&ctxName, "name", "", "name of the context")
+	_ = createCtxCmd.Flags().MarkDeprecated("name", "it has been replaced by using an argument to the command")
+
 	createCtxCmd.Flags().StringVar(&endpoint, "endpoint", "", "endpoint to create a context for")
 	createCtxCmd.Flags().StringVar(&apiToken, "api-token", "", "API token for the SaaS context")
 	createCtxCmd.Flags().StringVar(&kubeConfig, "kubeconfig", "", "path to the kubeconfig file; valid only if user doesn't choose 'endpoint' option.(See [*])")
@@ -137,7 +140,15 @@ func initCreateCtxCmd() {
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
 }
 
-func createCtx(_ *cobra.Command, _ []string) (err error) {
+func createCtx(_ *cobra.Command, args []string) (err error) {
+	// The context name is an optional argument to allow for the prompt to be used
+	if len(args) > 0 {
+		if ctxName != "" {
+			return fmt.Errorf("cannot specify the context name as an argument and with the --name flag at the same time")
+		}
+		ctxName = args[0]
+	}
+
 	controlPlaneEPType := os.Getenv(constants.ControlPlaneEndpointType)
 	if controlPlaneEPType != "" {
 		if strings.EqualFold(controlPlaneEPType, controlPlaneEndPointTypeSelfManagedTMC) {
