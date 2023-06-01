@@ -39,6 +39,8 @@ type PluginBasicOps interface {
 	ExecuteSubCommand(pluginWithSubCommand string, opts ...E2EOption) (string, error)
 	// CleanPlugins executes the plugin clean command to delete all existing plugins
 	CleanPlugins(opts ...E2EOption) error
+	// RunPluginCmd runs plugin command with provided options
+	RunPluginCmd(options string, opts ...E2EOption) (string, string, error)
 }
 
 // PluginSourceOps helps 'plugin source' commands
@@ -296,6 +298,19 @@ func (po *pluginCmdOps) CleanPlugins(opts ...E2EOption) error {
 		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, CleanPluginsCmd, err.Error(), stdErr.String(), out.String())
 	}
 	return err
+}
+
+func (po *pluginCmdOps) RunPluginCmd(options string, opts ...E2EOption) (string, string, error) {
+	cmd := PluginCmdWithOptions
+	if options != "" {
+		cmd += options
+	}
+	stdOut, stdErr, err := po.cmdExe.TanzuCmdExec(cmd, opts...)
+	if err != nil {
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, CleanPluginsCmd, err.Error(), stdErr.String(), stdOut.String())
+		return stdOut.String(), stdErr.String(), nil
+	}
+	return stdOut.String(), stdErr.String(), nil
 }
 
 func (po *pluginCmdOps) DownloadPluginBundle(image string, groups []string, toTar string, opts ...E2EOption) error {
