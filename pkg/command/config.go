@@ -208,7 +208,7 @@ func setEdition(cfg *configtypes.ClientConfig, edition string) error {
 var initConfigCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize config with defaults",
-	Long:  "Initialize config with defaults including plugin specific defaults for all active and installed plugins",
+	Long:  "Initialize config with defaults including plugin specific defaults such as default feature flags for all active and installed plugins",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Acquire tanzu config lock
 		configlib.AcquireTanzuConfigLock()
