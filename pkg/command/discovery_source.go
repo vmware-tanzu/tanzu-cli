@@ -164,7 +164,7 @@ func newAddDiscoverySourceCmd() *cobra.Command {
 
 func newUpdateDiscoverySourceCmd() *cobra.Command {
 	var updateDiscoverySourceCmd = &cobra.Command{
-		Use:   "update [name]",
+		Use:   "update SOURCE_NAME",
 		Short: "Update a discovery source configuration",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -213,7 +213,7 @@ func newUpdateDiscoverySourceCmd() *cobra.Command {
 
 func newDeleteDiscoverySourceCmd() *cobra.Command {
 	var deleteDiscoverySourceCmd = &cobra.Command{
-		Use:   "delete [name]",
+		Use:   "delete SOURCE_NAME",
 		Short: "Delete a discovery source",
 		Args:  cobra.ExactArgs(1),
 		Example: `
