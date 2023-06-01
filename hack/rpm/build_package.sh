@@ -29,8 +29,13 @@ VERSION=${VERSION#v}
 BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output/rpm/tanzu-cli
 
+if [[ ! -z "${GPGKEY}" ]]; then
+echo "%_signature gpg
+%_gpg_name ${GPGKEY}" > /root/.rpmmacros
+fi
+
 # Install build dependencies
-$DNF install -y rpmdevtools rpmlint createrepo
+$DNF install -y rpmdevtools rpmlint createrepo rpm-build rpm-sign
 
 rpmlint ${BASE_DIR}/tanzu-cli.spec
 
@@ -50,3 +55,5 @@ mv ${HOME}/rpmbuild/RPMS/aarch64/* ${OUTPUT_DIR}/
 
 # Create the repository metadata
 createrepo ${OUTPUT_DIR}
+
+gpg --detach-sign --armor repodata/repomd.xml
