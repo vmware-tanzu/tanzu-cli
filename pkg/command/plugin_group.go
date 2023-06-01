@@ -84,7 +84,7 @@ func newSearchCmd() *cobra.Command {
 
 func newGetCmd() *cobra.Command {
 	var getCmd = &cobra.Command{
-		Use:   "get <group>",
+		Use:   "get GROUP_NAME",
 		Short: "Get the content of the specified plugin-group",
 		Long:  "Get the content of the specified plugin-group.  A plugin-group provides a list of plugin name/version combinations which can be installed in one step.  This command allows to see the list of plugins included in the specified group.",
 		Args:  cobra.ExactArgs(1),
