@@ -31,14 +31,15 @@ For more details about the program, please see https://www.vmware.com/trustvmwar
 Do you agree to participate in the Customer Experience Improvement Program?
 `
 
-	// TODO(vuil): Placeholder content, update to actual verbiage
-	eulaPromptMsg = `You must agree to the VMware General Terms in order to install software via
-Tanzu CLI.  The term of acceptance of the VMware General Terms will cover all
-software installed via the Tanzu CLI until/unless there's a change to VMware
-General Terms, a major release of the Tanzu CLI has been installed, or the
-underlying software distribution registry has been changed.
+	eulaPromptMsg = `You must agree to the VMware General Terms in order to download, install, or
+use software from this registry via Tanzu CLI. Acceptance of the VMware General
+Terms covers all software installed via the Tanzu CLI during any Session.
+“Session” means the period from acceptance until any of the following occurs:
+(1) a change to VMware General Terms, (2) a new major release of the Tanzu CLI
+is installed, (3) software is accessed in a separate software distribution
+registry, or (4) re-acceptance of the General Terms is prompted by VMware.
 
-To view the VMware General Terms, please see https://network.tanzu.vmware.com/legal_document_agreements/1982364
+To view the VMware General Terms, please see https://www.vmware.com/vmware-general-terms.html
 
 Do you agree to the VMware General Terms?
 `
