@@ -3,13 +3,6 @@
 
 package cosignhelper
 
-var tanzuCLIPluginDBImageSignPublicKey = []byte(`
------BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAqmPz99XIt7P8OG5v9fmUjcCx0AI
-HZPkw/YmuDeV9ki0wT6USut6OcOml9pku+x3Np9eZD30TMlzRTbjdbM8kQ==
------END PUBLIC KEY-----
-`)
-
 var tanzuCLIPluginDBImageSignPublicKeyOfficial = []byte(`
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEtDdBg1A2wJQ4IH7PP9Ke3IjyT2kO
