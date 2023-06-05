@@ -29,16 +29,10 @@ apt-get install -y curl reprepro
 # Clean any old packages
 rm -rf ${OUTPUT_DIR}
 
-SIGN_LINE="#SignWith: NOTSIGNED"
-if [[ ! -z "${GPGKEY}" ]]; then
-  SIGN_LINE="SignWith: ${GPGKEY}"
-fi
-
 # Prepare repository that will be published
 mkdir -p ${OUTPUT_DIR}/apt/conf
 echo "Codename: tanzu-cli-jessie
 Components: main
-${SIGN_LINE}
 Architectures: amd64 arm64" \
    > ${OUTPUT_DIR}/apt/conf/distributions 
 
@@ -90,15 +84,5 @@ chmod a+r /usr/share/fish/vendor_completions.d/tanzu.fish" \
    # Create the .deb package
    dpkg-deb --build -Zgzip ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}
 
-   # Create repository
-   reprepro -b ${OUTPUT_DIR}/apt includedeb tanzu-cli-jessie ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb
-
-   # Cleanup
-   rm -f tanzu-cli-linux-${arch}.tar.gz
-   rm -f ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb
    rm -rf ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}
 done
-
-# Global cleanup
-rm -rf ${OUTPUT_DIR}/apt/conf
-rm -rf ${OUTPUT_DIR}/apt/db

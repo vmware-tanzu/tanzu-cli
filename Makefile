@@ -148,13 +148,24 @@ prepare-builder: ## Build Tanzu CLI builder plugin
 ## --------------------------------------
 ## OS Packages
 ## --------------------------------------
-.PHONY: apt-package
-apt-package: ## Build a debian package to use with APT
+.PHONY: apt-package-only
+apt-package-only: ## Build a debian package
 	@if [ "$$(command -v docker)" == "" ]; then \
 		echo "Docker required to build apt package" ;\
 		exit 1 ;\
 	fi
 	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package.sh
+
+.PHONY: apt-package-repo
+apt-package-repo: ## Build a debian package repo
+	@if [ "$$(command -v docker)" == "" ]; then \
+		echo "Docker required to build apt package" ;\
+		exit 1 ;\
+	fi
+	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package_repo.sh
+
+.PHONY: apt-package
+apt-package: apt-package-only apt-package-repo  ## Build a debian package to use with APT
 
 .PHONY: rpm-package
 rpm-package: ## Build an RPM package
