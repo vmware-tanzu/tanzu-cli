@@ -154,7 +154,7 @@ apt-package-only: ## Build a debian package
 		echo "Docker required to build apt package" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package.sh
 
 .PHONY: apt-package-repo
 apt-package-repo: ## Build a debian package repo
@@ -162,7 +162,7 @@ apt-package-repo: ## Build a debian package repo
 		echo "Docker required to build apt package" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package_repo.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package_repo.sh
 
 .PHONY: apt-package
 apt-package: apt-package-only apt-package-repo  ## Build a debian package to use with APT
@@ -173,7 +173,11 @@ rpm-package: ## Build an RPM package
 		echo "Docker required to build rpm package" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) $(RPM_IMAGE) $(ROOT_DIR)/hack/rpm/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) -v $(ROOT_DIR):$(ROOT_DIR) $(RPM_IMAGE) $(ROOT_DIR)/hack/rpm/build_package.sh
+
+.PHONY: rpm-package-in-docker
+rpm-package-in-docker: ## Build an RPM package from within a container already
+	VERSION=$(BUILD_VERSION) ./hack/rpm/build_package.sh
 
 .PHONY: choco-package
 choco-package: ## Build a Chocolatey package
@@ -187,7 +191,7 @@ choco-package: ## Build a Chocolatey package
 		echo "Can only build chocolatey package on an amd64 machine at the moment" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) $(DND_MOUNT_FLAG) -v $(ROOT_DIR):$(ROOT_DIR) $(CHOCO_IMAGE) $(ROOT_DIR)/hack/choco/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) -v $(ROOT_DIR):$(ROOT_DIR) $(CHOCO_IMAGE) $(ROOT_DIR)/hack/choco/build_package.sh
 
 ## --------------------------------------
 ## Testing

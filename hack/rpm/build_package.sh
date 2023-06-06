@@ -29,11 +29,6 @@ VERSION=${VERSION#v}
 BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output/rpm/tanzu-cli
 
-if [[ ! -z "${GPGKEY}" ]]; then
-echo "%_signature gpg
-%_gpg_name ${GPGKEY}" > /root/.rpmmacros
-fi
-
 # Install build dependencies
 $DNF install -y rpmdevtools rpmlint createrepo rpm-build rpm-sign
 
@@ -53,7 +48,22 @@ mv ${HOME}/rpmbuild/RPMS/x86_64/* ${OUTPUT_DIR}/
 rpmbuild --define "package_version ${PACKAGE_VERSION}" --define "release_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target aarch64
 mv ${HOME}/rpmbuild/RPMS/aarch64/* ${OUTPUT_DIR}/
 
+if [[ ! -z "${RPMSIGNER}" ]]; then
+  ls -l ${OUTPUT_DIR}/tanzu-cli*aarch64.rpm
+  ${RPMSIGNER} ${OUTPUT_DIR}/tanzu-cli*aarch64.rpm
+  ls -l ${OUTPUT_DIR}/tanzu-cli*aarch64.rpm
+
+  ls -l ${OUTPUT_DIR}/tanzu-cli*x86_64.rpm
+  ${RPMSIGNER} ${OUTPUT_DIR}/tanzu-cli*x86_64.rpm
+  ls -l ${OUTPUT_DIR}/tanzu-cli*x86_64.rpm
+else
+  echo skip rpmsigning
+fi
+
 # Create the repository metadata
 createrepo ${OUTPUT_DIR}
 
-gpg --detach-sign --armor repodata/repomd.xml
+if [[ ! -z "${RPMSIGNER}" ]]; then
+ # instead of ... gpg --detach-sign --armor repodata/repomd.xml
+  ${RPMSIGNER} repodata/repomd.xml
+fi
