@@ -37,6 +37,7 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	defer os.RemoveAll(tempDir)
 
 	// Untar the specified plugin bundle to the temp directory
+	log.Infof("extracting %q for processing...", o.Tar)
 	err = tarinator.UnTarinate(tempDir, o.Tar)
 	if err != nil {
 		return errors.Wrap(err, "unable to extract provided file")
@@ -57,7 +58,7 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	// Iterate through all the images and publish them to the remote repository
 	for _, ic := range manifest.ImagesToCopy {
 		imageTar := filepath.Join(pluginBundleDir, ic.SourceTarFilePath)
-		repoImagePath := filepath.Join(o.DestinationRepo, ic.RelativeImagePath)
+		repoImagePath := utils.JoinURL(o.DestinationRepo, ic.RelativeImagePath)
 		log.Infof("---------------------------")
 		log.Infof("uploading image %q", repoImagePath)
 		err = o.ImageProcessor.CopyImageFromTar(imageTar, repoImagePath)
@@ -71,7 +72,7 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	// Publish plugin inventory metadata image after merging inventory metadata
 	log.Infof("publishing plugin inventory metadata image...")
 	bundledPluginInventoryMetadataDBFilePath := filepath.Join(pluginBundleDir, manifest.InventoryMetadataImage.SourceFilePath)
-	pluginInventoryMetadataImageWithTag := filepath.Join(o.DestinationRepo, manifest.InventoryMetadataImage.RelativeImagePathWithTag)
+	pluginInventoryMetadataImageWithTag := utils.JoinURL(o.DestinationRepo, manifest.InventoryMetadataImage.RelativeImagePathWithTag)
 	err = o.mergePluginInventoryMetadata(pluginInventoryMetadataImageWithTag, bundledPluginInventoryMetadataDBFilePath, tempDir)
 	if err != nil {
 		return errors.Wrap(err, "error while merging the plugin inventory metadata database before uploading metadata image")
