@@ -128,14 +128,7 @@ git tag v0.0.1 # TAG the repository if it has no tag.
 
 #### 5) Setting up the go modules
 
-Configure the go modules
-
 ```shell
-# Configure the go module for tanzu-plugin-runtime to point to the latest release
-# This step should not required once we have `v0.90.0` tagged for the repository
-# because go get automatically will get the latest official tag
-go get github.com/vmware-tanzu/tanzu-plugin-runtime@v0.90.0-beta.0
-
 # Download and configure modules and update the go.mod and go.sum files
 make gomod
 
