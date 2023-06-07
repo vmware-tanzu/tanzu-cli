@@ -11,8 +11,6 @@ project and this repository.
 
 Include [plugin-tooling.mk](https://github.com/vmware-tanzu/tanzu-cli/blob/main/cmd/plugin/builder/template/plugintemplates/plugin-tooling.mk.tmpl) in your make file. It will provide make targets that are useful during the plugin build, test, and publishing process
 
-To use the latest version of `tanzu-plugin-runtime` as a `go.mod` dependency run `go get github.com/vmware-tanzu/tanzu-plugin-runtime@v0.90.0-beta.0`.
-
 Updating the import references to use `tanzu-plugin-runtime`
 
 1. The main change is to update the import references: `"github.com/vmware-tanzu/tanzu-framework/cli/runtime" => "github.com/vmware-tanzu/tanzu-plugin-runtime"`
