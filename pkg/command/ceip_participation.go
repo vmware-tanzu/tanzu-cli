@@ -35,6 +35,7 @@ func newCEIPParticipationCmd() *cobra.Command {
 		Annotations: map[string]string{
 			"group": string(plugin.SystemCmdGroup),
 		},
+		Hidden: true,
 	}
 	ceipParticipationCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 
