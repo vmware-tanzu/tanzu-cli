@@ -157,11 +157,15 @@ choco-package: ## Build a Chocolatey package
 	fi
 
 	@# There are only AMD64 images to run chocolatey on docker
-	@if [ "$(GOHOSTARCH)" != "amd64" ]; then \
+	@# and even if we request an amd64 image, chocolatey will crash on arm64.
+	@# This make target can ONLY be run on an AMD64 machine
+	@if [ "$$(uname -m)" != "x86_64" ]; then \
 		echo "Can only build chocolatey package on an amd64 machine at the moment" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) -v $(ROOT_DIR):$(ROOT_DIR) chocolatey/choco $(ROOT_DIR)/hack/choco/build_package.sh
+	@# The nuspec file uses a variable but variables don't seem to work anymore
+	@# with chocolatey 2.0.0 so we continue using version 1.4.0
+	docker run --rm -e VERSION=$(BUILD_VERSION) -e SHA_FOR_CHOCO=$(SHA_FOR_CHOCO) -v $(ROOT_DIR):$(ROOT_DIR) chocolatey/choco:v1.4.0 $(ROOT_DIR)/hack/choco/build_package.sh
 
 ## --------------------------------------
 ## Testing
