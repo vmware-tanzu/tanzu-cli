@@ -40,6 +40,9 @@ mkdir -p ${HOME}/rpmbuild/SOURCES
 # Create the .rpm packages
 rm -rf ${OUTPUT_DIR}
 mkdir -p ${OUTPUT_DIR}
+chmod 777 ${OUTPUT_DIR}
+ls -l ${OUTPUT_DIR}
+
 # RPM does not like - in the its package version
 PACKAGE_VERSION=${VERSION//-/_}
 rpmbuild --define "package_version ${PACKAGE_VERSION}" --define "release_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target x86_64
@@ -47,6 +50,10 @@ mv ${HOME}/rpmbuild/RPMS/x86_64/* ${OUTPUT_DIR}/
 
 rpmbuild --define "package_version ${PACKAGE_VERSION}" --define "release_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target aarch64
 mv ${HOME}/rpmbuild/RPMS/aarch64/* ${OUTPUT_DIR}/
+
+# checking if python functional
+echo "checking python version ....."
+/build/toolchain/lin32/python-2.7.9-openssl1.0.1m/bin/python -V
 
 if [[ ! -z "${RPMSIGNER}" ]]; then
   ls -l ${OUTPUT_DIR}/tanzu-cli*aarch64.rpm
