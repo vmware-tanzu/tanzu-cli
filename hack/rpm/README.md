@@ -52,9 +52,10 @@ The GCloud bucket dedicated to hosting the Tanzu CLI OS packages is
 gs://tanzu-cli-os-packages`.
 
 To publish the repository containing the new rpm packages for the Tanzu CLI, we
-must upload the entire `rpm` directory to the root of the bucket. You can do
-this manually. Once uploaded, the Tanzu CLI can be installed publicly as
-described in the next section.
+must upload the entire `rpm` directory located at `tanzu-cli/hack/rpm/_output/rpm`
+to the root of the bucket.  Note that it is the second `rpm` directory that must be
+uploaded. You can do this manually. Once uploaded, the Tanzu CLI
+can be installed publicly as described in the next section.
 
 ## Installing the Tanzu CLI
 
