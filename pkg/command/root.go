@@ -160,10 +160,10 @@ func newRootCmd() *cobra.Command {
 					fmt.Fprintf(os.Stderr, "The Tanzu CLI is only usable with reduced functionality until the General Terms are agreed to.\nPlease use `tanzu config eula show` to review the terms, or `tanzu config eula accept` to accept them directly\n")
 					return errors.New("terms not accepted")
 				}
-
-				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
-					return err
-				}
+				// TODO(prkalle): uncomment when the CEIP implementation is done in future release
+				// if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
+				//	return err
+				// }
 			}
 			return nil
 		},
