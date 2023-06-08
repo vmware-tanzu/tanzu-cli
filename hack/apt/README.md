@@ -37,7 +37,7 @@ apt install -y tanzu-cli --allow-unauthenticated
 tanzu
 ```
 
-Note that the repository isn't signed at the moment, so you may see warnings
+Note that when building loocally, the repository isn't signed, so you may see warnings
 during installation.
 
 ## Publishing the package to GCloud
@@ -53,14 +53,12 @@ publicly as described in the next section.
 
 ## Installing the Tanzu CLI
 
-Currently, the repo is not signed but will be in the future; you may get
-warnings. To install from an insecure repo:
-
 ```bash
 $ docker run --rm -it ubuntu
 apt update
-apt install -y ca-certificates
-echo "deb https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | tee /etc/apt/sources.list.d/tanzu.list
-apt update --allow-insecure-repositories
-apt install -y tanzu-cli --allow-unauthenticated
+apt install -y ca-certificates curl
+curl -fsSL https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub | sudo gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | tee /etc/apt/sources.list.d/tanzu.list
+apt update
+apt install -y tanzu-cli
 ```

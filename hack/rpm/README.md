@@ -44,7 +44,7 @@ yum install -y tanzu-cli
 tanzu
 ```
 
-Note that the repository isn't signed at the moment, so you may see warnings during installation.
+Note that when building locally, the repository isn't signed, so you may see warnings during installation.
 
 ## Publishing the package to GCloud
 
@@ -59,9 +59,6 @@ can be installed publicly as described in the next section.
 
 ## Installing the Tanzu CLI
 
-Currently, the repo is not signed but will be in the future; you may get
-warnings during installation. To install from an insecure repo:
-
 ```bash
 docker run --rm -it fedora
 cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
@@ -69,7 +66,9 @@ cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
 name=Tanzu CLI
 baseurl=https://storage.googleapis.com/tanzu-cli-os-packages/rpm/tanzu-cli
 enabled=1
-gpgcheck=0
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub
 EOF
 yum install -y tanzu-cli
 ```
