@@ -34,7 +34,7 @@ This section specifies the version, support, and deprecation policies for Alpha,
 - ***FAQ***:
   - What happens if I upgrade to the CLI v0.90.0 and use a plugin developed with Plugin Runtime v0.28.0?
     - As the CLI is always compatible with all existing plugins, plugins developed with Plugin Runtime v0.28.0 will continue to work.
-  - If I have developed a plugin with (v0.11, 0.25, 0.28, 0.29) of Tanzu Plugin Runtime (from Tanzu-Framework repository), Will my plugins be compatible with v0.90 Tanzu CLI?
+  - If I have developed a plugin with (v0.11, 0.25, 0.28, 0.29) of Tanzu Plugin Runtime (from the Tanzu-Framework repository), will my plugins be compatible with v0.90 Tanzu CLI?
     - Yes. As shown in the above diagram and the backward compatibility guarantees provided with the v0.90 release of Tanzu CLI, all plugins developed with (v0.11, 0.25, 0.28, 0.29) of Tanzu Plugin Runtime will be compatible with v0.90 Tanzu CLI.
   - When will my plugin be incompatible with the CLI?
     - The user may be using a CLI version that is old and some new functionality implemented in a plugin with newer Plugin Runtime is not compatible with the old CLI. However, the old CLI will still be able to invoke the plugin with all the compatible features. Also, upgrading CLI to a newer version should resolve this new feature incompatibility issue.
