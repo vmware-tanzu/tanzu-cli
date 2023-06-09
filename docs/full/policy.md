@@ -15,38 +15,30 @@ Given this scheme, the primary vehicle for changes is minor releases. The deprec
 
 This section specifies the version, support, and deprecation policies for Alpha, Beta, and GA releases.
 
-## Plugin/Tanzu-CLI Compatibility policy
+## Tanzu-Plugin-Runtime/Tanzu-CLI Compatibility policy
 
 - Each Tanzu Core CLI release should be compatible with all the existing plugins at the time of release and also with plugins developed with any future patch of the existing minor releases of Tanzu Plugin Runtime.
-  - For example, the below table shows the compatible plugin version with different releases of Tanzu CLI.
-  - ***Note***: In the below table pre-v1.0 (v0.11, 0.25, 0.28) versions are `legacy` library versions from Tanzu-Framework and `x` is any existing or future patch version.
+  - For example, the below table shows the compatible Tanzu Plugin Runtime versions with different releases of Tanzu CLI.
+  - ***Note***: In the below table v0.11, 0.25, 0.28, 0.29 versions are `legacy` library versions from Tanzu-Framework and `x` is any existing or future patch version.
 
-      | Tanzu CLI Version | Available Tanzu Plugin Runtime Versions at the time of Tanzu CLI Release (example only) | Plugin will be compatible if it is developed using one of the following Tanzu Plugin Runtime Versions |
-      |-------------------|-----------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-      | v1.0.0            | v0.11.0, v0.11.1, v0.11.2                                                               | v0.11.x                                                                                               |
-      |                   | v0.25.0, v0.25.2, v0.25.3, v0.25.4                                                      | v0.25.x                                                                                               |
-      |                   | v0.28.0, v0.28.1                                                                        | v0.28.x                                                                                               |
-      |                   | v1.0.0                                                                                  | v1.0.x                                                                                                |
-      |                   |                                                                                         |                                                                                                       |
-      | v1.1.0            | v0.11.0, v0.11.1, v0.11.2                                                               | v0.11.x                                                                                               |
-      |                   | v0.25.0, v0.25.2, v0.25.3, v0.25.4                                                      | v0.25.x                                                                                               |
-      |                   | v0.28.0, v0.28.1                                                                        | v0.28.x                                                                                               |
-      |                   | v1.0.0, v1.0.1                                                                          | v1.0.x                                                                                                |
-      |                   | v1.1.0, v1.1.1, v1.1.2                                                                  | v1.1.x                                                                                                |
-      |                   | v1.2.0                                                                                  | v1.2.x                                                                                                |
+    | Tanzu CLI Version | Compatible Tanzu Plugin Runtime Versions |
+    |-------------------|------------------------------------------|
+    | v0.90.x           | v0.11.x                                  |
+    |                   | v0.25.x                                  |
+    |                   | v0.28.x                                  |
+    |                   | v0.29.x                                  |
+    |                   | v0.90.x                                  |
 
-- ***Important***: Based on this compatibility policy, the user can always upgrade the Tanzu CLI to the latest version without worrying about existing plugin compatibility. The latest minor or patch release of  Tanzu CLI under the v1 major release will always be compatible with all existing plugins.
+- ***Important***: Based on this compatibility policy, the user can always upgrade the Tanzu CLI to the latest version without worrying about existing plugin compatibility.
 - This means any change in the contract between Tanzu CLI and Tanzu Plugin Runtime must be done in a backward-compatible manner.
 - ***FAQ***:
-  - What happens if I upgrade to a newer version of CLI v1.2.0 and use a plugin developed with Plugin Runtime v1.0.5?
-    - As CLI is always compatible with all existing plugins, plugins developed with Plugin Runtime v1.0.5 should continue to work.
-  - If I have developed a plugin with pre-v1.0 (v0.11, 0.25, 0.28) of Tanzu Plugin Runtime (from Tanzu-Framework repository), Will my plugins be compatible with v1.0 Tanzu CLI?
-    - Yes. As shown in the above diagram and the backward compatibility guarantees provided with the v1.0 release of Tanzu CLI, all plugins developed with pre-v1.0 of Tanzu Plugin Runtime will be compatible with v1.0 Tanzu CLI.
-  - As a pre-v1.0 Tanzu CLI plugin developer, What are the possible changes I need to do when consuming v1.0 of Tanzu Plugin Runtime?
-    - We are still working on the design and the possible changes required when consuming v1.0 of Tanzu Plugin Runtime but high-level changes are mentioned in the Impact on Plugin Developers section below.
+  - What happens if I upgrade to the CLI v0.90.0 and use a plugin developed with Plugin Runtime v0.28.0?
+    - As the CLI is always compatible with all existing plugins, plugins developed with Plugin Runtime v0.28.0 will continue to work.
+  - If I have developed a plugin with (v0.11, 0.25, 0.28, 0.29) of Tanzu Plugin Runtime (from the Tanzu-Framework repository), will my plugins be compatible with v0.90 Tanzu CLI?
+    - Yes. As shown in the above diagram and the backward compatibility guarantees provided with the v0.90 release of Tanzu CLI, all plugins developed with (v0.11, 0.25, 0.28, 0.29) of Tanzu Plugin Runtime will be compatible with v0.90 Tanzu CLI.
   - When will my plugin be incompatible with the CLI?
     - The user may be using a CLI version that is old and some new functionality implemented in a plugin with newer Plugin Runtime is not compatible with the old CLI. However, the old CLI will still be able to invoke the plugin with all the compatible features. Also, upgrading CLI to a newer version should resolve this new feature incompatibility issue.
-    - Example: If a plugin is developed with Tanzu Plugin Runtime v1.3.1 which introduced a new feature X which works in combination with a newer version of Tanzu CLI then if the user is using old Tanzu CLI v1.2.0 (which doesn’t support this new feature X introduced in Plugin Runtime v1.3.1) while invoking a plugin, that new functionality might not work when using old CLI. However, other functionalities of that plugin will continue to work as expected with the old CLI. This will make the new feature in the plugin incompatible with the installed CLI. However, the user can upgrade the CLI to the latest v1.3.0 version to make the new feature compatible again.
+    - Example: If a plugin is developed with Tanzu Plugin Runtime v1.3.1 which introduced a new feature X which works in combination with a newer version of Tanzu CLI then if the user is using an old Tanzu CLI v1.2.0 (which doesn’t support this new feature X introduced in Plugin Runtime v1.3.1) while invoking a plugin, that new functionality might not work when using the old CLI. However, other functionalities of that plugin will continue to work as expected with the old CLI. This will make the new feature in the plugin incompatible with the installed CLI. However, the user can upgrade the CLI to the latest v1.3.0 version to make the new feature compatible again. This type of situation will always be communicated with the above table when this situation arises.
 
 ## Tanzu CLI Support policy
 
