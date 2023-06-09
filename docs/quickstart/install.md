@@ -42,29 +42,32 @@ brew install vmware-tanzu/tanzu/tanzu-cli
 
 ### Chocolatey (Windows)
 
-NOTE: The Chocolatey package is not available yet.
-
 ```console
 choco install tanzu-cli
 ```
 
-### Apt (Debian/Ubuntu)
+Note that the Chocolatey package is part of the main
+[Chocolatey community repository](https://community.chocolatey.org/packages).
+This means that when a new `tanzu-cli` version is released, the chocolatey package may
+not be available immediately.  If the above installation instructions fail, you can try:
 
-Note: The current APT package is not signed and will cause security warnings.
-This will be fixed very soon.
+```console
+choco install tanzu-cli --version <version>
+# example: choco install tanzu-cli --version 0.90.0
+```
+
+### Apt (Debian/Ubuntu)
 
 ```console
 sudo apt-get update
-sudo apt-get install -y ca-certificates
-echo "deb https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
-sudo apt-get update --allow-insecure-repositories
-sudo apt-get install -y tanzu-cli --allow-unauthenticated
+sudo apt-get install -y ca-certificates curl gpg
+curl -fsSL https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub | sudo gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
+sudo apt-get update
+sudo apt-get install -y tanzu-cli
 ```
 
 ### From yum/dnf (RHEL)
-
-Note: The current yum/dnf package is not signed and will cause security warnings.
-This will be fixed very soon.
 
 ```console
 cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
@@ -72,10 +75,12 @@ cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
 name=Tanzu CLI
 baseurl=https://storage.googleapis.com/tanzu-cli-os-packages/rpm/tanzu-cli
 enabled=1
-gpgcheck=0
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub
 EOF
 
-sudo yum install tanzu-cli # dnf install can also be used
+sudo yum install -y tanzu-cli # dnf install can also be used
 ```
 
 ### Note on installation paths
