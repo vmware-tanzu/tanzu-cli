@@ -23,7 +23,7 @@ BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output
 
 # Install build dependencies
-if ! command -v reprepo &> /dev/null; then
+if ! command -v reprepro &> /dev/null; then
    apt-get update
    apt-get install -y reprepro
 fi
@@ -48,6 +48,14 @@ for arch in amd64 arm64; do
    # Cleanup
    rm -f ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb
 done
+
+if [[ ! -z "${DEB_SIGNER}" ]]; then
+   for rel in `find ${OUTPUT_DIR} -name "Release"`; do
+      ${DEB_SIGNER} $rel ${rel}.gpg
+   done
+else
+   echo skip debsigning
+fi
 
 # Global cleanup
 rm -rf ${OUTPUT_DIR}/apt/conf
