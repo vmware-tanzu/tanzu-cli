@@ -4,6 +4,8 @@ go 1.19
 
 replace cloud.google.com/go => cloud.google.com/go v0.102.1
 
+replace github.com/vmware-tanzu/tanzu-cli/test/e2e/framework => ./test/e2e/framework
+
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/Masterminds/semver v1.5.0
@@ -20,8 +22,8 @@ require (
 	github.com/lithammer/dedent v1.1.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/novln/docker-parser v1.0.0
-	github.com/onsi/ginkgo/v2 v2.9.2
-	github.com/onsi/gomega v1.27.6
+	github.com/onsi/ginkgo/v2 v2.10.0
+	github.com/onsi/gomega v1.27.8
 	github.com/otiai10/copy v1.6.0
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign/v2 v2.0.3-0.20230519173114-f21081a18209
@@ -33,6 +35,7 @@ require (
 	github.com/verybluebot/tarinator-go v0.0.0-20190613183509-5ab4e1193986
 	github.com/vmware-tanzu/carvel-imgpkg v0.36.1
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
+	github.com/vmware-tanzu/tanzu-cli/test/e2e/framework v0.0.0-00010101000000-000000000000
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686
 	github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0
 	go.pinniped.dev v0.20.0
@@ -216,7 +219,7 @@ require (
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.8.0 // indirect
+	golang.org/x/tools v0.9.3 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect

@@ -10,11 +10,58 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 )
+
+// ArtifactList contains an Artifact object for every supported platform of a version.
+type ArtifactList []Artifact
+
+// Artifact points to an individual plugin binary specific to a version and platform.
+type Artifact struct {
+	// Image is a fully qualified OCI image for the plugin binary.
+	Image string `json:"image,omitempty"`
+	// AssetURI is a URI of the plugin binary. This can be a fully qualified HTTP path or a local path.
+	URI string `json:"uri,omitempty"`
+	// SHA256 hash of the plugin binary.
+	Digest string `json:"digest,omitempty"`
+	// Type of the binary artifact. Valid values are S3, GCP, OCIImage.
+	Type string `json:"type"`
+	// OS of the plugin binary in `GOOS` format.
+	OS string `json:"os"`
+	// Arch is CPU architecture of the plugin binary in `GOARCH` format.
+	Arch string `json:"arch"`
+}
+
+// CLIPluginSpec defines the desired state of CLIPlugin.
+type CLIPluginSpec struct {
+	// Description is the plugin's description.
+	Description string `json:"description"`
+	// Recommended version that Tanzu CLI should use if available.
+	// The value should be a valid semantic version as defined in
+	// https://semver.org/. E.g., 2.0.1
+	RecommendedVersion string `json:"recommendedVersion"`
+	// Artifacts contains an artifact list for every supported version.
+	Artifacts map[string]ArtifactList `json:"artifacts,omitempty"`
+	// Optional specifies whether the plugin is mandatory or optional
+	// If optional, the plugin will not get auto-downloaded as part of
+	// `tanzu login` or `tanzu plugin sync` command
+	// To view the list of plugin, user can use `tanzu plugin list` and
+	// to download a specific plugin run, `tanzu plugin install <plugin-name>`
+	Optional bool `json:"optional,omitempty"`
+	// Target specifies the target of the plugin. Only needed for standalone plugins
+	Target configtypes.Target `json:"target,omitempty"`
+}
+
+//+kubebuilder:object:root=true
+
+// CLIPlugin denotes a Tanzu cli plugin.
+type CLIPlugin struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata"`
+	Spec              CLIPluginSpec `json:"spec"`
+}
 
 // GeneratePluginOps helps to generate script-based plugin binaries, and plugin binaries can be used to perform plugin testing
 // like, add plugin source, list, and install plugins. And call sub-commands such as info and version.
@@ -51,13 +98,6 @@ func NewPluginOps(generatePluginOps GeneratePluginOps, publishPluginOps PublishP
 		GeneratePluginOps: generatePluginOps,
 		PublishPluginOps:  publishPluginOps,
 	}
-}
-
-// CLIPlugin for plugin overlay info
-type CLIPlugin struct {
-	metav1.TypeMeta `yaml:",inline"`
-	Metadata        metav1.ObjectMeta         `json:"metadata"`
-	Spec            cliv1alpha1.CLIPluginSpec `json:"spec"`
 }
 
 // localOCIPluginOps is the implementation of PublishPluginOps interface
@@ -275,10 +315,10 @@ func (po *localOCIPluginOps) generatePluginDiscoveryOverlay(pm *PluginMeta) (plu
 	plugin = &CLIPlugin{}
 	plugin.TypeMeta.Kind = "CLIPlugin"
 	plugin.TypeMeta.APIVersion = "cli.tanzu.vmware.com/v1alpha1"
-	plugin.Metadata.Name = pm.name
+	plugin.ObjectMeta.Name = pm.name
 
-	var artifactsMap = make(map[string]cliv1alpha1.ArtifactList)
-	artifacts := make([]cliv1alpha1.Artifact, 1)
+	var artifactsMap = make(map[string]ArtifactList)
+	artifacts := make([]Artifact, 1)
 	artifacts[0].OS = pm.os
 	artifacts[0].Image = pm.binaryDistributionURL
 	artifacts[0].Arch = pm.arch

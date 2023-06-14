@@ -6,12 +6,12 @@ package framework
 
 import (
 	"time"
-
-	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 )
 
 const (
 	CliCore = "[CLI-Core]"
+
+	TargetList = "kubernetes[k8s]/mission-control[tmc]/global"
 
 	InitCmd          = "%s init"
 	VersionCmd       = "%s version"
@@ -137,7 +137,7 @@ const (
 	UnableToFindPluginForTarget                   = "unable to find plugin '%s' with version '%s'"
 	UnableToFindPluginWithVersionForTarget        = "unable to find plugin '%s' with version '%s' for target '%s'"
 	UnableToFindPlugin                            = "unable to find plugin '%s'"
-	InvalidTargetSpecified                        = "invalid target specified. Please specify a correct value for the `--target/-t` flag from '" + common.TargetList + "'"
+	InvalidTargetSpecified                        = "invalid target specified. Please specify a correct value for the `--target/-t` flag from '" + TargetList + "'"
 	InvalidTargetGlobal                           = "invalid target for plugin: global"
 	DiscoverySourceNotFound                       = "discovery %q does not exist"
 	ErrorLogForCommandWithErrStdErrAndStdOut      = "error while executing command:'%s', error:'%s' stdErr:'%s' stdOut: '%s'"
