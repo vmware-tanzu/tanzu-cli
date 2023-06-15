@@ -1205,7 +1205,7 @@ func SyncPlugins() error {
 
 	installed := false
 	for idx := range plugins {
-		if plugins[idx].Status == common.PluginStatusNotInstalled {
+		if plugins[idx].Status == common.PluginStatusNotInstalled || plugins[idx].Status == common.PluginStatusUpdateAvailable {
 			installed = true
 			p := plugins[idx]
 			err = InstallPluginFromContext(p.Name, p.RecommendedVersion, p.Target, p.ContextName)
