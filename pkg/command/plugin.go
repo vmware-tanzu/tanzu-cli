@@ -690,7 +690,7 @@ func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginI
 			installedStandalonePlugins[index].Description,
 			string(installedStandalonePlugins[index].Target),
 			installedStandalonePlugins[index].Version,
-			common.PluginStatusInstalled,
+			installedStandalonePlugins[index].Status,
 			"", // No context
 		)
 	}
@@ -701,8 +701,8 @@ func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginI
 			installedContextPlugins[i].Name,
 			installedContextPlugins[i].Description,
 			string(installedContextPlugins[i].Target),
-			installedContextPlugins[i].RecommendedVersion,
-			common.PluginStatusInstalled,
+			installedContextPlugins[i].InstalledVersion,
+			installedContextPlugins[i].Status,
 			installedContextPlugins[i].ContextName,
 		)
 	}
