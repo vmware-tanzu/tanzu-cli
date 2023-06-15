@@ -154,7 +154,7 @@ func newListPluginCmd() *cobra.Command {
 				// List installed context plugins and also missing context plugins.
 				// Showing missing ones guides the user to know some plugins are recommended for the
 				// active contexts, but are not installed.
-				installedContextPlugins, missingContextPlugins, err := getInstalledAndMissingContextPlugins()
+				installedContextPlugins, missingContextPlugins, pluginSyncRequired, err := getInstalledAndMissingContextPlugins()
 				if err != nil {
 					errorList = append(errorList, err)
 					log.Warningf(errorWhileGettingContextPlugins, err.Error())
@@ -163,7 +163,7 @@ func newListPluginCmd() *cobra.Command {
 				sort.Sort(discovery.DiscoveredSorter(missingContextPlugins))
 
 				if config.IsFeatureActivated(constants.FeatureContextCommand) && (outputFormat == "" || outputFormat == string(component.TableOutputType)) {
-					displayInstalledAndMissingSplitView(standalonePlugins, installedContextPlugins, missingContextPlugins, cmd.OutOrStdout())
+					displayInstalledAndMissingSplitView(standalonePlugins, installedContextPlugins, missingContextPlugins, pluginSyncRequired, cmd.OutOrStdout())
 				} else {
 					displayInstalledAndMissingListView(standalonePlugins, installedContextPlugins, missingContextPlugins, cmd.OutOrStdout())
 				}
@@ -503,7 +503,7 @@ func getInstalledElseAvailablePluginVersion(p *discovery.Discovered) string {
 }
 
 // getInstalledAndMissingContextPlugins returns any context plugins that are not installed
-func getInstalledAndMissingContextPlugins() (installed, missing []discovery.Discovered, err error) {
+func getInstalledAndMissingContextPlugins() (installed, missing []discovery.Discovered, pluginSyncRequired bool, err error) {
 	errorList := make([]error, 0)
 	serverPlugins, err := pluginmanager.DiscoverServerPlugins()
 	if err != nil {
@@ -528,8 +528,13 @@ func getInstalledAndMissingContextPlugins() (installed, missing []discovery.Disc
 
 			// Store the installed plugin, which includes the context from which it was installed
 			found = true
+			if serverPlugins[i].RecommendedVersion != installedPlugins[j].Version {
+				serverPlugins[i].Status = common.PluginStatusUpdateAvailable
+				pluginSyncRequired = true
+			} else {
+				serverPlugins[i].Status = common.PluginStatusInstalled
+			}
 			serverPlugins[i].InstalledVersion = installedPlugins[j].Version
-			serverPlugins[i].Status = common.PluginStatusInstalled
 			installed = append(installed, serverPlugins[i])
 			break
 		}
@@ -537,9 +542,10 @@ func getInstalledAndMissingContextPlugins() (installed, missing []discovery.Disc
 			// We have a server plugin that is not installed, include it in the list
 			serverPlugins[i].Status = common.PluginStatusNotInstalled
 			missing = append(missing, serverPlugins[i])
+			pluginSyncRequired = true
 		}
 	}
-	return installed, missing, kerrors.NewAggregate(errorList)
+	return installed, missing, pluginSyncRequired, kerrors.NewAggregate(errorList)
 }
 
 func displayPluginListOutputListView(availablePlugins []discovery.Discovered, writer io.Writer) {
@@ -611,7 +617,7 @@ func displayPluginListOutputSplitViewContext(availablePlugins []discovery.Discov
 	}
 }
 
-func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.PluginInfo, installedContextPlugins, missingContextPlugins []discovery.Discovered, writer io.Writer) {
+func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.PluginInfo, installedContextPlugins, missingContextPlugins []discovery.Discovered, pluginSyncRequired bool, writer io.Writer) {
 	// List installed standalone plugins
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	_, _ = cyanBold.Println("Standalone Plugins")
@@ -669,10 +675,10 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 		outputWriter.Render()
 	}
 
-	if len(missingContextPlugins) > 0 {
-		// Print a warning to the user that some context plugins are not installed, and how to install them
+	if pluginSyncRequired {
+		// Print a warning to the user that some context plugins are not installed or outdated and plugin sync is required to install them
 		fmt.Println("")
-		log.Warningf("As shown above, some recommended plugins have not been installed. To install them please run 'tanzu plugin sync'.")
+		log.Warningf("As shown above, some recommended plugins have not been installed or are outdated. To install them please run 'tanzu plugin sync'.")
 	}
 }
 
