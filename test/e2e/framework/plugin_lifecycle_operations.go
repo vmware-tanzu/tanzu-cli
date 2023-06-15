@@ -156,7 +156,7 @@ func (po *pluginCmdOps) ListPluginsForGivenContext(context string, installedOnly
 	for i := range plugins {
 		if plugins[i].Context == context {
 			if installedOnly {
-				if plugins[i].Status == Installed {
+				if plugins[i].Status == Installed || plugins[i].Status == UpdateAvailable {
 					contextSpecificPlugins = append(contextSpecificPlugins, plugins[i])
 				}
 			} else {
