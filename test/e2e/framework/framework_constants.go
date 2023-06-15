@@ -78,10 +78,11 @@ const (
 	CLIE2ETestEnvironment = "TANZU_CLI_E2E_TEST_ENVIRONMENT"
 
 	// General constants
-	True         = "true"
-	Installed    = "installed"
-	NotInstalled = "not installed"
-	JSONOtuput   = "-o json"
+	True            = "true"
+	Installed       = "installed"
+	UpdateAvailable = "update available"
+	NotInstalled    = "not installed"
+	JSONOtuput      = "-o json"
 
 	// Context commands
 	CreateContextWithEndPoint              = "%s context create --endpoint %s %s"
