@@ -43,7 +43,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
 
 	contextNames = make([]string, 0)
-	flags = make([]string, 0, 0)
+	flags = make([]string, 0)
 })
 
 // AfterSuite deletes the KIND which is created in BeforeSuite

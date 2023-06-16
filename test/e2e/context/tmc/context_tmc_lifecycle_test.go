@@ -124,7 +124,6 @@ func tmcAndK8sContextTests() bool {
 				active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 				Expect(err).To(BeNil(), "there should be a active context")
 				Expect(active).To(Equal(k8sCtx), "the active context should be recently added context")
-
 			})
 
 			// Test case: c. list all active contexts, make both tmc and k8s contexts are active
@@ -171,7 +170,6 @@ func tmcAndK8sContextTests() bool {
 					Expect(active).To(Equal(tmcCtx), "the active context should be recently added context")
 					tmcCtxs = append(tmcCtxs, tmcCtx)
 				}
-
 			})
 
 			// Test case: b. create k8s contexts
@@ -226,7 +224,6 @@ func tmcAndK8sContextTests() bool {
 					Expect(err).To(BeNil(), "delete context should delete context without any error")
 				}
 				for _, ctx := range tmcCtxs {
-
 					err := tf.ContextCmd.DeleteContext(ctx)
 					Expect(err).To(BeNil(), "delete context should delete context without any error")
 				}
@@ -293,17 +290,17 @@ func tmcLifeCycleTests() bool {
 			Expect(err).To(BeNil(), "context should create without any error")
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			activeCtx, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
-			Expect(active).To(Equal(ctxName), "the active context should be recently added context")
+			Expect(activeCtx).To(Equal(ctxName), "the active context should be recently added context")
 		})
 		// Test case: f. test 'tanzu context use' command with the specific context name (not the recently created one)
 		It("use context command", func() {
 			err := tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			activeCtx, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
-			Expect(active).To(Equal(contextNames[0]), "the active context should be same as the context set by use context command")
+			Expect(activeCtx).To(Equal(contextNames[0]), "the active context should be same as the context set by use context command")
 		})
 		// context unset command related use cases:::
 		// Test case: g. context unset command: test 'tanzu context unset' command with active context name

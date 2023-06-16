@@ -10,9 +10,10 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"gopkg.in/yaml.v3"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // ArtifactList contains an Artifact object for every supported platform of a version.

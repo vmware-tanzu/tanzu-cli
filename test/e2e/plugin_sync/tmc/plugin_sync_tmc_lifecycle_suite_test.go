@@ -38,8 +38,6 @@ var (
 	e2eTestLocalCentralRepoCACertPath string
 )
 
-const mockAPIEndpointForPlugins = "/pluginsInfo"
-const routesFileName = "routes.json"
 const tmcPluginsMockFile = "tmcPluginsMock.json"
 const numberOfPluginsToInstall = 3
 
@@ -61,7 +59,6 @@ const noErrorForPluginList = "should not get any error for plugin list"
 const noErrorForPluginSearch = "should not get any error for plugin search"
 const noErrorForPluginDelete = "should not get any error for plugin delete"
 const noErrorForPluginInstall = "should not get any error for plugin install"
-const noErrorForPluginSync = "should not get any error for plugin sync"
 const shouldBeSomePluginsForPluginSearch = "there should be some plugins for plugin search"
 
 const activeContextShouldBeRecentlyAddedOne = "the active context should be recently added context"

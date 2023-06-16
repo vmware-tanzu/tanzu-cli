@@ -211,6 +211,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			pluginWithIncorrectVersion = pluginsToGenerateMockResponse[numberOfPluginsToInstall-1]
 			// generate mock response for all plugins (including the incorrect version plugin)
 			mockReqResMapping, err := f.ConvertPluginsInfoToTMCEndpointMockResponse(pluginsToGenerateMockResponse)
+			Expect(err).To(BeNil())
 			err = f.WriteToFileInJSONFormat(mockReqResMapping, tmcPluginsMockFilePath)
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
