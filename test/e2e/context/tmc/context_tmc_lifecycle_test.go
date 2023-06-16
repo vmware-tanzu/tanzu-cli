@@ -24,12 +24,12 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-tmc-tests]", func
 
 	// The test suite includes context life cycle tests specifically for the TMC target.
 	framework.CLICoreDescribe("[Tests:E2E][Feature:Context-basic-lifecycle-tmc]", func() {
-		// tmcLifeCycleTests()
+		tmcLifeCycleTests()
 	})
 
 	// This test suite includes context life cycle tests where both Kubernetes (K8s) and TMC contexts coexist.
 	framework.CLICoreDescribe("[Tests:E2E][Feature:Context-lifecycle-tmc-k8s]", func() {
-		// tmcAndK8sContextTests()
+		tmcAndK8sContextTests()
 	})
 
 	// The test suite is dedicated to stress testing the context life cycle for the TMC target.

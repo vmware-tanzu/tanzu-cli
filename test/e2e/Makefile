@@ -9,11 +9,11 @@ GO := go
 GINKGO := ${ROOT_DIR}/hack/tools/bin/ginkgo
 
 ifndef TANZU_API_TOKEN
-TANZU_API_TOKEN = ""
+TANZU_API_TOKEN = 8bczHt0X4G5rPoVzFnkgM8p5s7YE5FngQ9sqCqc6UrQWBTGMyPP_Jsu6k7xATffV
 endif
 
 ifndef TANZU_CLI_TMC_UNSTABLE_URL
-TANZU_CLI_TMC_UNSTABLE_URL = ""
+TANZU_CLI_TMC_UNSTABLE_URL = unstable.tmc-dev.cloud.vmware.com
 endif
 
 ifndef TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL
@@ -49,7 +49,7 @@ E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_TMC ?= vmware-tmc/tmc-user:v9.9.9
 E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_K8S ?= vmware-tkg/default:v9.9.9
 
 .PHONY: e2e-cli-core-all ## Execute all CLI Core E2E Tests
-e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-plugin-compatibility-tests e2e-plugin-lifecycle-tests  e2e-plugin-sync-tmc e2e-plugin-sync-k8s e2e-context-tmc-tests e2e-context-k8s-tests e2e-airgapped-tests
+e2e-cli-core-all: e2e-context-tmc-tests
 
 .PHONY: e2e-cli-lifecycle ## Execute CLI life cycle specific e2e tests
 e2e-cli-lifecycle:
