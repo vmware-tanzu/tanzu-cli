@@ -58,7 +58,10 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	// Iterate through all the images and publish them to the remote repository
 	for _, ic := range manifest.ImagesToCopy {
 		imageTar := filepath.Join(pluginBundleDir, ic.SourceTarFilePath)
-		repoImagePath := utils.JoinURL(o.DestinationRepo, ic.RelativeImagePath)
+		repoImagePath, err := utils.JoinURL(o.DestinationRepo, ic.RelativeImagePath)
+		if err != nil {
+			return errors.Wrap(err, "error while constructing the repo image path")
+		}
 		log.Infof("---------------------------")
 		log.Infof("uploading image %q", repoImagePath)
 		err = o.ImageProcessor.CopyImageFromTar(imageTar, repoImagePath)
@@ -72,7 +75,10 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	// Publish plugin inventory metadata image after merging inventory metadata
 	log.Infof("publishing plugin inventory metadata image...")
 	bundledPluginInventoryMetadataDBFilePath := filepath.Join(pluginBundleDir, manifest.InventoryMetadataImage.SourceFilePath)
-	pluginInventoryMetadataImageWithTag := utils.JoinURL(o.DestinationRepo, manifest.InventoryMetadataImage.RelativeImagePathWithTag)
+	pluginInventoryMetadataImageWithTag, err := utils.JoinURL(o.DestinationRepo, manifest.InventoryMetadataImage.RelativeImagePathWithTag)
+	if err != nil {
+		return errors.Wrap(err, "error while constructing the plugin inventory metadata image with tag")
+	}
 	err = o.mergePluginInventoryMetadata(pluginInventoryMetadataImageWithTag, bundledPluginInventoryMetadataDBFilePath, tempDir)
 	if err != nil {
 		return errors.Wrap(err, "error while merging the plugin inventory metadata database before uploading metadata image")
@@ -85,7 +91,12 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	}
 
 	log.Infof("---------------------------")
-	log.Infof("successfully published all plugin images to %q", utils.JoinURL(o.DestinationRepo, manifest.RelativeInventoryImagePathWithTag))
+
+	joinedURL, err := utils.JoinURL(o.DestinationRepo, manifest.RelativeInventoryImagePathWithTag)
+	if err != nil {
+		return errors.Wrap(err, "error while constructing the image URL")
+	}
+	log.Infof("successfully published all plugin images to %q", joinedURL)
 
 	return nil
 }
