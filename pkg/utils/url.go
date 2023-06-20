@@ -4,8 +4,8 @@
 package utils
 
 import (
+	"errors"
 	"net/url"
-	"path"
 	"strings"
 )
 
@@ -20,30 +20,34 @@ import (
 // Returns:
 // A string that is the concatenation of baseURL and relativeURL, formatted correctly.
 // An error if there was a problem parsing the base URL.
-func JoinURL(baseURL, relativeURL string) string {
+func JoinURL(baseURL, relativeURL string) (string, error) {
+	if baseURL == "" {
+		return "", errors.New("base url is empty")
+	}
+
+	var schemaNotPresent bool
+
+	// Check if the URL has a schema
+	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
+		schemaNotPresent = true
+		// If not, prepend "https://"
+		baseURL = "https://" + baseURL
+	}
+
 	// Parse the base URL into a *url.URL object
 	parsedBaseURL, err := url.Parse(baseURL)
 	if err != nil {
-		// If the base URL is not a valid URL, return empty string
-		return ""
+		return "", err
 	}
 
-	// Remove leading slash from relativeURL if it's there
-	relativeURL = strings.TrimPrefix(relativeURL, "/")
+	// Join the baseURL and relativeURL
+	parsedBaseURL = parsedBaseURL.JoinPath(relativeURL)
 
-	// Join the base URL path and the relative URL.
-	// path.Join() takes care of removing or adding any necessary slashes.
-	parsedBaseURL.Path = path.Join(parsedBaseURL.Path, relativeURL)
-
-	// If the Opaque field of the URL isn't empty, the URL path should be joined differently. This is because the net/url package in Go treats a specified port number as an opaque component, thus modifying the way the URL is formatted.
-	// 1. scheme:opaque?query#fragment
-	// 2. scheme://userinfo@host/path?query#fragment
-	// If u.Opaque is non-empty, String uses the first form; otherwise it uses the second form.
-
-	if parsedBaseURL.Opaque != "" {
-		return path.Join(parsedBaseURL.String(), parsedBaseURL.Path)
+	if schemaNotPresent {
+		// Replace the schema prefix with the original baseUrl and return the joined URL
+		return strings.TrimPrefix(parsedBaseURL.String(), "https://"), nil
 	}
 
 	// Return the joined URL as a string
-	return parsedBaseURL.String()
+	return parsedBaseURL.String(), nil
 }
