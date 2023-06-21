@@ -140,7 +140,7 @@ tanzu cluster create CLUSTER-NAME [flags]
 * A user should only be required to explicitly set a max of 2 flags
 * Add as many flags as necessary to configure the command
 * Consider supporting the use of a config file if the number of flags exceeds 5
-* Flags should be tab completed. The Tanzu CLI uses the cobra framework, which has tooling to help with this [Cobra shell completion docs](https://github.com/spf13/cobra/blob/master/shell_completions.md)
+* Flags should be tab completed. The Tanzu CLI uses the cobra framework, which has tooling to help with this [Cobra shell completion docs](https://github.com/spf13/cobra/blob/main/site/content/completions/_index.md)
 
 #### Resource flags
 
