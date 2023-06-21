@@ -347,7 +347,7 @@ also provide shell completion for its arguments and flag values; these are
 referred to as "custom completions".
 
 Please refer to the Cobra project's documentation on
-[Customizing completions](https://github.com/spf13/cobra/blob/main/shell_completions.md#customizing-completions)
+[Customizing completions](https://github.com/spf13/cobra/blob/main/site/content/completions/_index.md#customizing-completions)
 to learn how to make your plugin more user-friendly using shell completion.
 
 ### Configuration file
