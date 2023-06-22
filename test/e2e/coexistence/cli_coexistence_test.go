@@ -40,7 +40,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(err).To(gomega.BeNil())
 
 			ginkgo.By("Verify the installed version of new Tanzu CLI")
-			version, err = tf.CLIVersion(framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			version, err = tf.CLIVersion(framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(version).To(gomega.ContainSubstring(newTanzuCLIVersion))
 			gomega.Expect(err).To(gomega.BeNil())
 
@@ -85,22 +85,22 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(err).To(gomega.BeNil())
 
 			ginkgo.By("Verify the installed version of new Tanzu CLI")
-			version, err = tf.CLIVersion(framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			version, err = tf.CLIVersion(framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(version).To(gomega.ContainSubstring(newTanzuCLIVersion))
 			gomega.Expect(err).To(gomega.BeNil())
 
 			// set up the test local central repository host CA cert in the config file
-			setTestLocalCentralRepoCertConfig([]framework.E2EOption{framework.WithTanzuCommandPrefix(framework.TzPrefix)})
+			setTestLocalCentralRepoCertConfig([]framework.E2EOption{framework.WithTanzuBinary(framework.TzPrefix)})
 
 			// set up the local central repository discovery image signature public key path
 			os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 			ginkgo.By("Update plugin discovery source with test central repo")
-			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL}, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL}, framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin source update")
 
 			ginkgo.By("Search plugins and make sure there are plugins available using new Tanzu CLI")
-			pluginsSearchList, err := pluginlifecyclee2e.SearchAllPlugins(tf, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			pluginsSearchList, err := pluginlifecyclee2e.SearchAllPlugins(tf, framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), framework.NoErrorForPluginSearch)
 			gomega.Expect(len(pluginsSearchList)).Should(gomega.BeNumerically(">", 0))
 
@@ -110,15 +110,15 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
 					target = ""
 				}
-				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version, framework.WithTanzuBinary(framework.TzPrefix))
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install for new tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.WithTanzuCommandPrefix(framework.TzPrefix), framework.GetJsonOutputFormatAdditionalFlagFunction())
+				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.WithTanzuBinary(framework.TzPrefix), framework.GetJsonOutputFormatAdditionalFlagFunction())
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe for new tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe for new tanzu cli")
 			}
 
 			ginkgo.By("Installing few plugins using new Tanzu CLI")
-			pluginsList, _, _, err = tf.PluginCmd.ListPlugins(framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins(framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list for new tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")
 
@@ -314,22 +314,22 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(err).To(gomega.BeNil())
 
 			ginkgo.By("Verify the installed version of new Tanzu CLI")
-			version, err = tf.CLIVersion(framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			version, err = tf.CLIVersion(framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(version).To(gomega.ContainSubstring(newTanzuCLIVersion))
 			gomega.Expect(err).To(gomega.BeNil())
 
 			// set up the test local central repository host CA cert in the config file
-			setTestLocalCentralRepoCertConfig([]framework.E2EOption{framework.WithTanzuCommandPrefix(framework.TzPrefix)})
+			setTestLocalCentralRepoCertConfig([]framework.E2EOption{framework.WithTanzuBinary(framework.TzPrefix)})
 
 			// set up the local central repository discovery image signature public key path
 			os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 			ginkgo.By("Update plugin discovery source with test central repo")
-			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL}, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: "default", SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL}, framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin source update")
 
 			ginkgo.By("search plugins and make sure there are plugins available")
-			pluginsSearchList, err := pluginlifecyclee2e.SearchAllPlugins(tf, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			pluginsSearchList, err := pluginlifecyclee2e.SearchAllPlugins(tf, framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), framework.NoErrorForPluginSearch)
 			gomega.Expect(len(pluginsSearchList)).Should(gomega.BeNumerically(">", 0))
 
@@ -339,15 +339,15 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
 					target = ""
 				}
-				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version, framework.WithTanzuBinary(framework.TzPrefix))
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using new tanzu cli")
-				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.WithTanzuCommandPrefix(framework.TzPrefix), framework.GetJsonOutputFormatAdditionalFlagFunction())
+				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.WithTanzuBinary(framework.TzPrefix), framework.GetJsonOutputFormatAdditionalFlagFunction())
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin describe using new tanzu cli")
 				gomega.Expect(str).NotTo(gomega.BeNil(), "there should be output for plugin describe using new tanzu cli")
 			}
 
 			ginkgo.By("Verify the installed plugins using new Tanzu CLI")
-			pluginsList, _, _, err = tf.PluginCmd.ListPlugins(framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins(framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list using new tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")
 
@@ -356,7 +356,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(err).To(gomega.BeNil())
 
 			ginkgo.By("Verify the installed plugins using reinstalled new Tanzu CLI")
-			pluginsList, _, _, err = tf.PluginCmd.ListPlugins(framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			pluginsList, _, _, err = tf.PluginCmd.ListPlugins(framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin list using new tanzu cli")
 			gomega.Expect(framework.CheckAllPluginsExists(pluginsList, PluginsForNewTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using new tanzu cli")
 			gomega.Expect(pluginlifecyclee2e.CheckAllLegacyPluginsExists(pluginsList, PluginsForLegacyTanzuCLICoexistenceTests)).Should(gomega.BeTrue(), "the plugin list output using new tanzu cli is not same as the plugins being installed using legacy tanzu cli")
@@ -460,7 +460,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(err).To(gomega.BeNil())
 
 			ginkgo.By("Verify the installed version of new Tanzu CLI")
-			version, err = tf.CLIVersion(framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			version, err = tf.CLIVersion(framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(version).To(gomega.ContainSubstring(newTanzuCLIVersion))
 			gomega.Expect(err).To(gomega.BeNil())
 
@@ -477,12 +477,12 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(val).Should(gomega.Equal(framework.True))
 
 			ginkgo.By("Validate the value of random feature flag set in previous step using new Tanzu CLI")
-			val, err = tf.Config.ConfigGetFeatureFlag(randomFeatureFlagPath, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			val, err = tf.Config.ConfigGetFeatureFlag(randomFeatureFlagPath, framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil())
 			gomega.Expect(val).Should(gomega.Equal(framework.True))
 
 			ginkgo.By("Unset random feature flag which was set in previous step using new Tanzu CLI")
-			err = tf.Config.ConfigUnsetFeature(randomFeatureFlagPath, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			err = tf.Config.ConfigUnsetFeature(randomFeatureFlagPath, framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil())
 
 			ginkgo.By("Validate the unset random feature flag in previous step using legacy Tanzu CLI")
@@ -491,7 +491,7 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			gomega.Expect(val).Should(gomega.Equal(""))
 
 			ginkgo.By("Validate the unset random feature flag in previous step using new Tanzu CLI")
-			val, err = tf.Config.ConfigGetFeatureFlag(randomFeatureFlagPath, framework.WithTanzuCommandPrefix(framework.TzPrefix))
+			val, err = tf.Config.ConfigGetFeatureFlag(randomFeatureFlagPath, framework.WithTanzuBinary(framework.TzPrefix))
 			gomega.Expect(err).To(gomega.BeNil())
 			gomega.Expect(val).Should(gomega.Equal(""))
 		})

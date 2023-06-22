@@ -158,7 +158,7 @@ func (co *cliOps) RollbackToLegacyTanzuCLI(tf *Framework, opts ...E2EOption) err
 	log.Info("Executing Rollback instructions to legacy Tanzu CLI")
 	// Default options
 	options := NewE2EOptions(
-		WithTanzuCommandPrefix(TanzuPrefix),
+		WithTanzuBinary(TanzuPrefix),
 	)
 
 	// Apply provided options
@@ -261,7 +261,7 @@ func (co *cliOps) InstallNewTanzuCLI(opts ...E2EOption) error {
 
 	// Default options
 	options := NewE2EOptions(
-		WithTanzuCommandPrefix(TzPrefix),
+		WithTanzuBinary(TzPrefix),
 		WithOverride(false),
 		WithFilePath(newTanzuCLIFilePath),
 	)
@@ -307,7 +307,7 @@ func (co *cliOps) InstallNewTanzuCLI(opts ...E2EOption) error {
 		log.Info("New Tanzu CLI to coexist along with Old Tanzu CLI")
 
 		// Create a copy of new tanzu with name tz
-		stdOut, stdErr, err := co.cmdExe.Exec(fmt.Sprintf("cp -r %s/tanzu %s/%s", options.FilePath, options.FilePath, options.TanzuCommandPrefix))
+		stdOut, stdErr, err := co.cmdExe.Exec(fmt.Sprintf("cp -r %s/tanzu %s/%s", options.FilePath, options.FilePath, options.TanzuBinary))
 		log.Info(stdOut.String())
 
 		if stdErr != nil {
@@ -319,7 +319,7 @@ func (co *cliOps) InstallNewTanzuCLI(opts ...E2EOption) error {
 		}
 
 		// Move tz binary to /usr/bin
-		stdOut, stdErr, err = co.cmdExe.Exec(fmt.Sprintf("cp -r %s/%s /usr/bin", options.FilePath, options.TanzuCommandPrefix))
+		stdOut, stdErr, err = co.cmdExe.Exec(fmt.Sprintf("cp -r %s/%s /usr/bin", options.FilePath, options.TanzuBinary))
 		log.Info(stdOut.String())
 
 		if stdErr != nil {
