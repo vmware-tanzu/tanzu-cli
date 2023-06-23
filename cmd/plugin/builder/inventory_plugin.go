@@ -6,8 +6,8 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/inventory"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
@@ -50,15 +50,15 @@ func newInventoryPluginAddCmd() *cobra.Command {
 		Example:      ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			paOptions := inventory.InventoryPluginUpdateOptions{
-				Repository:        ipaFlags.Repository,
-				InventoryImageTag: ipaFlags.InventoryImageTag,
-				ManifestFile:      ipaFlags.ManifestFile,
-				Vendor:            ipaFlags.Vendor,
-				Publisher:         ipaFlags.Publisher,
-				DeactivatePlugins: ipaFlags.DeactivatePlugins,
-				InventoryDBFile:   ipaFlags.InventoryDBFile,
-				ValidateOnly:      ipaFlags.ValidateOnly,
-				ImgpkgOptions:     imgpkg.NewImgpkgCLIWrapper(),
+				Repository:          ipaFlags.Repository,
+				InventoryImageTag:   ipaFlags.InventoryImageTag,
+				ManifestFile:        ipaFlags.ManifestFile,
+				Vendor:              ipaFlags.Vendor,
+				Publisher:           ipaFlags.Publisher,
+				DeactivatePlugins:   ipaFlags.DeactivatePlugins,
+				InventoryDBFile:     ipaFlags.InventoryDBFile,
+				ValidateOnly:        ipaFlags.ValidateOnly,
+				ImageOperationsImpl: carvelhelpers.NewImageOperationsImpl(),
 			}
 			return paOptions.PluginAdd()
 		},
@@ -97,14 +97,14 @@ func newInventoryPluginActivateCmd() *cobra.Command { // nolint:dupl
 	pluginActivateCmd.Example = ""
 	pluginActivateCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		piOptions := inventory.InventoryPluginUpdateOptions{
-			Repository:        flags.Repository,
-			InventoryImageTag: flags.InventoryImageTag,
-			ManifestFile:      flags.ManifestFile,
-			Vendor:            flags.Vendor,
-			Publisher:         flags.Publisher,
-			InventoryDBFile:   flags.InventoryDBFile,
-			DeactivatePlugins: false,
-			ImgpkgOptions:     imgpkg.NewImgpkgCLIWrapper(),
+			Repository:          flags.Repository,
+			InventoryImageTag:   flags.InventoryImageTag,
+			ManifestFile:        flags.ManifestFile,
+			Vendor:              flags.Vendor,
+			Publisher:           flags.Publisher,
+			InventoryDBFile:     flags.InventoryDBFile,
+			DeactivatePlugins:   false,
+			ImageOperationsImpl: carvelhelpers.NewImageOperationsImpl(),
 		}
 		return piOptions.UpdatePluginActivationState()
 	}
@@ -118,14 +118,14 @@ func newInventoryPluginDeactivateCmd() *cobra.Command { // nolint:dupl
 	pluginDeactivateCmd.Example = ""
 	pluginDeactivateCmd.RunE = func(cmd *cobra.Command, args []string) error {
 		piOptions := inventory.InventoryPluginUpdateOptions{
-			Repository:        flags.Repository,
-			InventoryImageTag: flags.InventoryImageTag,
-			ManifestFile:      flags.ManifestFile,
-			Vendor:            flags.Vendor,
-			Publisher:         flags.Publisher,
-			InventoryDBFile:   flags.InventoryDBFile,
-			DeactivatePlugins: true,
-			ImgpkgOptions:     imgpkg.NewImgpkgCLIWrapper(),
+			Repository:          flags.Repository,
+			InventoryImageTag:   flags.InventoryImageTag,
+			ManifestFile:        flags.ManifestFile,
+			Vendor:              flags.Vendor,
+			Publisher:           flags.Publisher,
+			InventoryDBFile:     flags.InventoryDBFile,
+			DeactivatePlugins:   true,
+			ImageOperationsImpl: carvelhelpers.NewImageOperationsImpl(),
 		}
 		return piOptions.UpdatePluginActivationState()
 	}

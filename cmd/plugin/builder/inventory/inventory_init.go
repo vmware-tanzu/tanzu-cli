@@ -13,7 +13,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 )
 
@@ -23,7 +23,7 @@ type InventoryInitOptions struct {
 	InventoryImageTag string
 	Override          bool
 
-	ImgpkgOptions imgpkg.ImgpkgWrapper
+	ImageOperationsImpl carvelhelpers.ImageOperationsImpl
 }
 
 // InitializeInventory initializes the repository with the empty inventory database
@@ -33,7 +33,7 @@ func (iio *InventoryInitOptions) InitializeInventory() error {
 
 	if !iio.Override {
 		// check if the image already exists or not
-		err := iio.ImgpkgOptions.ResolveImage(pluginInventoryDBImage)
+		err := iio.ImageOperationsImpl.ResolveImage(pluginInventoryDBImage)
 		if err == nil {
 			return errors.Errorf("%q image already exists on the repository. Use `--override` flag to override the content", pluginInventoryDBImage)
 		}
@@ -50,7 +50,7 @@ func (iio *InventoryInitOptions) InitializeInventory() error {
 
 	// Publish the database to the remote repository
 	log.Infof("publishing database at: %q", pluginInventoryDBImage)
-	err = iio.ImgpkgOptions.PushImage(pluginInventoryDBImage, dbFile)
+	err = iio.ImageOperationsImpl.PushImage(pluginInventoryDBImage, []string{dbFile})
 	if err != nil {
 		return errors.Wrapf(err, "error while publishing database to the repository as image: %q", pluginInventoryDBImage)
 	}

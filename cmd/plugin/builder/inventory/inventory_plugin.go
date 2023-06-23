@@ -15,7 +15,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
@@ -33,7 +33,7 @@ type InventoryPluginUpdateOptions struct {
 	DeactivatePlugins bool
 	ValidateOnly      bool
 
-	ImgpkgOptions imgpkg.ImgpkgWrapper
+	ImageOperationsImpl carvelhelpers.ImageOperationsImpl
 }
 
 // PluginAdd add plugin entry to the inventory database by downloading the database from the repository, updating it locally
@@ -125,7 +125,7 @@ func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInven
 		// If we are only validating the plugin's existence, we don't need to waste
 		// resources downloading the image to get the digest which won't actually be used.
 		pluginImage := fmt.Sprintf("%s/%s", ipuo.Repository, pluginImageBasePath)
-		digest, err = ipuo.ImgpkgOptions.GetFileDigestFromImage(pluginImage, cli.MakeArtifactName(plugin.Name, osArch))
+		digest, err = ipuo.ImageOperationsImpl.GetFileDigestFromImage(pluginImage, cli.MakeArtifactName(plugin.Name, osArch))
 		if err != nil {
 			return nil, errors.Wrapf(err, "error while getting plugin binary digest from the image %q", pluginImage)
 		}
@@ -187,7 +187,7 @@ func (ipuo *InventoryPluginUpdateOptions) getInventoryDBFile() (string, error) {
 	}
 
 	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
-	err = ipuo.ImgpkgOptions.PullImage(pluginInventoryDBImage, dir)
+	err = ipuo.ImageOperationsImpl.DownloadImageAndSaveFilesToDir(pluginInventoryDBImage, dir)
 	if err != nil {
 		return "", errors.Wrapf(err, "error while pulling database from the image: %q", pluginInventoryDBImage)
 	}
@@ -211,7 +211,7 @@ func (ipuo *InventoryPluginUpdateOptions) putInventoryDBFile(dbFile string) erro
 
 	// Publish the database to the remote repository
 	log.Info("publishing plugin inventory database")
-	err := ipuo.ImgpkgOptions.PushImage(pluginInventoryDBImage, dbFile)
+	err := ipuo.ImageOperationsImpl.PushImage(pluginInventoryDBImage, []string{dbFile})
 	if err != nil {
 		return errors.Wrapf(err, "error while publishing inventory database to the repository as image: %q", pluginInventoryDBImage)
 	}

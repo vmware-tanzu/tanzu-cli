@@ -6,7 +6,6 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/inventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
@@ -47,7 +46,6 @@ func newInventoryInitCmd() *cobra.Command {
 				Repository:        piiFlags.Repository,
 				InventoryImageTag: piiFlags.InventoryImageTag,
 				Override:          piiFlags.Override,
-				ImgpkgOptions:     imgpkg.NewImgpkgCLIWrapper(),
 			}
 			return iiOptions.InitializeInventory()
 		},

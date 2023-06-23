@@ -11,8 +11,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
 )
 
 func TestInventorySuite(t *testing.T) {
@@ -21,11 +21,11 @@ func TestInventorySuite(t *testing.T) {
 }
 
 var _ = Describe("Unit tests for inventory init", func() {
-	fakeImgpkgWrapper := &fakes.ImgpkgWrapper{}
+	fakeImgpkgWrapper := &fakes.ImageOperationsImpl{}
 	iip := InventoryInitOptions{
-		Repository:        "test-repo.com",
-		InventoryImageTag: "latest",
-		ImgpkgOptions:     fakeImgpkgWrapper,
+		Repository:          "test-repo.com",
+		InventoryImageTag:   "latest",
+		ImageOperationsImpl: fakeImgpkgWrapper,
 	}
 
 	var _ = Context("tests for the inventory init function", func() {

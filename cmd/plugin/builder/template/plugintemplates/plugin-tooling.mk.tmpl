@@ -102,13 +102,14 @@ plugin-build-%:
 		--plugin-scope-association-file $(PLUGIN_SCOPE_ASSOCIATION_FILE)
 
 .PHONY: plugin-build-packages
-plugin-build-packages: ## Build plugin packages
+plugin-build-packages: plugin-local-registry ## Build plugin packages
 	$(BUILDER_PLUGIN) plugin build-package \
 		--binary-artifacts $(PLUGIN_BINARY_ARTIFACTS_DIR) \
-		--package-artifacts $(PLUGIN_PACKAGE_ARTIFACTS_DIR)
+		--package-artifacts $(PLUGIN_PACKAGE_ARTIFACTS_DIR) \
+		--oci-registry $(REGISTRY_ENDPOINT)
 
 .PHONY: plugin-publish-packages
-plugin-publish-packages: plugin-build-packages plugin-local-registry ## Publish plugin packages
+plugin-publish-packages: plugin-build-packages ## Publish plugin packages
 	$(BUILDER_PLUGIN) plugin publish-package \
 		--package-artifacts $(PLUGIN_PACKAGE_ARTIFACTS_DIR) \
 		--publisher $(PUBLISHER) \

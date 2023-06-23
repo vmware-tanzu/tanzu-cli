@@ -8,20 +8,20 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 )
 
-func inventoryDBDownload(imgpkgOptions imgpkg.ImgpkgWrapper, pluginInventoryDBImage, tempDir string) (string, error) {
-	err := imgpkgOptions.PullImage(pluginInventoryDBImage, tempDir)
+func inventoryDBDownload(imageOperationsImpl carvelhelpers.ImageOperationsImpl, pluginInventoryDBImage, tempDir string) (string, error) {
+	err := imageOperationsImpl.DownloadImageAndSaveFilesToDir(pluginInventoryDBImage, tempDir)
 	if err != nil {
 		return "", errors.Wrapf(err, "error while pulling database from the image: %q", pluginInventoryDBImage)
 	}
 	return filepath.Join(tempDir, plugininventory.SQliteDBFileName), nil
 }
 
-func inventoryDBUpload(imgpkgOptions imgpkg.ImgpkgWrapper, pluginInventoryDBImage, dbFile string) error {
-	err := imgpkgOptions.PushImage(pluginInventoryDBImage, dbFile)
+func inventoryDBUpload(imageOperationsImpl carvelhelpers.ImageOperationsImpl, pluginInventoryDBImage, dbFile string) error {
+	err := imageOperationsImpl.PushImage(pluginInventoryDBImage, []string{dbFile})
 	if err != nil {
 		return errors.Wrapf(err, "error while publishing inventory database to the repository as image: %q", pluginInventoryDBImage)
 	}

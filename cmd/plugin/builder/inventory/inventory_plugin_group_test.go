@@ -11,8 +11,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
@@ -23,7 +23,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 
 	var referencedDBFile string
 	var ipgu InventoryPluginGroupUpdateOptions
-	fakeImgpkgWrapper := &fakes.ImgpkgWrapper{}
+	fakeImgpkgWrapper := &fakes.ImageOperationsImpl{}
 
 	// pullDBImageStub create new empty database with the table schemas created
 	pullDBImageStub := func(image, path string) error {
@@ -140,7 +140,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 			ipgu = InventoryPluginGroupUpdateOptions{
 				Repository:              "test-repo.com",
 				InventoryImageTag:       "latest",
-				ImgpkgOptions:           fakeImgpkgWrapper,
+				ImageOperationsImpl:     fakeImgpkgWrapper,
 				Vendor:                  "fakevendor",
 				Publisher:               "fakepublisher",
 				PluginGroupManifestFile: pluginGroupManifestFile,
@@ -155,7 +155,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when plugin inventory database cannot be pulled from the repository", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(errors.New("image not found"))
-			fakeImgpkgWrapper.PullImageReturns(errors.New("unable to pull inventory database"))
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirReturns(errors.New("unable to pull inventory database"))
 
 			err := ipgu.PluginGroupAdd()
 			Expect(err).To(HaveOccurred())
@@ -166,7 +166,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when specified manifest file doesn't exists, adding plugin group should throw error", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(errors.New("image not found"))
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStub)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStub)
 
 			ipgu.PluginGroupManifestFile = "does-not-exists.yaml"
 			err := ipgu.PluginGroupAdd()
@@ -178,7 +178,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when specified plugins in the plugin-group doesn't exist in the inventory database, adding plugin group should throw error", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStub)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStub)
 
 			err := ipgu.PluginGroupAdd()
 			Expect(err).To(HaveOccurred())
@@ -190,7 +190,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when specified plugins exists and the plugin-group doesn't exist in the inventory database, adding plugin group should be successful", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStubWithPlugins)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStubWithPlugins)
 
 			err := ipgu.PluginGroupAdd()
 			Expect(err).NotTo(HaveOccurred())
@@ -215,7 +215,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when specified plugin-group already exist in the inventory database and override is not provided, adding plugin group should throw error", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStubWithPluginGroups)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStubWithPluginGroups)
 
 			err := ipgu.PluginGroupAdd()
 			Expect(err).To(HaveOccurred())
@@ -227,7 +227,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when specified plugin-group already exist in the inventory database and override is provided, adding plugin group should be successful", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStubWithPluginGroups)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStubWithPluginGroups)
 
 			ipgu.Override = true
 			ipgu.DeactivatePluginGroup = false
@@ -256,7 +256,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when inventory database cannot be published from the repository", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(errors.New("unable to publish image"))
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStubWithPlugins)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStubWithPlugins)
 
 			err := ipgu.PluginGroupAdd()
 			Expect(err).To(HaveOccurred())
@@ -271,7 +271,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 			ipgu = InventoryPluginGroupUpdateOptions{
 				Repository:            "test-repo.com",
 				InventoryImageTag:     "latest",
-				ImgpkgOptions:         fakeImgpkgWrapper,
+				ImageOperationsImpl:   fakeImgpkgWrapper,
 				Vendor:                "fakevendor",
 				Publisher:             "fakepublisher",
 				GroupName:             "default",
@@ -284,7 +284,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when plugin inventory database cannot be pulled from the repository", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(errors.New("image not found"))
-			fakeImgpkgWrapper.PullImageReturns(errors.New("unable to pull inventory database"))
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirReturns(errors.New("unable to pull inventory database"))
 
 			err := ipgu.UpdatePluginGroupActivationState()
 			Expect(err).To(HaveOccurred())
@@ -295,7 +295,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when specified plugin-group doesn't exist in the inventory database, updating the activation state should throw error", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStub)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStub)
 
 			err := ipgu.UpdatePluginGroupActivationState()
 			Expect(err).To(HaveOccurred())
@@ -306,7 +306,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when specified plugin-group exists in the inventory database, updating the activation state with 'DeactivatePluginGroup=true' should be successful", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStubWithPluginGroups)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStubWithPluginGroups)
 
 			ipgu.DeactivatePluginGroup = true
 			err := ipgu.UpdatePluginGroupActivationState()
@@ -332,7 +332,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when specified plugin-group exists in the inventory database, updating the activation state with 'DeactivatePluginGroup=false' should be successful", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStubWithPluginGroups)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStubWithPluginGroups)
 
 			ipgu.DeactivatePluginGroup = false
 			err := ipgu.UpdatePluginGroupActivationState()
@@ -360,7 +360,7 @@ var _ = Describe("Unit tests for inventory plugin-group add", func() {
 		var _ = It("when inventory database cannot be published from the repository", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(errors.New("unable to publish image"))
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStubWithPluginGroups)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStubWithPluginGroups)
 
 			err := ipgu.UpdatePluginGroupActivationState()
 			Expect(err).To(HaveOccurred())

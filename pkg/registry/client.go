@@ -287,3 +287,23 @@ func (r *registry) PushImage(imageWithTag string, filePaths []string) error {
 
 	return pushOptions.Run()
 }
+
+// ResolveImage invokes `imgpkg tag resolve -i <image>` command
+func (r *registry) ResolveImage(image string) error {
+	// Creating a dummy writer to capture the logs
+	// currently this logs are not displayed or used directly
+	var outputBuf, errorBuf bytes.Buffer
+	writerUI := ui.NewWriterUI(&outputBuf, &errorBuf, nil)
+
+	resolveOptions := cmd.NewTagResolveOptions(writerUI)
+	resolveOptions.ImageFlags = cmd.ImageFlags{Image: image}
+	if r.opts != nil {
+		resolveOptions.RegistryFlags = cmd.RegistryFlags{
+			CACertPaths: r.opts.CACertPaths,
+			VerifyCerts: r.opts.VerifyCerts,
+			Insecure:    r.opts.Insecure,
+		}
+	}
+
+	return resolveOptions.Run()
+}

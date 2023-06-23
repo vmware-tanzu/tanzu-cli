@@ -6,8 +6,8 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/inventory"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
@@ -64,7 +64,8 @@ func newInventoryPluginGroupAddCmd() *cobra.Command {
 				InventoryDBFile:         ipgaFlags.InventoryDBFile,
 				DeactivatePluginGroup:   ipgaFlags.DeactivatePluginGroup,
 				Override:                ipgaFlags.Override,
-				ImgpkgOptions:           imgpkg.NewImgpkgCLIWrapper(),
+
+				ImageOperationsImpl: carvelhelpers.NewImageOperationsImpl(),
 			}
 			return pgaOptions.PluginGroupAdd()
 		},
@@ -117,7 +118,7 @@ func newInventoryPluginGroupActivateCmd() *cobra.Command { //nolint:dupl
 			Publisher:             flags.Publisher,
 			InventoryDBFile:       flags.InventoryDBFile,
 			DeactivatePluginGroup: false,
-			ImgpkgOptions:         imgpkg.NewImgpkgCLIWrapper(),
+			ImageOperationsImpl:   carvelhelpers.NewImageOperationsImpl(),
 		}
 		return pguOptions.UpdatePluginGroupActivationState()
 	}
@@ -139,7 +140,7 @@ func newInventoryPluginGroupDeactivateCmd() *cobra.Command { //nolint:dupl
 			Publisher:             flags.Publisher,
 			InventoryDBFile:       flags.InventoryDBFile,
 			DeactivatePluginGroup: true,
-			ImgpkgOptions:         imgpkg.NewImgpkgCLIWrapper(),
+			ImageOperationsImpl:   carvelhelpers.NewImageOperationsImpl(),
 		}
 		return pguOptions.UpdatePluginGroupActivationState()
 	}

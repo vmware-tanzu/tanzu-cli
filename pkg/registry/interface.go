@@ -30,4 +30,6 @@ type Registry interface {
 	// PushImage publishes the image to the specified location
 	// This is equivalent to `imgpkg push -i <image> -f <filepath>`
 	PushImage(imageWithTag string, filePaths []string) error
+	// ResolveImage invokes `imgpkg tag resolve -i <image>` command
+	ResolveImage(image string) error
 }
