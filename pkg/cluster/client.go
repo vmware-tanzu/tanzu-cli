@@ -6,6 +6,7 @@ package cluster
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -107,8 +108,7 @@ func NewClient(kubeConfigPath, contextStr string, options Options) (Client, erro
 		kubeConfigPath: kubeConfigPath,
 		currentContext: contextStr,
 	}
-
-	err = client.getK8sClients(options.CrtClient, options.DiscoveryClientFactory, options.DynamicClientFactory)
+	err = client.getK8sClients(options.CrtClient, options.DiscoveryClientFactory, options.DynamicClientFactory, options.RequestTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +199,7 @@ func ConsolidateImageRepoMaps(cmList *corev1.ConfigMapList) (map[string]string, 
 	return imageRepoMap, nil
 }
 
-func (c *client) getK8sClients(crtClient CrtClient, discoveryClientFactory DiscoveryClientFactory, dynamicClientFactory DynamicClientFactory) error {
+func (c *client) getK8sClients(crtClient CrtClient, discoveryClientFactory DiscoveryClientFactory, dynamicClientFactory DynamicClientFactory, timeout time.Duration) error {
 	var discoveryClient discovery.DiscoveryInterface
 	config, err := clientcmd.LoadFromFile(c.kubeConfigPath)
 	if err != nil {
@@ -218,6 +218,10 @@ func (c *client) getK8sClients(crtClient CrtClient, discoveryClientFactory Disco
 	// queries per second and the maximum burst for throttle to a high value to avoid throttling of messages
 	restConfig.QPS = constants.DefaultQPS
 	restConfig.Burst = constants.DefaultBurst
+	if timeout != 0 {
+		restConfig.Timeout = timeout
+	}
+
 	mapper, err := apiutil.NewDynamicRESTMapper(restConfig, apiutil.WithLazyDiscovery)
 	if err != nil {
 		return errors.Errorf("Unable to set up rest mapper due to : %v", err)
@@ -292,6 +296,7 @@ type Options struct {
 	CrtClient              CrtClient
 	DiscoveryClientFactory DiscoveryClientFactory
 	DynamicClientFactory   DynamicClientFactory
+	RequestTimeout         time.Duration
 }
 
 // NewOptions returns new options

@@ -122,13 +122,18 @@ type DiscoveryClient struct {
 		result1 *version.Info
 		result2 error
 	}
+	WithLegacyStub        func() discovery.DiscoveryInterface
+	withLegacyMutex       sync.RWMutex
+	withLegacyArgsForCall []struct {
+	}
+	withLegacyReturns struct {
+		result1 discovery.DiscoveryInterface
+	}
+	withLegacyReturnsOnCall map[int]struct {
+		result1 discovery.DiscoveryInterface
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-func (fake *DiscoveryClient) WithLegacy() discovery.DiscoveryInterface {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (fake *DiscoveryClient) OpenAPISchema() (*openapi_v2.Document, error) {
@@ -640,6 +645,59 @@ func (fake *DiscoveryClient) ServerVersionReturnsOnCall(i int, result1 *version.
 	}{result1, result2}
 }
 
+func (fake *DiscoveryClient) WithLegacy() discovery.DiscoveryInterface {
+	fake.withLegacyMutex.Lock()
+	ret, specificReturn := fake.withLegacyReturnsOnCall[len(fake.withLegacyArgsForCall)]
+	fake.withLegacyArgsForCall = append(fake.withLegacyArgsForCall, struct {
+	}{})
+	stub := fake.WithLegacyStub
+	fakeReturns := fake.withLegacyReturns
+	fake.recordInvocation("WithLegacy", []interface{}{})
+	fake.withLegacyMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *DiscoveryClient) WithLegacyCallCount() int {
+	fake.withLegacyMutex.RLock()
+	defer fake.withLegacyMutex.RUnlock()
+	return len(fake.withLegacyArgsForCall)
+}
+
+func (fake *DiscoveryClient) WithLegacyCalls(stub func() discovery.DiscoveryInterface) {
+	fake.withLegacyMutex.Lock()
+	defer fake.withLegacyMutex.Unlock()
+	fake.WithLegacyStub = stub
+}
+
+func (fake *DiscoveryClient) WithLegacyReturns(result1 discovery.DiscoveryInterface) {
+	fake.withLegacyMutex.Lock()
+	defer fake.withLegacyMutex.Unlock()
+	fake.WithLegacyStub = nil
+	fake.withLegacyReturns = struct {
+		result1 discovery.DiscoveryInterface
+	}{result1}
+}
+
+func (fake *DiscoveryClient) WithLegacyReturnsOnCall(i int, result1 discovery.DiscoveryInterface) {
+	fake.withLegacyMutex.Lock()
+	defer fake.withLegacyMutex.Unlock()
+	fake.WithLegacyStub = nil
+	if fake.withLegacyReturnsOnCall == nil {
+		fake.withLegacyReturnsOnCall = make(map[int]struct {
+			result1 discovery.DiscoveryInterface
+		})
+	}
+	fake.withLegacyReturnsOnCall[i] = struct {
+		result1 discovery.DiscoveryInterface
+	}{result1}
+}
+
 func (fake *DiscoveryClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -661,6 +719,8 @@ func (fake *DiscoveryClient) Invocations() map[string][][]interface{} {
 	defer fake.serverResourcesForGroupVersionMutex.RUnlock()
 	fake.serverVersionMutex.RLock()
 	defer fake.serverVersionMutex.RUnlock()
+	fake.withLegacyMutex.RLock()
+	defer fake.withLegacyMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
