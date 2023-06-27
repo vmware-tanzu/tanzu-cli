@@ -140,7 +140,7 @@ func TestPluginList(t *testing.T) {
 			targets:            []configtypes.Target{configtypes.TargetK8s},
 			args:               []string{"plugin", "describe", "foo", "-o", "json"},
 			expectedFailure:    false,
-			expected:           `[ { "buildsha": "", "completiontype": "0", "defaultfeatureflags": "map[]", "description": "some foo description", "digest": "", "discoveredrecommendedversion": "", "discovery": "", "docurl": "", "group": "System", "installationpath": "%v", "name": "foo", "scope": "", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
+			expected:           `[ { "description": "some foo description", "installationpath": "%v", "name": "foo", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
 		},
 	}
 
