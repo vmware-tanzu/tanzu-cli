@@ -54,6 +54,9 @@ ContextCmd   ContextCmdOps
 }
 ```
 
+To customize the choice of the Tanzu binary for usage, you have the option to indicate it by utilizing the environment variable `TANZU_CLI_BINARY_PATH`.
+Additionally, within the Tests, the `WithTanzuBinary()` helper method allows you to personalize the Tanzu binary selection.
+
 Below are the major interfaces defined and implemented as part of the E2E
 Framework (which are part of the `Framework` struct type). These interfaces are
 used to write E2E test cases using the Ginkgo test framework. The interfaces

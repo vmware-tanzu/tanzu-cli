@@ -24,10 +24,10 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
-// WithTanzuCommandPrefix is to set the tanzu command prefix; default is tanzu
-func WithTanzuCommandPrefix(prefix string) E2EOption {
+// WithTanzuBinary is to set the tanzu binary location; default is tanzu from PATH variable
+func WithTanzuBinary(tanzuBinary string) E2EOption {
 	return func(opts *E2EOptions) {
-		opts.TanzuCommandPrefix = prefix
+		opts.TanzuBinary = tanzuBinary
 	}
 }
 

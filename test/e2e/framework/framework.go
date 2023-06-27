@@ -24,6 +24,7 @@ var (
 	// ConfigFilePath represents config-ng.yaml file path which under $HOME/.tanzu-cli-e2e/.config/tanzu
 	ConfigNGFilePath string
 	TanzuFolderPath  string
+	TanzuBinary      string // Tanzu binary name if available in PATH variable or full path to binary with tanzu name
 )
 
 // PluginsForLifeCycleTests is list of plugins (which are published in local central repo) used in plugin life cycle test cases
@@ -49,9 +50,9 @@ type Framework struct {
 }
 
 // E2EOptions used to configure certain options to customize the E2E framework
-// TanzuCommandPrefix should be set to customize the tanzu command prefix; default is tanzu
+
 type E2EOptions struct {
-	TanzuCommandPrefix string
+	TanzuBinary string // TanzuBinary should be set to customize the tanzu binary either the binary name if available with PATH variable or full binary path with name ; default is tanzu from PATH variable
 	CLIOptions
 	AdditionalFlags string
 }
@@ -97,6 +98,11 @@ func init() {
 	TanzuFolderPath = filepath.Join(filepath.Join(TestDirPath, ConfigFolder), TanzuFolder)
 	ConfigFilePath = filepath.Join(TanzuFolderPath, ConfigFile)
 	ConfigNGFilePath = filepath.Join(TanzuFolderPath, ConfigNGFile)
+	TanzuBinary = os.Getenv(TanzuCLIBinaryPath)
+	// Set `tanzu` as default binary if not specified tanzu cli binary path
+	if TanzuBinary == "" {
+		TanzuBinary = TanzuPrefix
+	}
 	// Create a directory (if not exists) $HOME/.tanzu-cli-e2e/.config/tanzu-plugins/discovery/standalone
 	TestStandalonePluginsPath = filepath.Join(filepath.Join(filepath.Join(filepath.Join(TestDirPath, ConfigFolder), TanzuPluginsFolder), "discovery"), "standalone")
 	_ = CreateDir(TestStandalonePluginsPath)

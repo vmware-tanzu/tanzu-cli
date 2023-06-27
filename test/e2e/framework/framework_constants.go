@@ -179,14 +179,14 @@ const (
 	// TempDirInTestDirPath is the directory under $HOME/$TestDir, to create temporary files (if any) for E2E test execution
 	TempDirInTestDirPath = "temp"
 
-	ConfigFolder       = ".config"
-	TanzuFolder        = "tanzu"
-	TanzuPluginsFolder = "tanzu-plugins"
-	ConfigFile         = "config.yaml"
-	ConfigNGFile       = "config-ng.yaml"
-	K8SCRDFileName     = "cli.tanzu.vmware.com_cliplugins.yaml"
-	Config             = "config"
-
+	ConfigFolder                = ".config"
+	TanzuFolder                 = "tanzu"
+	TanzuPluginsFolder          = "tanzu-plugins"
+	ConfigFile                  = "config.yaml"
+	ConfigNGFile                = "config-ng.yaml"
+	K8SCRDFileName              = "cli.tanzu.vmware.com_cliplugins.yaml"
+	Config                      = "config"
+	TanzuCLIBinaryPath          = "TANZU_CLI_BINARY_PATH"
 	WiredMockHTTPServerStartCmd = "docker run --rm -d -p 8080:8080 -p 8443:8443 --name %s -v %s:/home/wiremock rodolpheche/wiremock:2.25.1"
 	HttpMockServerStopCmd       = "docker container stop %s"
 	HttpMockServerName          = "wiremock"
