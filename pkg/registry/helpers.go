@@ -5,9 +5,12 @@ package registry
 
 import (
 	"encoding/base64"
+	"fmt"
+	"net"
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 
 	regname "github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
@@ -95,11 +98,40 @@ func AddRegistryTrustedRootCertsFileForWindows(registryCertOpts *CertOptions) er
 	return nil
 }
 
+// isValidRegistryName does a user friendly check of a regietry name so that we dont
+// try to "ParseReference" if its not valid, and instead return back a clear problem.
+func isValidRegistryName(s string) bool {
+	parts := strings.Split(s, "/")
+	if len(parts) > 0 {
+		registryAndPort := strings.Split(parts[0], ":")
+		registry := registryAndPort[0]
+
+		if len(registryAndPort) == 2 {
+			_, err := strconv.Atoi(registryAndPort[1])
+			if err != nil {
+				return false
+			}
+		}
+
+		if net.ParseIP(registry) != nil {
+			return false
+		}
+
+		if _, err := strconv.Atoi(string(registry[0])); err != nil {
+			return false
+		}
+	}
+	return true
+}
+
 // GetRegistryName extracts the registry name from the image name with/without image tag
 // (e.g. localhost:9876/tanzu-cli/plugins/central:small => localhost:9876)
 // It also supports a digest format:
 // (e.g. localhost:9876/tanzu-cli/plugins/plugin@sha256:3925a7a0e78ec439529c4bc9e26b4bbe95a01645325a8b2f66334be7e6b37ab6)
 func GetRegistryName(imageName string) (string, error) {
+	if !isValidRegistryName(imageName) {
+		return "", fmt.Errorf("Invalid registry name, will not attempt parsing it... %s", imageName)
+	}
 	ref, err := regname.ParseReference(imageName)
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to fetch registry name from image %q", imageName)
