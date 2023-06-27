@@ -55,7 +55,7 @@ func (ppo *PublishPluginPackageOptions) PublishPluginPackages() error {
 
 				log.Infof("publishing plugin 'name:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 				if ppo.DryRun {
-					log.Infof("command: 'crane push -i %s %s'", pluginTarFilePath, imageToPush)
+					log.Infof("command: 'crane push %s %s'", pluginTarFilePath, imageToPush)
 				} else {
 					err = ppo.CraneOptions.PushImage(pluginTarFilePath, imageToPush)
 					if err != nil {

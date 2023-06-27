@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/inventory"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
@@ -43,9 +44,10 @@ func newInventoryInitCmd() *cobra.Command {
 		Example: ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			iiOptions := inventory.InventoryInitOptions{
-				Repository:        piiFlags.Repository,
-				InventoryImageTag: piiFlags.InventoryImageTag,
-				Override:          piiFlags.Override,
+				Repository:          piiFlags.Repository,
+				InventoryImageTag:   piiFlags.InventoryImageTag,
+				Override:            piiFlags.Override,
+				ImageOperationsImpl: carvelhelpers.NewImageOperationsImpl(),
 			}
 			return iiOptions.InitializeInventory()
 		},

@@ -4,8 +4,6 @@
 // Package crane implements helper function for crane library
 package crane
 
-//go:generate counterfeiter -o ../fakes/imgpkgwrapper.go --fake-name ImgpkgWrapper . ImgpkgWrapper
-
 // CraneWrapper defines the crane command wrapper functions
 type CraneWrapper interface {
 	// SaveImage image as an archive file

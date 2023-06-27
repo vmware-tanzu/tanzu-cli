@@ -31,5 +31,5 @@ type Registry interface {
 	// This is equivalent to `imgpkg push -i <image> -f <filepath>`
 	PushImage(imageWithTag string, filePaths []string) error
 	// ResolveImage invokes `imgpkg tag resolve -i <image>` command
-	ResolveImage(image string) error
+	ResolveImage(imageWithTag string) error
 }

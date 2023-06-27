@@ -128,7 +128,7 @@ func (i *ImageOperationOptions) ResolveImage(image string) error {
 }
 
 // GetFileDigestFromImage invokes `DownloadImageAndSaveFilesToDir` to fetch the image and returns the digest of the specified file
-func (i *ImageOperationOptions) GetFileDigestFromImage(image, fileName string) (string, error) {
+func (i *ImageOperationOptions) GetFileDigestFromImage(imageWithTag, fileName string) (string, error) {
 	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		return "", errors.Wrap(err, "unable to create temporary directory")
@@ -136,9 +136,9 @@ func (i *ImageOperationOptions) GetFileDigestFromImage(image, fileName string) (
 	defer os.RemoveAll(tempDir)
 
 	// Pull image to the temporary directory
-	err = i.DownloadImageAndSaveFilesToDir(image, tempDir)
+	err = i.DownloadImageAndSaveFilesToDir(imageWithTag, tempDir)
 	if err != nil {
-		return "", errors.Wrapf(err, "unable to find image at %q", image)
+		return "", errors.Wrapf(err, "unable to find image at %q", imageWithTag)
 	}
 
 	// find the digest of the specified file

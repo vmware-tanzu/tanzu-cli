@@ -64,8 +64,7 @@ func newInventoryPluginGroupAddCmd() *cobra.Command {
 				InventoryDBFile:         ipgaFlags.InventoryDBFile,
 				DeactivatePluginGroup:   ipgaFlags.DeactivatePluginGroup,
 				Override:                ipgaFlags.Override,
-
-				ImageOperationsImpl: carvelhelpers.NewImageOperationsImpl(),
+				ImageOperationsImpl:     carvelhelpers.NewImageOperationsImpl(),
 			}
 			return pgaOptions.PluginGroupAdd()
 		},

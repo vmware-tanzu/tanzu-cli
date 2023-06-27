@@ -302,6 +302,7 @@ func (r *registry) ResolveImage(image string) error {
 			CACertPaths: r.opts.CACertPaths,
 			VerifyCerts: r.opts.VerifyCerts,
 			Insecure:    r.opts.Insecure,
+			Anon:        r.opts.Anon,
 		}
 	}
 
