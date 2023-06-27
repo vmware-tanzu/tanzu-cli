@@ -115,8 +115,8 @@ func (i *ImageOperationOptions) PushImage(imageWithTag string, filePaths []strin
 }
 
 // ResolveImage invokes `imgpkg tag resolve -i <image>` command
-func (i *ImageOperationOptions) ResolveImage(image string) error {
-	registryName, err := registry.GetRegistryName(image)
+func (i *ImageOperationOptions) ResolveImage(imageWithTag string) error {
+	registryName, err := registry.GetRegistryName(imageWithTag)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (i *ImageOperationOptions) ResolveImage(image string) error {
 	if err != nil {
 		return errors.Wrapf(err, "unable to initialize registry")
 	}
-	return reg.ResolveImage(image)
+	return reg.ResolveImage(imageWithTag)
 }
 
 // GetFileDigestFromImage invokes `DownloadImageAndSaveFilesToDir` to fetch the image and returns the digest of the specified file

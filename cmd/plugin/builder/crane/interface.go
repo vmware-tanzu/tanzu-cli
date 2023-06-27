@@ -6,10 +6,10 @@ package crane
 
 // CraneWrapper defines the crane command wrapper functions
 type CraneWrapper interface {
-	// SaveImage image as an archive file
-	SaveImage(image, pluginTarGZFilePath string) error
-	// PushImage publish the archive file to remote container registry
-	PushImage(pluginTarGZFilePath, image string) error
+	// SaveImage image as an tar file
+	SaveImage(image, pluginTarFilePath string) error
+	// PushImage publish the tar file to remote container registry
+	PushImage(pluginTarFilePath, image string) error
 }
 
 // NewCraneWrapper creates new CraneWrapper instance
