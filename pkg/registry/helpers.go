@@ -128,7 +128,7 @@ func isValidRegistryName(s string) bool {
 // (e.g. localhost:9876/tanzu-cli/plugins/plugin@sha256:3925a7a0e78ec439529c4bc9e26b4bbe95a01645325a8b2f66334be7e6b37ab6)
 func GetRegistryName(imageName string) (string, error) {
 	if !isValidRegistryName(imageName) {
-		return "", fmt.Errorf("Invalid registry name, will not attempt parsing it... %s", imageName)
+		return "", fmt.Errorf("invalid registry name, will not attempt parsing it... %s", imageName)
 	}
 	ref, err := regname.ParseReference(imageName)
 	if err != nil {
