@@ -6,11 +6,11 @@ package registry
 import (
 	"encoding/base64"
 	"fmt"
-	"net"
 	"os"
 	"runtime"
 	"strconv"
 	"strings"
+	"unicode"
 
 	regname "github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
@@ -107,17 +107,15 @@ func isValidRegistryName(s string) bool {
 		registry := registryAndPort[0]
 
 		if len(registryAndPort) == 2 {
+			// Check if the port part is a valid number
 			_, err := strconv.Atoi(registryAndPort[1])
 			if err != nil {
 				return false
 			}
 		}
 
-		if net.ParseIP(registry) != nil {
-			return false
-		}
-
-		if _, err := strconv.Atoi(string(registry[0])); err != nil {
+		// Check if the first character is a letter or number
+		if !unicode.IsLetter(rune(registry[0])) && !unicode.IsNumber(rune(registry[0])) {
 			return false
 		}
 	}
