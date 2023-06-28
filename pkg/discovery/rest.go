@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/pkg/errors"
 
@@ -19,8 +18,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
-
-var defaultTimeout = 5 * time.Second
 
 // Plugin contains information about a Tanzu CLI plugin discovered via a REST API.
 type Plugin struct {

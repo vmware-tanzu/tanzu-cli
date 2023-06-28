@@ -10,10 +10,13 @@ package discovery
 
 import (
 	"errors"
+	"time"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
+
+var defaultTimeout = 5 * time.Second
 
 // Discovery is the interface to fetch the list of available plugins
 type Discovery interface {
