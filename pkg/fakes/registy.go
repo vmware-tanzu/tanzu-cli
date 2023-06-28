@@ -123,6 +123,17 @@ type Registry struct {
 	pushImageReturnsOnCall map[int]struct {
 		result1 error
 	}
+	ResolveImageStub        func(string) error
+	resolveImageMutex       sync.RWMutex
+	resolveImageArgsForCall []struct {
+		arg1 string
+	}
+	resolveImageReturns struct {
+		result1 error
+	}
+	resolveImageReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -702,6 +713,67 @@ func (fake *Registry) PushImageReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *Registry) ResolveImage(arg1 string) error {
+	fake.resolveImageMutex.Lock()
+	ret, specificReturn := fake.resolveImageReturnsOnCall[len(fake.resolveImageArgsForCall)]
+	fake.resolveImageArgsForCall = append(fake.resolveImageArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.ResolveImageStub
+	fakeReturns := fake.resolveImageReturns
+	fake.recordInvocation("ResolveImage", []interface{}{arg1})
+	fake.resolveImageMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *Registry) ResolveImageCallCount() int {
+	fake.resolveImageMutex.RLock()
+	defer fake.resolveImageMutex.RUnlock()
+	return len(fake.resolveImageArgsForCall)
+}
+
+func (fake *Registry) ResolveImageCalls(stub func(string) error) {
+	fake.resolveImageMutex.Lock()
+	defer fake.resolveImageMutex.Unlock()
+	fake.ResolveImageStub = stub
+}
+
+func (fake *Registry) ResolveImageArgsForCall(i int) string {
+	fake.resolveImageMutex.RLock()
+	defer fake.resolveImageMutex.RUnlock()
+	argsForCall := fake.resolveImageArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *Registry) ResolveImageReturns(result1 error) {
+	fake.resolveImageMutex.Lock()
+	defer fake.resolveImageMutex.Unlock()
+	fake.ResolveImageStub = nil
+	fake.resolveImageReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *Registry) ResolveImageReturnsOnCall(i int, result1 error) {
+	fake.resolveImageMutex.Lock()
+	defer fake.resolveImageMutex.Unlock()
+	fake.ResolveImageStub = nil
+	if fake.resolveImageReturnsOnCall == nil {
+		fake.resolveImageReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.resolveImageReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *Registry) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -723,6 +795,8 @@ func (fake *Registry) Invocations() map[string][][]interface{} {
 	defer fake.listImageTagsMutex.RUnlock()
 	fake.pushImageMutex.RLock()
 	defer fake.pushImageMutex.RUnlock()
+	fake.resolveImageMutex.RLock()
+	defer fake.resolveImageMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

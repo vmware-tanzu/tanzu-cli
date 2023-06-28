@@ -52,7 +52,7 @@ func ReadPluginGroupManifest(pluginGroupManifestFile string) (*cli.PluginGroupMa
 
 // GetPluginArchiveRelativePath creates plugin archive relative path from metadata
 func GetPluginArchiveRelativePath(plugin cli.Plugin, osArch cli.Arch, version string) string {
-	pluginTarFileName := fmt.Sprintf("%s-%s.tar.gz", plugin.Name, osArch.String())
+	pluginTarFileName := fmt.Sprintf("%s-%s.tar", plugin.Name, osArch.String())
 	return filepath.Join(osArch.OS(), osArch.Arch(), plugin.Target, plugin.Name, version, pluginTarFileName)
 }
 

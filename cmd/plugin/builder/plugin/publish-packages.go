@@ -11,7 +11,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/docker"
+	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/crane"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
@@ -23,7 +23,7 @@ type PublishPluginPackageOptions struct {
 	Vendor             string
 	Repository         string
 	DryRun             bool
-	DockerOptions      docker.DockerWrapper
+	CraneOptions       crane.CraneWrapper
 
 	pluginManifestFile string
 }
@@ -51,26 +51,15 @@ func (ppo *PublishPluginPackageOptions) PublishPluginPackages() error {
 					continue
 				}
 
-				imageAfterLoad := fmt.Sprintf("%s/plugins/%s/%s/%s:%s", localRegistry, osArch.OS(), osArch.Arch(), pluginManifest.Plugins[i].Name, version)
 				imageToPush := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s:%s", ppo.Repository, ppo.Vendor, ppo.Publisher, osArch.OS(), osArch.Arch(), pluginManifest.Plugins[i].Target, pluginManifest.Plugins[i].Name, version)
-				log.Infof("publishing plugin 'name:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 
 				if ppo.DryRun {
-					log.Infof("command: 'docker load -i %s'", pluginTarFilePath)
-					log.Infof("command: 'docker tag %s %s'", imageAfterLoad, imageToPush)
-					log.Infof("command: 'docker push %s'", imageToPush)
+					log.Infof("command: 'crane push %s %s'", pluginTarFilePath, imageToPush)
 				} else {
-					err := ppo.DockerOptions.LoadImage(pluginTarFilePath)
+					log.Infof("publishing plugin 'name:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
+					err = ppo.CraneOptions.PushImage(pluginTarFilePath, imageToPush)
 					if err != nil {
-						return errors.Wrapf(err, "unable to load image for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
-					}
-					err = ppo.DockerOptions.TagImage(imageAfterLoad, imageToPush)
-					if err != nil {
-						return errors.Wrapf(err, "unable to retag image for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
-					}
-					err = ppo.DockerOptions.PushImage(imageToPush)
-					if err != nil {
-						return errors.Wrapf(err, "unable to push image for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
+						return errors.Wrapf(err, "unable to publish plugin (name:%s, target:%s, os:%s, arch:%s, version:%s)", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 					}
 					log.Infof("published plugin at '%s'", imageToPush)
 				}

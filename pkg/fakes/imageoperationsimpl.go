@@ -44,6 +44,20 @@ type ImageOperationsImpl struct {
 	downloadImageAndSaveFilesToDirReturnsOnCall map[int]struct {
 		result1 error
 	}
+	GetFileDigestFromImageStub        func(string, string) (string, error)
+	getFileDigestFromImageMutex       sync.RWMutex
+	getFileDigestFromImageArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	getFileDigestFromImageReturns struct {
+		result1 string
+		result2 error
+	}
+	getFileDigestFromImageReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	GetFilesMapFromImageStub        func(string) (map[string][]byte, error)
 	getFilesMapFromImageMutex       sync.RWMutex
 	getFilesMapFromImageArgsForCall []struct {
@@ -82,6 +96,17 @@ type ImageOperationsImpl struct {
 		result1 error
 	}
 	pushImageReturnsOnCall map[int]struct {
+		result1 error
+	}
+	ResolveImageStub        func(string) error
+	resolveImageMutex       sync.RWMutex
+	resolveImageArgsForCall []struct {
+		arg1 string
+	}
+	resolveImageReturns struct {
+		result1 error
+	}
+	resolveImageReturnsOnCall map[int]struct {
 		result1 error
 	}
 	invocations      map[string][][]interface{}
@@ -272,6 +297,71 @@ func (fake *ImageOperationsImpl) DownloadImageAndSaveFilesToDirReturnsOnCall(i i
 	fake.downloadImageAndSaveFilesToDirReturnsOnCall[i] = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *ImageOperationsImpl) GetFileDigestFromImage(arg1 string, arg2 string) (string, error) {
+	fake.getFileDigestFromImageMutex.Lock()
+	ret, specificReturn := fake.getFileDigestFromImageReturnsOnCall[len(fake.getFileDigestFromImageArgsForCall)]
+	fake.getFileDigestFromImageArgsForCall = append(fake.getFileDigestFromImageArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.GetFileDigestFromImageStub
+	fakeReturns := fake.getFileDigestFromImageReturns
+	fake.recordInvocation("GetFileDigestFromImage", []interface{}{arg1, arg2})
+	fake.getFileDigestFromImageMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *ImageOperationsImpl) GetFileDigestFromImageCallCount() int {
+	fake.getFileDigestFromImageMutex.RLock()
+	defer fake.getFileDigestFromImageMutex.RUnlock()
+	return len(fake.getFileDigestFromImageArgsForCall)
+}
+
+func (fake *ImageOperationsImpl) GetFileDigestFromImageCalls(stub func(string, string) (string, error)) {
+	fake.getFileDigestFromImageMutex.Lock()
+	defer fake.getFileDigestFromImageMutex.Unlock()
+	fake.GetFileDigestFromImageStub = stub
+}
+
+func (fake *ImageOperationsImpl) GetFileDigestFromImageArgsForCall(i int) (string, string) {
+	fake.getFileDigestFromImageMutex.RLock()
+	defer fake.getFileDigestFromImageMutex.RUnlock()
+	argsForCall := fake.getFileDigestFromImageArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *ImageOperationsImpl) GetFileDigestFromImageReturns(result1 string, result2 error) {
+	fake.getFileDigestFromImageMutex.Lock()
+	defer fake.getFileDigestFromImageMutex.Unlock()
+	fake.GetFileDigestFromImageStub = nil
+	fake.getFileDigestFromImageReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *ImageOperationsImpl) GetFileDigestFromImageReturnsOnCall(i int, result1 string, result2 error) {
+	fake.getFileDigestFromImageMutex.Lock()
+	defer fake.getFileDigestFromImageMutex.Unlock()
+	fake.GetFileDigestFromImageStub = nil
+	if fake.getFileDigestFromImageReturnsOnCall == nil {
+		fake.getFileDigestFromImageReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.getFileDigestFromImageReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *ImageOperationsImpl) GetFilesMapFromImage(arg1 string) (map[string][]byte, error) {
@@ -472,6 +562,67 @@ func (fake *ImageOperationsImpl) PushImageReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *ImageOperationsImpl) ResolveImage(arg1 string) error {
+	fake.resolveImageMutex.Lock()
+	ret, specificReturn := fake.resolveImageReturnsOnCall[len(fake.resolveImageArgsForCall)]
+	fake.resolveImageArgsForCall = append(fake.resolveImageArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	stub := fake.ResolveImageStub
+	fakeReturns := fake.resolveImageReturns
+	fake.recordInvocation("ResolveImage", []interface{}{arg1})
+	fake.resolveImageMutex.Unlock()
+	if stub != nil {
+		return stub(arg1)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fakeReturns.result1
+}
+
+func (fake *ImageOperationsImpl) ResolveImageCallCount() int {
+	fake.resolveImageMutex.RLock()
+	defer fake.resolveImageMutex.RUnlock()
+	return len(fake.resolveImageArgsForCall)
+}
+
+func (fake *ImageOperationsImpl) ResolveImageCalls(stub func(string) error) {
+	fake.resolveImageMutex.Lock()
+	defer fake.resolveImageMutex.Unlock()
+	fake.ResolveImageStub = stub
+}
+
+func (fake *ImageOperationsImpl) ResolveImageArgsForCall(i int) string {
+	fake.resolveImageMutex.RLock()
+	defer fake.resolveImageMutex.RUnlock()
+	argsForCall := fake.resolveImageArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *ImageOperationsImpl) ResolveImageReturns(result1 error) {
+	fake.resolveImageMutex.Lock()
+	defer fake.resolveImageMutex.Unlock()
+	fake.ResolveImageStub = nil
+	fake.resolveImageReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *ImageOperationsImpl) ResolveImageReturnsOnCall(i int, result1 error) {
+	fake.resolveImageMutex.Lock()
+	defer fake.resolveImageMutex.Unlock()
+	fake.ResolveImageStub = nil
+	if fake.resolveImageReturnsOnCall == nil {
+		fake.resolveImageReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.resolveImageReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *ImageOperationsImpl) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -481,12 +632,16 @@ func (fake *ImageOperationsImpl) Invocations() map[string][][]interface{} {
 	defer fake.copyImageToTarMutex.RUnlock()
 	fake.downloadImageAndSaveFilesToDirMutex.RLock()
 	defer fake.downloadImageAndSaveFilesToDirMutex.RUnlock()
+	fake.getFileDigestFromImageMutex.RLock()
+	defer fake.getFileDigestFromImageMutex.RUnlock()
 	fake.getFilesMapFromImageMutex.RLock()
 	defer fake.getFilesMapFromImageMutex.RUnlock()
 	fake.getImageDigestMutex.RLock()
 	defer fake.getImageDigestMutex.RUnlock()
 	fake.pushImageMutex.RLock()
 	defer fake.pushImageMutex.RUnlock()
+	fake.resolveImageMutex.RLock()
+	defer fake.resolveImageMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

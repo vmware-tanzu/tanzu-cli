@@ -13,8 +13,9 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/docker"
+	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/crane"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
@@ -22,7 +23,8 @@ import (
 type BuildPluginPackageOptions struct {
 	BinaryArtifactDir  string
 	PackageArtifactDir string
-	DockerOptions      docker.DockerWrapper
+	LocalOCIRegistry   string
+	CraneOptions       crane.CraneWrapper
 
 	pluginManifestFile string
 }
@@ -39,11 +41,6 @@ func (bpo *BuildPluginPackageOptions) BuildPluginPackages() error {
 	}
 
 	pluginManifest, err := helpers.ReadPluginManifest(bpo.pluginManifestFile)
-	if err != nil {
-		return err
-	}
-
-	dockerTemplateFile, err := getDockerTemplateFileForPluginPackageBuild()
 	if err != nil {
 		return err
 	}
@@ -75,18 +72,18 @@ func (bpo *BuildPluginPackageOptions) BuildPluginPackages() error {
 				}
 
 				pluginTarFilePath := filepath.Join(bpo.PackageArtifactDir, helpers.GetPluginArchiveRelativePath(pluginManifest.Plugins[i], osArch, version))
-				image := fmt.Sprintf("%s/plugins/%s/%s/%s:%s", localRegistry, osArch.OS(), osArch.Arch(), pluginManifest.Plugins[i].Name, version)
+				image := fmt.Sprintf("%s/plugins/%s/%s/%s:%s", bpo.LocalOCIRegistry, osArch.OS(), osArch.Arch(), pluginManifest.Plugins[i].Name, version)
 
 				log.Infof("Generating plugin package for 'plugin:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 
-				err = bpo.DockerOptions.BuildImage(image, dockerTemplateFile, filepath.Dir(pluginBinaryFilePath))
+				err = carvelhelpers.NewImageOperationsImpl().PushImage(image, []string{pluginBinaryFilePath})
 				if err != nil {
-					return errors.Wrapf(err, "unable to build package for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
+					return errors.Wrapf(err, "unable to push package to temporary registry for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 				}
 
-				err = bpo.DockerOptions.SaveImage(image, pluginTarFilePath)
+				err = bpo.CraneOptions.SaveImage(image, pluginTarFilePath)
 				if err != nil {
-					return errors.Wrapf(err, "unable to save package for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
+					return errors.Wrapf(err, "unable to generate package for plugin: %s, target: %s, os: %s, arch: %s, version: %s", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
 				}
 
 				log.Infof("Generated plugin package at %q", pluginTarFilePath)

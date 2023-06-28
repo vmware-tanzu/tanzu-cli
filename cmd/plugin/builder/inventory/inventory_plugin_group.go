@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/imgpkg"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -31,7 +31,7 @@ type InventoryPluginGroupUpdateOptions struct {
 	DeactivatePluginGroup   bool
 	Override                bool
 
-	ImgpkgOptions imgpkg.ImgpkgWrapper
+	ImageOperationsImpl carvelhelpers.ImageOperationsImpl
 }
 
 // PluginGroupAdd add plugin-group entry to the inventory database by downloading
@@ -140,7 +140,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getInventoryDBFile() (string, err
 	}
 
 	log.Infof("pulling plugin inventory database from: %q", pluginInventoryDBImage)
-	dbFile, err := inventoryDBDownload(ipuo.ImgpkgOptions, pluginInventoryDBImage, tempDir)
+	dbFile, err := inventoryDBDownload(ipuo.ImageOperationsImpl, pluginInventoryDBImage, tempDir)
 	if err != nil {
 		return "", errors.Wrapf(err, "error while downloading inventory database from the repository as image: %q", pluginInventoryDBImage)
 	}
@@ -159,7 +159,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) putInventoryDBFile(dbFile string)
 
 	// Publish the database to the remote repository
 	log.Info("publishing plugin inventory database")
-	err := inventoryDBUpload(ipuo.ImgpkgOptions, pluginInventoryDBImage, dbFile)
+	err := inventoryDBUpload(ipuo.ImageOperationsImpl, pluginInventoryDBImage, dbFile)
 	if err != nil {
 		return errors.Wrapf(err, "error while publishing inventory database to the repository as image: %q", pluginInventoryDBImage)
 	}

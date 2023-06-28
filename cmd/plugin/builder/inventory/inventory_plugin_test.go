@@ -13,8 +13,8 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
-	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
@@ -25,14 +25,14 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 
 	var referencedDBFile string
 
-	fakeImgpkgWrapper := &fakes.ImgpkgWrapper{}
+	fakeImgpkgWrapper := &fakes.ImageOperationsImpl{}
 	iip := InventoryPluginUpdateOptions{
-		Repository:        "test-repo.com",
-		InventoryImageTag: "latest",
-		ImgpkgOptions:     fakeImgpkgWrapper,
-		Vendor:            "fakevendor",
-		Publisher:         "fakepublisher",
-		ManifestFile:      manifestFile,
+		Repository:          "test-repo.com",
+		InventoryImageTag:   "latest",
+		ImageOperationsImpl: fakeImgpkgWrapper,
+		Vendor:              "fakevendor",
+		Publisher:           "fakepublisher",
+		ManifestFile:        manifestFile,
 	}
 
 	// pullDBImageStub create new empty database with the table schemas created
@@ -86,8 +86,8 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 		var _ = It("when plugin inventory database cannot be pulled from the repository", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(errors.New("image not found"))
-			fakeImgpkgWrapper.PullImageReturns(nil)
-			fakeImgpkgWrapper.PullImageReturnsOnCall(0, errors.New("unable to pull inventory database"))
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirReturns(nil)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirReturnsOnCall(0, errors.New("unable to pull inventory database"))
 
 			err := iip.PluginAdd()
 			Expect(err).To(HaveOccurred())
@@ -98,7 +98,7 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 		var _ = It("when plugin inventory database can be pulled from the repository but calculating plugin binary digest fails", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(errors.New("image not found"))
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStub)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStub)
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("", errors.New("error while getting digest"))
 
 			err := iip.PluginAdd()
@@ -110,7 +110,7 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 		var _ = It("when plugin inventory database can be pulled, plugin binary digest can be calculated by publishing image fails", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(errors.New("image not found"))
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStub)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStub)
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("fake-digest", nil)
 
 			err := iip.PluginAdd()
@@ -122,7 +122,7 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 		var _ = It("when all configuration are correct and inserting plugin with DeactivatePlugins=false", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStub)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStub)
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("fake-digest", nil)
 
 			iip.DeactivatePlugins = false
@@ -147,7 +147,7 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 		var _ = It("when all configuration are correct and inserting plugin with DeactivatePlugins=true", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStub)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStub)
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("fake-digest", nil)
 
 			iip.DeactivatePlugins = true
@@ -173,7 +173,7 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 		var _ = It("when specified pluginInventoryEntry doesn't exist in database", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStub)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStub)
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("fake-digest", nil)
 
 			iip.DeactivatePlugins = false
@@ -185,7 +185,7 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 		var _ = It("when all configuration are correct and DeactivatePlugins=false", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStubWithPlugins)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStubWithPlugins)
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("fake-digest", nil)
 
 			iip.DeactivatePlugins = false
@@ -208,7 +208,7 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 		var _ = It("when all configuration are correct and inserting plugin with DeactivatePlugins=true", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(nil)
-			fakeImgpkgWrapper.PullImageCalls(pullDBImageStubWithPlugins)
+			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStubWithPlugins)
 			fakeImgpkgWrapper.GetFileDigestFromImageReturns("fake-digest", nil)
 
 			iip.DeactivatePlugins = true
