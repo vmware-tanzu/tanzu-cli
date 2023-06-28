@@ -10,7 +10,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/pkg/errors"
 
@@ -20,8 +19,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
-
-var minConcurrent = 2
 
 // ReadPluginManifest reads the PluginManifest file and returns Manifest object
 func ReadPluginManifest(pluginManifestFile string) (*cli.Manifest, error) {
@@ -77,8 +74,8 @@ func GetDigest(filePath string) (string, error) {
 // ValidatePluginBinary validates the plugin binary file
 // Checks the binary file size if its empty
 // returns true if file is not empty and false if file is empty
-func ValidatePluginBinary(pluginBinaryFilePath string) (bool, error) {
-	log.Infof("Validating Plugin Binary file: %v", pluginBinaryFilePath)
+func ValidatePluginBinary(pluginBinaryFilePath, threadID string) (bool, error) {
+	log.Infof("%s Validating Plugin Binary file: %v", threadID, pluginBinaryFilePath)
 	// Check whether the plugin binary is empty by verifying if size is zero
 	fileEmpty, err := utils.IsFileEmpty(pluginBinaryFilePath)
 
@@ -87,36 +84,4 @@ func ValidatePluginBinary(pluginBinaryFilePath string) (bool, error) {
 	}
 
 	return !fileEmpty, nil
-}
-
-func GetMaxParallelism() int {
-	maxConcurrent := runtime.NumCPU() - 2
-	if maxConcurrent < minConcurrent {
-		maxConcurrent = minConcurrent
-	}
-	return maxConcurrent
-}
-
-var Identifiers = []string{
-	string("=> T01]"),
-	string("=> T02]"),
-	string("=> T03]"),
-	string("=> T04]"),
-	string("=> T05]"),
-	string("=> T06]"),
-	string("=> T07]"),
-	string("=> T08]"),
-	string("=> T09]"),
-	string("=> T10]"),
-	string("=> T11]"),
-	string("=> T12]"),
-}
-
-func GetID(i int) string {
-	index := i
-	if i >= len(Identifiers) {
-		// Well aren't you lucky
-		index = i % len(Identifiers)
-	}
-	return Identifiers[index]
 }

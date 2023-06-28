@@ -33,7 +33,7 @@ func TestNonEmptyValidatePluginBinary(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test a non-empty plugin binary file
-	valid, err := ValidatePluginBinary(tmpFile.Name())
+	valid, err := ValidatePluginBinary(tmpFile.Name(), "")
 	assert.Nil(t, err)
 	assert.Equal(t, true, valid)
 }
@@ -55,7 +55,7 @@ func TestEmptyValidatePluginBinary(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Test an empty plugin binary file
-	valid, err := ValidatePluginBinary(tmpFile.Name())
+	valid, err := ValidatePluginBinary(tmpFile.Name(), "")
 	assert.Nil(t, err)
 	assert.Equal(t, false, valid)
 }
