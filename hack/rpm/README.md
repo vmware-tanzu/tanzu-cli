@@ -14,6 +14,12 @@ operation, the new `rpm-package` Makefile target has been added; this Makefile
 target will first start a docker container and then run the
 `hack/rpm/build_package.sh` script.
 
+### Pre-requisite
+
+`make cross-build` should be run first to build the `tanzu` binary for linux
+in the location expected by the scripts.  To save time, the shorter
+`make build-cli-linux-amd64` target can be used.
+
 ```bash
 cd tanzu-cli
 make rpm-package
@@ -31,8 +37,8 @@ Linux machine with `yum` or `dnf` installed or using a docker container. For
 example, using `yum`:
 
 ```bash
-cd tanzu-cli
-docker run --rm -it -v $(pwd)/hack/rpm/_output/rpm:/tmp/rpm fedora
+$ cd tanzu-cli
+$ docker run --rm -it -v $(pwd)/hack/rpm/_output/rpm:/tmp/rpm fedora
 cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
 [tanzu-cli]
 name=Tanzu CLI
@@ -60,7 +66,7 @@ can be installed publicly as described in the next section.
 ## Installing the Tanzu CLI
 
 ```bash
-docker run --rm -it fedora
+$ docker run --rm -it fedora
 cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
 [tanzu-cli]
 name=Tanzu CLI
