@@ -28,6 +28,7 @@ VERSION=${VERSION#v}
 
 BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output/rpm/tanzu-cli
+ROOT_DIR=${BASE_DIR}/../..
 
 # Install build dependencies
 if ! command -v rpmlint &> /dev/null; then
@@ -42,6 +43,8 @@ mkdir -p ${HOME}/rpmbuild/SOURCES
 # Create the .rpm packages
 rm -rf ${OUTPUT_DIR}
 mkdir -p ${OUTPUT_DIR}
+cd ${ROOT_DIR}
+
 # RPM does not like - in the its package version
 PACKAGE_VERSION=${VERSION//-/_}
 rpmbuild --define "package_version ${PACKAGE_VERSION}" --define "release_version ${VERSION}" -bb ${BASE_DIR}/tanzu-cli.spec --target x86_64
@@ -61,8 +64,8 @@ fi
 createrepo ${OUTPUT_DIR}
 
 if [[ ! -z "${RPM_SIGNER}" ]]; then
- # instead of ... gpg --detach-sign --armor repodata/repomd.xml
- ${RPM_SIGNER} ${OUTPUT_DIR}/repodata/repomd.xml
+  # instead of ... gpg --detach-sign --armor repodata/repomd.xml
+  ${RPM_SIGNER} ${OUTPUT_DIR}/repodata/repomd.xml
 else
   echo skip rpmsigning repo
 fi
