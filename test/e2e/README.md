@@ -54,7 +54,7 @@ ContextCmd   ContextCmdOps
 }
 ```
 
-To customize the choice of the Tanzu binary for usage, you have the option to indicate it by utilizing the environment variable `TANZU_CLI_BINARY_PATH`.
+To customize the choice of the Tanzu binary for usage, you have the option to indicate it by utilizing the environment variable `TANZU_CLI_E2E_TEST_BINARY_PATH`.
 Additionally, within the Tests, the `WithTanzuBinary()` helper method allows you to personalize the Tanzu binary selection.
 
 Below are the major interfaces defined and implemented as part of the E2E

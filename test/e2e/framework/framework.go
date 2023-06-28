@@ -98,7 +98,7 @@ func init() {
 	TanzuFolderPath = filepath.Join(filepath.Join(TestDirPath, ConfigFolder), TanzuFolder)
 	ConfigFilePath = filepath.Join(TanzuFolderPath, ConfigFile)
 	ConfigNGFilePath = filepath.Join(TanzuFolderPath, ConfigNGFile)
-	TanzuBinary = os.Getenv(TanzuCLIBinaryPath)
+	TanzuBinary = os.Getenv(TanzuCLIE2ETestBinaryPath)
 	// Set `tanzu` as default binary if not specified tanzu cli binary path
 	if TanzuBinary == "" {
 		TanzuBinary = TanzuPrefix
