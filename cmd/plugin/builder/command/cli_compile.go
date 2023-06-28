@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +23,7 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	rtplugin "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
+	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/types"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -72,7 +72,6 @@ type PluginCompileArgs struct {
 
 const local = "local"
 
-var minConcurrent = 2
 var identifiers = []string{
 	string('\U0001F435'),
 	string('\U0001F43C'),
@@ -111,14 +110,6 @@ func getBuildArch(arch []string) []cli.Arch {
 		}
 	}
 	return arrArch
-}
-
-func getMaxParallelism() int {
-	maxConcurrent := runtime.NumCPU() - 2
-	if maxConcurrent < minConcurrent {
-		maxConcurrent = minConcurrent
-	}
-	return maxConcurrent
 }
 
 type errInfo struct {
@@ -160,7 +151,7 @@ func Compile(compileArgs *PluginCompileArgs) error {
 	}
 
 	// Limit the number of concurrent operations we perform so we don't overwhelm the system.
-	maxConcurrent := getMaxParallelism()
+	maxConcurrent := helpers.GetMaxParallelism()
 	guard := make(chan struct{}, maxConcurrent)
 
 	// Mix up IDs so we don't always get the same set.

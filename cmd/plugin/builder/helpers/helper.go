@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/pkg/errors"
 
@@ -19,6 +20,8 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
+
+var minConcurrent = 2
 
 // ReadPluginManifest reads the PluginManifest file and returns Manifest object
 func ReadPluginManifest(pluginManifestFile string) (*cli.Manifest, error) {
@@ -84,4 +87,36 @@ func ValidatePluginBinary(pluginBinaryFilePath string) (bool, error) {
 	}
 
 	return !fileEmpty, nil
+}
+
+func GetMaxParallelism() int {
+	maxConcurrent := runtime.NumCPU() - 2
+	if maxConcurrent < minConcurrent {
+		maxConcurrent = minConcurrent
+	}
+	return maxConcurrent
+}
+
+var Identifiers = []string{
+	string("=> T01]"),
+	string("=> T02]"),
+	string("=> T03]"),
+	string("=> T04]"),
+	string("=> T05]"),
+	string("=> T06]"),
+	string("=> T07]"),
+	string("=> T08]"),
+	string("=> T09]"),
+	string("=> T10]"),
+	string("=> T11]"),
+	string("=> T12]"),
+}
+
+func GetID(i int) string {
+	index := i
+	if i >= len(Identifiers) {
+		// Well aren't you lucky
+		index = i % len(Identifiers)
+	}
+	return Identifiers[index]
 }

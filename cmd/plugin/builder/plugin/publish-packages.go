@@ -5,9 +5,12 @@ package plugin
 
 import (
 	"fmt"
+	"math/rand"
 	"path/filepath"
+	"sync"
 
 	"github.com/pkg/errors"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
@@ -43,29 +46,54 @@ func (ppo *PublishPluginPackageOptions) PublishPluginPackages() error {
 
 	log.Infof("using plugin package artifacts from %q", ppo.PackageArtifactDir)
 
+	// Limit the number of concurrent operations we perform so we don't overwhelm the system.
+	maxConcurrent := helpers.GetMaxParallelism()
+	guard := make(chan struct{}, maxConcurrent)
+	var wg sync.WaitGroup
+	// Mix up IDs so we don't always get the same set.
+	randSkew := rand.Intn(len(helpers.Identifiers)) // nolint:gosec
+	errorList := []error{}
+
+	publishPluginPackage := func(p cli.Plugin, osArch cli.Arch, version, id string) {
+		defer func() {
+			<-guard
+			wg.Done()
+		}()
+
+		pluginTarFilePath := filepath.Join(ppo.PackageArtifactDir, helpers.GetPluginArchiveRelativePath(p, osArch, version))
+		if !utils.PathExists(pluginTarFilePath) {
+			return
+		}
+
+		imageToPush := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s:%s", ppo.Repository, ppo.Vendor, ppo.Publisher, osArch.OS(), osArch.Arch(), p.Target, p.Name, version)
+
+		if ppo.DryRun {
+			log.Infof("command: 'crane push %s %s'", pluginTarFilePath, imageToPush)
+		} else {
+			log.Infof("publishing plugin 'name:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", p.Name, p.Target, osArch.OS(), osArch.Arch(), version)
+			err = ppo.CraneOptions.PushImage(pluginTarFilePath, imageToPush)
+			if err != nil {
+				errorList = append(errorList, errors.Wrapf(err, "unable to publish plugin (name:%s, target:%s, os:%s, arch:%s, version:%s)", p.Name, p.Target, osArch.OS(), osArch.Arch(), version))
+				return
+			}
+			log.Infof("published plugin at '%s'", imageToPush)
+		}
+	}
+
+	id := 0
 	for i := range pluginManifest.Plugins {
 		for _, osArch := range cli.AllOSArch {
 			for _, version := range pluginManifest.Plugins[i].Versions {
-				pluginTarFilePath := filepath.Join(ppo.PackageArtifactDir, helpers.GetPluginArchiveRelativePath(pluginManifest.Plugins[i], osArch, version))
-				if !utils.PathExists(pluginTarFilePath) {
-					continue
-				}
-
-				imageToPush := fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s:%s", ppo.Repository, ppo.Vendor, ppo.Publisher, osArch.OS(), osArch.Arch(), pluginManifest.Plugins[i].Target, pluginManifest.Plugins[i].Name, version)
-
-				if ppo.DryRun {
-					log.Infof("command: 'crane push %s %s'", pluginTarFilePath, imageToPush)
-				} else {
-					log.Infof("publishing plugin 'name:%s' 'target:%s' 'os:%s' 'arch:%s' 'version:%s'", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
-					err = ppo.CraneOptions.PushImage(pluginTarFilePath, imageToPush)
-					if err != nil {
-						return errors.Wrapf(err, "unable to publish plugin (name:%s, target:%s, os:%s, arch:%s, version:%s)", pluginManifest.Plugins[i].Name, pluginManifest.Plugins[i].Target, osArch.OS(), osArch.Arch(), version)
-					}
-					log.Infof("published plugin at '%s'", imageToPush)
-				}
+				wg.Add(1)
+				guard <- struct{}{}
+				go publishPluginPackage(pluginManifest.Plugins[i], osArch, version, helpers.GetID(id+randSkew))
+				id++
 			}
 		}
 	}
 
-	return nil
+	// wait for all WaitGroup to complete before continuing
+	wg.Wait()
+
+	return kerrors.NewAggregate(errorList)
 }
