@@ -94,27 +94,26 @@ var createCtxCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	RunE:  createCtx,
 	Example: `
-	# Create a TKG management cluster context using endpoint
-	tanzu context create mgmt-cluster --endpoint "https://k8s.example.com[:port]"
+    # Create a TKG management cluster context using endpoint
+    tanzu context create mgmt-cluster --endpoint "https://k8s.example.com[:port]"
 
-	# Create a TKG management cluster context using kubeconfig path and context
-	tanzu context create mgmt-cluster --kubeconfig path/to/kubeconfig --kubecontext kubecontext
+    # Create a TKG management cluster context using kubeconfig path and context
+    tanzu context create mgmt-cluster --kubeconfig path/to/kubeconfig --kubecontext kubecontext
 
- 	#  Create a TKG management cluster context by using the provided CA Bundle for TLS verification:
+    # Create a TKG management cluster context by using the provided CA Bundle for TLS verification:
     tanzu context create --endpoint https://k8s.example.com[:port] --endpoint-ca-certificate /path/to/ca/ca-cert
 
- 	# Create a TKG management cluster context by explicit request to skip TLS verification, which is insecure:
-  	tanzu context create --endpoint https://k8s.example.com[:port] --insecure-skip-tls-verify
+    # Create a TKG management cluster context by explicit request to skip TLS verification, which is insecure:
+    tanzu context create --endpoint https://k8s.example.com[:port] --insecure-skip-tls-verify
 
-	# Create a TKG management cluster context using default kubeconfig path and a kubeconfig context
-	tanzu context create mgmt-cluster --kubecontext kubecontext
+    # Create a TKG management cluster context using default kubeconfig path and a kubeconfig context
+    tanzu context create mgmt-cluster --kubecontext kubecontext
 
-	[*] : User has two options to create a kubernetes cluster context. User can choose the control
-	plane option by providing 'endpoint', or use the kubeconfig for the cluster by providing
-	'kubeconfig' and 'context'. If only '--context' is set and '--kubeconfig' is not set
-	$KUBECONFIG env variable would be used and, if $KUBECONFIG env is also not set default
-	kubeconfig($HOME/.kube/config) would be used.
-	`,
+    [*] : Users have two options to create a kubernetes cluster context. They can choose the control
+    plane option by providing 'endpoint', or use the kubeconfig for the cluster by providing
+    'kubeconfig' and 'context'. If only '--context' is set and '--kubeconfig' is not, the
+    $KUBECONFIG env variable will be used and, if the $KUBECONFIG env is also not set, the default
+    kubeconfig file ($HOME/.kube/config) will be used.`,
 }
 
 func initCreateCtxCmd() {

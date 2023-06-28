@@ -62,30 +62,29 @@ func init() {
 	loginCmd.Deprecated = msg
 
 	loginCmd.Example = `
-	# Login to TKG management cluster using endpoint
-	tanzu login --endpoint "https://login.example.com"  --name mgmt-cluster
+    # Login to TKG management cluster using endpoint
+    tanzu login --endpoint "https://login.example.com"  --name mgmt-cluster
 
- 	#  Login to TKG management cluster by using the provided CA Bundle for TLS verification:
+    #  Login to TKG management cluster by using the provided CA Bundle for TLS verification:
     tanzu login --endpoint https://k8s.example.com[:port] --endpoint-ca-certificate /path/to/ca/ca-cert
 
- 	# Login to TKG management cluster by explicit request to skip TLS verification, which is insecure:
-  	tanzu login --endpoint https://k8s.example.com[:port] --insecure-skip-tls-verify
+    # Login to TKG management cluster by explicit request to skip TLS verification, which is insecure:
+    tanzu login --endpoint https://k8s.example.com[:port] --insecure-skip-tls-verify
 
-	# Login to TKG management cluster by using kubeconfig path and context for the management cluster
-	tanzu login --kubeconfig path/to/kubeconfig --context path/to/context --name mgmt-cluster
+    # Login to TKG management cluster by using kubeconfig path and context for the management cluster
+    tanzu login --kubeconfig path/to/kubeconfig --context path/to/context --name mgmt-cluster
 
-	# Login to TKG management cluster by using default kubeconfig path and context for the management cluster
-	tanzu login  --context path/to/context --name mgmt-cluster
+    # Login to TKG management cluster by using default kubeconfig path and context for the management cluster
+    tanzu login  --context path/to/context --name mgmt-cluster
 
-	# Login to an existing server
-	tanzu login --server mgmt-cluster
+    # Login to an existing server
+    tanzu login --server mgmt-cluster
 
-	[*] : User has two options to login to TKG. User can choose the login endpoint option
-	by providing 'endpoint', or user can choose to use the kubeconfig for the management cluster by
-	providing 'kubeconfig' and 'context'. If only '--context' is set and '--kubeconfig' is unset
-	$KUBECONFIG env variable would be used and, if $KUBECONFIG env is also unset default 
-	kubeconfig($HOME/.kube/config) would be used
-	`
+    [*] : Users have two options to login to TKG. They can choose the login endpoint option
+    by providing 'endpoint', or can choose to use the kubeconfig for the management cluster by
+    providing 'kubeconfig' and 'context'. If only '--context' is set and '--kubeconfig' is not,
+    the $KUBECONFIG env variable will be used and, if the $KUBECONFIG env is also not set, the
+    default kubeconfig file ($HOME/.kube/config) will be used.`
 }
 
 func login(cmd *cobra.Command, args []string) (err error) {

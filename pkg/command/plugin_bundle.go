@@ -26,12 +26,11 @@ func newDownloadBundlePluginCmd() *cobra.Command {
 		Long: `Download a plugin bundle to the local file system to be used when migrating plugins
 to an internet-restricted environment. Please also see the "upload-bundle" command.`,
 		Example: `
-# Download a plugin bundle for a specific group version from the default discovery source
-tanzu plugin download-bundle --to-tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --group vmware-tkg/default:v1.0.0
+    # Download a plugin bundle for a specific group version from the default discovery source
+    tanzu plugin download-bundle --to-tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --group vmware-tkg/default:v1.0.0
 
-# Download a plugin bundle with the entire plugin repository from a custom discovery source
-tanzu plugin download-bundle --image custom.registry.vmware.com/tkg/tanzu-plugins/plugin-inventory:latest --to-tar /tmp/plugin_bundle_complete.tar.gz
-		`,
+    # Download a plugin bundle with the entire plugin repository from a custom discovery source
+    tanzu plugin download-bundle --image custom.registry.vmware.com/tkg/tanzu-plugins/plugin-inventory:latest --to-tar /tmp/plugin_bundle_complete.tar.gz`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			options := airgapped.DownloadPluginBundleOptions{
 				PluginInventoryImage: dpbo.pluginDiscoveryOCIImage,
@@ -67,9 +66,9 @@ func newUploadBundlePluginCmd() *cobra.Command {
 		Long: `Upload a plugin bundle to an alternate container registry for use in an internet-restricted
 environment. The plugin bundle is obtained using the "download-bundle" command.`,
 		Example: `
-# Upload the plugin bundle to the remote repository
-tanzu plugin upload-bundle --tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/
-tanzu plugin upload-bundle --tar /tmp/plugin_bundle_complete.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/`,
+    # Upload the plugin bundle to the remote repository
+    tanzu plugin upload-bundle --tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/
+    tanzu plugin upload-bundle --tar /tmp/plugin_bundle_complete.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			options := airgapped.UploadPluginBundleOptions{
 				Tar:             upbo.sourceTar,

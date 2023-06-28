@@ -107,7 +107,6 @@ func newAddCertCmd() *cobra.Command {
 
     # Set to allow insecure (http) connection while interacting with host
     tanzu config cert add --host test.vmware.com  --insecure true`,
-
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if skipCertVerifyForAdd != "" {
 				if !strings.EqualFold(skipCertVerifyForAdd, "true") && !strings.EqualFold(skipCertVerifyForAdd, "false") {
@@ -160,9 +159,8 @@ func newUpdateCertCmd() *cobra.Command {
     # Update whether to skip verifying the certificate while interacting with host
     tanzu config cert update test.vmware.com  --skip-cert-verify true
 
-	# Update whether to allow insecure (http) connection while interacting with host
-	tanzu config cert update test.vmware.com  --insecure true`,
-
+    # Update whether to allow insecure (http) connection while interacting with host
+    tanzu config cert update test.vmware.com  --insecure true`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if skipCertVerifyForUpdate != "" {
 				if !strings.EqualFold(skipCertVerifyForUpdate, "true") && !strings.EqualFold(skipCertVerifyForUpdate, "false") {
