@@ -9,9 +9,20 @@ how to install the CLI from that repository.
 Executing the `hack/apt/build_package.sh` script will build the Debian packages
 under `hack/apt/_output`. The `hack/apt/build_package.sh` script is meant to
 be run on a Linux machine that has `apt` installed. This can be done in
-docker. To facilitate this operation, the new `apt-package` Makefile target has
-been added; this Makefile target will first start a docker container and then
-run the `hack/apt/build_package.sh` script.
+docker.
+
+Then the `hack/apt/build_package_repo.sh` needs to be executed to build the
+Debian repository containing the packages.
+
+To facilitate this operation, the `apt-package` Makefile target can be used;
+this Makefile target will first start a docker container and then
+run the `hack/apt/build_package*.sh` scripts.
+
+### Pre-requisite
+
+`make cross-build` should be run first to build the `tanzu` binary for linux
+in the location expected by the scripts.  To save time, the shorter
+`make build-cli-linux-amd64` target can be used.
 
 ```bash
 cd tanzu-cli

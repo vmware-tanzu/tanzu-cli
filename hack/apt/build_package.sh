@@ -21,6 +21,7 @@ VERSION=${VERSION#v}
 
 BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output
+ARTIFACTS_DIR=${BASE_DIR}/../../artifacts
 
 # Install build dependencies
 if ! command -v curl &> /dev/null; then
@@ -44,15 +45,12 @@ for arch in amd64 arm64; do
    echo "Building debian package for $arch..."
    echo "===================================="
 
-   mkdir -p ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/usr/bin
-
    # For now, we don't have an ARM64 build, so we get the AMD64 one and use it for ARM64.
    # This is for Apple M1 machines which normally have an emulator.
-   # TODO: Replace all instances of "amd64" with "${arch}"
-   curl -sLo tanzu-cli-linux-${arch}.tar.gz https://github.com/vmware-tanzu/tanzu-cli/releases/download/v${VERSION}/tanzu-cli-linux-amd64.tar.gz
-
-   tar xzf tanzu-cli-linux-${arch}.tar.gz --strip-components=1 v${VERSION}/tanzu-cli-linux_amd64
-   mv tanzu-cli-linux_amd64 ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/usr/bin/tanzu
+   # TODO: Replace all instances of "${fakeArch}" with "${arch}"
+   fakeArch=amd64
+   mkdir -p ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/usr/bin
+   cp ${ARTIFACTS_DIR}/linux/${fakeArch}/cli/core/v${VERSION}/tanzu-cli-linux_${fakeArch} ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/usr/bin/tanzu
 
    # Create the control file
    mkdir -p ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/DEBIAN
