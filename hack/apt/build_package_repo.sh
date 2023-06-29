@@ -4,9 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set -e
+set -x
 
-if [ $(uname) != "Linux" ] || [ -z "$(command -v apt)" ]; then
-   echo "This script must be run on a Linux system that uses the APT package manager"
+if [ $(uname) != "Linux" ]; then
+   echo "This script must be run on a Linux system"
+   exit 1
+fi
+
+# Use apt-get, but also support dnf/yum
+PKG_MGR=$(command -v apt-get || command -v dnf || command -v yum || true)
+
+if [ -z "$PKG_MGR" ]; then
+   echo "This script requires one of the following package managers: apt-get, dnf or yum"
    exit 1
 fi
 
@@ -24,8 +33,8 @@ OUTPUT_DIR=${BASE_DIR}/_output
 
 # Install build dependencies
 if ! command -v reprepro &> /dev/null; then
-   apt-get update
-   apt-get install -y reprepro
+   ${PKG_MGR} update -y
+   ${PKG_MGR} install -y reprepro
 fi
 
 # Assumes ${OUTPUT_DIR} is populated from build_package.sh

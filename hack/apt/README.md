@@ -34,6 +34,11 @@ repository will be generated as a directory called `_output/apt` which will
 contain the two built packages. Please see the section on publishing the
 repository for more details.
 
+## Using fedora
+
+The package build scripts support building on a fedora machine.
+This can be done using `make apt-package APT_BUILDER_IMAGE=fedora`.
+
 ## Testing the installation of the Tanzu CLI locally
 
 We can install the Tanzu CLI using the newly built Debian repository locally on
