@@ -52,6 +52,7 @@ const (
 	// String used to request the user to use the --target flag
 	missingTargetStr             = "unable to uniquely identify plugin '%v'. Please specify the target (" + common.TargetList + ") of the plugin using the `--target` flag"
 	errorWhileDiscoveringPlugins = "there was an error while discovering plugins, error information: '%v'"
+	errorNoDiscoverySourcesFound = "there are no plugin discovery sources available. Please run 'tanzu plugin source init'"
 )
 
 var execCommand = exec.Command
@@ -140,6 +141,8 @@ func DiscoverStandalonePlugins(criteria *discovery.PluginDiscoveryCriteria) ([]d
 	discoveries, err := getPluginDiscoveries()
 	if err != nil {
 		return nil, err
+	} else if len(discoveries) == 0 {
+		return nil, errors.New(errorNoDiscoverySourcesFound)
 	}
 
 	plugins, err := discoverSpecificPlugins(discoveries, criteria)
@@ -159,6 +162,9 @@ func DiscoverPluginGroups(criteria *discovery.GroupDiscoveryCriteria) ([]*plugin
 	discoveries, err := getPluginDiscoveries()
 	if err != nil {
 		return nil, err
+	}
+	if len(discoveries) == 0 {
+		return nil, errors.New(errorNoDiscoverySourcesFound)
 	}
 
 	groups, err := discoverSpecificPluginGroups(discoveries, criteria)
@@ -704,8 +710,11 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 	}
 
 	discoveries, err := getPluginDiscoveries()
-	if err != nil || len(discoveries) == 0 {
+	if err != nil {
 		return err
+	}
+	if len(discoveries) == 0 {
+		return errors.New(errorNoDiscoverySourcesFound)
 	}
 	criteria := &discovery.PluginDiscoveryCriteria{
 		Name:    pluginName,
@@ -816,8 +825,11 @@ func UpgradePlugin(pluginName, version string, target configtypes.Target) error 
 // The group identifier including the version used is returned.
 func InstallPluginsFromGroup(pluginName, groupIDAndVersion string) (string, error) { //nolint:gocyclo
 	discoveries, err := getPluginDiscoveries()
-	if err != nil || len(discoveries) == 0 {
+	if err != nil {
 		return "", err
+	}
+	if len(discoveries) == 0 {
+		return "", errors.New(errorNoDiscoverySourcesFound)
 	}
 
 	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupIDAndVersion)
