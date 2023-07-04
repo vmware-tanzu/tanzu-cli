@@ -23,4 +23,5 @@ const (
 	E2ETestEnvironment                                = "TANZU_CLI_E2E_TEST_ENVIRONMENT"
 	// ControlPlaneEndpointType is the control-plane endpoint type to be used for "self-managed-tmc"(this list may grow in future)
 	ControlPlaneEndpointType = "TANZU_CLI_CONTROL_PLANE_ENDPOINT_TYPE"
+	ShowTelemetryConsoleLogs = "TANZU_CLI_SHOW_TELEMETRY_CONSOLE_LOGS"
 )

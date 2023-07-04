@@ -20,6 +20,9 @@ var (
 	// DefaultLocalPluginDistroDir is the default Local plugin distribution root directory
 	// This directory will be used for local discovery and local distribute of plugins
 	DefaultLocalPluginDistroDir = filepath.Join(xdg.Home, ".config", "tanzu-plugins")
+
+	// DefaultCLITelemetryDir is the default telemetry directory
+	DefaultCLITelemetryDir = filepath.Join(xdg.Home, ".config", "tanzu-cli-telemetry")
 )
 
 const (

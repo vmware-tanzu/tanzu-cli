@@ -5,11 +5,13 @@
 package command
 
 import (
-	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -22,10 +24,11 @@ import (
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/telemetry"
 )
 
 // NewRootCmd creates a root command.
-func NewRootCmd() (*cobra.Command, error) {
+func NewRootCmd() (*cobra.Command, error) { //nolint:gocyclo
 	var rootCmd = newRootCmd()
 	uFunc := cli.NewMainUsage().UsageFunc()
 	rootCmd.SetUsageFunc(uFunc)
@@ -45,7 +48,9 @@ func NewRootCmd() (*cobra.Command, error) {
 		//       If we decide to fold this functionality into existing 'tanzu telemetry' plugin
 		newCEIPParticipationCmd(),
 	)
-
+	if _, err := ensureCLIInstanceID(); err != nil {
+		return nil, errors.Wrap(err, "failed to ensure CLI ID")
+	}
 	// If the context and target feature is enabled, add the corresponding commands under root.
 	if config.IsFeatureActivated(constants.FeatureContextCommand) {
 		rootCmd.AddCommand(
@@ -66,6 +71,7 @@ func NewRootCmd() (*cobra.Command, error) {
 	if err != nil {
 		return nil, err
 	}
+	telemetry.Client().SetInstalledPlugins(plugins)
 	if err = config.CopyLegacyConfigDir(); err != nil {
 		return nil, fmt.Errorf("failed to copy legacy configuration directory to new location: %w", err)
 	}
@@ -131,6 +137,10 @@ func newRootCmd() *cobra.Command {
 		// Flag parsing must be deactivated because the root plugin won't know about all flags.
 		DisableFlagParsing: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := telemetry.Client().UpdateCmdPreRunMetrics(cmd, args); err != nil {
+				telemetry.LogError(err, "")
+			}
+
 			// Prompt user for EULA and CEIP agreement if necessary, except for
 			skipCommands := []string{
 				// The shell completion setup is not interactive, so it should not trigger a prompt
@@ -259,6 +269,18 @@ func duplicateAliasWarning(rootCmd *cobra.Command) {
 		}
 	}
 }
+func ensureCLIInstanceID() (string, error) {
+	cliID, _ := config.GetCLIId()
+	if cliID != "" {
+		return cliID, nil
+	}
+	cliID = uuid.New().String()
+	err := config.SetCLIId(cliID)
+	if err != nil {
+		return "", err
+	}
+	return cliID, nil
+}
 
 // Execute executes the CLI.
 func Execute() error {
@@ -266,5 +288,23 @@ func Execute() error {
 	if err != nil {
 		return err
 	}
-	return root.Execute()
+	executionErr := root.Execute()
+	exitCode := 0
+	if executionErr != nil {
+		exitCode = 1
+		if errStr, ok := executionErr.(*exec.ExitError); ok {
+			// If a plugin exited with an error, we don't want to print its
+			// exit status as a string, but want to use it as our own exit code.
+			exitCode = (errStr.ExitCode())
+		}
+	}
+
+	postRunMetrics := &telemetry.PostRunMetrics{ExitCode: exitCode}
+	if updateErr := telemetry.Client().UpdateCmdPostRunMetrics(postRunMetrics); updateErr != nil {
+		telemetry.LogError(updateErr, "")
+	} else if saveErr := telemetry.Client().SaveMetrics(); saveErr != nil {
+		telemetry.LogError(saveErr, "")
+	}
+
+	return executionErr
 }
