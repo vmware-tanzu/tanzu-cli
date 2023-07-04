@@ -16,8 +16,10 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/google/gnostic v0.6.9
 	github.com/google/go-containerregistry v0.15.2
+	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/imdario/mergo v0.3.13
+	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/k14s/kbld v0.32.0
 	github.com/lithammer/dedent v1.1.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
@@ -30,6 +32,7 @@ require (
 	github.com/sigstore/sigstore v1.6.4
 	github.com/spf13/afero v1.9.3
 	github.com/spf13/cobra v1.7.0
+	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.3
 	github.com/tj/assert v0.0.3
 	github.com/verybluebot/tarinator-go v0.0.0-20190613183509-5ab4e1193986
@@ -37,7 +40,7 @@ require (
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-cli/test/e2e/framework v0.0.0-00010101000000-000000000000
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686
-	github.com/vmware-tanzu/tanzu-plugin-runtime v0.90.0
+	github.com/vmware-tanzu/tanzu-plugin-runtime v1.0.0-dev.0.20230706203022-6b662c0fddaa
 	go.pinniped.dev v0.20.0
 	go.uber.org/multierr v1.11.0
 	golang.org/x/mod v0.10.0
@@ -140,7 +143,6 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20221118152302-e6195bd50e26 // indirect
 	github.com/google/trillian v1.5.2 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.2 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
@@ -151,7 +153,6 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b // indirect
 	github.com/k14s/semver/v4 v4.0.1-0.20210701191048-266d47ac6115 // indirect
 	github.com/k14s/starlark-go v0.0.0-20200720175618-3a5c849cc368 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
@@ -193,7 +194,6 @@ require (
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.15.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect

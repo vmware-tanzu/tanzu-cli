@@ -28,9 +28,10 @@ func GetCmdForPlugin(p *PluginInfo) *cobra.Command {
 		},
 		DisableFlagParsing: true,
 		Annotations: map[string]string{
-			"group": string(p.Group),
-			"scope": p.Scope,
-			"type":  common.CommandTypePlugin,
+			"group":                  string(p.Group),
+			"scope":                  p.Scope,
+			"type":                   common.CommandTypePlugin,
+			"pluginInstallationPath": p.InstallationPath,
 		},
 		Hidden:  p.Hidden,
 		Aliases: p.Aliases,
