@@ -208,10 +208,12 @@ Edit the file as appropriate.
 
 To publish one or more built plugins to a target repository, one would need to
 
+1. Have built each plugin for all required os/architecture combinations (`make plugin-build`)
 1. Specify the repository with the env var PLUGIN_PUBLISH_REPOSITORY (the default location is localhost:5001/test/v1/tanzu-cli/plugins), which is where the local test repository is deployed
 1. Have push access to said repository location
 
 ```sh
+make plugin-build
 make plugin-publish-packages
 ```
 
