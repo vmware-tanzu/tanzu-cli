@@ -143,7 +143,6 @@ func newAddDiscoverySourceCmd() *cobra.Command {
 
     # Add an OCI discovery source. URI should be an OCI image.
     tanzu plugin source add --name standalone-oci --type oci --uri projects.registry.vmware.com/tkg/tanzu-plugins/standalone:latest`,
-
 		RunE: func(cmd *cobra.Command, args []string) error {
 			newDiscoverySource, err := createDiscoverySource(discoverySourceType, discoverySourceName, uri)
 			if err != nil {

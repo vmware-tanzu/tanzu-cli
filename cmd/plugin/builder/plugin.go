@@ -61,14 +61,15 @@ func newPluginBuildCmd() *cobra.Command {
 		Use:          "build",
 		Short:        "Build plugins",
 		SilenceUsage: true,
-		Example: `# Build all plugins under 'cmd/plugin' directory for local host os and arch
-  tanzu builder plugin build --path ./cmd/plugin --version v0.0.2 --os-arch local
+		Example: `
+    # Build all plugins under 'cmd/plugin' directory for local host os and arch
+    tanzu builder plugin build --path ./cmd/plugin --version v0.0.2 --os-arch local
 
-  # Build all plugins under 'cmd/plugin' directory for os-arch 'darwin_amd64', 'linux_amd64', 'windows_amd64'
-  tanzu builder plugin build --path ./cmd/plugin --version v0.0.2 --os-arch darwin_amd64 --os-arch linux_amd64 --os-arch windows_amd64
+    # Build all plugins under 'cmd/plugin' directory for os-arch 'darwin_amd64', 'linux_amd64', 'windows_amd64'
+    tanzu builder plugin build --path ./cmd/plugin --version v0.0.2 --os-arch darwin_amd64 --os-arch linux_amd64 --os-arch windows_amd64
 
-  # Build only foo plugin under 'cmd/plugin' directory for all supported os-arch
-  tanzu builder plugin build --path ./cmd/plugin --version v0.0.2 --os-arch all --match foo`,
+    # Build only foo plugin under 'cmd/plugin' directory for all supported os-arch
+    tanzu builder plugin build --path ./cmd/plugin --version v0.0.2 --os-arch all --match foo`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			compileArgs := &command.PluginCompileArgs{
 				Match:                      pbFlags.Match,

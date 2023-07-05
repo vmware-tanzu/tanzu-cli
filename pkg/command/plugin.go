@@ -320,13 +320,13 @@ func newInstallPluginCmd() *cobra.Command {
     tanzu plugin install --group vmware-tkg/default
 
     # Install the latest version of plugin "myPlugin"
-	# If the plugin exists for more than one target, an error will be thrown
+    # If the plugin exists for more than one target, an error will be thrown
     tanzu plugin install myPlugin
 
     # Install the latest version of plugin "myPlugin" for target kubernetes
     tanzu plugin install myPlugin --target k8s
 
-    # Install version v1.0.0 of plugin "myPlugin" 
+    # Install version v1.0.0 of plugin "myPlugin"
     tanzu plugin install myPlugin --version v1.0.0`
 		installCmd.Long = "Install a specific plugin by name or specify all to install all plugins of a group"
 	}
