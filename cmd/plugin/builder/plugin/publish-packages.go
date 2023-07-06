@@ -49,7 +49,7 @@ func (ppo *PublishPluginPackageOptions) PublishPluginPackages() error {
 	maxConcurrent := helpers.GetMaxParallelism()
 	guard := make(chan struct{}, maxConcurrent)
 	var wg sync.WaitGroup
-	fatalErrors := make(chan helpers.ErrInfo, len(pluginManifest.Plugins)*len(cli.AllOSArch))
+	fatalErrors := make(chan helpers.ErrInfo, helpers.GetNumberOfIndividualPluginBinariesFromManifest(pluginManifest))
 
 	publishPluginPackage := func(p cli.Plugin, osArch cli.Arch, version, threadID string) {
 		defer func() {

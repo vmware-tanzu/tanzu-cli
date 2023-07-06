@@ -85,3 +85,15 @@ func ValidatePluginBinary(pluginBinaryFilePath, threadID string) (bool, error) {
 
 	return !fileEmpty, nil
 }
+
+// GetNumberOfIndividualPluginBinariesFromManifest returns the number of plugin binaries
+// into consideration based on the plugin manifest file
+// This includes plugin binaries for all supported os architectures as well as
+// all versions mentioned for the specific plugin.
+func GetNumberOfIndividualPluginBinariesFromManifest(pluginManifest *cli.Manifest) int {
+	numberOfPluginPackages := 0
+	for i := range pluginManifest.Plugins {
+		numberOfPluginPackages += len(pluginManifest.Plugins[i].Versions)
+	}
+	return numberOfPluginPackages * len(cli.AllOSArch)
+}
