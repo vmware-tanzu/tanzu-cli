@@ -209,7 +209,7 @@ func newDescribePluginCmd() *cobra.Command {
 		Short: "Describe a plugin",
 		Long:  "Displays detailed information for a plugin",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "name", "description", "version", "buildSHA", "digest", "group", "docURL", "completionType", "installationPath", "discovery", "scope", "status", "discoveredRecommendedVersion", "target", "defaultFeatureFlags")
+			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "name", "version", "status", "target", "description", "installationPath")
 			if len(args) != 1 {
 				return fmt.Errorf("must provide plugin name as positional argument")
 			}
@@ -223,8 +223,7 @@ func newDescribePluginCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			output.AddRow(pd.Name, pd.Description, pd.Version, pd.BuildSHA, pd.Digest, pd.Group, pd.DocURL, pd.CompletionType, pd.InstallationPath,
-				pd.Discovery, pd.Scope, pd.Status, pd.DiscoveredRecommendedVersion, pd.Target, pd.DefaultFeatureFlags)
+			output.AddRow(pd.Name, pd.Version, pd.Status, pd.Target, pd.Description, pd.InstallationPath)
 			output.Render()
 			return nil
 		},
