@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -24,6 +23,7 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	rtplugin "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
+	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/types"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -72,31 +72,6 @@ type PluginCompileArgs struct {
 
 const local = "local"
 
-var minConcurrent = 2
-var identifiers = []string{
-	string('\U0001F435'),
-	string('\U0001F43C'),
-	string('\U0001F436'),
-	string('\U0001F430'),
-	string('\U0001F98A'),
-	string('\U0001F431'),
-	string('\U0001F981'),
-	string('\U0001F42F'),
-	string('\U0001F42E'),
-	string('\U0001F437'),
-	string('\U0001F42D'),
-	string('\U0001F428'),
-}
-
-func getID(i int) string {
-	index := i
-	if i >= len(identifiers) {
-		// Well aren't you lucky
-		index = i % len(identifiers)
-	}
-	return identifiers[index]
-}
-
 func getBuildArch(arch []string) []cli.Arch {
 	var arrArch []cli.Arch
 	for _, buildArch := range arch {
@@ -111,20 +86,6 @@ func getBuildArch(arch []string) []cli.Arch {
 		}
 	}
 	return arrArch
-}
-
-func getMaxParallelism() int {
-	maxConcurrent := runtime.NumCPU() - 2
-	if maxConcurrent < minConcurrent {
-		maxConcurrent = minConcurrent
-	}
-	return maxConcurrent
-}
-
-type errInfo struct {
-	Err  error
-	Path string
-	ID   string
 }
 
 // setGlobals initializes a set of global variables used throughout the compile
@@ -160,14 +121,14 @@ func Compile(compileArgs *PluginCompileArgs) error {
 	}
 
 	// Limit the number of concurrent operations we perform so we don't overwhelm the system.
-	maxConcurrent := getMaxParallelism()
+	maxConcurrent := helpers.GetMaxParallelism()
 	guard := make(chan struct{}, maxConcurrent)
 
 	// Mix up IDs so we don't always get the same set.
-	randSkew := rand.Intn(len(identifiers)) // nolint:gosec
+	randSkew := rand.Intn(len(helpers.Identifiers)) // nolint:gosec
 	var wg sync.WaitGroup
 	plugins := make(chan cli.Plugin, len(files))
-	fatalErrors := make(chan errInfo, len(files))
+	fatalErrors := make(chan helpers.ErrInfo, len(files))
 	g := glob.MustCompile(compileArgs.Match)
 	for i, f := range files {
 		if f.IsDir() {
@@ -178,7 +139,7 @@ func Compile(compileArgs *PluginCompileArgs) error {
 					defer wg.Done()
 					p, err := buildPlugin(fullPath, id)
 					if err != nil {
-						fatalErrors <- errInfo{Err: err, Path: fullPath, ID: id}
+						fatalErrors <- helpers.ErrInfo{Err: err, Path: fullPath, ID: id}
 					} else {
 						plug := cli.Plugin{
 							Name:        p.Name,
@@ -189,7 +150,7 @@ func Compile(compileArgs *PluginCompileArgs) error {
 						plugins <- plug
 					}
 					<-guard
-				}(filepath.Join(compileArgs.SourcePath, f.Name()), getID(i+randSkew))
+				}(filepath.Join(compileArgs.SourcePath, f.Name()), helpers.GetID(i+randSkew))
 			}
 		}
 	}
