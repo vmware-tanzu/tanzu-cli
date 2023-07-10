@@ -244,8 +244,17 @@ func (o *DownloadPluginBundleOptions) downloadImagesAsTarFile(pluginEntries []*p
 // validateOptions validates the provided options and returns
 // error if contains invalid option
 func (o *DownloadPluginBundleOptions) validateOptions() error {
-	_, err := os.Stat(filepath.Dir(o.ToTar))
+	dir := filepath.Dir(o.ToTar)
+	_, err := os.Stat(dir)
 	if err != nil {
+		return errors.Wrapf(err, "invalid path for %q", dir)
+	}
+	// Check the input file path for --to-tar is valid
+	var empty []byte
+	err = os.WriteFile(o.ToTar, empty, 0600)
+	if err == nil {
+		os.Remove(o.ToTar)
+	} else {
 		return errors.Wrapf(err, "invalid path for %q", o.ToTar)
 	}
 

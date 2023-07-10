@@ -4,8 +4,10 @@
 package airgapped
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -14,6 +16,8 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	pluginlifecyclee2e "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugin_lifecycle"
 )
+
+const InvalidPath = "invalid path for \"%s\""
 
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-DownloadBundle-UploadBundle-Lifecycle]", func() {
 
@@ -229,6 +233,25 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
 			Expect(err).To(BeNil())
 			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsNotInAnyPG_999)).To(BeTrue())
+		})
+
+		// Test case: (negative use case) empty path for --to-tar
+		It("plugin download-bundle when to-tar path is empty", func() {
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, "")
+			Expect(err).NotTo(BeNil(), "should throw error for incorrect input path")
+			Expect(strings.Contains(err.Error(), fmt.Sprintf(InvalidPath, ""))).To(BeTrue())
+		})
+		// Test case: (negative use case) directory name only for for --to-tar
+		It("plugin download-bundle when to-tar path is a directory", func() {
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, tempDir)
+			Expect(err).NotTo(BeNil(), "should throw error for incorrect input path")
+			Expect(strings.Contains(err.Error(), fmt.Sprintf(InvalidPath, tempDir))).To(BeTrue())
+		})
+		// Test case: (negative use case) current directory only for --to-tar
+		It("plugin download-bundle when to-tar path is current directory", func() {
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, ".")
+			Expect(err).NotTo(BeNil(), "should throw error for incorrect input path")
+			Expect(strings.Contains(err.Error(), fmt.Sprintf(InvalidPath, "."))).To(BeTrue())
 		})
 	})
 })
