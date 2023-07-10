@@ -5,6 +5,7 @@ package airgapped
 
 import (
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -20,6 +21,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 func TestAirgappedSuite(t *testing.T) {
@@ -331,6 +333,48 @@ imagesToCopy:
 				Expect(exists).To(BeTrue())
 			}
 		})
+
+		var _ = It("when using --dry-run option, it should work and write the images yaml to the standard output", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
+			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
+			dpbo.ToTar = ""
+			dpbo.DryRun = true
+
+			// Setup to interject stdout for our tests
+			r, w, err := os.Pipe()
+			Expect(err).NotTo(HaveOccurred())
+			c := make(chan []byte)
+			go readOutput(r, c)
+			stdout := os.Stdout
+			defer func() {
+				os.Stdout = stdout
+			}()
+			os.Stdout = w
+
+			// Invoke actual tests
+			err = dpbo.DownloadPluginBundle()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Read the stdout from the channel.
+			w.Close()
+			stdoutBytes := <-c
+
+			// Verify that correct information was written to the stdout
+			log.Infof("%v", string(stdoutBytes))
+			imageMetadata := make(map[string][]string)
+			err = yaml.Unmarshal(stdoutBytes, &imageMetadata)
+			Expect(err).NotTo(HaveOccurred())
+			images, ok := imageMetadata["images"]
+			Expect(ok).To(Equal(true))
+			expectedImages := []string{
+				"fake.fakerepo.abc/plugin/plugin-inventory:latest",
+				"fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1",
+				"fake.fakerepo.abc/plugin/path/darwin/amd64/global/foo:v0.0.2",
+				"fake.fakerepo.abc/plugin/path/linux/amd64/global/foo:v0.0.2",
+			}
+
+			Expect(images).To(ContainElements(expectedImages))
+		})
 	})
 
 	var _ = Context("Tests for uploading plugin bundle when downloading entire plugin repository with all plugin", func() {
@@ -400,4 +444,10 @@ func createIncorrectPluginBundleTarFile(dir string) string {
 	err = tarinator.Tarinate([]string{emptyDirToTar}, tarFile)
 	Expect(err).NotTo(HaveOccurred())
 	return tarFile
+}
+
+func readOutput(r io.Reader, c chan<- []byte) {
+	data, err := io.ReadAll(r)
+	Expect(err).NotTo(HaveOccurred())
+	c <- data
 }

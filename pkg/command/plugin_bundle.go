@@ -4,6 +4,7 @@
 package command
 
 import (
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/airgapped"
@@ -15,6 +16,7 @@ type downloadPluginBundleOptions struct {
 	pluginDiscoveryOCIImage string
 	tarFile                 string
 	groups                  []string
+	dryRun                  bool
 }
 
 var dpbo downloadPluginBundleOptions
@@ -32,10 +34,14 @@ to an internet-restricted environment. Please also see the "upload-bundle" comma
     # Download a plugin bundle with the entire plugin repository from a custom discovery source
     tanzu plugin download-bundle --image custom.registry.vmware.com/tkg/tanzu-plugins/plugin-inventory:latest --to-tar /tmp/plugin_bundle_complete.tar.gz`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if !dpbo.dryRun && dpbo.tarFile == "" {
+				return errors.New("flag '--to-tar' is required")
+			}
 			options := airgapped.DownloadPluginBundleOptions{
 				PluginInventoryImage: dpbo.pluginDiscoveryOCIImage,
 				ToTar:                dpbo.tarFile,
 				Groups:               dpbo.groups,
+				DryRun:               dpbo.dryRun,
 				ImageProcessor:       carvelhelpers.NewImageOperationsImpl(),
 			}
 			return options.DownloadPluginBundle()
@@ -47,7 +53,10 @@ to an internet-restricted environment. Please also see the "upload-bundle" comma
 	f.StringVarP(&dpbo.tarFile, "to-tar", "", "", "local tar file path to store the plugin images")
 	f.StringSliceVarP(&dpbo.groups, "group", "", []string{}, "only download the plugins specified in the plugin-group version (can specify multiple)")
 
-	_ = downloadBundleCmd.MarkFlagRequired("to-tar")
+	f.BoolVarP(&dpbo.dryRun, "dry-run", "", false, "perform a dry run by listing the images to download without actually downloading them")
+	_ = downloadBundleCmd.Flags().MarkHidden("dry-run")
+
+	downloadBundleCmd.MarkFlagsMutuallyExclusive("to-tar", "dry-run")
 
 	return downloadBundleCmd
 }
