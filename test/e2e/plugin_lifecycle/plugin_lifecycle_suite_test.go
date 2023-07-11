@@ -28,12 +28,17 @@ var (
 	pluginGroupToPluginListMap map[string][]*framework.PluginInfo
 )
 
+const errorNoDiscoverySourcesFound = "there are no plugin discovery sources available. Please run 'tanzu plugin source init'"
+
 // BeforeSuite initializes and set up the environment to execute the plugin life cycle and plugin group life cycle end-to-end test cases
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
 
 	err := framework.CleanConfigFiles(tf)
 	Expect(err).To(BeNil())
+
+	// Delete default plugin source, and perform negative test cases, then initialize the plugin source
+	testWithoutPluginDiscoverySources(tf)
 
 	// check E2E test central repo URL (TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL)
 	e2eTestLocalCentralRepoURL = os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryURL)
@@ -92,3 +97,31 @@ var _ = BeforeSuite(func() {
 		Expect(len(pluginGroupToPluginListMap[key])).Should(BeNumerically(">", 0), "there should be at least one plugin available for each plugin group in plugin group life cycle list")
 	}
 })
+
+// testWithoutPluginDiscoverySources executes negative test cases when there are no plugin sources available
+// it perfrom below use cases
+// delete the default plugin discovery source
+// tanzu plugin search
+// tanzu plugin install plugin_name
+// tanzu plugin install --group group_name
+// tanzu plugin group search
+// initialize plugin source
+func testWithoutPluginDiscoverySources(tf *framework.Framework) {
+	_, err := tf.PluginCmd.DeletePluginDiscoverySource("default")
+	Expect(err).To(BeNil(), "there should not be any error to delete default discovery source")
+
+	_, err = tf.PluginCmd.SearchPlugins("")
+	Expect(err.Error()).To(ContainSubstring(errorNoDiscoverySourcesFound))
+
+	err = tf.PluginCmd.InstallPlugin("unknowPlugin", "", "")
+	Expect(err.Error()).To(ContainSubstring(errorNoDiscoverySourcesFound))
+
+	err = tf.PluginCmd.InstallPluginsFromGroup("", "unknowGroup")
+	Expect(err.Error()).To(ContainSubstring(errorNoDiscoverySourcesFound))
+
+	_, err = tf.PluginCmd.SearchPluginGroups("")
+	Expect(err.Error()).To(ContainSubstring(errorNoDiscoverySourcesFound))
+
+	_, err = tf.PluginCmd.InitPluginDiscoverySource()
+	Expect(err).To(BeNil(), "there should not be any error for plugin source init")
+}

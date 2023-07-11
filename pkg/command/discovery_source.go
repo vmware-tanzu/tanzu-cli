@@ -212,9 +212,10 @@ func newUpdateDiscoverySourceCmd() *cobra.Command {
 
 func newDeleteDiscoverySourceCmd() *cobra.Command {
 	var deleteDiscoverySourceCmd = &cobra.Command{
-		Use:   "delete SOURCE_NAME",
-		Short: "Delete a discovery source",
-		Args:  cobra.ExactArgs(1),
+		Use:    "delete SOURCE_NAME",
+		Short:  "Delete a discovery source",
+		Args:   cobra.ExactArgs(1),
+		Hidden: true,
 		Example: `
     # Delete a discovery source
     tanzu plugin discovery delete default`,
