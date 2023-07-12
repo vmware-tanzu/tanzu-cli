@@ -26,6 +26,7 @@ type DownloadPluginBundleOptions struct {
 	ToTar                string
 	Groups               []string
 
+	DryRun         bool
 	ImageProcessor carvelhelpers.ImageOperationsImpl
 }
 
@@ -54,6 +55,22 @@ func (o *DownloadPluginBundleOptions) DownloadPluginBundle() error {
 	selectedPluginEntries, selectedPluginGroups, err := o.getSelectedPluginInfo()
 	if err != nil {
 		return errors.Wrap(err, "error while getting selected plugin and plugin group information")
+	}
+
+	if o.DryRun {
+		imageMetadata, err := o.getListOfImages(selectedPluginEntries)
+		if err != nil {
+			return err
+		}
+
+		imagesBytes, err := yaml.Marshal(imageMetadata)
+		if err != nil {
+			return err
+		}
+
+		log.Info("Saving the list of images to download...")
+		log.Outputf("%v", string(imagesBytes))
+		return nil
 	}
 
 	// Save plugin images and get list of images that needs to be copied as part of the upload process
@@ -97,6 +114,8 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 		return nil, nil, errors.Wrap(err, "unable to create temp directory")
 	}
 	defer os.RemoveAll(tempDBDir)
+
+	log.Infof("Getting selected plugin information...")
 
 	// Download the plugin inventory oci image to tempDBDir
 	inventoryFile := filepath.Join(tempDBDir, plugininventory.SQliteDBFileName)
@@ -241,9 +260,47 @@ func (o *DownloadPluginBundleOptions) downloadImagesAsTarFile(pluginEntries []*p
 	return relativeInventoryImagePathWithTag, allImages, nil
 }
 
+// downloadImagesAsTarFile downloads plugin inventory image and all plugin images
+// as tar file to the specified directory
+func (o *DownloadPluginBundleOptions) getListOfImages(pluginEntries []*plugininventory.PluginInventoryEntry) (map[string]interface{}, error) {
+	images := []string{}
+	images = append(images, o.PluginInventoryImage)
+
+	// Process all plugin entries and download the oci image as tar file
+	for _, pe := range pluginEntries {
+		for _, artifacts := range pe.Artifacts {
+			for _, a := range artifacts {
+				images = append(images, a.Image)
+			}
+		}
+	}
+
+	metadata := make(map[string]interface{})
+	metadata["images"] = images
+	return metadata, nil
+}
+
 // validateOptions validates the provided options and returns
 // error if contains invalid option
 func (o *DownloadPluginBundleOptions) validateOptions() error {
+	if !o.DryRun {
+		// Verify tar file to be used to save plugin bundle
+		err := o.verifyTarFile()
+		if err != nil {
+			return err
+		}
+	}
+
+	// Verify the inventory image signature before downloading the plugin inventory database
+	err := sigverifier.VerifyInventoryImageSignature(o.PluginInventoryImage)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o *DownloadPluginBundleOptions) verifyTarFile() error {
 	dir := filepath.Dir(o.ToTar)
 	_, err := os.Stat(dir)
 	if err != nil {
@@ -254,17 +311,9 @@ func (o *DownloadPluginBundleOptions) validateOptions() error {
 	err = os.WriteFile(o.ToTar, empty, 0600)
 	if err == nil {
 		os.Remove(o.ToTar)
-	} else {
-		return errors.Wrapf(err, "invalid path for %q", o.ToTar)
+		return nil
 	}
-
-	// Verify the inventory image signature before downloading the plugin inventory database
-	err = sigverifier.VerifyInventoryImageSignature(o.PluginInventoryImage)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return errors.Wrapf(err, "invalid path for %q", o.ToTar)
 }
 
 // savePluginMigrationManifestFile save the plugin_migration_manifest.yaml file

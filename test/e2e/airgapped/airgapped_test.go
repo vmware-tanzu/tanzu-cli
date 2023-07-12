@@ -239,7 +239,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		It("plugin download-bundle when to-tar path is empty", func() {
 			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, "")
 			Expect(err).NotTo(BeNil(), "should throw error for incorrect input path")
-			Expect(strings.Contains(err.Error(), fmt.Sprintf(InvalidPath, ""))).To(BeTrue())
+			Expect(strings.Contains(err.Error(), "flag '--to-tar' is required")).To(BeTrue())
 		})
 		// Test case: (negative use case) directory name only for for --to-tar
 		It("plugin download-bundle when to-tar path is a directory", func() {
