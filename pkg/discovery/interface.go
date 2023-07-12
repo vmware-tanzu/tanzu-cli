@@ -24,7 +24,7 @@ type Discovery interface {
 	Name() string
 
 	// List available plugins.
-	List() ([]Discovered, error)
+	List(options ...PluginDiscoveryOptions) ([]Discovered, error)
 
 	// Type returns type of discovery.
 	Type() string
@@ -35,7 +35,7 @@ type GroupDiscovery interface {
 	Name() string
 
 	// GetGroups returns the plugin groups defined in the discovery
-	GetGroups() ([]*plugininventory.PluginGroup, error)
+	GetGroups(options ...PluginDiscoveryOptions) ([]*plugininventory.PluginGroup, error)
 }
 
 // DiscoveryOpts used to customize the plugin discovery process or mechanism
@@ -118,4 +118,21 @@ func CreateGroupDiscovery(pd configtypes.PluginDiscovery, options ...DiscoveryOp
 		return NewOCIGroupDiscovery(pd.OCI.Name, pd.OCI.Image, options...), nil
 	}
 	return nil, errors.New("unknown group discovery source")
+}
+
+// PluginDiscoveryOpts used to customize the plugin discovery process or mechanism
+type PluginDiscoveryOpts struct {
+	ForceCache bool // ForceCache used to pull the plugin data from the cache
+}
+
+type PluginDiscoveryOptions func(options *PluginDiscoveryOpts)
+
+func WithForceCache() PluginDiscoveryOptions {
+	return func(o *PluginDiscoveryOpts) {
+		o.ForceCache = true
+	}
+}
+
+func NewPluginDiscoveryOpts() *PluginDiscoveryOpts {
+	return &PluginDiscoveryOpts{}
 }

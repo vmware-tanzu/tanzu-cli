@@ -15,17 +15,18 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
-
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/telemetry"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
 // NewRootCmd creates a root command.
@@ -160,10 +161,45 @@ func newRootCmd() *cobra.Command {
 				//	return err
 				// }
 			}
+			// Install or update essential plugins
+			InstallEssentialPlugins(cmd)
 			return nil
 		},
 	}
 	return rootCmd
+}
+
+func InstallEssentialPlugins(cmd *cobra.Command) {
+	skipCommandsForEssentials := []string{
+		// The shell completion setup is not interactive, so it should not trigger a prompt
+		"tanzu __complete",
+		"tanzu completion",
+		// Common first command to run,
+		"tanzu version",
+		// It would be a chicken and egg issue if user tries to set CEIP configuration
+		// using "tanzu config set env.TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER yes"
+		"tanzu config set",
+		// Auto prompting when running these commands is confusing
+		"tanzu config eula",
+		"tanzu ceip-participation set",
+		// This command is being invoked by the kubectl exec binary where the user doesn't
+		// get to see the prompts and the kubectl command execution just gets stuck, and it
+		// is very hard for users to figure out what is going wrong
+		"tanzu pinniped-auth",
+		// Avoid trying to install essential plugins when user want to remove all plugins using tanzu plugin clean
+		"tanzu plugin clean",
+	}
+	skipEssentials := false
+	for _, cmdPath := range skipCommandsForEssentials {
+		if strings.HasPrefix(cmd.CommandPath(), cmdPath) {
+			skipEssentials = true
+			break
+		}
+	}
+	if !skipEssentials {
+		// Check if essential plugins are installed and up to date if not Install or Upgrade the Essential plugins
+		_, _ = pluginmanager.InstallEssentialPluginGroups()
+	}
 }
 
 var k8sCmd = &cobra.Command{

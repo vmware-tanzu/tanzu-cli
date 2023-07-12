@@ -26,3 +26,20 @@ func SortVersions(vStrArr []string) error {
 	}
 	return nil
 }
+
+// IsNewVersion compares the plugin version and the installed version.
+func IsNewVersion(pluginVersionStr, installedVersionStr string) bool {
+	// Parse versions using semver package
+	pluginVersion, err := semver.NewVersion(pluginVersionStr)
+	if err != nil {
+		return false // Invalid plugin version, return false
+	}
+
+	installedVersion, err := semver.NewVersion(installedVersionStr)
+	if err != nil {
+		return false // Invalid installed version, return false
+	}
+
+	// Compare versions
+	return pluginVersion.Compare(installedVersion) > 0 // Return true if new version is available
+}

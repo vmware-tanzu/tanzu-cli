@@ -86,7 +86,7 @@ func newDBBackedOCIDiscovery(name, image string) *DBBackedOCIDiscovery {
 }
 
 // List available plugins.
-func (od *OCIDiscovery) List() (plugins []Discovered, err error) {
+func (od *OCIDiscovery) List(_ ...PluginDiscoveryOptions) (plugins []Discovered, err error) {
 	return od.Manifest()
 }
 

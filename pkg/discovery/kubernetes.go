@@ -35,7 +35,7 @@ func NewKubernetesDiscovery(name, kubeconfigPath, kubecontext string) Discovery 
 }
 
 // List available plugins.
-func (k *KubernetesDiscovery) List() ([]Discovered, error) {
+func (k *KubernetesDiscovery) List(_ ...PluginDiscoveryOptions) ([]Discovered, error) {
 	return k.Manifest()
 }
 
