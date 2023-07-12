@@ -93,11 +93,11 @@ func discoverPlugins(pd []configtypes.PluginDiscovery) ([]discovery.Discovered, 
 
 // discoverSpecificPlugins returns all plugins that match the specified criteria from all PluginDiscovery sources,
 // along with an aggregated error (if any) that occurred while creating the plugin discovery source or fetching plugins.
-func discoverSpecificPlugins(pd []configtypes.PluginDiscovery, criteria *discovery.PluginDiscoveryCriteria) ([]discovery.Discovered, error) {
+func discoverSpecificPlugins(pd []configtypes.PluginDiscovery, options ...discovery.DiscoveryOptions) ([]discovery.Discovered, error) {
 	allPlugins := make([]discovery.Discovered, 0)
 	errorList := make([]error, 0)
 	for _, d := range pd {
-		discObject, err := discovery.CreateDiscoveryFromV1alpha1(d, criteria)
+		discObject, err := discovery.CreateDiscoveryFromV1alpha1(d, options...)
 		if err != nil {
 			errorList = append(errorList, errors.Wrapf(err, "unable to create discovery"))
 			continue
@@ -115,10 +115,10 @@ func discoverSpecificPlugins(pd []configtypes.PluginDiscovery, criteria *discove
 }
 
 // discoverSpecificPluginGroups returns all the plugin groups found in the discoveries
-func discoverSpecificPluginGroups(pd []configtypes.PluginDiscovery, criteria *discovery.GroupDiscoveryCriteria) ([]*plugininventory.PluginGroup, error) {
+func discoverSpecificPluginGroups(pd []configtypes.PluginDiscovery, options ...discovery.DiscoveryOptions) ([]*plugininventory.PluginGroup, error) {
 	var allGroups []*plugininventory.PluginGroup
 	for _, d := range pd {
-		groupDisc, err := discovery.CreateGroupDiscovery(d, criteria)
+		groupDisc, err := discovery.CreateGroupDiscovery(d, options...)
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to create group discovery")
 		}
@@ -137,7 +137,7 @@ func discoverSpecificPluginGroups(pd []configtypes.PluginDiscovery, criteria *di
 }
 
 // DiscoverStandalonePlugins returns the available standalone plugins
-func DiscoverStandalonePlugins(criteria *discovery.PluginDiscoveryCriteria) ([]discovery.Discovered, error) {
+func DiscoverStandalonePlugins(options ...discovery.DiscoveryOptions) ([]discovery.Discovered, error) {
 	discoveries, err := getPluginDiscoveries()
 	if err != nil {
 		return nil, err
@@ -145,7 +145,7 @@ func DiscoverStandalonePlugins(criteria *discovery.PluginDiscoveryCriteria) ([]d
 		return nil, errors.New(errorNoDiscoverySourcesFound)
 	}
 
-	plugins, err := discoverSpecificPlugins(discoveries, criteria)
+	plugins, err := discoverSpecificPlugins(discoveries, options...)
 	if err != nil {
 		log.Warningf(errorWhileDiscoveringPlugins, err.Error())
 	}
@@ -158,7 +158,7 @@ func DiscoverStandalonePlugins(criteria *discovery.PluginDiscoveryCriteria) ([]d
 }
 
 // DiscoverPluginGroups returns the available plugin groups
-func DiscoverPluginGroups(criteria *discovery.GroupDiscoveryCriteria) ([]*plugininventory.PluginGroup, error) {
+func DiscoverPluginGroups(options ...discovery.DiscoveryOptions) ([]*plugininventory.PluginGroup, error) {
 	discoveries, err := getPluginDiscoveries()
 	if err != nil {
 		return nil, err
@@ -167,7 +167,7 @@ func DiscoverPluginGroups(criteria *discovery.GroupDiscoveryCriteria) ([]*plugin
 		return nil, errors.New(errorNoDiscoverySourcesFound)
 	}
 
-	groups, err := discoverSpecificPluginGroups(discoveries, criteria)
+	groups, err := discoverSpecificPluginGroups(discoveries, options...)
 	if err != nil {
 		return nil, err
 	}
@@ -724,7 +724,7 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 		Arch:    runtime.GOARCH,
 	}
 	errorList := make([]error, 0)
-	availablePlugins, err := discoverSpecificPlugins(discoveries, criteria)
+	availablePlugins, err := discoverSpecificPlugins(discoveries, discovery.WithPluginDiscoveryCriteria(criteria))
 	if err != nil {
 		errorList = append(errorList, err)
 	}
@@ -845,12 +845,14 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string) (string, erro
 		// If the version is not specified to install from, we use the latest
 		groupIdentifier.Version = cli.VersionLatest
 	}
-	groups, err := discoverSpecificPluginGroups(discoveries, &discovery.GroupDiscoveryCriteria{
+	criteria := &discovery.GroupDiscoveryCriteria{
 		Vendor:    groupIdentifier.Vendor,
 		Publisher: groupIdentifier.Publisher,
 		Name:      groupIdentifier.Name,
 		Version:   groupIdentifier.Version,
-	})
+	}
+
+	groups, err := discoverSpecificPluginGroups(discoveries, discovery.WithGroupDiscoveryCriteria(criteria))
 	if err != nil {
 		return "", err
 	}

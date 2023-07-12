@@ -58,9 +58,11 @@ func newSearchPluginCmd() *cobra.Command {
 				}
 			} else {
 				// Show plugins found in the central repos
-				allPlugins, err = pluginmanager.DiscoverStandalonePlugins(&discovery.PluginDiscoveryCriteria{
+				criteria := &discovery.PluginDiscoveryCriteria{
 					Name:   pluginName,
-					Target: configtypes.StringToTarget(targetStr)})
+					Target: configtypes.StringToTarget(targetStr),
+				}
+				allPlugins, err = pluginmanager.DiscoverStandalonePlugins(discovery.WithPluginDiscoveryCriteria(criteria))
 				if err != nil {
 					errorList = append(errorList, err)
 					log.Warningf("there was an error while discovering standalone plugins, error information: '%v'", err.Error())

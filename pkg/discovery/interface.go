@@ -38,6 +38,37 @@ type GroupDiscovery interface {
 	GetGroups() ([]*plugininventory.PluginGroup, error)
 }
 
+// DiscoveryOpts used to customize the plugin discovery process or mechanism
+type DiscoveryOpts struct {
+	UseLocalCacheOnly       bool // UseLocalCacheOnly used to pull the plugin data from the cache
+	PluginDiscoveryCriteria *PluginDiscoveryCriteria
+	GroupDiscoveryCriteria  *GroupDiscoveryCriteria
+}
+
+type DiscoveryOptions func(options *DiscoveryOpts)
+
+func WithUseLocalCacheOnly() DiscoveryOptions {
+	return func(o *DiscoveryOpts) {
+		o.UseLocalCacheOnly = true
+	}
+}
+
+func WithPluginDiscoveryCriteria(criteria *PluginDiscoveryCriteria) DiscoveryOptions {
+	return func(o *DiscoveryOpts) {
+		o.PluginDiscoveryCriteria = criteria
+	}
+}
+
+func WithGroupDiscoveryCriteria(criteria *GroupDiscoveryCriteria) DiscoveryOptions {
+	return func(o *DiscoveryOpts) {
+		o.GroupDiscoveryCriteria = criteria
+	}
+}
+
+func NewDiscoveryOpts() *DiscoveryOpts {
+	return &DiscoveryOpts{}
+}
+
 // PluginDiscoveryCriteria provides criteria to look for plugins
 // in a discovery.
 type PluginDiscoveryCriteria struct {
@@ -67,11 +98,11 @@ type GroupDiscoveryCriteria struct {
 }
 
 // CreateDiscoveryFromV1alpha1 creates discovery interface from v1alpha1 API
-func CreateDiscoveryFromV1alpha1(pd configtypes.PluginDiscovery, criteria *PluginDiscoveryCriteria) (Discovery, error) {
+func CreateDiscoveryFromV1alpha1(pd configtypes.PluginDiscovery, options ...DiscoveryOptions) (Discovery, error) {
 	switch {
 	case pd.OCI != nil:
 		// Only the OCI Discovery currently supports a criteria
-		return NewOCIDiscovery(pd.OCI.Name, pd.OCI.Image, criteria), nil
+		return NewOCIDiscovery(pd.OCI.Name, pd.OCI.Image, options...), nil
 	case pd.Local != nil:
 		return NewLocalDiscovery(pd.Local.Name, pd.Local.Path), nil
 	case pd.Kubernetes != nil:
@@ -82,9 +113,9 @@ func CreateDiscoveryFromV1alpha1(pd configtypes.PluginDiscovery, criteria *Plugi
 	return nil, errors.New("unknown plugin discovery source")
 }
 
-func CreateGroupDiscovery(pd configtypes.PluginDiscovery, criteria *GroupDiscoveryCriteria) (GroupDiscovery, error) {
+func CreateGroupDiscovery(pd configtypes.PluginDiscovery, options ...DiscoveryOptions) (GroupDiscovery, error) {
 	if pd.OCI != nil {
-		return NewOCIGroupDiscovery(pd.OCI.Name, pd.OCI.Image, criteria), nil
+		return NewOCIGroupDiscovery(pd.OCI.Name, pd.OCI.Image, options...), nil
 	}
 	return nil, errors.New("unknown group discovery source")
 }

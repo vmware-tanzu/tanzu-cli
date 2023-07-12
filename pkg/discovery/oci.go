@@ -32,10 +32,17 @@ type OCIDiscovery struct {
 }
 
 // NewOCIDiscovery returns a new Discovery using the specified OCI image.
-func NewOCIDiscovery(name, image string, criteria *PluginDiscoveryCriteria) Discovery {
+func NewOCIDiscovery(name, image string, options ...DiscoveryOptions) Discovery {
+	// Initialize discovery options
+	opts := NewDiscoveryOpts()
+	for _, option := range options {
+		option(opts)
+	}
+
 	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		discovery := newDBBackedOCIDiscovery(name, image)
-		discovery.pluginCriteria = criteria
+		discovery.pluginCriteria = opts.PluginDiscoveryCriteria
+		discovery.useLocalCacheOnly = opts.UseLocalCacheOnly
 		return discovery
 	}
 
@@ -46,9 +53,17 @@ func NewOCIDiscovery(name, image string, criteria *PluginDiscoveryCriteria) Disc
 }
 
 // NewOCIGroupDiscovery returns a new plugn group Discovery using the specified OCI image.
-func NewOCIGroupDiscovery(name, image string, criteria *GroupDiscoveryCriteria) GroupDiscovery {
+func NewOCIGroupDiscovery(name, image string, options ...DiscoveryOptions) GroupDiscovery {
+	// Initialize discovery options
+	opts := NewDiscoveryOpts()
+	for _, option := range options {
+		option(opts)
+	}
+
 	discovery := newDBBackedOCIDiscovery(name, image)
-	discovery.groupCriteria = criteria
+	discovery.groupCriteria = opts.GroupDiscoveryCriteria
+	discovery.useLocalCacheOnly = opts.UseLocalCacheOnly
+
 	return discovery
 }
 

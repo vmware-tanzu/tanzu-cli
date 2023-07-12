@@ -38,6 +38,8 @@ type DBBackedOCIDiscovery struct {
 	// groupCriteria specifies different conditions that a plugin group must respect to be discovered.
 	// This allows to filter the list of plugins groups that will be returned.
 	groupCriteria *GroupDiscoveryCriteria
+	// useLocalCacheOnly enable to pull the plugins and plugin groups data from the cache
+	useLocalCacheOnly bool
 	// pluginDataDir is the location where the plugin data will be stored once
 	// extracted from the OCI image
 	pluginDataDir string
@@ -59,21 +61,37 @@ func (od *DBBackedOCIDiscovery) Type() string {
 	return common.DiscoveryTypeOCI
 }
 
-// List available plugins.
+// List is a method of the DBBackedOCIDiscovery struct that retrieves the available plugins.
+// It returns a slice of Discovered interfaces and an error if any occurs during the process.
 func (od *DBBackedOCIDiscovery) List() ([]Discovered, error) {
-	err := od.fetchInventoryImage()
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to fetch the inventory of discovery '%s' for plugins", od.Name())
+	// If useLocalCacheOnly option is not set, fetch the inventory image
+	if !od.useLocalCacheOnly {
+		// Fetch the inventory image
+		err := od.fetchInventoryImage()
+		if err != nil {
+			// Return an error if unable to fetch the inventory image for plugins
+			return nil, errors.Wrapf(err, "unable to fetch the inventory of discovery '%s' for plugins", od.Name())
+		}
 	}
+
+	// List and return the plugins from the inventory
 	return od.listPluginsFromInventory()
 }
 
-// GetGroups returns the plugin groups defined in the discovery
+// GetGroups is a method of the DBBackedOCIDiscovery struct that retrieves the plugin groups defined in the discovery.
+// It returns a slice of PluginGroup pointers and an error if any occurs during the process.
 func (od *DBBackedOCIDiscovery) GetGroups() ([]*plugininventory.PluginGroup, error) {
-	err := od.fetchInventoryImage()
-	if err != nil {
-		return nil, errors.Wrapf(err, "unable to fetch the inventory of discovery '%s' for groups", od.Name())
+	// If useLocalCacheOnly option is not set, fetch the inventory image
+	if !od.useLocalCacheOnly {
+		// Fetch the inventory image
+		err := od.fetchInventoryImage()
+		if err != nil {
+			// Return an error if unable to fetch the inventory image for groups
+			return nil, errors.Wrapf(err, "unable to fetch the inventory of discovery '%s' for groups", od.Name())
+		}
 	}
+
+	// List and return the groups from the inventory
 	return od.listGroupsFromInventory()
 }
 

@@ -61,7 +61,7 @@ func newSearchCmd() *cobra.Command {
 					Name:      groupIdentifier.Name,
 				}
 			}
-			groups, err := pluginmanager.DiscoverPluginGroups(criteria)
+			groups, err := pluginmanager.DiscoverPluginGroups(discovery.WithGroupDiscoveryCriteria(criteria))
 			if err != nil {
 				return err
 			}
@@ -101,12 +101,13 @@ func newGetCmd() *cobra.Command {
 				groupIdentifier.Version = cli.VersionLatest
 			}
 
-			groups, err := pluginmanager.DiscoverPluginGroups(&discovery.GroupDiscoveryCriteria{
+			criteria := &discovery.GroupDiscoveryCriteria{
 				Vendor:    groupIdentifier.Vendor,
 				Publisher: groupIdentifier.Publisher,
 				Name:      groupIdentifier.Name,
 				Version:   groupIdentifier.Version,
-			})
+			}
+			groups, err := pluginmanager.DiscoverPluginGroups(discovery.WithGroupDiscoveryCriteria(criteria))
 			if err != nil {
 				return err
 			}
