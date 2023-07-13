@@ -177,11 +177,12 @@ addGroup() {
     fi
 }
 
-k8sPlugins=(cluster feature management-cluster package secret telemetry kubernetes-release)
+k8sPlugins=(cluster feature management-cluster package secret kubernetes-release)
 tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster events iam
             inspection integration management-cluster policy workspace helm secret
             continuousdelivery tanzupackage)
 globalPlugins=(isolated-cluster pinniped-auth)
+essentialPlugins=(telemetry)
 
 echo "======================================"
 echo "Creating small test Central Repository: $repoBasePath/$smallImage"
@@ -189,6 +190,12 @@ echo "======================================"
 
 for name in ${globalPlugins[*]}; do
     addPlugin $name global true
+done
+
+for name in ${essentialPlugins[*]}; do
+    addPlugin $name global true
+    addGroup vmware tanzucli essentials v0.0.1 $name global v0.0.1
+    addGroup vmware tanzucli essentials v9.9.9 $name global v9.9.9
 done
 
 for name in ${k8sPlugins[*]}; do
@@ -299,6 +306,13 @@ for name in ${globalPlugins[0]}; do
     addPlugin $name global true v9.9.9
 done
 
+for name in ${essentialPlugins[*]}; do
+    addPlugin $name global true v0.0.1
+    addPlugin $name global true v9.9.9
+    addGroup vmware tanzucli essentials v0.0.1 $name global v0.0.1
+    addGroup vmware tanzucli essentials v9.9.9 $name global v9.9.9
+done
+
 for name in ${k8sPlugins[0]}; do
     addPlugin $name kubernetes true v0.0.1
     addPlugin $name kubernetes true v9.9.9
@@ -329,6 +343,13 @@ cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 for name in ${globalPlugins[*]}; do
     addPlugin $name global true v0.0.1
     addPlugin $name global true v9.9.9
+done
+
+for name in ${essentialPlugins[*]}; do
+    addPlugin $name global true v0.0.1
+    addPlugin $name global true v9.9.9
+    addGroup vmware tanzucli essentials v0.0.1 $name global v0.0.1
+    addGroup vmware tanzucli essentials v9.9.9 $name global v9.9.9
 done
 
 for name in ${k8sPlugins[*]}; do
