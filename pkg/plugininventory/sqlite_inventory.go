@@ -159,12 +159,25 @@ func (b *SQLiteInventory) GetPluginGroups(filter PluginGroupFilter) ([]*PluginGr
 }
 
 // getPluginsFromDB returns the plugins found in the DB 'inventoryFile' that match the filter
+//
+//nolint:dupl
 func (b *SQLiteInventory) getPluginsFromDB(filter *PluginInventoryFilter) ([]*PluginInventoryEntry, error) {
+	// Check if the inventory file exists.
+	if _, err := os.Stat(b.inventoryFile); os.IsNotExist(err) {
+		return []*PluginInventoryEntry{}, nil
+	}
+
 	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open the DB at '%s'", b.inventoryFile)
 	}
 	defer db.Close()
+
+	// Return empty data if db connection is not available
+	err = db.Ping()
+	if err != nil {
+		return []*PluginInventoryEntry{}, err
+	}
 
 	whereClause, err := createPluginWhereClause(filter)
 	if err != nil {
@@ -319,12 +332,25 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 }
 
 // getGroupsFromDB returns all the plugin groups found in the DB 'inventoryFile' that match the filter
+//
+//nolint:dupl
 func (b *SQLiteInventory) getGroupsFromDB(filter PluginGroupFilter) ([]*PluginGroup, error) {
+	// Check if the inventory file exists.
+	if _, err := os.Stat(b.inventoryFile); os.IsNotExist(err) {
+		return []*PluginGroup{}, nil
+	}
+
 	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to open the DB at '%s' for groups", b.inventoryFile)
 	}
 	defer db.Close()
+
+	// Return empty data if db connection is not available
+	err = db.Ping()
+	if err != nil {
+		return []*PluginGroup{}, err
+	}
 
 	whereClause, err := createGroupWhereClause(filter)
 	if err != nil {
