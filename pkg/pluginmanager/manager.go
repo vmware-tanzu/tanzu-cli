@@ -723,16 +723,19 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 		OS:      runtime.GOOS,
 		Arch:    runtime.GOARCH,
 	}
+	errorList := make([]error, 0)
 	availablePlugins, err := discoverSpecificPlugins(discoveries, criteria)
 	if err != nil {
-		log.Warningf("There was an error while discovering plugins. Error information: '%v'", err.Error())
+		errorList = append(errorList, err)
 	}
 
 	if len(availablePlugins) == 0 {
 		if target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target))
+			errorList = append(errorList, errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target)))
+			return kerrors.NewAggregate(errorList)
 		}
-		return errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version)
+		errorList = append(errorList, errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version))
+		return kerrors.NewAggregate(errorList)
 	}
 
 	// Deal with duplicates from different plugin discovery sources
@@ -751,9 +754,11 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 	}
 	if len(matchedPlugins) == 0 {
 		if target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target))
+			errorList = append(errorList, errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target)))
+			return kerrors.NewAggregate(errorList)
 		}
-		return errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version)
+		errorList = append(errorList, errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version))
+		return kerrors.NewAggregate(errorList)
 	}
 
 	if len(matchedPlugins) == 1 {
@@ -774,8 +779,8 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 			return installOrUpgradePlugin(&matchedPlugins[i], version, false)
 		}
 	}
-
-	return errors.Errorf(missingTargetStr, pluginName)
+	errorList = append(errorList, errors.Errorf(missingTargetStr, pluginName))
+	return kerrors.NewAggregate(errorList)
 }
 
 // legacyInstallPlugin installs a plugin by name, version and target.
