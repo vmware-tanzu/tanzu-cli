@@ -254,7 +254,6 @@ func (od *DBBackedOCIDiscovery) checkImageCache() (string, string, error) {
 	_, hashHexValInventoryImage, err := carvelhelpers.GetImageDigest(od.image)
 	if err != nil {
 		// This will happen when the user has configured an invalid image discovery URI
-		log.Warningf("Unable to resolve the plugin discovery image: %v", err)
 		return "", "", fmt.Errorf("plugins discovery image resolution failed. Please check that the repository image URL %q is correct ", od.image)
 	}
 
