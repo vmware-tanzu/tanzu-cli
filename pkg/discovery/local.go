@@ -38,7 +38,7 @@ func NewLocalDiscovery(name, localPath string) Discovery {
 }
 
 // List available plugins.
-func (l *LocalDiscovery) List(_ ...PluginDiscoveryOptions) ([]Discovered, error) {
+func (l *LocalDiscovery) List() ([]Discovered, error) {
 	return l.Manifest()
 }
 

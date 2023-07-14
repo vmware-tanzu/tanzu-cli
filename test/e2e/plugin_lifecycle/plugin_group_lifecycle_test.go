@@ -29,6 +29,24 @@ import (
 // 2. 'tanzu plugin group describe <group>'
 
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]", func() {
+
+	Context("install essentials plugin group", func() {
+		It("install v0.0.1 plugin group", func() {
+			err := tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin clean")
+
+			pluginsList, err := framework.GetPluginsList(tf, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+
+			// search plugin groups and make sure there plugin groups available
+			pluginGroups, err = SearchAllPluginGroups(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
+
+			// check all required plugin groups (framework.PluginGroupsForLifeCycleTests) need for life cycle test are available in plugin group search output
+			Expect(framework.IsAllPluginGroupsExists(pluginGroups, framework.EssentialPluginGroups)).Should(BeTrue(), "all essential plugin groups should exists in plugin group search output")
+		})
+	})
 	// Use cases:
 	// a. clean, install one plugin from a plugin group and validate the installation by running plugin describe.
 	// b. install all plugins in a group (to make sure we should be able to install all plugins in a group even when some plugins in group already installed) and validate the installation by running plugin describe for all plugins in a plugin group.

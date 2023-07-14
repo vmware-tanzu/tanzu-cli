@@ -15,6 +15,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
+
 	pluginlifecyclee2e "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugin_lifecycle"
 )
 
@@ -47,7 +48,7 @@ var _ = BeforeSuite(func() {
 
 	e2eAirgappedCentralRepoImage = fmt.Sprintf("%s%s", e2eAirgappedCentralRepo, filepath.Base(e2eTestLocalCentralRepoImage))
 
-	os.Setenv(framework.TanzuCliPluginDiscoverySignatureVerificationSkipList, e2eAirgappedCentralRepoImage)
+	os.Setenv(framework.TanzuCliPluginDiscoverySignatureVerificationSkipList, fmt.Sprintf("%v,%v", e2eAirgappedCentralRepoImage, e2eTestLocalCentralRepoImage))
 
 	e2eTestLocalCentralRepoPluginHost := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryHost)
 	Expect(e2eTestLocalCentralRepoPluginHost).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository host", framework.TanzuCliE2ETestLocalCentralRepositoryHost))

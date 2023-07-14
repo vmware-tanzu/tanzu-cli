@@ -1659,3 +1659,119 @@ func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
 	discoverySources, _ := configlib.GetCLIDiscoverySources()
 	return append(discoverySources, testDiscoveries...), nil
 }
+
+// IsPluginsFromPluginGroupInstalled checks if all plugins from a specific group are installed and if a new version is available.
+// This function uses cache data to verify rather than fetching the inventory image
+func IsPluginsFromPluginGroupInstalled(name, version string) (bool, bool, error) {
+	// Disable logs.
+	log.QuietMode(true)
+	// Ensure that logs are re-enabled when we're done.
+	defer log.QuietMode(false)
+
+	// Retrieve the list of currently installed plugins.
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+	if err != nil {
+		// If there's an error, wrap it with additional context and return.
+		return false, false, fmt.Errorf("failed to get installed plugins: %w", err)
+	}
+
+	// Append the version to the plugin group name if it's not empty.
+	pluginGroupName := name
+	if version != "" {
+		pluginGroupName = fmt.Sprintf("%v:%v", pluginGroupName, version)
+	}
+
+	// Parse the plugin group identifier from the name.
+	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(pluginGroupName)
+	if groupIdentifier == nil {
+		// If the identifier is nil, return an error.
+		return false, false, fmt.Errorf("incorrect plugin-group %q specified", pluginGroupName)
+	}
+
+	// If no version is specified, use the latest version.
+	if groupIdentifier.Version == "" {
+		groupIdentifier.Version = cli.VersionLatest
+	}
+
+	// Create the discovery criteria for the plugin group.
+	discoveryCriteria := &discovery.GroupDiscoveryCriteria{
+		Vendor:    groupIdentifier.Vendor,
+		Publisher: groupIdentifier.Publisher,
+		Name:      groupIdentifier.Name,
+		Version:   groupIdentifier.Version,
+	}
+	// Discover the plugin groups that match the criteria.
+	groups, err := DiscoverPluginGroups(discovery.WithGroupDiscoveryCriteria(discoveryCriteria), discovery.WithUseLocalCacheOnly())
+	if err != nil {
+		// If there's an error, wrap it with additional context and return.
+		return false, false, fmt.Errorf("failed to discover plugin groups: %w", err)
+	}
+	if len(groups) == 0 {
+		// If no groups are found, return an error.
+		return false, false, fmt.Errorf("plugin-group %q cannot be found", pluginGroupName)
+	}
+
+	// Get the first group from the list.
+	group := groups[0]
+
+	// Create a list of mandatory plugins from the group.
+	var pluginsOfGroup []*plugininventory.PluginGroupPluginEntry
+	for _, plugin := range group.Versions[group.RecommendedVersion] {
+		if plugin.Mandatory {
+			pluginsOfGroup = append(pluginsOfGroup, plugin)
+		}
+	}
+
+	// Check if all plugins from the group are installed and if a new version is available.
+	return isAllPluginsFromGroupInstalled(pluginsOfGroup, installedPlugins), isNewPluginVersionAvailable(pluginsOfGroup, installedPlugins), nil
+}
+
+// isAllPluginsFromGroupInstalled checks if all plugins from a specific group are installed.
+func isAllPluginsFromGroupInstalled(plugins []*plugininventory.PluginGroupPluginEntry, installedPlugins []cli.PluginInfo) bool {
+	// Create a map to store the installed plugins.
+	installedPluginsMap := make(map[string]*cli.PluginInfo)
+	for i := range installedPlugins {
+		// Use the plugin name, target, and version as the key.
+		installedPlugin := installedPlugins[i]
+		key := utils.GenerateKey(installedPlugin.Name, string(installedPlugin.Target), installedPlugin.Version)
+		installedPluginsMap[key] = &installedPlugin
+	}
+
+	// Iterate over each plugin in the group.
+	for _, plugin := range plugins {
+		// Check if the current plugin is installed.
+		key := utils.GenerateKey(plugin.Name, string(plugin.Target), plugin.Version)
+		if _, ok := installedPluginsMap[key]; !ok {
+			// If the plugin is not installed, return false.
+			return false
+		}
+	}
+	// If all plugins are installed, return true.
+	return true
+}
+
+// isNewPluginVersionAvailable checks if a new version of any plugin from a specific group is available.
+func isNewPluginVersionAvailable(plugins []*plugininventory.PluginGroupPluginEntry, installedPlugins []cli.PluginInfo) bool {
+	// Create a map of installed plugins for faster lookup
+	installedPluginsMap := make(map[string]*cli.PluginInfo)
+	for i := range installedPlugins {
+		installedPlugin := installedPlugins[i]
+		key := utils.GenerateKey(installedPlugin.Name, string(installedPlugin.Target))
+		installedPluginsMap[key] = &installedPlugin
+	}
+
+	for _, plugin := range plugins {
+		key := utils.GenerateKey(plugin.Name, string(plugin.Target))
+		installedPlugin, ok := installedPluginsMap[key]
+		if !ok {
+			continue // Plugin not installed, skip to next plugin
+		}
+
+		// Check if a new version of the plugin is available.
+		if utils.IsNewVersion(plugin.Version, installedPlugin.Version) {
+			return true // New version available
+		}
+	}
+
+	return false // No new version available
+}

@@ -5,14 +5,12 @@ package airgapped
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	pluginlifecyclee2e "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugin_lifecycle"
 )
@@ -38,8 +36,6 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		It("update discovery source to point to new airgapped repository discovery image", func() {
 			err := framework.UpdatePluginDiscoverySource(tf, e2eAirgappedCentralRepoImage)
 			Expect(err).To(BeNil(), "should not get any error for plugin source update")
-			// Also set the skip signature verification for the airgapped repository discovery image
-			os.Setenv(constants.PluginDiscoveryImageSignatureVerificationSkipList, e2eAirgappedCentralRepoImage)
 		})
 
 		// Test case: Validate that the correct plugins and plugin group exists with `tanzu plugin search` and `tanzu plugin group search` output

@@ -77,7 +77,7 @@ var _ = ginkgo.BeforeSuite(func() {
 
 	PluginsForLegacyTanzuCLICoexistenceTests = []*framework.PluginInfo{
 		{
-			Name:    "telemetry",
+			Name:    "secret",
 			Target:  framework.KubernetesTarget,
 			Version: legacyTanzuCLIVersion,
 		},

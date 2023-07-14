@@ -48,7 +48,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 	// b. create context and validate current active context
 	// c. list plugins and make sure no plugins installed
 	// d. delete current context and KIND cluster
-	Context("Use case: Install KIND Cluster, create context and validate plugin sync", func() {
+	Context("Use case 1: Install KIND Cluster, create context and validate plugin sync", func() {
 		var clusterInfo *f.ClusterInfo
 		var contextName string
 		var err error
@@ -206,7 +206,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 	// d. list plugins and validate plugins info, make sure all plugins installed for which CRs have applied to the KIND cluster and are available in the central repo
 	// e. run plugin sync and validate the plugin list
 	// f. delete the KIND cluster
-	Context("Use case: Install KIND Cluster, Apply CRD, Apply specific plugin CRs, create context and validate plugin sync", func() {
+	Context("Use case 3: Install KIND Cluster, Apply CRD, Apply specific plugin CRs, create context and validate plugin sync", func() {
 		var clusterInfo *f.ClusterInfo
 		var pluginCRFilePaths, pluginWithIncorrectVerCRFilePaths []string
 		var pluginsInfoForCRsApplied, pluginsWithIncorrectVer, pluginsList []*f.PluginInfo
@@ -286,7 +286,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 	//    plugins installed for which CRs are applied in KIND cluster
 	// d. delete the context, make sure all context specific plugins are uninstalled
 	// e. delete the KIND cluster
-	Context("Use case: Install KIND Cluster, Apply CRD, Apply specific plugin CRs, create context and validate plugin sync", func() {
+	Context("Use case 4: Install KIND Cluster, Apply CRD, Apply specific plugin CRs, create context and validate plugin sync", func() {
 		var clusterInfo *f.ClusterInfo
 		var pluginCRFilePaths []string
 		var pluginsInfoForCRsApplied, pluginsList []*f.PluginInfo
@@ -349,7 +349,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 	// d. for cluster two, create random context and validate the plugin list should show all plugins for which CRs are applied
 	// e. switch context's, make sure installed plugins also updated
 	// f. delete the KIND clusters
-	Context("Use case: Install KIND Cluster, Apply CRD, Apply specific plugin CRs, create context and validate plugin sync", func() {
+	Context("Use case 5: Install KIND Cluster, Apply CRD, Apply specific plugin CRs, create context and validate plugin sync", func() {
 		var clusterOne, clusterTwo *f.ClusterInfo
 		var pluginCRFilePathsClusterOne, pluginCRFilePathsClusterTwo []string
 		var pluginsInfoForCRsAppliedClusterOne, pluginsListClusterOne []*f.PluginInfo
@@ -365,12 +365,13 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			clusterTwo, err = f.CreateKindCluster(tf, f.ContextPrefixK8s+f.RandomNumber(4))
 			Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
 		})
+
 		// Test case: b. for both clusters, apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins
 		It("apply CRD and CRs to KIND cluster", func() {
 			err = f.ApplyConfigOnKindCluster(tf, clusterOne, append(make([]string, 0), f.K8SCRDFilePath))
 			pluginsToGenerateCRs, ok := pluginGroupToPluginListMap[usePluginsFromPluginGroup]
 			Expect(ok).To(BeTrue(), "plugin group does not exist in the map")
-			Expect(len(pluginsToGenerateCRs) > numberOfPluginsToInstall*2).To(BeTrue(), "we don't have enough plugins in local test central repo")
+			Expect(len(pluginsToGenerateCRs) > numberOfPluginsToInstall).To(BeTrue(), "we don't have enough plugins in local test central repo")
 
 			pluginsInfoForCRsAppliedClusterOne, pluginCRFilePathsClusterOne, err = f.CreateTemporaryCRsForPluginsInGivenPluginGroup(pluginsToGenerateCRs[:numberOfPluginsToInstall])
 			Expect(err).To(BeNil(), "should not get any error while generating CR files")

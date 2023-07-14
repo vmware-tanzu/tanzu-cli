@@ -97,7 +97,7 @@ func (d *RESTDiscovery) doRequest(req *http.Request, v interface{}) error {
 }
 
 // List available plugins.
-func (d *RESTDiscovery) List(options ...PluginDiscoveryOptions) ([]Discovered, error) {
+func (d *RESTDiscovery) List() ([]Discovered, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
 	defer cancel()
 
