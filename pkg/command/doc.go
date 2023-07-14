@@ -28,13 +28,15 @@ var (
 )
 
 func init() {
+	// Shell completion for this flag is file completion which is enabled by default
 	genAllDocsCmd.Flags().StringVarP(&docsDir, "docs-dir", "d", DefaultDocsDir, "destination for docs output")
 }
 
 var genAllDocsCmd = &cobra.Command{
-	Use:    "generate-all-docs",
-	Short:  "Generate Cobra CLI docs for all plugins installed",
-	Hidden: true,
+	Use:               "generate-all-docs",
+	Short:             "Generate Cobra CLI docs for all plugins installed",
+	Hidden:            true,
+	ValidArgsFunction: cobra.NoFileCompletions,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		if docsDir == "" {

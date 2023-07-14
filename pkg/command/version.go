@@ -21,6 +21,7 @@ func newVersionCmd() *cobra.Command {
 		Annotations: map[string]string{
 			"group": string(plugin.SystemCmdGroup),
 		},
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("version: %s\nbuildDate: %s\nsha: %s\n", buildinfo.Version, buildinfo.Date, buildinfo.SHA)
 			return nil

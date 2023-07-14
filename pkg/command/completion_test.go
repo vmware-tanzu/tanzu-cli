@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Test_runCompletion_MissingArg validates functionality when shell name is not provided.
@@ -74,7 +76,7 @@ func Test_runCompletion_Bash(t *testing.T) {
 
 	// Check for a snippet of the bash completion output
 	// TODO make this test less brittle
-	if !strings.Contains(out.String(), "# bash completion V2 for completion") {
+	if !strings.Contains(out.String(), "# bash completion V2") {
 		t.Errorf("Unexpected output for the bash shell script: %s", out.String())
 	}
 }
@@ -89,7 +91,7 @@ func Test_runCompletion_Zsh(t *testing.T) {
 	}
 
 	// Check for a snippet of the zsh completion output
-	if !strings.Contains(out.String(), "# For zsh, when completing a flag with an = (e.g., completion -n=<TAB>)") {
+	if !strings.Contains(out.String(), "# For zsh, when completing a flag with an =") {
 		t.Errorf("Unexpected output for the zsh shell script: %s", out.String())
 	}
 }
@@ -104,7 +106,7 @@ func Test_runCompletion_Fish(t *testing.T) {
 	}
 
 	// Check for a snippet of the fish completion output
-	if !strings.Contains(out.String(), "# For Fish, when completing a flag with an = (e.g., <program> -n=<TAB>)") {
+	if !strings.Contains(out.String(), "# For Fish, when completing a flag with an =") {
 		t.Errorf("Unexpected output for the fish shell script: %s", out.String())
 	}
 }
@@ -121,5 +123,44 @@ func Test_runCompletion_Pwsh(t *testing.T) {
 	// Check for a snippet of the powershell completion output
 	if !strings.Contains(out.String(), "# PowerShell supports three different completion modes") {
 		t.Errorf("Unexpected output for the powershell script: %s", out.String())
+	}
+}
+
+func TestCompletionCompletion(t *testing.T) {
+	tests := []struct {
+		test     string
+		args     []string
+		expected string
+	}{
+		{
+			test: "completion of supported shells as the arg to the completion command",
+			args: []string{"__complete", "completion", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: strings.Join(completionShells, "\n") + "\n:4\n",
+		},
+		{
+			test: "no completion after the first arg for the completion command",
+			args: []string{"__complete", "completion", "fish", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+	}
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var out bytes.Buffer
+			rootCmd.SetOut(&out)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			assert.Equal(spec.expected, out.String())
+		})
 	}
 }

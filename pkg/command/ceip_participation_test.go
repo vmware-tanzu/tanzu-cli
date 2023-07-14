@@ -6,10 +6,12 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/otiai10/copy"
+	"github.com/stretchr/testify/assert"
 )
 
 var _ = Describe("ceip-participation command tests", func() {
@@ -113,5 +115,56 @@ var _ = Describe("ceip-participation command tests", func() {
 			})
 		})
 	})
-
 })
+
+func TestCompletionCeip(t *testing.T) {
+	tests := []struct {
+		test     string
+		args     []string
+		expected string
+	}{
+		// =====================
+		// tanzu ceip set
+		// =====================
+		{
+			test: "completion of true/false for the ceip set command",
+			args: []string{"__complete", "ceip", "set", ""},
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "true\tAccept to participate\n" +
+				"false\tRefuse to participate\n" + ":36\n",
+		},
+		{
+			test: "no completion after the first arg for the ceip set command",
+			args: []string{"__complete", "ceip", "set", "true", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// =====================
+		// tanzu ceip get
+		// =====================
+		{
+			test: "no completion for the ceip get command",
+			args: []string{"__complete", "ceip", "get", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+	}
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var out bytes.Buffer
+			rootCmd.SetOut(&out)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			assert.Equal(spec.expected, out.String())
+		})
+	}
+}
