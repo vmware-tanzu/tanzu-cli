@@ -163,7 +163,7 @@ var createCtxCmd = &cobra.Command{
 
 func initCreateCtxCmd() {
 	createCtxCmd.Flags().StringVar(&ctxName, "name", "", "name of the context")
-	_ = createCtxCmd.Flags().MarkDeprecated("name", "it has been replaced by using an argument to the command")
+	utils.PanicOnErr(createCtxCmd.Flags().MarkDeprecated("name", "it has been replaced by using an argument to the command"))
 
 	createCtxCmd.Flags().StringVar(&endpoint, "endpoint", "", "endpoint to create a context for")
 	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("endpoint", cobra.NoFileCompletions))
@@ -193,10 +193,10 @@ func initCreateCtxCmd() {
 			cobra.ShellCompDirectiveNoFileComp
 	}))
 
-	_ = createCtxCmd.Flags().MarkHidden("api-token")
-	_ = createCtxCmd.Flags().MarkHidden("stderr-only")
-	_ = createCtxCmd.Flags().MarkHidden("force-csp")
-	_ = createCtxCmd.Flags().MarkHidden("staging")
+	utils.PanicOnErr(createCtxCmd.Flags().MarkHidden("api-token"))
+	utils.PanicOnErr(createCtxCmd.Flags().MarkHidden("stderr-only"))
+	utils.PanicOnErr(createCtxCmd.Flags().MarkHidden("force-csp"))
+	utils.PanicOnErr(createCtxCmd.Flags().MarkHidden("staging"))
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint", "kubecontext")
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint", "kubeconfig")
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")

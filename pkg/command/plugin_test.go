@@ -402,3 +402,313 @@ func TestUpgradePlugin(t *testing.T) {
 		})
 	}
 }
+
+func TestCompletionPlugin(t *testing.T) {
+	// Test local discovery
+	localSourcePath := filepath.Join("..", "fakes", "plugins", cli.GOOS, cli.GOARCH)
+
+	expectedOutforTargetFlag := compGlobalTarget + "\n" + compK8sTarget + "\n" + compTMCTarget + "\n"
+
+	tests := []struct {
+		test     string
+		args     []string
+		expected string
+	}{
+		// =====================
+		// tanzu plugin list
+		// =====================
+		{
+			test: "no completion after the plugin list command",
+			args: []string{"__complete", "plugin", "list", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion for the --output flag value of the plugin list command",
+			args: []string{"__complete", "plugin", "list", "--output", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForOutputFlag + ":4\n",
+		},
+		// =====================
+		// tanzu plugin clean
+		// =====================
+		{
+			test: "no completions for the plugin clean command",
+			args: []string{"__complete", "plugin", "clean", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// =====================
+		// tanzu plugin sync
+		// =====================
+		{
+			test: "no completions for the plugin sync command",
+			args: []string{"__complete", "plugin", "sync", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// =====================
+		// tanzu plugin install
+		// =====================
+		{
+			test: "completion for the plugin install command",
+			args: []string{"__complete", "plugin", "install", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "cluster\tMultiple entries for plugin cluster. You will need to use the --target flag.\n" +
+				"feature\tPlugin feature/kubernetes description\n" +
+				"isolated-cluster\tPlugin isolated-cluster/global description\n" +
+				"login\tPlugin login/global description\n" +
+				"management-cluster\tMultiple entries for plugin management-cluster. You will need to use the --target flag.\n" +
+				"package\tPlugin package/kubernetes description\n" +
+				"secret\tPlugin secret/kubernetes description\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the plugin install command using --group",
+			args: []string{"__complete", "plugin", "install", "--group", "vmware-tkg/default:v1.1.1", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			// There are no descriptions in this case because the plugin group only contains plugin names
+			expected: "all\n" +
+				"isolated-cluster\n" +
+				"login\n" +
+				"management-cluster\n" +
+				"package\n" +
+				"secret\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the plugin install command using --target",
+			args: []string{"__complete", "plugin", "install", "--target", "kubernetes", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "cluster\tPlugin cluster/kubernetes description\n" +
+				"feature\tPlugin feature/kubernetes description\n" +
+				"management-cluster\tPlugin management-cluster/kubernetes description\n" +
+				"package\tPlugin package/kubernetes description\n" +
+				"secret\tPlugin secret/kubernetes description\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the plugin install command using --local-source",
+			args: []string{"__complete", "plugin", "install", "--local-source", localSourcePath, ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "all\tAll plugins of the local source\n" +
+				"builder\tBuild Tanzu components\n" +
+				"secret\tTanzu secret management\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the plugin install command using --local-source and --target",
+			args: []string{"__complete", "plugin", "install", "--local-source", localSourcePath, "--target", "global", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "all\tAll plugins of the local source\n" +
+				"builder\tBuild Tanzu components\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the plugin install command using --local-source and --target with no plugin match",
+			args: []string{"__complete", "plugin", "install", "--local-source", localSourcePath, "--target", "tmc", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion for the --group flag value for the group name part of the plugin install command",
+			args: []string{"__complete", "plugin", "install", "--group", ""},
+			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
+			expected: "vmware-tap/default\tPlugins for TAP\n" +
+				"vmware-tkg/default\tPlugins for TKG\n" +
+				":6\n",
+		},
+		{
+			test: "completion for the --group flag value for the version part of the plugin install command",
+			args: []string{"__complete", "plugin", "install", "--group", "vmware-tkg/default:"},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "vmware-tkg/default:v1.1.1\n" +
+				"vmware-tkg/default:v2.2.2\n" +
+				"vmware-tkg/default:v2.2.2-beta\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --local-source flag value",
+			args: []string{"__complete", "plugin", "install", "--local-source", ""},
+			// ":0" is the value of the ShellCompDirectiveDefault which indicates
+			// that file completion will be performed
+			expected: ":0\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin install command",
+			args: []string{"__complete", "plugin", "install", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutforTargetFlag + ":4\n",
+		},
+		{
+			test: "no completion for the --version flag value for the plugin install command with no plugin name",
+			args: []string{"__complete", "plugin", "install", "--version", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ You must first specify a plugin name to be able to complete its version\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --version flag value for the plugin install command with a plugin name",
+			args: []string{"__complete", "plugin", "install", "management-cluster", "--version", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ Unable to uniquely identify this plugin. Please specify a target using the `--target` flag\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --version flag value for the plugin install command with a plugin name and --target",
+			args: []string{"__complete", "plugin", "install", "management-cluster", "--target", "tmc", "--version", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "v0.0.1\n" +
+				"v0.0.2\n" +
+				"v0.0.3\n" +
+				"v0.2.0\n" +
+				":4\n",
+		},
+		{
+			test: "no completion after the first arg for the plugin install command",
+			args: []string{"__complete", "plugin", "install", "builder", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// =====================
+		// tanzu plugin upgrade
+		// =====================
+		{
+			test: "completion for the plugin upgrade command",
+			args: []string{"__complete", "plugin", "upgrade", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "cluster\tMultiple entries for plugin cluster. You will need to use the --target flag.\n" +
+				"feature\tPlugin feature/kubernetes description\n" +
+				"isolated-cluster\tPlugin isolated-cluster/global description\n" +
+				"login\tPlugin login/global description\n" +
+				"management-cluster\tMultiple entries for plugin management-cluster. You will need to use the --target flag.\n" +
+				"package\tPlugin package/kubernetes description\n" +
+				"secret\tPlugin secret/kubernetes description\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the plugin upgrade command using --target",
+			args: []string{"__complete", "plugin", "upgrade", "--target", "kubernetes", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "cluster\tPlugin cluster/kubernetes description\n" +
+				"feature\tPlugin feature/kubernetes description\n" +
+				"management-cluster\tPlugin management-cluster/kubernetes description\n" +
+				"package\tPlugin package/kubernetes description\n" +
+				"secret\tPlugin secret/kubernetes description\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin upgrade command",
+			args: []string{"__complete", "plugin", "upgrade", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutforTargetFlag + ":4\n",
+		},
+		{
+			test: "no completion after the first arg for the plugin upgrade command",
+			args: []string{"__complete", "plugin", "upgrade", "builder", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// =====================
+		// tanzu plugin delete
+		// =====================
+		{
+			test: "completion for the plugin delete command",
+			args: []string{"__complete", "plugin", "delete", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "cluster\tMultiple entries for plugin cluster. You will need to use the --target flag.\n" +
+				"feature\tTarget: kubernetes for feature\n" +
+				"management-cluster\tMultiple entries for plugin management-cluster. You will need to use the --target flag.\n" +
+				"secret\tTarget: kubernetes for secret\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the plugin delete command using --target",
+			args: []string{"__complete", "plugin", "delete", "--target", "k8s", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "cluster\tTarget: kubernetes for cluster\n" +
+				"feature\tTarget: kubernetes for feature\n" +
+				"management-cluster\tTarget: kubernetes for management-cluster\n" +
+				"secret\tTarget: kubernetes for secret\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin delete command",
+			args: []string{"__complete", "plugin", "delete", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutforTargetFlag + ":4\n",
+		},
+		// =====================
+		// tanzu plugin describe
+		// =====================
+		{
+			test: "completion for the plugin describe command",
+			args: []string{"__complete", "plugin", "describe", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "cluster\tMultiple entries for plugin cluster. You will need to use the --target flag.\n" +
+				"feature\tTarget: kubernetes for feature\n" +
+				"management-cluster\tMultiple entries for plugin management-cluster. You will need to use the --target flag.\n" +
+				"secret\tTarget: kubernetes for secret\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the plugin describe command using --target",
+			args: []string{"__complete", "plugin", "describe", "--target", "k8s", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "cluster\tTarget: kubernetes for cluster\n" +
+				"feature\tTarget: kubernetes for feature\n" +
+				"management-cluster\tTarget: kubernetes for management-cluster\n" +
+				"secret\tTarget: kubernetes for secret\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --output flag value of the plugin describe command",
+			args: []string{"__complete", "plugin", "describe", "--output", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForOutputFlag + ":4\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin describe command",
+			args: []string{"__complete", "plugin", "describe", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutforTargetFlag + ":4\n",
+		},
+	}
+
+	// Setup a plugin source and a set of installed plugins
+	defer setupPluginSourceForTesting(t)()
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var out bytes.Buffer
+			rootCmd.SetOut(&out)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			assert.Equal(spec.expected, out.String())
+
+			resetPluginCommandFlags()
+		})
+	}
+}
+
+func resetPluginCommandFlags() {
+	targetStr = ""
+	local = ""
+	version = ""
+	forceDelete = false
+	outputFormat = ""
+	targetStr = ""
+	group = ""
+	showNonMandatory = false
+	groupID = ""
+	showDetails = false
+	pluginName = ""
+}

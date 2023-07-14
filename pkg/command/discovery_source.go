@@ -12,6 +12,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 
 	"github.com/spf13/cobra"
 
@@ -46,8 +47,9 @@ func newDiscoverySourceCmd() *cobra.Command {
 
 func newListDiscoverySourceCmd() *cobra.Command {
 	var listDiscoverySourceCmd = &cobra.Command{
-		Use:   "list",
-		Short: "List available discovery sources",
+		Use:               "list",
+		Short:             "List available discovery sources",
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			output := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "name", "image")
 			discoverySources, err := configlib.GetCLIDiscoverySources()
@@ -68,6 +70,7 @@ func newListDiscoverySourceCmd() *cobra.Command {
 	}
 
 	listDiscoverySourceCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
+	utils.PanicOnErr(listDiscoverySourceCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
 
 	return listDiscoverySourceCmd
 }
@@ -82,7 +85,8 @@ func newUpdateDiscoverySourceCmd() *cobra.Command {
 		Example: `
     # Update the discovery source for an air-gapped scenario. The URI must be an OCI image.
     tanzu plugin source update default --uri registry.example.com/tanzu/plugin-inventory:latest`,
-		Args: cobra.ExactArgs(1),
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: completeDiscoverySources,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			discoveryName := args[0]
 
@@ -108,6 +112,7 @@ func newUpdateDiscoverySourceCmd() *cobra.Command {
 
 	updateDiscoverySourceCmd.Flags().StringVarP(&uri, "uri", "u", "", "URI for discovery source. The URI must be of an OCI image")
 	_ = updateDiscoverySourceCmd.MarkFlagRequired("uri")
+	utils.PanicOnErr(updateDiscoverySourceCmd.RegisterFlagCompletionFunc("uri", cobra.NoFileCompletions))
 
 	return updateDiscoverySourceCmd
 }
@@ -123,6 +128,7 @@ func newDeleteDiscoverySourceCmd() *cobra.Command {
 		Example: `
     # Delete a discovery source
     tanzu plugin discovery delete default`,
+		ValidArgsFunction: completeDiscoverySources,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			discoveryName := args[0]
 
@@ -149,6 +155,7 @@ func newInitDiscoverySourceCmd() *cobra.Command {
 		Args:  cobra.MaximumNArgs(0),
 		// There are no flags
 		DisableFlagsInUseLine: true,
+		ValidArgsFunction:     cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := config.PopulateDefaultCentralDiscovery(true)
 			if err != nil {
@@ -187,4 +194,22 @@ func checkDiscoverySource(source configtypes.PluginDiscovery) error {
 	}
 	_, err = discObject.List()
 	return err
+}
+
+// ====================================
+// Shell completion functions
+// ====================================
+func completeDiscoverySources(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var comps []string
+	discoverySources, _ := configlib.GetCLIDiscoverySources()
+	for _, ds := range discoverySources {
+		if ds.OCI != nil {
+			comps = append(comps, fmt.Sprintf("%s\t%s", ds.OCI.Name, ds.OCI.Image))
+		}
+	}
+	return comps, cobra.ShellCompDirectiveNoFileComp
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/airgapped"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 type downloadPluginBundleOptions struct {
@@ -33,6 +34,7 @@ to an internet-restricted environment. Please also see the "upload-bundle" comma
 
     # Download a plugin bundle with the entire plugin repository from a custom discovery source
     tanzu plugin download-bundle --image custom.registry.vmware.com/tkg/tanzu-plugins/plugin-inventory:latest --to-tar /tmp/plugin_bundle_complete.tar.gz`,
+		ValidArgsFunction: completeDownloadBundle,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !dpbo.dryRun && dpbo.tarFile == "" {
 				return errors.New("flag '--to-tar' is required")
@@ -50,12 +52,18 @@ to an internet-restricted environment. Please also see the "upload-bundle" comma
 
 	f := downloadBundleCmd.Flags()
 	f.StringVarP(&dpbo.pluginDiscoveryOCIImage, "image", "", constants.TanzuCLIDefaultCentralPluginDiscoveryImage, "URI of the plugin discovery image providing the plugins")
+	utils.PanicOnErr(downloadBundleCmd.RegisterFlagCompletionFunc("image", cobra.NoFileCompletions))
+
+	// Shell completion for this flag is the default behavior of doing file completion
 	f.StringVarP(&dpbo.tarFile, "to-tar", "", "", "local tar file path to store the plugin images")
 	f.StringSliceVarP(&dpbo.groups, "group", "", []string{}, "only download the plugins specified in the plugin-group version (can specify multiple)")
+	utils.PanicOnErr(downloadBundleCmd.RegisterFlagCompletionFunc("group", completeGroupsAndVersion))
 
 	f.BoolVarP(&dpbo.dryRun, "dry-run", "", false, "perform a dry run by listing the images to download without actually downloading them")
 	_ = downloadBundleCmd.Flags().MarkHidden("dry-run")
 
+	// TODO(khouzam): Once using Cobra 1.8, we can use MarkFlagsOneRequired.
+	// We can then adjust the shell completion as it will be handled by cobra
 	downloadBundleCmd.MarkFlagsMutuallyExclusive("to-tar", "dry-run")
 
 	return downloadBundleCmd
@@ -78,6 +86,7 @@ environment. The plugin bundle is obtained using the "download-bundle" command.`
     # Upload the plugin bundle to the remote repository
     tanzu plugin upload-bundle --tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/
     tanzu plugin upload-bundle --tar /tmp/plugin_bundle_complete.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/`,
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			options := airgapped.UploadPluginBundleOptions{
 				Tar:             upbo.sourceTar,
@@ -89,11 +98,27 @@ environment. The plugin bundle is obtained using the "download-bundle" command.`
 	}
 
 	f := uploadBundleCmd.Flags()
+
+	// Shell completion for this flag is the default behavior of doing file completion
 	f.StringVarP(&upbo.sourceTar, "tar", "", "", "source tar file")
 	f.StringVarP(&upbo.destinationRepo, "to-repo", "", "", "destination repository for publishing plugins")
+	utils.PanicOnErr(uploadBundleCmd.RegisterFlagCompletionFunc("to-repo", cobra.NoFileCompletions))
 
 	_ = uploadBundleCmd.MarkFlagRequired("tar")
 	_ = uploadBundleCmd.MarkFlagRequired("to-repo")
 
 	return uploadBundleCmd
+}
+
+func completeDownloadBundle(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if !dpbo.dryRun && dpbo.tarFile == "" {
+		// The user must provide more info by using flags.
+		// Note that those flags are not marked as mandatory
+		// because only one of the two --to-tar and --dry-run are required
+		comps := []string{"--"}
+		return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+	}
+
+	// The user has provided enough information
+	return nil, cobra.ShellCompDirectiveNoFileComp
 }
