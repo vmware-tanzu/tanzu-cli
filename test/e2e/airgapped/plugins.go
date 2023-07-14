@@ -74,5 +74,8 @@ var pluginsForPGTMC999 = []*framework.PluginInfo{
 var pluginsNotInAnyPG999 = []*framework.PluginInfo{
 	{Name: "isolated-cluster", Target: "global", Version: "v9.9.9", Description: "Desc for isolated-cluster"},
 	{Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "Desc for pinniped-auth"},
+}
+
+var essentialPlugins = []*framework.PluginInfo{
 	{Name: "telemetry", Target: "global", Version: "v9.9.9", Description: "Desc for telemetry"},
 }

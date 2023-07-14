@@ -120,14 +120,15 @@ const (
 	StartDockerUbuntu = "sudo systemctl start docker"
 	StopDockerUbuntu  = "sudo systemctl stop docker"
 
-	TMC                  = "tmc"
-	TKG                  = "tkg"
-	SourceType           = "oci"
-	GlobalTarget         = "global"
-	KubernetesTarget     = "kubernetes"
-	MissionControlTarget = "mission-control"
-	TMCPluginGroupPrefix = "vmware-tmc"
-	K8SPluginGroupPrefix = "vmware-tkg"
+	TMC                         = "tmc"
+	TKG                         = "tkg"
+	SourceType                  = "oci"
+	GlobalTarget                = "global"
+	KubernetesTarget            = "kubernetes"
+	MissionControlTarget        = "mission-control"
+	TMCPluginGroupPrefix        = "vmware-tmc"
+	K8SPluginGroupPrefix        = "vmware-tkg"
+	EssentialsPluginGroupPrefix = "vmware-tanzucli"
 
 	// log info
 	ExecutingCommand = "Executing command: %s"

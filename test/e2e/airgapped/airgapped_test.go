@@ -50,6 +50,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// search plugins and make sure correct number of plugins available
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
 			expectedPlugins := pluginsForPGTKG001
+			expectedPlugins = append(expectedPlugins, essentialPlugins...) // Essential plugin will be always installed
 			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
@@ -107,6 +108,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			expectedPlugins := append(pluginsForPGTKG001, pluginsForPGTMC999...)
+			expectedPlugins = append(expectedPlugins, essentialPlugins...) // Essential plugin will be always installed
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
 			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
 		})
@@ -151,6 +153,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// search plugins and make sure correct number of plugins available
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
 			expectedPlugins := append(pluginsForPGTKG001, pluginsForPGTMC999...)
+			expectedPlugins = append(expectedPlugins, essentialPlugins...) // Essential plugin will be always installed
 			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
@@ -199,6 +202,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
 			expectedPlugins := append(pluginsForPGTKG999, pluginsForPGTMC999...)
 			expectedPlugins = append(expectedPlugins, pluginsNotInAnyPG999...)
+			expectedPlugins = append(expectedPlugins, essentialPlugins...) // Essential plugin will be always installed
 			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
@@ -228,7 +232,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// Verify above plugins got installed with `tanzu plugin list`
 			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
 			Expect(err).To(BeNil())
-			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsNotInAnyPG999)).To(BeTrue())
+			expectedPlugins := append(pluginsNotInAnyPG999, essentialPlugins...) // Essential plugin will be always installed
+			Expect(framework.CheckAllPluginsExists(installedPlugins, expectedPlugins)).To(BeTrue())
 		})
 
 		// Test case: (negative use case) empty path for --to-tar
@@ -237,7 +242,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			Expect(err).NotTo(BeNil(), "should throw error for incorrect input path")
 			Expect(strings.Contains(err.Error(), "flag '--to-tar' is required")).To(BeTrue())
 		})
-		// Test case: (negative use case) directory name only for for --to-tar
+		// Test case: (negative use case) directory name only for --to-tar
 		It("plugin download-bundle when to-tar path is a directory", func() {
 			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, tempDir)
 			Expect(err).NotTo(BeNil(), "should throw error for incorrect input path")

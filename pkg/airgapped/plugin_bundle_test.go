@@ -110,6 +110,47 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 		},
 	}
 
+	// plugin entry bar to be added in the inventory database
+	essentialPluginEntryTelemetry := &plugininventory.PluginInventoryEntry{
+		Name:               "telemetry",
+		Target:             "global",
+		Description:        "Telemetry plugin",
+		Publisher:          "tanzucli",
+		Vendor:             "vmware",
+		Hidden:             false,
+		RecommendedVersion: "v0.0.1",
+		Artifacts: map[string]distribution.ArtifactList{
+			"v0.0.1": []distribution.Artifact{
+				{
+					OS:     "darwin",
+					Arch:   "amd64",
+					Digest: "fake-digest-telemetry",
+					Image:  "path/darwin/amd64/global/telemetry:v0.0.1",
+				},
+			},
+		},
+	}
+
+	essentialPluginGroupEntry := &plugininventory.PluginGroup{
+		Vendor:             "vmware",
+		Publisher:          "tanzucli",
+		Name:               "essentials",
+		Description:        "Desc for plugin",
+		Hidden:             false,
+		RecommendedVersion: "v0.0.1",
+		Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
+			"v0.0.1": {
+				&plugininventory.PluginGroupPluginEntry{
+					PluginIdentifier: plugininventory.PluginIdentifier{
+						Name:    "telemetry",
+						Target:  "global",
+						Version: "v0.0.1",
+					},
+				},
+			},
+		},
+	}
+
 	// Plugin bundle manifest file generated based on the above mentioned
 	// plugin entry in the inventory database
 	pluginBundleManifestCompleteRepositoryString := `relativeInventoryImagePathWithTag: /plugin-inventory:latest
@@ -125,6 +166,8 @@ imagesToCopy:
       relativeImagePath: /path/darwin/amd64/global/foo
     - sourceTarFilePath: foo-global-linux_amd64-v0.0.2.tar.gz
       relativeImagePath: /path/linux/amd64/global/foo
+    - sourceTarFilePath: telemetry-global-darwin_amd64-v0.0.1.tar.gz
+      relativeImagePath: /path/darwin/amd64/global/telemetry
 `
 
 	// Plugin bundle manifest file generated based on the above mentioned
@@ -138,6 +181,8 @@ imagesToCopy:
       relativeImagePath: /plugin-inventory
     - sourceTarFilePath: bar-kubernetes-darwin_amd64-v0.0.1.tar.gz
       relativeImagePath: /path/darwin/amd64/kubernetes/bar
+    - sourceTarFilePath: telemetry-global-darwin_amd64-v0.0.1.tar.gz
+      relativeImagePath: /path/darwin/amd64/global/telemetry
 `
 
 	// Configure the configuration before running the tests
@@ -178,6 +223,11 @@ imagesToCopy:
 		Expect(err).ToNot(HaveOccurred())
 		err = db.InsertPluginGroup(pluginGroupEntry, true)
 		Expect(err).ToNot(HaveOccurred())
+
+		err = db.InsertPlugin(essentialPluginEntryTelemetry)
+		Expect(err).ToNot(HaveOccurred())
+		err = db.InsertPluginGroup(essentialPluginGroupEntry, true)
+		Expect(err).ToNot(HaveOccurred())
 		return nil
 	}
 
@@ -210,6 +260,12 @@ imagesToCopy:
 		Expect(err).ToNot(HaveOccurred())
 
 		err = db.InsertPluginIdentifier(&plugininventory.PluginIdentifier{Name: pluginEntryBar.Name, Target: pluginEntryBar.Target, Version: pluginEntryBar.RecommendedVersion})
+		Expect(err).ToNot(HaveOccurred())
+
+		err = db.InsertPluginGroupIdentifier(&plugininventory.PluginGroupIdentifier{Name: essentialPluginGroupEntry.Name, Vendor: essentialPluginGroupEntry.Vendor, Publisher: essentialPluginGroupEntry.Publisher})
+		Expect(err).ToNot(HaveOccurred())
+
+		err = db.InsertPluginIdentifier(&plugininventory.PluginIdentifier{Name: essentialPluginEntryTelemetry.Name, Target: essentialPluginEntryTelemetry.Target, Version: essentialPluginEntryTelemetry.RecommendedVersion})
 		Expect(err).ToNot(HaveOccurred())
 
 		return nil
@@ -371,6 +427,7 @@ imagesToCopy:
 				"fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1",
 				"fake.fakerepo.abc/plugin/path/darwin/amd64/global/foo:v0.0.2",
 				"fake.fakerepo.abc/plugin/path/linux/amd64/global/foo:v0.0.2",
+				"fake.fakerepo.abc/plugin/path/darwin/amd64/global/telemetry:v0.0.1",
 			}
 
 			Expect(images).To(ContainElements(expectedImages))
