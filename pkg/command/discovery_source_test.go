@@ -4,11 +4,15 @@
 package command
 
 import (
+	"bytes"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 )
 
 func Test_createDiscoverySource(t *testing.T) {
@@ -81,6 +85,51 @@ func Test_createDiscoverySource(t *testing.T) {
 	assert.Contains(err.Error(), "unknown discovery source type 'unexpectedValue'")
 }
 
+// Test_createAndListDiscoverySources test 'tanzu plugin source list' when TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY has set test only discovery sources
+func Test_createAndListDiscoverySources(t *testing.T) {
+	oldVal := os.Getenv(constants.ConfigVariableAdditionalDiscoveryForTesting)
+	os.Setenv(constants.CEIPOptInUserPromptAnswer, "No")
+	os.Setenv(constants.EULAPromptAnswer, "Yes")
+
+	// Initialize the plugin source
+	rootCmd, err := NewRootCmd()
+	assert.Nil(t, err)
+	rootCmd.SetArgs([]string{"plugin", "source", "init"})
+	err = rootCmd.Execute()
+	assert.Nil(t, err)
+
+	// List plugin source - one
+	os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, "harbor-repo.vmware.com/tanzu_cli_stage/plugins/plugin-inventory:latest")
+
+	rootCmd.SetArgs([]string{"plugin", "source", "list"})
+	b := bytes.NewBufferString("")
+	rootCmd.SetOut(b)
+	err = rootCmd.Execute()
+	assert.Nil(t, err)
+
+	got, err := io.ReadAll(b)
+	assert.Nil(t, err)
+
+	str := string(got)
+	assert.Contains(t, str, "disc_0 (test only)")
+
+	// List plugin source - two
+	os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, "harbor-repo.vmware.com/tanzu_cli_stage/plugins/plugin-inventory:latest,localhost:9876/tanzu-cli/plugins/sandbox1:small")
+
+	rootCmd.SetArgs([]string{"plugin", "source", "list"})
+	b = bytes.NewBufferString("")
+	rootCmd.SetOut(b)
+	err = rootCmd.Execute()
+	assert.Nil(t, err)
+
+	got, err = io.ReadAll(b)
+	assert.Nil(t, err)
+
+	str = string(got)
+	assert.Contains(t, str, "disc_0 (test only)")
+	assert.Contains(t, str, "disc_1 (test only)")
+	os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, oldVal)
+}
 func Test_addDiscoverySource(t *testing.T) {
 }
 
