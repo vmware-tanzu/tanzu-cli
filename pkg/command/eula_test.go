@@ -3,12 +3,15 @@
 package command
 
 import (
+	"bytes"
 	"os"
 	"strings"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -111,3 +114,48 @@ var _ = Describe("EULA command tests", func() {
 		})
 	})
 })
+
+func TestCompletionEULA(t *testing.T) {
+	tests := []struct {
+		test     string
+		args     []string
+		expected string
+	}{
+		// =====================
+		// tanzu config eula accept
+		// =====================
+		{
+			test: "no completion for the eula accept command",
+			args: []string{"__complete", "config", "eula", "accept", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// =====================
+		// tanzu config eula show
+		// =====================
+		{
+			test: "no completion for the eula show command",
+			args: []string{"__complete", "config", "eula", "show", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+	}
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var out bytes.Buffer
+			rootCmd.SetOut(&out)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			assert.Equal(spec.expected, out.String())
+		})
+	}
+}

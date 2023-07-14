@@ -5,6 +5,7 @@ package command
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -63,8 +64,9 @@ var configCmd = &cobra.Command{
 }
 
 var getConfigCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Get the current configuration",
+	Use:               "get",
+	Short:             "Get the current configuration",
+	ValidArgsFunction: cobra.NoFileCompletions,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := configlib.GetClientConfig()
 		if err != nil {
@@ -81,9 +83,10 @@ var getConfigCmd = &cobra.Command{
 }
 
 var setConfigCmd = &cobra.Command{
-	Use:   "set <path> <value>",
-	Short: "Set config values at the given path",
-	Long:  "Set config values at the given path. path values: [unstable-versions, cli.edition, features.global.<feature>, features.<plugin>.<feature>, env.<variable>]",
+	Use:               "set <path> <value>",
+	Short:             "Set config values at the given path",
+	Long:              "Set config values at the given path. path values: [unstable-versions, cli.edition, features.global.<feature>, features.<plugin>.<feature>, env.<variable>]",
+	ValidArgsFunction: completeSetConfig,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 2 {
 			return errors.Errorf("both path and value are required")
@@ -207,9 +210,10 @@ func setEdition(cfg *configtypes.ClientConfig, edition string) error {
 }
 
 var initConfigCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Initialize config with defaults",
-	Long:  "Initialize config with defaults including plugin specific defaults such as default feature flags for all active and installed plugins",
+	Use:               "init",
+	Short:             "Initialize config with defaults",
+	Long:              "Initialize config with defaults including plugin specific defaults such as default feature flags for all active and installed plugins",
+	ValidArgsFunction: cobra.NoFileCompletions,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Acquire tanzu config lock
 		configlib.AcquireTanzuConfigLock()
@@ -285,7 +289,6 @@ var listServersCmd = &cobra.Command{
 var deleteServersCmd = &cobra.Command{
 	Use:   "delete SERVER_NAME",
 	Short: "Delete a server from the config",
-
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
 			return errors.Errorf("Server name required. Usage: tanzu config server delete server_name")
@@ -319,9 +322,10 @@ var deleteServersCmd = &cobra.Command{
 }
 
 var unsetConfigCmd = &cobra.Command{
-	Use:   "unset <path>",
-	Short: "Unset config values at the given path",
-	Long:  "Unset config values at the given path. path values: [features.global.<feature>, features.<plugin>.<feature>, env.global.<variable>, env.<plugin>.<variable>]",
+	Use:               "unset <path>",
+	Short:             "Unset config values at the given path",
+	Long:              "Unset config values at the given path. path values: [features.global.<feature>, features.<plugin>.<feature>, env.global.<variable>, env.<plugin>.<variable>]",
+	ValidArgsFunction: completeUnsetConfig,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
 			return errors.Errorf("path is required")
@@ -372,4 +376,63 @@ func unsetEnvs(paramArray []string) error {
 
 	envVariable := paramArray[1]
 	return configlib.DeleteEnv(envVariable)
+}
+
+// ====================================
+// Shell completion functions
+// ====================================
+
+func completeSetConfig(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 1 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	if len(args) == 1 {
+		return cobra.AppendActiveHelp(nil, "You must provide a value as a second argument"),
+			cobra.ShellCompDirectiveNoFileComp
+	}
+	comps := cobra.AppendActiveHelp(nil, "You can modify the below entries, or provide a new one")
+	comps = append(comps, completionGetEnvAndFeatures()...)
+
+	return comps, cobra.ShellCompDirectiveNoFileComp
+}
+
+func completeUnsetConfig(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return completionGetEnvAndFeatures(), cobra.ShellCompDirectiveNoFileComp
+}
+
+func completionGetEnvAndFeatures() []string {
+	// Complete all available env.<var> and features.<...> immediately
+	// instead of first completing "env." and "features.".
+	// This allows doing fuzzy matching with zsh and fish such as:
+	//  "tanzu config unset ADD<TAB>" and directly getting the completion
+	//  "env.TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY"
+	var comps []string
+	if envVars, err := configlib.GetAllEnvs(); err == nil {
+		for name, value := range envVars {
+			comps = append(comps, fmt.Sprintf("%s.%s\tValue: %q", ConfigLiteralEnv, name, value))
+		}
+	}
+
+	// Retrieve client config node
+	cfg, err := configlib.GetClientConfig()
+	if err != nil {
+		return comps
+	}
+
+	if cfg.ClientOptions != nil && cfg.ClientOptions.Features != nil {
+		for plugin, features := range cfg.ClientOptions.Features {
+			for name, value := range features {
+				comps = append(comps, fmt.Sprintf("%s.%s.%s\tValue: %q", ConfigLiteralFeatures, plugin, name, value))
+			}
+		}
+	}
+
+	// Sort to allow for testing
+	sort.Strings(comps)
+
+	return comps
 }
