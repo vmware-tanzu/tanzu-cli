@@ -31,41 +31,102 @@ VERSION=${VERSION#v}
 BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output
 
-# Install build dependencies
-if ! command -v reprepro &> /dev/null; then
+# Install dependencies
+if ! command -v bzip2 &> /dev/null || ! command -v curl &> /dev/null; then
    ${PKG_MGR} update -y
-   ${PKG_MGR} install -y reprepro
+   ${PKG_MGR} install -y bzip2 curl
 fi
 
-# Assumes ${OUTPUT_DIR} is populated from build_package.sh
-
-# Download the SRP-compliant CLI build from github and copy it to the package directory
+# Generate the repo metadata
+DIST_DIR=${OUTPUT_DIR}/apt/dists/tanzu-cli-jessie
 for arch in amd64 arm64; do
-   echo "===================================="
-   echo "Building debian package repo for $arch..."
-   echo "===================================="
+   FINAL_DIR=${DIST_DIR}/main/binary-${arch}
 
-   # Expects signed file to be present
-   if [ ! -f "${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb" ]; then
-      echo "Not found: ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb"
+   # Assumes ${OUTPUT_DIR} is populated with the new deb packages from build_package.sh
+   PKG="${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb"
+   if [ ! -f ${PKG} ]; then
+      echo "Not found: ${PKG}"
       exit 1
    fi
 
-   # Create repository
-   reprepro -b ${OUTPUT_DIR}/apt includedeb tanzu-cli-jessie ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb
+   # All that is needed from the original repo is to have the original Packages files under:
+   #  ${FINAL_DIR}/Packages
+   DEB_METADATA_BASE_URI=${DEB_METADATA_BASE_URI:=https://storage.googleapis.com/tanzu-cli-os-packages}
+   mkdir -p ${FINAL_DIR}
+   if [ "${DEB_METADATA_BASE_URI}" = "new" ]; then
+      echo
+      echo "Building a brand new repository"
+      echo
+   else
+      # To build a brand new repo, we must pass in DEB_METADATA_BASE_URI=new
+      curl -sLo ${FINAL_DIR}/Packages ${DEB_METADATA_BASE_URI}/apt/dists/tanzu-cli-jessie/main/binary-${arch}/Packages
+   fi
 
-   # Cleanup
-   rm -f ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb
+   # Generate the new entry for the new package and add it to the existing file of packages
+   cat << EOF >> ${FINAL_DIR}/Packages
+Package: tanzu-cli
+Version: ${VERSION}
+Maintainer: Tanzu CLI project team
+Architecture: ${arch}
+Homepage: https://github.com/vmware-tanzu/tanzu-cli
+Priority: optional
+Section: main
+Filename: pool/main/t/tanzu-cli/$(basename ${PKG})
+Size: $(ls -l ${PKG} | awk '{print $5}')
+SHA256: $(sha256sum ${PKG} | cut -f1 -d' ')
+SHA1: $(sha1sum ${PKG} | cut -f1 -d' ')
+MD5sum: $(md5sum ${PKG} | cut -f1 -d' ')
+SHA512: $(sha512sum ${PKG} | cut -f1 -d' ')
+Description: The core Tanzu CLI
+EOF
+
+   # Create the two compressed Packages file
+   gzip -k -f ${FINAL_DIR}/Packages
+   bzip2 -k -f ${FINAL_DIR}/Packages
+   # The dists/tanzu-cli-jessie/main/binary-${arch}/Release file does not seem to change
+   # so let's create our own instead of having to download it
+   cat << EOF > ${FINAL_DIR}/Release
+Component: main
+Architecture: ${arch}
+EOF
+
+   # Move the new package into its final location
+   mkdir -p ${OUTPUT_DIR}/apt/pool/main/t/tanzu-cli
+   mv ${PKG} ${OUTPUT_DIR}/apt/pool/main/t/tanzu-cli
 done
 
+# Finally, re-generate the dists/tanzu-cli-jessie/Release file
+cd $DIST_DIR
+cat << EOF > Release
+Codename: tanzu-cli-jessie
+Date: $(TZ=UTC date '+%a, %d %b %Y %T %Z')
+Architectures: amd64 arm64
+Components: main
+MD5Sum:
+$(for f in $(find main -type f); do
+  size=$(ls -l $f | awk '{print $5}')
+  md5sum $f | awk -v size=$size '{print "  "$1" "size" "$2}'
+done)
+SHA1:
+$(for f in $(find main -type f); do
+  size=$(ls -l $f | awk '{print $5}')
+  sha1sum $f | awk -v size=$size '{print "  "$1" "size" "$2}'
+done)
+SHA256:
+$(for f in $(find main -type f); do
+  size=$(ls -l $f | awk '{print $5}')
+  sha256sum $f | awk -v size=$size '{print "  "$1" "size" "$2}'
+done)
+SHA512:
+$(for f in $(find main -type f); do
+  size=$(ls -l $f | awk '{print $5}')
+  sha512sum $f | awk -v size=$size '{print "  "$1" "size" "$2}'
+done)
+EOF
+
 if [[ ! -z "${DEB_SIGNER}" ]]; then
-   for rel in `find ${OUTPUT_DIR} -name "Release"`; do
-      ${DEB_SIGNER} $rel ${rel}.gpg
-   done
+   # Sign the main release file which has all the checksums
+   ${DEB_SIGNER} ${DIST_DIR}/Release ${DIST_DIR}/Release.gpg
 else
    echo skip debsigning
 fi
-
-# Global cleanup
-rm -rf ${OUTPUT_DIR}/apt/conf
-rm -rf ${OUTPUT_DIR}/apt/db

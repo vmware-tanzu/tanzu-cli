@@ -162,7 +162,7 @@ apt-package-repo: ## Build a debian package repo
 		echo "Docker required to build apt package" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) -e DEB_SIGNER=$(DEB_SIGNER) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package_repo.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) -e DEB_SIGNER=$(DEB_SIGNER) -e DEB_METADATA_BASE_URI=$(DEB_METADATA_BASE_URI) -v $(ROOT_DIR):$(ROOT_DIR) $(APT_IMAGE) $(ROOT_DIR)/hack/apt/build_package_repo.sh
 
 .PHONY: apt-package-in-docker
 apt-package-in-docker: ## Build a debian package from within a container already

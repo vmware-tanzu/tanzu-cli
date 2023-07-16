@@ -18,6 +18,10 @@ To facilitate this operation, the `apt-package` Makefile target can be used;
 this Makefile target will first start a docker container and then
 run the `hack/apt/build_package*.sh` scripts.
 
+The remote location of the existing repository can be overridden by setting
+the variable `DEB_METADATA_BASE_URI`.  For example, the default value for
+this variable is currently `https://storage.googleapis.com/tanzu-cli-os-packages`
+
 ### Pre-requisite
 
 `make cross-build` should be run first to build the `tanzu` binary for linux
@@ -53,7 +57,7 @@ apt install -y tanzu-cli --allow-unauthenticated
 tanzu
 ```
 
-Note that when building loocally, the repository isn't signed, so you may see warnings
+Note that when building locally, the repository isn't signed, so you may see warnings
 during installation.
 
 ## Publishing the package to GCloud
@@ -61,18 +65,34 @@ during installation.
 The GCloud bucket dedicated to hosting the Tanzu CLI OS packages is
 gs://tanzu-cli-os-packages`.
 
-To publish the repository containing the new debian packages for the Tanzu CLI,
-we must upload the entire `apt` directory located at `tanzu-cli/hack/apt/_output/apt`
-to the root of the bucket.  Note that it is the second `apt` directory that must be
-uploaded. You can do this manually. Once uploaded, the Tanzu CLI can be installed
-publicly as described in the next section.
+Building the Debian repository incrementally means that we create the
+repository metadata for the new package version *and* for any existing packages on
+the bucket without downloading the older packages.  This implies that we *must* not
+delete the older packages from the bucket but instead we must just upload the
+built `hack/apt/_output/apt` on top of the existing bucket's `apt` directory.
+This can be done using the `gcloud` CLI:
+
+```bash
+gcloud storage cp -r hack/apt/_output/apt gs://tanzu-cli-os-packages
+```
+
+This will effectively:
+
+1. upload the new packages to the bucket under `apt/pool/main/t/tanzu-cli/`
+2. replace the entire repodata directory located on the bucket at `apt/dists/`
+
+If we want to publish to a brand new bucket, we need to build the repo with
+`DEB_METADATA_BASE_URI=new` then upload the entire `apt`
+directory located locally at `hack/apt/_output/apt` to the root of the *new* bucket.
+Note that it is the second `apt` directory that must be uploaded. You can do this manually.
+Once uploaded, the Tanzu CLI can be installed publicly as described in the next section.
 
 ## Installing the Tanzu CLI
 
 ```bash
 $ docker run --rm -it ubuntu
 apt update
-apt install -y ca-certificates curl
+apt install -y ca-certificates curl gpg
 curl -fsSL https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub | sudo gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
 echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | tee /etc/apt/sources.list.d/tanzu.list
 apt update
