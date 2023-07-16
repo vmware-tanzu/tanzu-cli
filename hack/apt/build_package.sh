@@ -41,14 +41,7 @@ fi
 # Clean any old packages
 rm -rf ${OUTPUT_DIR}
 
-# Prepare repository that will be published
-mkdir -p ${OUTPUT_DIR}/apt/conf
-echo "Codename: tanzu-cli-jessie
-Components: main
-Architectures: amd64 arm64" \
-   > ${OUTPUT_DIR}/apt/conf/distributions 
-
-# Download the SRP-compliant CLI build from github and copy it to the package directory
+# Copy the CLI build from ARTIFACTS_DIR to the package directory
 for arch in amd64 arm64; do
    echo "===================================="
    echo "Building debian package for $arch..."
