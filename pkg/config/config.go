@@ -5,6 +5,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -155,6 +156,11 @@ func promptForEULA() (bool, error) {
 	if err != nil {
 		return false, errors.Wrapf(err, "prompt failed")
 	}
+
+	// Put a delimiter after the prompt as it can be followed by
+	// standard CLI output
+	fmt.Println("")
+	fmt.Println("==")
 
 	return strings.EqualFold(eulaAccepted, "Yes"), nil
 }
