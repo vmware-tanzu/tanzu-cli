@@ -178,7 +178,7 @@ rpm-package: ## Build an RPM package
 		echo "Docker required to build rpm package" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) -e RPM_SIGNER=$(RPM_SIGNER) -v $(ROOT_DIR):$(ROOT_DIR) $(RPM_IMAGE) $(ROOT_DIR)/hack/rpm/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) -e RPM_SIGNER=$(RPM_SIGNER) -e RPM_METADATA_BASE_URI=$(RPM_METADATA_BASE_URI) -v $(ROOT_DIR):$(ROOT_DIR) $(RPM_IMAGE) $(ROOT_DIR)/hack/rpm/build_package.sh
 
 .PHONY: rpm-package-in-docker
 rpm-package-in-docker: ## Build an RPM package from within a container already

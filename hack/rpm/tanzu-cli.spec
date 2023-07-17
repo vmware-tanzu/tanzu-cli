@@ -1,12 +1,12 @@
 Name:       tanzu-cli
-Version:    %{package_version}
-Release:    1
+Version:    %{rpm_package_version}
+Release:    %{rpm_release_version}
 License:    Apache 2.0
 URL:        https://github.com/vmware-tanzu/tanzu-cli
 Vendor:     VMware
 Summary:    The core Tanzu CLI
 Provides:   tanzu-cli
-Obsoletes:  tanzu-cli  < %{package_version}
+Obsoletes:  tanzu-cli  < %{rpm_package_version}
 
 %ifarch x86_64
 %define arch amd64
@@ -17,7 +17,7 @@ Obsoletes:  tanzu-cli  < %{package_version}
 %define arch amd64
 %endif
 
-Source0:    %{expand:%%(pwd)/artifacts/linux/%{arch}/cli/core/v%{release_version}/tanzu-cli-linux_%{arch}}
+Source0:    %{expand:%%(pwd)/artifacts/linux/%{arch}/cli/core/%{cli_version}/tanzu-cli-linux_%{arch}}
 
 %description
 VMware Tanzu is a modular, cloud native application platform that enables vital DevSecOps outcomes
