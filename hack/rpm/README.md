@@ -14,6 +14,10 @@ operation, the new `rpm-package` Makefile target has been added; this Makefile
 target will first start a docker container and then run the
 `hack/rpm/build_package.sh` script.
 
+The remote location of the existing repository can be overridden by setting
+the variable `RPM_METADATA_BASE_URI`.  For example, the default value for
+this variable is currently `https://storage.googleapis.com/tanzu-cli-os-packages`
+
 ### Pre-requisite
 
 `make cross-build` should be run first to build the `tanzu` binary for linux
@@ -57,11 +61,27 @@ Note that when building locally, the repository isn't signed, so you may see war
 The GCloud bucket dedicated to hosting the Tanzu CLI OS packages is
 gs://tanzu-cli-os-packages`.
 
-To publish the repository containing the new rpm packages for the Tanzu CLI, we
-must upload the entire `rpm` directory located at `tanzu-cli/hack/rpm/_output/rpm`
-to the root of the bucket.  Note that it is the second `rpm` directory that must be
-uploaded. You can do this manually. Once uploaded, the Tanzu CLI
-can be installed publicly as described in the next section.
+Building the RPM repository incrementally means that we create the
+repository metadata for the new package version *and* for any existing packages on
+the bucket without downloading the older packages.  This implies that we *must* not
+delete the older packages from the bucket but instead we must just upload the
+built `hack/rpm/_output/rpm` on top of the existing bucket's `rpm` directory.
+This can be done using the `gcloud` CLI:
+
+```bash
+gcloud storage cp -r hack/rpm/_output/rpm gs://tanzu-cli-os-packages
+```
+
+This will effectively:
+
+1. upload the new packages to the bucket under `rpm/tanzu-cli/`
+2. replace the entire repodata directory located on the bucket at `rpm/tanzu-cli/repodata/`
+
+If we want to publish to a brand new bucket, we need to build the repo with
+`RPM_METADATA_BASE_URI=new` then upload the entire `rpm`
+directory located locally at `hack/rpm/_output/rpm` to the root of the *new* bucket.
+Note that it is the second `rpm` directory that must be uploaded. You can do this manually.
+Once uploaded, the Tanzu CLI can be installed publicly as described in the next section.
 
 ## Installing the Tanzu CLI
 
