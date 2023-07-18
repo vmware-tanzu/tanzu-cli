@@ -81,9 +81,15 @@ func NewRootCmd() (*cobra.Command, error) {
 			matchedCmd := findSubCommand(rootCmd, cmd)
 			if matchedCmd == nil { // If the subcommand for the plugin doesn't exist add the command
 				rootCmd.AddCommand(cmd)
-			} else if plugins[i].Scope == common.PluginScopeContext && isStandalonePluginCommand(matchedCmd) {
+			} else if (plugins[i].Scope == common.PluginScopeContext ||
+				plugins[i].Target == configtypes.TargetGlobal) && isStandalonePluginCommand(matchedCmd) {
 				// If the subcommand already exists because of a standalone plugin but the new plugin
 				// is `Context-Scoped` then the new context-scoped plugin gets higher precedence.
+				// Also, if the subcommand already exists because of a standalone plugin but the new plugin
+				// is explicitly using the global target, it gets higher precedence also. This allows a plugin
+				// developer to move their plugin from a k8s target to a global target; during the transition
+				// the previous version of that plugin may be installed and target k8s, so we want to make sure
+				// that the new version which targets global will be properly installed at the root level.
 				// We therefore replace the existing command with the new command by removing the old and
 				// adding the new one.
 				maskedPluginsWithPluginOverlap = append(maskedPluginsWithPluginOverlap, matchedCmd.Name())
