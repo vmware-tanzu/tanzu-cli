@@ -160,10 +160,10 @@ func Test_NewOCIDiscovery(t *testing.T) {
 	discoveryName := "test-discovery"
 	discoveryImage := "test-image:latest"
 	criteriaName := "test-criteria"
-	discoveryCriteria := PluginDiscoveryCriteria{Name: criteriaName}
+	discoveryCriteria := &PluginDiscoveryCriteria{Name: criteriaName}
 
 	// Check that the correct discovery type is returned
-	pd := NewOCIDiscovery(discoveryName, discoveryImage, &discoveryCriteria)
+	pd := NewOCIDiscovery(discoveryName, discoveryImage, WithPluginDiscoveryCriteria(discoveryCriteria))
 	assert.NotNil(pd)
 	assert.Equal(discoveryName, pd.Name())
 	assert.Equal(common.DiscoveryTypeOCI, pd.Type())
@@ -172,7 +172,7 @@ func Test_NewOCIDiscovery(t *testing.T) {
 	assert.True(ok)
 	assert.Equal(discoveryName, dbDiscovery.name)
 	assert.Equal(discoveryImage, dbDiscovery.image)
-	assert.Equal(discoveryCriteria, *dbDiscovery.pluginCriteria)
+	assert.Equal(discoveryCriteria, dbDiscovery.pluginCriteria)
 	assert.Nil(dbDiscovery.groupCriteria)
 
 	// Turn off central repo feature
@@ -181,7 +181,7 @@ func Test_NewOCIDiscovery(t *testing.T) {
 	assert.Nil(err)
 
 	// Check that the correct discovery type is returned
-	pd = NewOCIDiscovery(discoveryName, discoveryImage, &discoveryCriteria)
+	pd = NewOCIDiscovery(discoveryName, discoveryImage, WithPluginDiscoveryCriteria(discoveryCriteria))
 	assert.NotNil(pd)
 	assert.Equal(discoveryName, pd.Name())
 	assert.Equal(common.DiscoveryTypeOCI, pd.Type())
@@ -198,10 +198,10 @@ func Test_NewOCIGroupDiscovery(t *testing.T) {
 	discoveryName := "test-discovery2"
 	discoveryImage := "test-image2:latest"
 	criteriaName := "test-criteria2"
-	groupCriteria := GroupDiscoveryCriteria{Name: criteriaName}
+	groupCriteria := &GroupDiscoveryCriteria{Name: criteriaName}
 
 	// Check that the correct discovery is returned
-	pd := NewOCIGroupDiscovery(discoveryName, discoveryImage, &groupCriteria)
+	pd := NewOCIGroupDiscovery(discoveryName, discoveryImage, WithGroupDiscoveryCriteria(groupCriteria))
 	assert.NotNil(pd)
 	assert.Equal(discoveryName, pd.Name())
 
@@ -209,6 +209,6 @@ func Test_NewOCIGroupDiscovery(t *testing.T) {
 	assert.True(ok)
 	assert.Equal(discoveryName, dbDiscovery.name)
 	assert.Equal(discoveryImage, dbDiscovery.image)
-	assert.Equal(groupCriteria, *dbDiscovery.groupCriteria)
+	assert.Equal(groupCriteria, dbDiscovery.groupCriteria)
 	assert.Nil(dbDiscovery.pluginCriteria)
 }

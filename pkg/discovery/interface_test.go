@@ -18,7 +18,7 @@ func Test_CreateDiscoveryFromV1alpha1(t *testing.T) {
 
 	// When no discovery type is provided, it should throw error
 	pd := configtypes.PluginDiscovery{}
-	_, err := CreateDiscoveryFromV1alpha1(pd, nil)
+	_, err := CreateDiscoveryFromV1alpha1(pd)
 	assert.NotNil(err)
 	assert.Contains(err.Error(), "unknown plugin discovery source")
 
@@ -26,7 +26,7 @@ func Test_CreateDiscoveryFromV1alpha1(t *testing.T) {
 	pd = configtypes.PluginDiscovery{
 		OCI: &configtypes.OCIDiscovery{Name: "fake-oci", Image: "fake.repo.com/test:v1.0.0"},
 	}
-	discovery, err := CreateDiscoveryFromV1alpha1(pd, nil)
+	discovery, err := CreateDiscoveryFromV1alpha1(pd)
 	assert.Nil(err)
 	assert.Equal(common.DiscoveryTypeOCI, discovery.Type())
 	assert.Equal("fake-oci", discovery.Name())
@@ -35,7 +35,7 @@ func Test_CreateDiscoveryFromV1alpha1(t *testing.T) {
 	pd = configtypes.PluginDiscovery{
 		Local: &configtypes.LocalDiscovery{Name: "fake-local", Path: "test/path"},
 	}
-	discovery, err = CreateDiscoveryFromV1alpha1(pd, nil)
+	discovery, err = CreateDiscoveryFromV1alpha1(pd)
 	assert.Nil(err)
 	assert.Equal(common.DiscoveryTypeLocal, discovery.Type())
 	assert.Equal("fake-local", discovery.Name())
@@ -44,7 +44,7 @@ func Test_CreateDiscoveryFromV1alpha1(t *testing.T) {
 	pd = configtypes.PluginDiscovery{
 		Kubernetes: &configtypes.KubernetesDiscovery{Name: "fake-k8s"},
 	}
-	discovery, err = CreateDiscoveryFromV1alpha1(pd, nil)
+	discovery, err = CreateDiscoveryFromV1alpha1(pd)
 	assert.Nil(err)
 	assert.Equal(common.DiscoveryTypeKubernetes, discovery.Type())
 	assert.Equal("fake-k8s", discovery.Name())
@@ -53,7 +53,7 @@ func Test_CreateDiscoveryFromV1alpha1(t *testing.T) {
 	pd = configtypes.PluginDiscovery{
 		REST: &configtypes.GenericRESTDiscovery{Name: "fake-rest"},
 	}
-	discovery, err = CreateDiscoveryFromV1alpha1(pd, nil)
+	discovery, err = CreateDiscoveryFromV1alpha1(pd)
 	assert.Nil(err)
 	assert.Equal(common.DiscoveryTypeREST, discovery.Type())
 	assert.Equal("fake-rest", discovery.Name())
@@ -64,7 +64,7 @@ func Test_CreateGroupDiscovery(t *testing.T) {
 
 	// When no discovery type is provided, it should throw error
 	pd := configtypes.PluginDiscovery{}
-	_, err := CreateGroupDiscovery(pd, nil)
+	_, err := CreateGroupDiscovery(pd)
 	assert.NotNil(err)
 	assert.Contains(err.Error(), "unknown group discovery source")
 
@@ -72,7 +72,7 @@ func Test_CreateGroupDiscovery(t *testing.T) {
 	pd = configtypes.PluginDiscovery{
 		OCI: &configtypes.OCIDiscovery{Name: "fake-oci", Image: "fake.repo.com/test:v1.0.0"},
 	}
-	discovery, err := CreateGroupDiscovery(pd, nil)
+	discovery, err := CreateGroupDiscovery(pd)
 	assert.Nil(err)
 	assert.Equal("fake-oci", discovery.Name())
 
@@ -85,7 +85,7 @@ func Test_CreateGroupDiscovery(t *testing.T) {
 		Publisher: "tkg",
 		Name:      "fakegroup",
 	}
-	discovery, err = CreateGroupDiscovery(pd, criteria)
+	discovery, err = CreateGroupDiscovery(pd, WithGroupDiscoveryCriteria(criteria))
 	assert.Nil(err)
 	assert.Equal("fake-oci", discovery.Name())
 
