@@ -53,7 +53,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 			// search plugins and make sure correct number of plugins available
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
-			expectedPlugins := pluginsForPG_TKG_001
+			expectedPlugins := pluginsForPGTKG001
 			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
@@ -69,7 +69,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// Verify all plugins got installed with `tanzu plugin list`
 			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
 			Expect(err).To(BeNil())
-			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsForPG_TKG_001)).To(BeTrue())
+			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsForPGTKG001)).To(BeTrue())
 		})
 
 		// Test case: (Negative) try to install plugins that are not migrated to the airgapped repository
@@ -110,7 +110,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
 			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
-			expectedPlugins := append(pluginsForPG_TKG_001, pluginsForPG_TMC_999...)
+			expectedPlugins := append(pluginsForPGTKG001, pluginsForPGTMC999...)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
 			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
 		})
@@ -123,7 +123,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// Verify all plugins got installed with `tanzu plugin list`
 			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
 			Expect(err).To(BeNil())
-			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsForPG_TMC_999)).To(BeTrue())
+			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsForPGTMC999)).To(BeTrue())
 		})
 
 	})
@@ -154,7 +154,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 			// search plugins and make sure correct number of plugins available
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
-			expectedPlugins := append(pluginsForPG_TKG_001, pluginsForPG_TMC_999...)
+			expectedPlugins := append(pluginsForPGTKG001, pluginsForPGTMC999...)
 			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
@@ -169,7 +169,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// Verify all plugins got installed with `tanzu plugin list`
 			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
 			Expect(err).To(BeNil())
-			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsForPG_TMC_001)).To(BeTrue())
+			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsForPGTMC001)).To(BeTrue())
 		})
 
 	})
@@ -201,8 +201,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 			// search plugins and make sure correct number of plugins available
 			// check expected plugins are available in the `plugin search` output from the airgapped repository
-			expectedPlugins := append(pluginsForPG_TKG_999, pluginsForPG_TMC_999...)
-			expectedPlugins = append(expectedPlugins, pluginsNotInAnyPG_999...)
+			expectedPlugins := append(pluginsForPGTKG999, pluginsForPGTMC999...)
+			expectedPlugins = append(expectedPlugins, pluginsNotInAnyPG999...)
 			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
@@ -218,7 +218,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// Verify all plugins got installed with `tanzu plugin list`
 			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
 			Expect(err).To(BeNil())
-			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsForPG_TKG_999)).To(BeTrue())
+			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsForPGTKG999)).To(BeTrue())
 		})
 
 		// Test case: validate that all plugins that are not part of any plugin-groups can be installed as well
@@ -232,7 +232,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			// Verify above plugins got installed with `tanzu plugin list`
 			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
 			Expect(err).To(BeNil())
-			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsNotInAnyPG_999)).To(BeTrue())
+			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsNotInAnyPG999)).To(BeTrue())
 		})
 
 		// Test case: (negative use case) empty path for --to-tar

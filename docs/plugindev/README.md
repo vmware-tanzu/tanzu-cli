@@ -384,7 +384,7 @@ the `tanzu` binary specified by the `TANZU_BIN` variable.
 
 For example, the plugin can use the following to perform a `tanzu plugin sync`:
 
-```go
+``` go
 cliPath := os.Getenv("TANZU_BIN")
 command := exec.Command(cliPath, "plugin", "sync")
 command.Stdout = os.Stdout

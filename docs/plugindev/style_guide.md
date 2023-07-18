@@ -20,9 +20,9 @@ Two checklists to help contributors design and develop styleguide-consistent com
 
 ### Prioritize human users first
 
-* Default to human readable output, but support plaintext and json/yaml options
+* Default to human-readable output, but support plaintext and json/yaml options
 * Use straightforward, simple language and syntax
-* Use machine readable output where it does not impact usability
+* Use machine-readable output where it does not impact usability
 
 ### Prioritize discoverability, consistency and predictability
 
@@ -47,7 +47,7 @@ Two checklists to help contributors design and develop styleguide-consistent com
 
 * We should not exclude users by deprioritizing accessibility
 * Features like search filters and output limits are useful for folks using assistive technology
-* Screen-readers and automation are both served by being thoughtful with the use of non machine-readable characters (emojis, ascii spinners, etc.)
+* Screen-readers and automation are both served by being thoughtful with the use of non-machine-readable characters (emojis, ascii spinners, etc.)
 
 ------------------------------
 

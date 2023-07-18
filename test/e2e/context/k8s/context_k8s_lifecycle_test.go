@@ -238,7 +238,6 @@ func k8sContextStressTests() bool {
 				Expect(err).To(BeNil(), "there should be a active context")
 				Expect(active).To(Equal(contextNamesStress[i]), "the active context should be recently set context")
 			}
-
 		})
 		// Test case: e. test 'tanzu context list' command, should list all contexts created
 		It("list context should have all added contexts", func() {
@@ -257,5 +256,4 @@ func k8sContextStressTests() bool {
 			}
 		})
 	})
-
 }

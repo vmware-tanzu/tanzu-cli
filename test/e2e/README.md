@@ -2,7 +2,7 @@
 
 ## E2E Framework and Tools
 
-The CLI End-to-End (E2E) test framework framework provides basic tooling
+The CLI End-to-End (E2E) test framework provides basic tooling
 and utility functions to write E2E test cases for CLI functionality
 and also to write e2e tests for any CLI based plugin functionality, so
 this framework does helps for CLI developers and plugin developers to
@@ -42,7 +42,7 @@ E2E test implementer need to create Framework object `framework.NewFramework()`
 to utilize framework functionalities like, execute CLI commands like
 end user calling from command line prompt.
 
-```go
+``` go
 // Framework has all CLI Core commands lifecycle operations and helper functions to write CLI e2e test cases
 type Framework struct {
 CliOps
@@ -52,6 +52,7 @@ PluginCmd    PluginCmdOps    // performs plugin command operations
 PluginHelper PluginHelperOps // helper (pre-setup) for plugin cmd operations
 ContextCmd   ContextCmdOps
 }
+
 ```
 
 To customize the choice of the Tanzu binary for usage, you have the option to indicate it by utilizing the environment variable `TANZU_CLI_E2E_TEST_BINARY_PATH`.
@@ -64,7 +65,7 @@ are self-explanatory:
 
 To execute unix commands:
 
-```go
+``` go
 // CmdOps performs the Command line exec operations
 type CmdOps interface {
     Exec(command string) (stdOut, stdErr *bytes.Buffer, err error)
@@ -78,7 +79,7 @@ type CmdOps interface {
 
 To perform tanzu plugin command operations:
 
-```go
+``` go
 type PluginCmdOps interface {
     PluginBasicOps
     PluginSourceOps
@@ -140,7 +141,7 @@ type PluginGroupOps interface {
 
 To perform cluster specific operations:
 
-```go
+``` go
 // ClusterOps has helper operations to perform on cluster
 type ClusterOps interface {
     // CreateCluster creates the cluster with given name
@@ -167,7 +168,7 @@ type KindCluster interface {
 
 To perform tanzu config command and CLI lifecycle operations:
 
-```go
+``` go
 // ConfigLifecycleOps performs "tanzu config" command operations
 type ConfigLifecycleOps interface {
     // ConfigSetFeatureFlag sets the tanzu config feature flag
@@ -261,7 +262,7 @@ Below table shows list of functionalities and number of test cases or use cases
 being executed in E2E test framework on every pull request to main branch:
 
 |       Functionality       | Number of use cases or test cases |
-| :-----------------------: | :-------------------------------: |
+|:-------------------------:|:---------------------------------:|
 |   Plugin Compatibility    |                 7                 |
 |     Plugin lifecycle      |                28                 |
 |   Plugin sync lifecycle   |                28                 |
