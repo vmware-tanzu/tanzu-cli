@@ -42,7 +42,7 @@ registry, or (4) re-acceptance of the General Terms is prompted by VMware.
 
 To view the VMware General Terms, please see https://www.vmware.com/vmware-general-terms.html
 
-If you agree, the essentials plugins will be installed that is necessary for tanzu cli experience
+If you agree, the essential plugins will be installed that are necessary for the tanzu cli experience
 
 Do you agree to the VMware General Terms?
 `

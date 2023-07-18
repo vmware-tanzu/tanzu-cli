@@ -34,8 +34,8 @@ func getEssentialsPluginGroupDetails() (name, version string) {
 	return name, version
 }
 
-// InstallEssentialPluginGroups is a function that installs or upgrades the essential plugin groups.
-func InstallEssentialPluginGroups() (string, error) {
+// InstallPluginsFromEssentialPluginGroup is a function that installs or upgrades the essential plugin groups.
+func InstallPluginsFromEssentialPluginGroup() (string, error) {
 	// Retrieve the name and version of the essential plugin group.
 	name, version := getEssentialsPluginGroupDetails()
 
@@ -64,7 +64,7 @@ func InstallEssentialPluginGroups() (string, error) {
 	fmt.Println()
 
 	// Attempt to install or upgrade the essential plugin group.
-	_, err = installEssentialPluginGroup(name, version)
+	_, err = installPluginsFromEssentialPluginGroup(name, version)
 
 	// If there's an error during installation or upgrade, return it with additional context.
 	if err != nil {
@@ -76,18 +76,20 @@ func InstallEssentialPluginGroups() (string, error) {
 }
 
 // installEssentialPluginGroup is a function that installs the essential plugin group.
-func installEssentialPluginGroup(name, version string) (string, error) {
+func installPluginsFromEssentialPluginGroup(name, version string) (string, error) {
+	// Get the log mode based on the environment variable.
+	enableLogs := os.Getenv(constants.TanzuCLIEssentialsPluginGroupLogs) == "True"
+
+	// Set the log mode based on the value of enableLogs and defer resetting it.
+	log.QuietMode(!enableLogs)
+	defer log.QuietMode(enableLogs)
+
 	pluginGroupNameWithVersion := name
 
 	// Combine the name and version into a single string.
 	if version != "" {
 		pluginGroupNameWithVersion = fmt.Sprintf("%v:%v", pluginGroupNameWithVersion, version)
 	}
-
-	// Disable logs.
-	log.QuietMode(true)
-	// Ensure that logs are re-enabled when we're done.
-	defer log.QuietMode(false)
 
 	// Attempt to install the plugins from the group.
 	groupWithVersion, err := InstallPluginsFromGroup("all", pluginGroupNameWithVersion)

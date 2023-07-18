@@ -4,6 +4,6 @@
 package constants
 
 const (
-	InstallEssentialPluginGroupsMsg = "Looks like you haven't installed essential plugins, installing the essential plugins"
-	UpgradeEssentialPluginGroupsMsg = "We found essentials plugins are outdated, updating the essential plugins"
+	InstallEssentialPluginGroupsMsg = "Looks like you haven't installed essential plugins, installing the essential plugins. this will take a few seconds."
+	UpgradeEssentialPluginGroupsMsg = "We found essential plugins are outdated, updating the essential plugins. this will take a few seconds."
 )

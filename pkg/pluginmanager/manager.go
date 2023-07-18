@@ -1663,10 +1663,12 @@ func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
 // IsPluginsFromPluginGroupInstalled checks if all plugins from a specific group are installed and if a new version is available.
 // This function uses cache data to verify rather than fetching the inventory image
 func IsPluginsFromPluginGroupInstalled(name, version string) (bool, bool, error) {
-	// Disable logs.
-	log.QuietMode(true)
-	// Ensure that logs are re-enabled when we're done.
-	defer log.QuietMode(false)
+	// Get the log mode based on the environment variable.
+	enableLogs := os.Getenv(constants.TanzuCLIEssentialsPluginGroupLogs) == "True"
+
+	// Set the log mode based on the value of enableLogs and defer resetting it.
+	log.QuietMode(!enableLogs)
+	defer log.QuietMode(enableLogs)
 
 	// Retrieve the list of currently installed plugins.
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()

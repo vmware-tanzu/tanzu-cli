@@ -198,7 +198,7 @@ func InstallEssentialPlugins(cmd *cobra.Command) {
 	}
 	if !skipEssentials {
 		// Check if essential plugins are installed and up to date if not Install or Upgrade the Essential plugins
-		_, _ = pluginmanager.InstallEssentialPluginGroups()
+		_, _ = pluginmanager.InstallPluginsFromEssentialPluginGroup()
 	}
 }
 

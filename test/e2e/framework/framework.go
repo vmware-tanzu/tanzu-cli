@@ -124,7 +124,7 @@ func init() {
 	PluginGroupsForLifeCycleTests = []*PluginGroup{
 		{Group: "vmware-tkg/default", Latest: "v9.9.9", Description: "Desc for vmware-tkg/default:v9.9.9"},
 		{Group: "vmware-tmc/tmc-user", Latest: "v9.9.9", Description: "Desc for vmware-tmc/tmc-user:v9.9.9"},
-		{Group: "vmware-tzcli/essentials", Latest: "v9.9.9", Description: "Desc for vmware-tzcli/essentials:v9.9.9"},
+		{Group: "vmware-tanzucli/essentials", Latest: "v9.9.9", Description: "Desc for vmware-tanzucli/essentials:v9.9.9"},
 	}
-	EssentialPluginGroups = []*PluginGroup{{Group: "vmware-tzcli/essentials", Latest: "v9.9.9", Description: "Desc for vmware-tzcli/essentials:v9.9.9"}}
+	EssentialPluginGroups = []*PluginGroup{{Group: "vmware-tanzucli/essentials", Latest: "v9.9.9", Description: "Desc for vmware-tanzucli/essentials:v9.9.9"}}
 }

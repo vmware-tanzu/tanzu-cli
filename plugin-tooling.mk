@@ -44,7 +44,7 @@ PLUGIN_NAME ?= *
 
 # Repository specific configuration
 BUILDER_PLUGIN ?= $(ROOT_DIR)/bin/builder
-PUBLISHER ?= tzcli
+PUBLISHER ?= tanzucli
 VENDOR ?= vmware
 PLUGIN_PUBLISH_REPOSITORY ?= $(REGISTRY_ENDPOINT)/test/v1/tanzu-cli/plugins
 PLUGIN_INVENTORY_IMAGE_TAG ?= latest
