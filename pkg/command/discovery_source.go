@@ -11,6 +11,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -80,17 +81,23 @@ func newListDiscoverySourceCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List available discovery sources",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
 			if !configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 				output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "name", "image")
-				discoverySources, _ := configlib.GetCLIDiscoverySources()
+				discoverySources, err := configlib.GetCLIDiscoverySources()
 				for _, ds := range discoverySources {
 					if ds.OCI != nil {
 						output.AddRow(ds.OCI.Name, ds.OCI.Image)
 					}
 				}
-
+				testPluginSources := pluginmanager.GetAdditionalTestPluginDiscoveries()
+				for _, ds := range testPluginSources {
+					if ds.OCI != nil {
+						output.AddRow(ds.OCI.Name+" (test only)", ds.OCI.Image)
+					}
+				}
 				output.Render()
-				return nil
+				return err
 			}
 
 			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "name", "type", "scope")
@@ -116,10 +123,8 @@ func newListDiscoverySourceCmd() *cobra.Command {
 					outputFromDiscoverySources(server.DiscoverySources, common.PluginScopeContext, output)
 				}
 			}
-
 			output.Render()
-
-			return nil
+			return err
 		},
 	}
 	return listDiscoverySourceCmd

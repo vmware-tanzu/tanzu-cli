@@ -1321,7 +1321,7 @@ func TestGetAdditionalTestPluginDiscoveries(t *testing.T) {
 	err := os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, "")
 	assertions.Nil(err)
 
-	discoveries := getAdditionalTestPluginDiscoveries()
+	discoveries := GetAdditionalTestPluginDiscoveries()
 	assertions.Nil(err)
 	assertions.Equal(0, len(discoveries))
 
@@ -1330,7 +1330,7 @@ func TestGetAdditionalTestPluginDiscoveries(t *testing.T) {
 	err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, expectedDiscovery)
 	assertions.Nil(err)
 
-	discoveries = getAdditionalTestPluginDiscoveries()
+	discoveries = GetAdditionalTestPluginDiscoveries()
 	assertions.Nil(err)
 	assertions.Equal(1, len(discoveries))
 	assertions.Equal(expectedDiscovery, discoveries[0].OCI.Image)
@@ -1347,7 +1347,7 @@ func TestGetAdditionalTestPluginDiscoveries(t *testing.T) {
 		expectedDiscoveries[0]+","+expectedDiscoveries[1]+"   ,"+expectedDiscoveries[2]+"  ,  "+expectedDiscoveries[3])
 	assertions.Nil(err)
 
-	discoveries = getAdditionalTestPluginDiscoveries()
+	discoveries = GetAdditionalTestPluginDiscoveries()
 	assertions.Equal(len(expectedDiscoveries), len(discoveries))
 	assertions.Equal(expectedDiscoveries[0], discoveries[0].OCI.Image)
 	assertions.Equal(expectedDiscoveries[1], discoveries[1].OCI.Image)

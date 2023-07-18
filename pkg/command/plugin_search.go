@@ -18,7 +18,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 var (
@@ -53,8 +52,7 @@ func newSearchPluginCmd() *cobra.Command {
 				}
 				allPlugins, err = pluginmanager.DiscoverPluginsFromLocalSource(local)
 				if err != nil {
-					errorList = append(errorList, err)
-					log.Warningf("there was an error while discovering plugins from local source, error information: '%v'", err.Error())
+					errorList = append(errorList, fmt.Errorf("there was an error while discovering plugins from local source, error information: '%w'", err))
 				}
 			} else {
 				// Show plugins found in the central repos
@@ -64,8 +62,7 @@ func newSearchPluginCmd() *cobra.Command {
 				}
 				allPlugins, err = pluginmanager.DiscoverStandalonePlugins(discovery.WithPluginDiscoveryCriteria(criteria))
 				if err != nil {
-					errorList = append(errorList, err)
-					log.Warningf("there was an error while discovering standalone plugins, error information: '%v'", err.Error())
+					errorList = append(errorList, fmt.Errorf("there was an error while discovering standalone plugins, error information: '%w'", err))
 				}
 			}
 			sort.Sort(discovery.DiscoveredSorter(allPlugins))

@@ -146,15 +146,11 @@ func DiscoverStandalonePlugins(options ...discovery.DiscoveryOptions) ([]discove
 	}
 
 	plugins, err := discoverSpecificPlugins(discoveries, options...)
-	if err != nil {
-		log.Warningf(errorWhileDiscoveringPlugins, err.Error())
-	}
-
 	for i := range plugins {
 		plugins[i].Scope = common.PluginScopeStandalone
 		plugins[i].Status = common.PluginStatusNotInstalled
 	}
-	return mergeDuplicatePlugins(plugins), nil
+	return mergeDuplicatePlugins(plugins), err
 }
 
 // DiscoverPluginGroups returns the available plugin groups
@@ -174,13 +170,13 @@ func DiscoverPluginGroups(options ...discovery.DiscoveryOptions) ([]*plugininven
 	return groups, err
 }
 
-// getAdditionalTestPluginDiscoveries returns an array of plugin discoveries that
+// GetAdditionalTestPluginDiscoveries returns an array of plugin discoveries that
 // are meant to be used for testing new plugin version.  The comma-separated list of
 // such discoveries can be specified through the environment variable
 // "TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY".
 // Each entry in the variable should be the URI of an OCI image of the DB of the
 // discovery in question.
-func getAdditionalTestPluginDiscoveries() []configtypes.PluginDiscovery {
+func GetAdditionalTestPluginDiscoveries() []configtypes.PluginDiscovery {
 	var testDiscoveries []configtypes.PluginDiscovery
 	testDiscoveryImages := config.GetAdditionalTestDiscoveryImages()
 	for idx, image := range testDiscoveryImages {
@@ -1609,7 +1605,7 @@ func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
 	var testDiscoveries []configtypes.PluginDiscovery
 	if !configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		// Look for testing discoveries.  Those should be stored and searched AFTER the central repo.
-		testDiscoveries = getAdditionalTestPluginDiscoveries()
+		testDiscoveries = GetAdditionalTestPluginDiscoveries()
 	}
 
 	// The configured discoveries should be searched BEFORE the test discoveries.
