@@ -40,6 +40,19 @@ brew update
 brew install vmware-tanzu/tanzu/tanzu-cli
 ```
 
+At the time of writing, Homebrew did not officially support installing older
+versions of a formula, however the following approach works:
+
+```console
+brew tap-new local/tap
+brew tap local/tap
+brew extract --version=0.90.1 vmware-tanzu/tanzu/tanzu-cli local/tap
+brew install tanzu-cli@0.90.1
+
+# To uninstall such an installation
+brew uninstall tanzu-cli@0.90.1
+```
+
 ### Chocolatey (Windows)
 
 ```console
@@ -49,22 +62,37 @@ choco install tanzu-cli
 Note that the Chocolatey package is part of the main
 [Chocolatey community repository](https://community.chocolatey.org/packages).
 This means that when a new `tanzu-cli` version is released, the chocolatey package may
-not be available immediately.  If the above installation instructions fail, you can try:
+not be available immediately as it needs to be approved by a Chocolatey maintainer.
+If the above installation instructions install an older version of the Tanzu CLI,
+you can explicitly specify the version you want to install using the `--version` flag:
 
 ```console
 choco install tanzu-cli --version <version>
 # example: choco install tanzu-cli --version 0.90.0
 ```
 
+You can also use the `--version` flag as described above to install older
+versions of the Tanzu CLI.
+
 ### Apt (Debian/Ubuntu)
 
 ```console
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl gpg
+sudo apt update
+sudo apt install -y ca-certificates curl gpg
 curl -fsSL https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub | sudo gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
 echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
-sudo apt-get update
-sudo apt-get install -y tanzu-cli
+sudo apt update
+sudo apt install -y tanzu-cli
+```
+
+To install older versions of the Tanzu CLI you can specify the version explicitly:
+
+```console
+# To list the available versions
+sudo apt list tanzu-cli -a
+
+# To install a specific version (notice the '=' before the version)
+sudo apt install tanzu-cli=0.90.1
 ```
 
 ### From yum/dnf (RHEL)
@@ -81,6 +109,16 @@ gpgkey=https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub
 EOF
 
 sudo yum install -y tanzu-cli # dnf install can also be used
+```
+
+To install older versions of the Tanzu CLI you can specify the version explicitly:
+
+```console
+# To list the available versions
+sudo yum list tanzu-cli --showduplicates
+
+# To install a specific version (notice the '-' before the version)
+sudo yum install tanzu-cli-0.90.1
 ```
 
 ### Note on installation paths
