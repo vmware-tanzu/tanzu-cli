@@ -60,7 +60,13 @@ commandTree:
     aliases: {}
 `
 
-func TestCache_ConstructAndAddTree(t *testing.T) {
+func Test_RepeatConstructAndAddTree(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		testConstructAndAddTree(t)
+	}
+}
+
+func testConstructAndAddTree(t *testing.T) {
 	// create the command docs
 	tmpCacheDir, err := os.MkdirTemp("", "cache")
 	assert.NoError(t, err)

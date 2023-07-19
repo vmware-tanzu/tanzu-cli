@@ -5,8 +5,11 @@
 package telemetry
 
 import (
+	"context"
 	"encoding/json"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -18,9 +21,15 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugincmdtree"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+)
+
+const (
+	telemetryPluginName          = "telemetry"
+	metricsSendThresholdRowCount = 10
 )
 
 var once sync.Once
@@ -38,7 +47,7 @@ type MetricsHandler interface {
 	// SaveMetrics saves the metrics to the metrics store/DB
 	SaveMetrics() error
 	// SendMetrics sends the metrics to the destination(metrics data lake)
-	SendMetrics() error
+	SendMetrics(ctx context.Context, timeoutInSecs int) error
 }
 
 type telemetryClient struct {
@@ -65,6 +74,7 @@ type OperationMetricsPayload struct {
 	PluginVersion string
 	Target        string
 	Endpoint      string
+	IsInternal    bool
 	Error         string
 }
 
@@ -131,8 +141,28 @@ func (tc *telemetryClient) SaveMetrics() error {
 }
 
 // SendMetrics sends the local stored metrics to super collider
-// TODO: to be implemented
-func (tc *telemetryClient) SendMetrics() error {
+// telemetry plugin would be called to send the metrics to the super collider.
+// The telemetry plugin would read the DB source from the tanzu config file and
+// would send the data to super collider followed draining the data from the DB if send
+// operation was successful
+func (tc *telemetryClient) SendMetrics(ctx context.Context, timeoutInSecs int) error {
+	// don't send if conditions are not met
+	if !tc.shouldSendTelemetryData() {
+		return nil
+	}
+	plugin, err := tc.getTelemetryPluginInstalled()
+	if err != nil {
+		return errors.Wrapf(err, "unable to get the telemetry plugin")
+	}
+	args := []string{"cli-usage-analytics", "collect", "-q"}
+	if timeoutInSecs != 0 {
+		args = append(args, "--timeout", strconv.Itoa(timeoutInSecs))
+	}
+	runner := cli.NewRunner(plugin.Name, plugin.InstallationPath, args)
+	_, _, err = runner.RunOutput(ctx)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -145,6 +175,7 @@ func isCoreCommand(cmd *cobra.Command) bool {
 func (tc *telemetryClient) updateMetricsForCoreCommand(cmd *cobra.Command, args []string, cliID string) error {
 	tc.currentOperationMetrics.CliID = cliID
 	tc.currentOperationMetrics.CliVersion = buildinfo.Version
+	tc.currentOperationMetrics.IsInternal = getIsInternalMetric()
 	tc.currentOperationMetrics.StartTime = time.Now()
 	tc.currentOperationMetrics.CommandName = strings.Join(strings.Split(cmd.CommandPath(), " ")[1:], " ")
 
@@ -174,6 +205,7 @@ func (tc *telemetryClient) updateMetricsForCoreCommand(cmd *cobra.Command, args 
 func (tc *telemetryClient) updateMetricsForPlugin(cmd *cobra.Command, args []string, cliID string) error {
 	tc.currentOperationMetrics.CliID = cliID
 	tc.currentOperationMetrics.CliVersion = buildinfo.Version
+	tc.currentOperationMetrics.IsInternal = getIsInternalMetric()
 	tc.currentOperationMetrics.StartTime = time.Now()
 
 	flagNames := TraverseFlagNames(args)
@@ -318,4 +350,35 @@ func pluginCommandTreeCacheGetter() (plugincmdtree.Cache, error) {
 		return nil, errors.Wrap(err, "failed to get plugin command tree cache")
 	}
 	return pctCache, nil
+}
+
+func (tc *telemetryClient) getTelemetryPluginInstalled() (*cli.PluginInfo, error) {
+	for i := range tc.installedPlugins {
+		if tc.installedPlugins[i].Name == telemetryPluginName && tc.installedPlugins[i].Target == configtypes.TargetGlobal {
+			return &tc.installedPlugins[i], nil
+		}
+	}
+	return nil, errors.New("telemetry plugin with 'global' target not found, it is required to send telemetry data to supercollider, please install the plugin")
+}
+
+func (tc *telemetryClient) shouldSendTelemetryData() bool {
+	// TODO(pkalle): Should revisit this condition in future if telemetry plugin wants data to be send to
+	// plugin irrespective of CEIP Opt-in condition and the plugin would take appropriate action in sending
+	ceipOptInConfigVal, _ := configlib.GetCEIPOptIn()
+	optIn, _ := strconv.ParseBool(ceipOptInConfigVal)
+	if !optIn {
+		return false
+	}
+	count, err := tc.metricsDB.GetRowCount()
+	if err != nil {
+		return false
+	}
+	return count >= metricsSendThresholdRowCount
+}
+
+// getIsInternalMetric returns if the metrics is for internal
+func getIsInternalMetric() bool {
+	// TODO(pkalle): update it to use buildinfo.IsOfficialBuild to determine "is_internal" metric value if necessary
+	telemetryEnv := os.Getenv(constants.TelemetrySuperColliderEnvironment)
+	return strings.ToLower(strings.TrimSpace(telemetryEnv)) == "staging"
 }

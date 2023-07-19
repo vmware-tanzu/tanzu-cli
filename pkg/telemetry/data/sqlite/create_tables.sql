@@ -9,8 +9,6 @@ CREATE TABLE IF NOT EXISTS "tanzu_cli_operations"
     "cli_id"            TEXT NOT NULL,
     "command_start_ts"  TEXT NOT NULL,
     "command_end_ts"    TEXT NOT NULL,
-    "csp_org_id"        TEXT,
-    "account_number"    TEXT,
     "target"            TEXT,
     "name_arg"          TEXT,
     "endpoint"          TEXT,
