@@ -28,6 +28,11 @@ fi
 # Strip 'v' prefix as an apt package version must start with an integer
 VERSION=${VERSION#v}
 
+UNSTABLE=""
+if [[ ${VERSION} == *-* ]]; then 
+   UNSTABLE="-unstable"
+fi
+
 BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output
 ARTIFACTS_DIR=${BASE_DIR}/../../artifacts
@@ -51,12 +56,12 @@ for arch in amd64 arm64; do
    # This is for Apple M1 machines which normally have an emulator.
    # TODO: Replace all instances of "${fakeArch}" with "${arch}"
    fakeArch=amd64
-   mkdir -p ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/usr/bin
-   cp ${ARTIFACTS_DIR}/linux/${fakeArch}/cli/core/v${VERSION}/tanzu-cli-linux_${fakeArch} ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/usr/bin/tanzu
+   mkdir -p ${OUTPUT_DIR}/tanzu-cli${UNSTABLE}_${VERSION}_linux_${arch}/usr/bin
+   cp ${ARTIFACTS_DIR}/linux/${fakeArch}/cli/core/v${VERSION}/tanzu-cli-linux_${fakeArch} ${OUTPUT_DIR}/tanzu-cli${UNSTABLE}_${VERSION}_linux_${arch}/usr/bin/tanzu
 
    # Create the control file
-   mkdir -p ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/DEBIAN
-   echo "Package: tanzu-cli
+   mkdir -p ${OUTPUT_DIR}/tanzu-cli${UNSTABLE}_${VERSION}_linux_${arch}/DEBIAN
+   echo "Package: tanzu-cli${UNSTABLE}
 Version: ${VERSION}
 Maintainer: Tanzu CLI project team
 Architecture: ${arch}
@@ -64,7 +69,7 @@ Section: main
 Priority: optional
 Homepage: https://github.com/vmware-tanzu/tanzu-cli
 Description: The core Tanzu CLI" \
-      > ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/DEBIAN/control
+      > ${OUTPUT_DIR}/tanzu-cli${UNSTABLE}_${VERSION}_linux_${arch}/DEBIAN/control
 
    # Add a postinstall script to setup shell completion
    echo "#!/bin/bash
@@ -80,13 +85,13 @@ chmod a+r /usr/local/share/zsh/site-functions/_tanzu
 mkdir -p /usr/share/fish/vendor_completions.d
 tanzu completion fish > /usr/share/fish/vendor_completions.d/tanzu.fish
 chmod a+r /usr/share/fish/vendor_completions.d/tanzu.fish" \
-      > ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/DEBIAN/postinst
-   chmod a+x ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}/DEBIAN/postinst
+      > ${OUTPUT_DIR}/tanzu-cli${UNSTABLE}_${VERSION}_linux_${arch}/DEBIAN/postinst
+   chmod a+x ${OUTPUT_DIR}/tanzu-cli${UNSTABLE}_${VERSION}_linux_${arch}/DEBIAN/postinst
 
    # Create the .deb package
-   dpkg-deb --build -Zgzip ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}
+   dpkg-deb --build -Zgzip ${OUTPUT_DIR}/tanzu-cli${UNSTABLE}_${VERSION}_linux_${arch}
 
-   rm -rf ${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}
+   rm -rf ${OUTPUT_DIR}/tanzu-cli${UNSTABLE}_${VERSION}_linux_${arch}
 done
 
 if [[ ! -z "${DEB_SIGNER}" ]]; then
