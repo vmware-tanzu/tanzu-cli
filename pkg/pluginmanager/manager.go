@@ -34,8 +34,10 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugincmdtree"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/telemetry"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
@@ -1105,7 +1107,39 @@ func updatePluginInfoAndInitializePlugin(p *discovery.Discovered, plugin *cli.Pl
 	if err := config.ConfigureDefaultFeatureFlagsIfMissing(plugin.DefaultFeatureFlags); err != nil {
 		log.Infof("could not configure default featureflags for the plugin: %v", err.Error())
 	}
+	// add plugin to the plugin command tree cache for telemetry to consume later for plugin command chain parsing
+	addPluginToCommandTreeCache(plugin)
 	return nil
+}
+
+// addPluginToCommandTreeCache would construct and add the plugin command tree to the command tree cache
+// which would be consumed by telemetry for plugin command chain parsing
+func addPluginToCommandTreeCache(plugin *cli.PluginInfo) {
+	// update the plugin command tree cache
+	ctr, err := plugincmdtree.NewCache()
+	if err != nil {
+		telemetry.LogError(err, "")
+		return
+	}
+	err = ctr.ConstructAndAddTree(plugin)
+	if err != nil {
+		telemetry.LogError(err, "")
+	}
+}
+
+// deletePluginFromCommandTreeCache deletes the plugin command tree from the command tree cache
+// which would be consumed by telemetry
+func deletePluginFromCommandTreeCache(plugin *cli.PluginInfo) {
+	// delete the plugin command tree from the plugin command tree cache
+	ctr, err := plugincmdtree.NewCache()
+	if err != nil {
+		telemetry.LogError(err, "")
+		return
+	}
+	err = ctr.DeleteTree(plugin)
+	if err != nil {
+		telemetry.LogError(err, "")
+	}
 }
 
 // DeletePlugin deletes a plugin.
@@ -1160,6 +1194,10 @@ func DeletePlugin(options DeletePluginOptions) error {
 				options.PluginName, string(uniqueTarget))); err != nil {
 			return err
 		}
+	}
+	// Delete the plugins from the command tree cache which would be consumed by telemetry
+	for i := range matchedPlugins {
+		deletePluginFromCommandTreeCache(&matchedPlugins[i])
 	}
 	// Delete all plugins that match since they are all from the same target
 	return doDeletePluginFromCatalog(options.PluginName, uniqueTarget, matchedCatalogNames)
@@ -1378,6 +1416,12 @@ func Clean() error {
 	// Remove all plugin binaries
 	if err := os.RemoveAll(common.DefaultPluginRoot); err != nil {
 		errorList = append(errorList, errors.Wrapf(err, "Failed to clean the plugin binaries"))
+	}
+
+	// Remove the plugin command tree registry cache
+	commandTreeDir := filepath.Dir(plugincmdtree.GetPluginsCommandTreeCachePath())
+	if err := os.RemoveAll(commandTreeDir); err != nil {
+		errorList = append(errorList, errors.Wrapf(err, "Failed to clean the plugin command tree cache"))
 	}
 
 	return kerrors.NewAggregate(errorList)
