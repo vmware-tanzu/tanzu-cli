@@ -28,6 +28,11 @@ fi
 # Strip 'v' prefix as an apt package version must start with an integer
 VERSION=${VERSION#v}
 
+UNSTABLE=""
+if [[ ${VERSION} == *-* ]]; then 
+   UNSTABLE="-unstable"
+fi
+
 BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output
 
@@ -43,7 +48,7 @@ for arch in amd64 arm64; do
    FINAL_DIR=${DIST_DIR}/main/binary-${arch}
 
    # Assumes ${OUTPUT_DIR} is populated with the new deb packages from build_package.sh
-   PKG="${OUTPUT_DIR}/tanzu-cli_${VERSION}_linux_${arch}.deb"
+   PKG="${OUTPUT_DIR}/tanzu-cli${UNSTABLE}_${VERSION}_linux_${arch}.deb"
    if [ ! -f ${PKG} ]; then
       echo "Not found: ${PKG}"
       exit 1
@@ -64,14 +69,14 @@ for arch in amd64 arm64; do
 
    # Generate the new entry for the new package and add it to the existing file of packages
    cat << EOF >> ${FINAL_DIR}/Packages
-Package: tanzu-cli
+Package: tanzu-cli${UNSTABLE}
 Version: ${VERSION}
 Maintainer: Tanzu CLI project team
 Architecture: ${arch}
 Homepage: https://github.com/vmware-tanzu/tanzu-cli
 Priority: optional
 Section: main
-Filename: pool/main/t/tanzu-cli/$(basename ${PKG})
+Filename: pool/main/t/tanzu-cli${UNSTABLE}/$(basename ${PKG})
 Size: $(ls -l ${PKG} | awk '{print $5}')
 SHA256: $(sha256sum ${PKG} | cut -f1 -d' ')
 SHA1: $(sha1sum ${PKG} | cut -f1 -d' ')
@@ -91,8 +96,8 @@ Architecture: ${arch}
 EOF
 
    # Move the new package into its final location
-   mkdir -p ${OUTPUT_DIR}/apt/pool/main/t/tanzu-cli
-   mv ${PKG} ${OUTPUT_DIR}/apt/pool/main/t/tanzu-cli
+   mkdir -p ${OUTPUT_DIR}/apt/pool/main/t/tanzu-cli${UNSTABLE}
+   mv ${PKG} ${OUTPUT_DIR}/apt/pool/main/t/tanzu-cli${UNSTABLE}
 done
 
 # Finally, re-generate the dists/tanzu-cli-jessie/Release file

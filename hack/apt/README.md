@@ -4,6 +4,16 @@ APT uses Debian packages for installation. This document describes how to build
 such packages for the Tanzu CLI, how to push them to a public repository and
 how to install the CLI from that repository.
 
+There are two package names that can be built:
+
+1. "tanzu-cli" for official releases
+2. "tanzu-cli-unstable" for pre-releases
+
+The name of the packages built is chosen automatically based on the version
+used; a version with a `-` in it is considered a pre-release and will use the
+`tanzu-cli-unstable` package name, while other versions will use the
+official `tanzu-cli` package name.
+
 ## Building the Debian package
 
 Executing the `hack/apt/build_package.sh` script will build the Debian packages
@@ -60,6 +70,15 @@ tanzu
 Note that when building locally, the repository isn't signed, so you may see warnings
 during installation.
 
+### Testing a pre-release installation
+
+To install a pre-release package, the same procedure must be used as described above
+but for the actual installation the command should be:
+
+```bash
+apt install -y tanzu-cli-unstable --allow-unauthenticated
+```
+
 ## Publishing the package to GCloud
 
 The GCloud bucket dedicated to hosting the Tanzu CLI OS packages is
@@ -87,6 +106,8 @@ directory located locally at `hack/apt/_output/apt` to the root of the *new* buc
 Note that it is the second `apt` directory that must be uploaded. You can do this manually.
 Once uploaded, the Tanzu CLI can be installed publicly as described in the next section.
 
+The above procedure applies just as much to the `tanzu-cli-unstable` packages.
+
 ## Installing the Tanzu CLI
 
 ```bash
@@ -97,4 +118,13 @@ curl -fsSL https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.p
 echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | tee /etc/apt/sources.list.d/tanzu.list
 apt update
 apt install -y tanzu-cli
+```
+
+### Installing a pre-release
+
+To install a pre-release package, the same procedure must be used as described above
+but for the actual installation the command should be:
+
+```bash
+apt install -y tanzu-cli-unstable
 ```
