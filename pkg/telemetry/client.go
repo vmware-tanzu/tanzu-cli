@@ -18,6 +18,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugincmdtree"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
@@ -44,6 +45,7 @@ type telemetryClient struct {
 	currentOperationMetrics *OperationMetricsPayload
 	installedPlugins        []cli.PluginInfo
 	metricsDB               MetricsDB
+	cmdTreeCacheGetter      func() (plugincmdtree.Cache, error)
 }
 
 type PostRunMetrics struct {
@@ -79,6 +81,7 @@ func newTelemetryClient() MetricsHandler {
 	return &telemetryClient{
 		currentOperationMetrics: opMetrics,
 		metricsDB:               metricsDB,
+		cmdTreeCacheGetter:      pluginCommandTreeCacheGetter,
 	}
 }
 
@@ -184,10 +187,23 @@ func (tc *telemetryClient) updateMetricsForPlugin(cmd *cobra.Command, args []str
 		tc.currentOperationMetrics.PluginVersion = plugin.Version
 		tc.currentOperationMetrics.Target = string(plugin.Target)
 		tc.currentOperationMetrics.Endpoint = getEndpointSHA(plugin)
+		// for plugins, cobra can only parse the command upto the plugin name,
+		// and the rest of the subcommands and args would be captured as args
+		// ex: tanzu cluster kubeconfig get testCluster --export-file /path/to/file
+		//   the above command after parsing cobra will provide the below
+		//    ==>   cmd.CommandPath() would return "tanzu cluster"
+		//          args = ["kubeconfig","get","testCluster","--export-file","/path/to/file"]
+		// So, use the plugin command parser to figure out(best-effort) the command path using command tree as reference
+		cobraParsedCMDPath := strings.Join(strings.Split(cmd.CommandPath(), " ")[1:], " ")
+		cmdPath, err := tc.parsePluginCommandPath(plugin, args)
+		if err != nil {
+			LogError(err, "")
+			// assign the default plugin path
+			tc.currentOperationMetrics.CommandName = cobraParsedCMDPath
+		} else {
+			tc.currentOperationMetrics.CommandName = cobraParsedCMDPath + cmdPath
+		}
 	}
-
-	// TODO : Fix the command chain for plugins by using command chain cache constructed from generate-all-docs command
-	tc.currentOperationMetrics.CommandName = strings.Join(strings.Split(cmd.CommandPath(), " ")[1:], " ")
 
 	return nil
 }
@@ -205,6 +221,56 @@ func (tc *telemetryClient) pluginInfoFromCommand(cmd *cobra.Command) *cli.Plugin
 	return plugin
 }
 
+// parsePluginCommandPath parses the args provided by the cobra and uses the best-effort strategy to
+// map to the plugin command tree and would return the command path
+func (tc *telemetryClient) parsePluginCommandPath(plugin *cli.PluginInfo, args []string) (string, error) {
+	pctCache, err := tc.cmdTreeCacheGetter()
+	if err != nil {
+		return "", err
+	}
+	pct, err := pctCache.GetTree(plugin)
+	if err != nil {
+		return "", err
+	}
+	cmdPath := ""
+	current := pct
+	for _, arg := range args {
+		if current == nil || current.Subcommands == nil || len(current.Subcommands) == 0 {
+			return cmdPath, nil
+		}
+		switch {
+		// "--" terminates the flags (everything after is an argument)
+		case arg == doubleHyphen:
+			return cmdPath, nil
+		// A flag without a value, or with an `=` separated value
+		case isFlagArg(arg):
+			continue
+		default:
+			if subCMD := subCommandMatchingArg(current, arg); subCMD != nil {
+				cmdPath = cmdPath + " " + arg
+				current = subCMD
+			}
+		}
+	}
+
+	return cmdPath, nil
+}
+func subCommandMatchingArg(current *plugincmdtree.CommandNode, arg string) *plugincmdtree.CommandNode {
+	if current.Subcommands == nil {
+		return nil
+	}
+	if subCMD, exists := current.Subcommands[arg]; exists {
+		return subCMD
+	}
+	for _, subCMD := range current.Subcommands {
+		if subCMD.Aliases != nil {
+			if _, exists := subCMD.Aliases[arg]; exists {
+				return subCMD
+			}
+		}
+	}
+	return nil
+}
 func cliInstanceID() (string, error) {
 	cliID, err := configlib.GetCLIId()
 	if err != nil {
@@ -244,4 +310,12 @@ func isHashRequiredForCmdFlags(cmdPath string) bool {
 		return false
 	}
 	return true
+}
+
+func pluginCommandTreeCacheGetter() (plugincmdtree.Cache, error) {
+	pctCache, err := plugincmdtree.NewCache()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get plugin command tree cache")
+	}
+	return pctCache, nil
 }

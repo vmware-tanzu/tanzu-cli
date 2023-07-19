@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugincmdtree"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
@@ -54,16 +56,21 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 		cmd          *cobra.Command
 		configFile   *os.File
 		configFileNG *os.File
+		cmdTreeCache *fakes.CommandTreeCache
 		err          error
 	)
 
 	BeforeEach(func() {
 		metricsDB = &mockMetricsDB{}
+		cmdTreeCache = &fakes.CommandTreeCache{}
 		tc = &telemetryClient{
 			currentOperationMetrics: &OperationMetricsPayload{
 				StartTime: time.Time{},
 			},
 			metricsDB: metricsDB,
+			cmdTreeCacheGetter: func() (plugincmdtree.Cache, error) {
+				return cmdTreeCache, nil
+			},
 		}
 
 		rootCmd = &cobra.Command{
@@ -199,6 +206,8 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 					InstallationPath: "/path/to/plugin1",
 				}})
 
+				cmdTreeCache.GetTreeReturns(nil, errors.New("fake-get-command-tree-error"))
+
 				// command: tanzu plugin1 arg1
 				err = tc.UpdateCmdPreRunMetrics(globalPluginCmd, []string{"arg1"})
 
@@ -215,8 +224,8 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 		})
 
 		//Since cobra can only recognize the plugin command in the current plugin architecture, all the subcommands and flags are considered as args for the plugin command
-		Context("when kubernetes plugin command has subcommands, args and flags ", func() {
-			It("should return success and the metrics should have name arg(first argument) empty and flags string should be empty", func() {
+		Context("when kubernetes plugin command has subcommands, args, flags and plugin command tree cache fails to return the plugin command tree ", func() {
+			It("should return success and the metrics should have name arg(first argument) empty and flags string should not be empty", func() {
 
 				k8sTargetCmd := &cobra.Command{
 					Use: "kubernetes",
@@ -244,6 +253,8 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 					InstallationPath: "/path/to/k8s-plugin1",
 				}})
 
+				cmdTreeCache.GetTreeReturns(nil, errors.New("fake-get-command-tree-error"))
+
 				// command : tanzu kubernetes k8s-plugin1 plugin-subcmd1 -v 6 plugin-subcmd2 -ab --flag1=value1 --flag2 value2 -- --arg1 --arg2
 				err = tc.UpdateCmdPreRunMetrics(k8sPlugincmd, []string{"plugin-subcmd1", "-v", "6", "plugin-subcmd2", "-ab", "--flag1=value1", "--flag2", "value2", "--", "--arg1", "--arg2"})
 
@@ -269,6 +280,149 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 				}))
 				Expect(metricsPayload.CliID).ToNot(BeEmpty())
 				Expect(metricsPayload.StartTime.IsZero()).To(BeFalse())
+			})
+		})
+
+		//Since cobra can only recognize the plugin command in the current plugin architecture, all the subcommands and flags are considered as args for the plugin command
+		Describe("when kubernetes plugin command has subcommands, args, flags and plugin command tree cache returns the command tree ", func() {
+			var (
+				pluginCMDTree *plugincmdtree.CommandNode
+				k8sPlugincmd  *cobra.Command
+			)
+			BeforeEach(func() {
+				k8sTargetCmd := &cobra.Command{
+					Use: "kubernetes",
+					RunE: func(cmd *cobra.Command, args []string) error {
+						return nil
+					},
+				}
+				k8sPlugincmd = &cobra.Command{
+					Use: "k8s-plugin1",
+					RunE: func(cmd *cobra.Command, args []string) error {
+						return nil
+					},
+					Annotations: map[string]string{
+						"type":                   common.CommandTypePlugin,
+						"pluginInstallationPath": "/path/to/k8s-plugin1",
+					},
+				}
+				k8sTargetCmd.AddCommand(k8sPlugincmd)
+				rootCmd.AddCommand(k8sTargetCmd)
+				tc.SetInstalledPlugins([]cli.PluginInfo{{
+					Name:             "k8s-plugin1",
+					Version:          "1.0.0",
+					Target:           configtypes.TargetK8s,
+					InstallationPath: "/path/to/k8s-plugin1",
+				}})
+
+				// cmd tree for "k8s-plugin1" plugin that would be used by parser for parsing the command args and return command path
+				pluginCMDTree = &plugincmdtree.CommandNode{
+					Subcommands: map[string]*plugincmdtree.CommandNode{
+						"plugin-subcmd1": &plugincmdtree.CommandNode{
+							Subcommands: map[string]*plugincmdtree.CommandNode{
+								"plugin-subcmd2": plugincmdtree.NewCommandNode(),
+							},
+							Aliases: map[string]struct{}{
+								"pscmd1-alias": {},
+							},
+						},
+					},
+				}
+			})
+			Context("When the user command string matches accurately with plugin command tree ", func() {
+				It("should return success and the metrics should have the command path updated", func() {
+
+					cmdTreeCache.GetTreeReturns(pluginCMDTree, nil)
+
+					// command : tanzu kubernetes k8s-plugin1 plugin-subcmd1 -v 6 plugin-subcmd2 -ab --flag1=value1 --flag2 value2 -- --arg1 --arg2
+					err = tc.UpdateCmdPreRunMetrics(k8sPlugincmd, []string{"plugin-subcmd1", "-v", "6", "plugin-subcmd2", "-ab", "--flag1=value1", "--flag2", "value2", "--", "--arg1", "--arg2"})
+
+					Expect(err).ToNot(HaveOccurred())
+					metricsPayload := tc.currentOperationMetrics
+					Expect(metricsPayload.CommandName).To(Equal("kubernetes k8s-plugin1 plugin-subcmd1 plugin-subcmd2"))
+					Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
+					Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
+					Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
+					Expect(metricsPayload.Endpoint).To(BeEmpty())
+					Expect(metricsPayload.NameArg).To(BeEmpty())
+
+					flagMap := make(map[string]string)
+					err = json.Unmarshal([]byte(metricsPayload.Flags), &flagMap)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(flagMap).To(Equal(map[string]string{
+						"v":     "",
+						"a":     "",
+						"b":     "",
+						"flag1": "",
+						"flag2": "",
+					}))
+					Expect(metricsPayload.CliID).ToNot(BeEmpty())
+					Expect(metricsPayload.StartTime.IsZero()).To(BeFalse())
+				})
+			})
+			Context("When the user command string having command alias matches with plugin command tree ", func() {
+				It("should return success and the metrics should have the command path updated correctly", func() {
+
+					cmdTreeCache.GetTreeReturns(pluginCMDTree, nil)
+
+					// command : tanzu kubernetes k8s-plugin1 plugin-subcmd1 -v 6 plugin-subcmd2 -ab --flag1=value1 --flag2 value2 -- --arg1 --arg2
+					err = tc.UpdateCmdPreRunMetrics(k8sPlugincmd, []string{"pscmd1-alias", "-v", "6", "plugin-subcmd2", "-ab", "--flag1=value1", "--flag2", "value2", "--", "--arg1", "--arg2"})
+
+					Expect(err).ToNot(HaveOccurred())
+					metricsPayload := tc.currentOperationMetrics
+					Expect(metricsPayload.CommandName).To(Equal("kubernetes k8s-plugin1 pscmd1-alias plugin-subcmd2"))
+					Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
+					Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
+					Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
+					Expect(metricsPayload.Endpoint).To(BeEmpty())
+					Expect(metricsPayload.NameArg).To(BeEmpty())
+
+					flagMap := make(map[string]string)
+					err = json.Unmarshal([]byte(metricsPayload.Flags), &flagMap)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(flagMap).To(Equal(map[string]string{
+						"v":     "",
+						"a":     "",
+						"b":     "",
+						"flag1": "",
+						"flag2": "",
+					}))
+					Expect(metricsPayload.CliID).ToNot(BeEmpty())
+					Expect(metricsPayload.StartTime.IsZero()).To(BeFalse())
+				})
+			})
+			Context("When the user command string partially matches with plugin command tree ", func() {
+				It("should return success and the metrics should have command path updated upto the point of command match(best-effort)", func() {
+					cmdTreeCache.GetTreeReturns(pluginCMDTree, nil)
+
+					// command : tanzu kubernetes k8s-plugin1 plugin-subcmd1 -v 6 plugin-subcmd2 -ab --flag1=value1 --flag2 value2 -- --arg1 --arg2
+					err = tc.UpdateCmdPreRunMetrics(k8sPlugincmd, []string{"plugin-subcmd1", "-v", "6", "plugin-subcmd-notmatched", "-ab", "--flag1=value1", "--flag2", "value2", "--", "--arg1", "--arg2"})
+
+					Expect(err).ToNot(HaveOccurred())
+					metricsPayload := tc.currentOperationMetrics
+					Expect(metricsPayload.CommandName).To(Equal("kubernetes k8s-plugin1 plugin-subcmd1"))
+					Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
+					Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
+					Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
+					Expect(metricsPayload.Endpoint).To(BeEmpty())
+					Expect(metricsPayload.NameArg).To(BeEmpty())
+
+					flagMap := make(map[string]string)
+					err = json.Unmarshal([]byte(metricsPayload.Flags), &flagMap)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(flagMap).To(Equal(map[string]string{
+						"v":     "",
+						"a":     "",
+						"b":     "",
+						"flag1": "",
+						"flag2": "",
+					}))
+					Expect(metricsPayload.CliID).ToNot(BeEmpty())
+					Expect(metricsPayload.StartTime.IsZero()).To(BeFalse())
+				})
 			})
 		})
 
