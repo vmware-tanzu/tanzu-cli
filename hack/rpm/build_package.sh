@@ -49,8 +49,11 @@ mkdir -p ${OUTPUT_DIR}
 mkdir -p ${PKG_DIR}
 cd ${ROOT_DIR}
 
+UNSTABLE="false"
 # Transform the CLI version into RPM-compatible package version and release numbers.
 if [[ ${VERSION} == *-* ]]; then 
+   UNSTABLE="true"
+
    # When there is a - in the version, we are dealing with a pre-release
    # e.g., 1.0.0-dev, 1.0.0-alpha.0, 1.0.0.rc.1, etc
    # Such versions should be marked as RPM pre-releases by using a package release
@@ -78,6 +81,7 @@ for arch in x86_64 aarch64; do
    rpmbuild --define "rpm_package_version ${RPM_PACKAGE_VERSION}" \
             --define "rpm_release_version ${RPM_RELEASE_VERSION}" \
             --define "cli_version v${VERSION}" \
+            --define "unstable ${UNSTABLE}" \
             -bb ${BASE_DIR}/tanzu-cli.spec \
             --target ${arch}
    mv ${HOME}/rpmbuild/RPMS/${arch}/* ${PKG_DIR}/
