@@ -32,7 +32,8 @@ const (
 	// TanzuCLIEssentialsPluginGroupVersion is used to override and customize what version of essentials plugin group should be installed
 	TanzuCLIEssentialsPluginGroupVersion = "TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_VERSION"
 
-	// TanzuCLIEssentialsPluginGroupLogs is used to enable or disable the logs for essential plugin group installation process
+	// TanzuCLIShowPluginInstallationLogs is used to enable or disable the logs for essential plugin group installation process
 	// Possible values "True" or "False"
-	TanzuCLIEssentialsPluginGroupLogs = "TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_LOGS"
+	// by default logs are enabled
+	TanzuCLIShowPluginInstallationLogs = "TANZU_CLI_SHOW_PLUGIN_INSTALLATION_LOGS"
 )

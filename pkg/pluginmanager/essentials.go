@@ -1,4 +1,4 @@
-// Copyright 2021 VMware, Inc. All Rights Reserved.
+// Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
 package pluginmanager
@@ -11,36 +11,13 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
-// getEssentialsPluginGroupDetails is a function that retrieves the name and version of the essentials plugin group.
-func getEssentialsPluginGroupDetails() (name, version string) {
-	// Set the default name for the essential plugin group.
-	name = constants.DefaultCLIEssentialsPluginGroupName
-
-	// Check if the environment variable for the essentials plugin group name is set.
-	// If it is, override the default name with the value from the environment variable.
-	essentialsPluginGroupName := os.Getenv(constants.TanzuCLIEssentialsPluginGroupName)
-	if essentialsPluginGroupName != "" {
-		name = essentialsPluginGroupName
-	}
-
-	// Check if the environment variable for the essentials plugin group version is set.
-	// If it is, set the version to the value from the environment variable.
-	essentialsPluginGroupVersion := os.Getenv(constants.TanzuCLIEssentialsPluginGroupVersion)
-	if essentialsPluginGroupVersion != "" {
-		version = essentialsPluginGroupVersion
-	}
-
-	// Return the name and version of the essentials plugin group.
-	return name, version
-}
-
 // InstallPluginsFromEssentialPluginGroup is a function that installs or upgrades the essential plugin groups.
 func InstallPluginsFromEssentialPluginGroup() (string, error) {
 	// Retrieve the name and version of the essential plugin group.
-	name, version := getEssentialsPluginGroupDetails()
+	name, version := GetEssentialsPluginGroupDetails()
 
 	// Check if the plugins from the plugin group are installed, and if an update is available.
-	installed, updateAvailable, err := IsPluginsFromPluginGroupInstalled(name, version)
+	installed, updateAvailable, err := IsPluginsFromPluginGroupInstalled(name, version, DisableLogs())
 	// If there's an error, return it with additional context.
 	if err != nil {
 		return "", fmt.Errorf("failed to check if plugins from group are installed: %w", err)
@@ -75,15 +52,31 @@ func InstallPluginsFromEssentialPluginGroup() (string, error) {
 	return "", nil
 }
 
+// GetEssentialsPluginGroupDetails is a function that retrieves the name and version of the essentials plugin group.
+func GetEssentialsPluginGroupDetails() (name, version string) {
+	// Set the default name for the essential plugin group.
+	name = constants.DefaultCLIEssentialsPluginGroupName
+
+	// Check if the environment variable for the essentials plugin group name is set.
+	// If it is, override the default name with the value from the environment variable.
+	essentialsPluginGroupName := os.Getenv(constants.TanzuCLIEssentialsPluginGroupName)
+	if essentialsPluginGroupName != "" {
+		name = essentialsPluginGroupName
+	}
+
+	// Check if the environment variable for the essentials plugin group version is set.
+	// If it is, set the version to the value from the environment variable.
+	essentialsPluginGroupVersion := os.Getenv(constants.TanzuCLIEssentialsPluginGroupVersion)
+	if essentialsPluginGroupVersion != "" {
+		version = essentialsPluginGroupVersion
+	}
+
+	// Return the name and version of the essentials plugin group.
+	return name, version
+}
+
 // installEssentialPluginGroup is a function that installs the essential plugin group.
 func installPluginsFromEssentialPluginGroup(name, version string) (string, error) {
-	// Get the log mode based on the environment variable.
-	enableLogs := os.Getenv(constants.TanzuCLIEssentialsPluginGroupLogs) == "True"
-
-	// Set the log mode based on the value of enableLogs and defer resetting it.
-	log.QuietMode(!enableLogs)
-	defer log.QuietMode(enableLogs)
-
 	pluginGroupNameWithVersion := name
 
 	// Combine the name and version into a single string.
@@ -92,7 +85,7 @@ func installPluginsFromEssentialPluginGroup(name, version string) (string, error
 	}
 
 	// Attempt to install the plugins from the group.
-	groupWithVersion, err := InstallPluginsFromGroup("all", pluginGroupNameWithVersion)
+	groupWithVersion, err := InstallPluginsFromGroup("all", pluginGroupNameWithVersion, DisableLogs())
 
 	// If there's an error during installation, return it with additional context.
 	if err != nil {

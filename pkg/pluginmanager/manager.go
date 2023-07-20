@@ -826,7 +826,17 @@ func UpgradePlugin(pluginName, version string, target configtypes.Target) error 
 // InstallPluginsFromGroup installs either the specified plugin or all plugins from the specified group version.
 // If the group version is not specified, the latest available version will be used.
 // The group identifier including the version used is returned.
-func InstallPluginsFromGroup(pluginName, groupIDAndVersion string) (string, error) { //nolint:gocyclo
+func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...PluginManagerOptions) (string, error) { //nolint:gocyclo,funlen
+	// Initialize plugin manager options and enable logs by default
+	opts := NewPluginManagerOpts()
+	for _, option := range options {
+		option(opts)
+	}
+
+	// Enable or Disable logs
+	opts.SetLogMode()
+	defer opts.ResetLogMode()
+
 	discoveries, err := getPluginDiscoveries()
 	if err != nil {
 		return "", err
@@ -1662,13 +1672,15 @@ func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
 
 // IsPluginsFromPluginGroupInstalled checks if all plugins from a specific group are installed and if a new version is available.
 // This function uses cache data to verify rather than fetching the inventory image
-func IsPluginsFromPluginGroupInstalled(name, version string) (bool, bool, error) {
-	// Get the log mode based on the environment variable.
-	enableLogs := os.Getenv(constants.TanzuCLIEssentialsPluginGroupLogs) == "True"
-
-	// Set the log mode based on the value of enableLogs and defer resetting it.
-	log.QuietMode(!enableLogs)
-	defer log.QuietMode(enableLogs)
+func IsPluginsFromPluginGroupInstalled(name, version string, options ...PluginManagerOptions) (bool, bool, error) {
+	// Initialize plugin manager options and enable logs by default
+	opts := NewPluginManagerOpts()
+	for _, option := range options {
+		option(opts)
+	}
+	// Enable or Disable logs
+	opts.SetLogMode()
+	defer opts.ResetLogMode()
 
 	// Retrieve the list of currently installed plugins.
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()

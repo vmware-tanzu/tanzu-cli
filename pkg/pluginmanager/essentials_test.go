@@ -62,7 +62,7 @@ func TestGetEssentialsPluginGroupDetails(t *testing.T) {
 			assert.Nil(t, err)
 
 			// Call the function and check the results.
-			gotName, gotVer := getEssentialsPluginGroupDetails()
+			gotName, gotVer := GetEssentialsPluginGroupDetails()
 			if gotName != tt.wantName || gotVer != tt.wantVer {
 				t.Errorf("GetEssentialsPluginGroupDetails() = (%v, %v), want (%v, %v)", gotName, gotVer, tt.wantName, tt.wantVer)
 			}
