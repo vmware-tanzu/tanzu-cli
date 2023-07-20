@@ -4,18 +4,26 @@
 package registry
 
 import (
+	"context"
 	"encoding/base64"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
 	"os"
 	"runtime"
 	"strconv"
+	"time"
 
 	regname "github.com/google/go-containerregistry/pkg/name"
+	gocontainerregistry "github.com/google/go-containerregistry/pkg/registry"
 	"github.com/pkg/errors"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/configpaths"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	tprlog "github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 type CertOptions struct {
@@ -141,4 +149,42 @@ func updateCACertData(caCertData string, registryCertOpts *CertOptions) error {
 		}
 	}
 	return nil
+}
+
+// ServeLocalRegistry start an in-memory localhost registry server at provided port
+// If the port is not provided it uses a random available port to start the registry server
+// It returns the port on which the server is running, the function to shutdown the server, error if any
+func ServeLocalRegistry(port string) (string, func(), error) {
+	ctx := context.Background()
+	listener, err := net.Listen("tcp", "localhost:"+port)
+	if err != nil {
+		return port, nil, err
+	}
+	porti := listener.Addr().(*net.TCPAddr).Port
+	port = fmt.Sprintf("%d", porti)
+
+	serverLogFile, err := os.CreateTemp("", "")
+	if err != nil {
+		return port, nil, err
+	}
+	s := &http.Server{
+		ReadHeaderTimeout: 5 * time.Second, // prevent slowloris, quiet linter
+		Handler:           gocontainerregistry.New(gocontainerregistry.Logger(log.New(serverLogFile, "", log.LstdFlags))),
+		ErrorLog:          nil,
+	}
+	tprlog.Infof("starting local registry server on port %s, logs available at %s", port, serverLogFile.Name())
+
+	errCh := make(chan error)
+	go func() { errCh <- s.Serve(listener) }()
+
+	return port, func() {
+		tprlog.Info("shutting down local registry server...")
+		if err := s.Shutdown(ctx); err != nil {
+			tprlog.Infof("error while terminating local registry server: %v", err.Error())
+		}
+		if err := <-errCh; !errors.Is(err, http.ErrServerClosed) {
+			tprlog.Infof("error received from local registry server: %v", err.Error())
+		}
+		os.Remove(serverLogFile.Name())
+	}, nil
 }
