@@ -54,6 +54,7 @@ var _ = Describe("Inserting CLI metrics to database and verifying it by fetching
 				PluginVersion: "v0.0.1",
 				Target:        "kubernetes",
 				Endpoint:      "fake-endpoint-hash",
+				IsInternal:    false,
 				Error:         "",
 			}
 
@@ -75,16 +76,21 @@ var _ = Describe("Inserting CLI metrics to database and verifying it by fetching
 			Expect(metricsRows[0].flags).To(Equal(`{"v":"6","longflag":"lvalue"}`))
 			Expect(metricsRows[0].target).To(Equal("kubernetes"))
 			Expect(metricsRows[0].endpoint).To(Equal("fake-endpoint-hash"))
+			Expect(metricsRows[0].isInternal).To(Equal(false))
 			Expect(metricsRows[0].exitStatus).To(Equal(0))
 			Expect(metricsRows[0].error).To(BeEmpty())
 
+			//validate the GetRowCount()
+			count, err := db.GetRowCount()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(count).To(Equal(1))
 		})
 	})
 
 })
 
-const selectAllFromCLIOperationMetrics = "SELECT cli_version,os_name,os_arch,plugin_name,plugin_version,command,cli_id,command_start_ts,command_end_ts,csp_org_id," +
-	"account_number,target,name_arg,endpoint,flags,exit_status,is_internal,error FROM tanzu_cli_operations"
+const selectAllFromCLIOperationMetrics = "SELECT cli_version,os_name,os_arch,plugin_name,plugin_version,command,cli_id,command_start_ts,command_end_ts," +
+	"target,name_arg,endpoint,flags,exit_status,is_internal,error FROM tanzu_cli_operations"
 
 func getOperationMetrics(metricsDB *sqliteMetricsDB) ([]*cliOperationsRow, error) {
 	db, err := sql.Open("sqlite", metricsDB.metricsDBFile)
@@ -104,7 +110,7 @@ func getOperationMetrics(metricsDB *sqliteMetricsDB) ([]*cliOperationsRow, error
 	for rows.Next() {
 		var row cliOperationsRow
 		err = rows.Scan(&row.cliVersion, &row.osName, &row.osArch, &row.pluginName, &row.pluginVersion, &row.command, &row.cliID, &row.commandStartTSMsec, &row.commandEndTSMsec,
-			&row.cspOrgID, &row.accountNumber, &row.target, &row.nameArg, &row.endpoint, &row.flags, &row.exitStatus, &row.isInternal, &row.error)
+			&row.target, &row.nameArg, &row.endpoint, &row.flags, &row.exitStatus, &row.isInternal, &row.error)
 		if err != nil {
 			return nil, errors.New("failed to scan the metrics row")
 		}

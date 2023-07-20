@@ -46,8 +46,6 @@ type cliOperationsRow struct {
 	cliID              string
 	commandStartTSMsec string
 	commandEndTSMsec   string
-	cspOrgID           string
-	accountNumber      string
 	target             string
 	nameArg            string
 	endpoint           string
@@ -120,18 +118,16 @@ func (b *sqliteMetricsDB) SaveOperationMetric(entry *OperationMetricsPayload) er
 		cliID:              entry.CliID,
 		commandStartTSMsec: strconv.FormatInt(entry.StartTime.UnixMilli(), 10),
 		commandEndTSMsec:   strconv.FormatInt(entry.EndTime.UnixMilli(), 10),
-		cspOrgID:           "", // TODO:(prkalle) to configure cspOrgID through telemetry plugin
-		accountNumber:      "", // TODO:(prkalle) to configure accountNumber through telemetry plugin
 		target:             entry.Target,
 		nameArg:            entry.NameArg,
 		endpoint:           entry.Endpoint,
 		flags:              entry.Flags,
 		exitStatus:         entry.ExitStatus,
-		isInternal:         true, // TODO:(prkalle) to configure isInternal through build options
+		isInternal:         entry.IsInternal,
 		error:              entry.Error,
 	}
 
-	_, err = db.Exec("INSERT INTO tanzu_cli_operations VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", row.cliVersion, row.osName, row.osArch, row.pluginName, row.pluginVersion, row.command, row.cliID, row.commandStartTSMsec, row.commandEndTSMsec, row.cspOrgID, row.accountNumber, row.target, row.nameArg, row.endpoint, row.flags, row.exitStatus, row.isInternal, row.error)
+	_, err = db.Exec("INSERT INTO tanzu_cli_operations VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);", row.cliVersion, row.osName, row.osArch, row.pluginName, row.pluginVersion, row.command, row.cliID, row.commandStartTSMsec, row.commandEndTSMsec, row.target, row.nameArg, row.endpoint, row.flags, row.exitStatus, row.isInternal, row.error)
 	if err != nil {
 		return errors.Wrapf(err, "unable to insert clioperations row %v", row)
 	}
@@ -139,6 +135,30 @@ func (b *sqliteMetricsDB) SaveOperationMetric(entry *OperationMetricsPayload) er
 	return nil
 }
 
+func (b *sqliteMetricsDB) GetRowCount() (int, error) {
+	err := AcquireTanzuMetricDBLock()
+	if err != nil {
+		return 0, err
+	}
+	defer ReleaseTanzuMetricDBLock()
+	db, err := sql.Open("sqlite", b.metricsDBFile)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to open the DB from '%s' file", b.metricsDBFile)
+	}
+	defer db.Close()
+
+	dbQuery := cliOperationMetricRowClause
+	rows, err := db.Query(dbQuery)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to execute the DB query : %v", dbQuery)
+	}
+	defer rows.Close()
+	count := 0
+	if rows.Next() {
+		err = rows.Scan(&count)
+	}
+	return count, err
+}
 func isDBRowCountThresholdReached(db *sql.DB) (bool, error) {
 	dbQuery := cliOperationMetricRowClause
 	rows, err := db.Query(dbQuery)

@@ -10,4 +10,7 @@ type MetricsDB interface {
 
 	// SaveOperationMetric inserts CLI operation metrics collected into database
 	SaveOperationMetric(*OperationMetricsPayload) error
+
+	// GetRowCount gets metrics table current row count
+	GetRowCount() (int, error)
 }

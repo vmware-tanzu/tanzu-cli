@@ -4,12 +4,11 @@
 package telemetry
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"testing"
 	"time"
-
-	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -19,6 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugincmdtree"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -33,8 +33,11 @@ func TestClient(t *testing.T) {
 type mockMetricsDB struct {
 	createSchemaCalled             bool
 	saveOperationMetricCalled      bool
+	getRowCountCalled              bool
 	createSchemaReturnError        error
 	saveOperationMetricReturnError error
+	getRowCountError               error
+	getRowCountReturnVal           int
 }
 
 func (mc *mockMetricsDB) CreateSchema() error {
@@ -45,6 +48,10 @@ func (mc *mockMetricsDB) CreateSchema() error {
 func (mc *mockMetricsDB) SaveOperationMetric(payload *OperationMetricsPayload) error {
 	mc.saveOperationMetricCalled = true
 	return mc.saveOperationMetricReturnError
+}
+func (mc *mockMetricsDB) GetRowCount() (int, error) {
+	mc.getRowCountCalled = true
+	return mc.getRowCountReturnVal, mc.getRowCountError
 }
 
 var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
@@ -529,14 +536,91 @@ var _ = Describe("Unit tests for SaveMetrics()", func() {
 
 })
 
-func TestTelemetryClient_SendMetrics(t *testing.T) {
-	tc := &telemetryClient{}
+var _ = Describe("Unit tests for SendMetrics()", func() {
+	var (
+		tc           *telemetryClient
+		metricsDB    *mockMetricsDB
+		configFile   *os.File
+		configFileNG *os.File
+		err          error
+	)
+	BeforeEach(func() {
+		metricsDB = &mockMetricsDB{}
+		tc = &telemetryClient{
+			currentOperationMetrics: &OperationMetricsPayload{
+				StartTime: time.Time{},
+			},
+			metricsDB: metricsDB,
+		}
+		configFile, err = os.CreateTemp("", "config")
+		Expect(err).To(BeNil())
+		os.Setenv("TANZU_CONFIG", configFile.Name())
 
-	err := tc.SendMetrics()
-	if err != nil {
-		t.Errorf("Failed to send metrics: %v", err)
-	}
-}
+		configFileNG, err = os.CreateTemp("", "config_ng")
+		Expect(err).To(BeNil())
+		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+
+		err = configlib.SetCEIPOptIn("true")
+		Expect(err).ToNot(HaveOccurred(), "failed to set the CEIP OptIn")
+
+	})
+	AfterEach(func() {
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+
+		os.RemoveAll(configFile.Name())
+		os.RemoveAll(configFileNG.Name())
+
+	})
+
+	Context("when the user had opted-out from CEIP", func() {
+		It("should return success and should not call DB rouw count", func() {
+			err = configlib.SetCEIPOptIn("false")
+			Expect(err).ToNot(HaveOccurred(), "failed to set the CEIP OptOut")
+
+			err = tc.SendMetrics(context.Background(), 0)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(metricsDB.getRowCountCalled).To(BeFalse())
+		})
+	})
+	Context("when the user had opted-in for CEIP and DB row count is less than send rowcount threshold", func() {
+		It("should return success and not call send operation", func() {
+			metricsDB.getRowCountReturnVal = metricsSendThresholdRowCount - 1
+
+			err = tc.SendMetrics(context.Background(), 1)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(metricsDB.getRowCountCalled).To(BeTrue())
+		})
+	})
+	Context("when the send metrics conditions are met, but the telemetry plugin was not installed", func() {
+		It("should return error", func() {
+			metricsDB.getRowCountReturnVal = metricsSendThresholdRowCount
+			tc.SetInstalledPlugins(nil)
+			err = tc.SendMetrics(context.Background(), 1)
+			Expect(err).To(HaveOccurred())
+			Expect(metricsDB.getRowCountCalled).To(BeTrue())
+			Expect(err.Error()).To(ContainSubstring("unable to get the telemetry plugin"))
+
+		})
+	})
+
+	Context("when the send metrics conditions are met, but the telemetry plugin installation path was incorrect", func() {
+		It("should return error", func() {
+			metricsDB.getRowCountReturnVal = metricsSendThresholdRowCount
+			tc.SetInstalledPlugins([]cli.PluginInfo{{
+				Name:             "telemetry",
+				Target:           configtypes.TargetGlobal,
+				InstallationPath: "incorrect/path",
+				Version:          "1.0.0",
+			}})
+			err = tc.SendMetrics(context.Background(), 1)
+			Expect(err).To(HaveOccurred())
+			Expect(metricsDB.getRowCountCalled).To(BeTrue())
+			Expect(err.Error()).To(ContainSubstring(`plugin "telemetry" does not exist`))
+		})
+	})
+
+})
 
 func TestTelemetryClient_isCoreCommand(t *testing.T) {
 	coreCMD := &cobra.Command{

@@ -5,6 +5,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -137,36 +138,14 @@ func newRootCmd() *cobra.Command {
 		// Flag parsing must be deactivated because the root plugin won't know about all flags.
 		DisableFlagParsing: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := telemetry.Client().UpdateCmdPreRunMetrics(cmd, args); err != nil {
-				telemetry.LogError(err, "")
-			}
-
-			// Prompt user for EULA and CEIP agreement if necessary, except for
-			skipCommands := []string{
-				// The shell completion setup is not interactive, so it should not trigger a prompt
-				"tanzu __complete",
-				"tanzu completion",
-				// Common first command to run,
-				"tanzu version",
-				// It would be a chicken and egg issue if user tries to set CEIP configuration
-				// using "tanzu config set env.TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER yes"
-				"tanzu config set",
-				// Auto prompting when running these commands is confusing
-				"tanzu config eula",
-				"tanzu ceip-participation set",
-				// This command is being invoked by the kubectl exec binary where the user doesn't
-				// get to see the prompts and the kubectl command execution just gets stuck, and it
-				// is very hard for users to figure out what is going wrong
-				"tanzu pinniped-auth",
-			}
-			skipPrompts := false
-			for _, cmdPath := range skipCommands {
-				if strings.HasPrefix(cmd.CommandPath(), cmdPath) {
-					skipPrompts = true
-					break
+			if !shouldSkipTelemetryCollection(cmd) {
+				if err := telemetry.Client().UpdateCmdPreRunMetrics(cmd, args); err != nil {
+					telemetry.LogError(err, "")
 				}
 			}
-			if !skipPrompts {
+
+			// Prompt user for EULA and CEIP agreement if necessary
+			if !shouldSkipPrompts(cmd) {
 				if err := cliconfig.ConfigureEULA(false); err != nil {
 					return err
 				}
@@ -282,6 +261,56 @@ func ensureCLIInstanceID() (string, error) {
 	return cliID, nil
 }
 
+// isSkipCommand returns true if the command is part of the skip list by checking the prefix of
+// the command's command path matches with one of the item in the skip command list
+func isSkipCommand(skipCommandList []string, commandPath string) bool {
+	skipCommand := false
+	for _, cmdPath := range skipCommandList {
+		if strings.HasPrefix(commandPath, cmdPath) {
+			skipCommand = true
+			break
+		}
+	}
+	return skipCommand
+}
+
+// shouldSkipTelemetryCollection checks if the command should be skipped for telemetry collection
+func shouldSkipTelemetryCollection(cmd *cobra.Command) bool {
+	skipTelemetryCollectionCommands := []string{
+		// The shell completion setup is not interactive, so it should not trigger a prompt
+		"tanzu __complete",
+		"tanzu completion",
+		// Common first command to run,
+		"tanzu version",
+		// should skip telemetry for "telemetry" plugin
+		"tanzu telemetry",
+	}
+	return isSkipCommand(skipTelemetryCollectionCommands, cmd.CommandPath())
+}
+
+// shouldSkipPrompts checks if the prompts should be skipped for the command
+func shouldSkipPrompts(cmd *cobra.Command) bool {
+	// Prompt user for EULA and CEIP agreement if necessary, except for
+	skipCommands := []string{
+		// The shell completion setup is not interactive, so it should not trigger a prompt
+		"tanzu __complete",
+		"tanzu completion",
+		// Common first command to run,
+		"tanzu version",
+		// It would be a chicken and egg issue if user tries to set CEIP configuration
+		// using "tanzu config set env.TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER yes"
+		"tanzu config set",
+		// Auto prompting when running these commands is confusing
+		"tanzu config eula",
+		"tanzu ceip-participation set",
+		// This command is being invoked by the kubectl exec binary where the user doesn't
+		// get to see the prompts and the kubectl command execution just gets stuck, and it
+		// is very hard for users to figure out what is going wrong
+		"tanzu pinniped-auth",
+	}
+	return isSkipCommand(skipCommands, cmd.CommandPath())
+}
+
 // Execute executes the CLI.
 func Execute() error {
 	root, err := NewRootCmd()
@@ -304,7 +333,8 @@ func Execute() error {
 		telemetry.LogError(updateErr, "")
 	} else if saveErr := telemetry.Client().SaveMetrics(); saveErr != nil {
 		telemetry.LogError(saveErr, "")
+	} else if sendErr := telemetry.Client().SendMetrics(context.Background(), 1); sendErr != nil {
+		telemetry.LogError(sendErr, "")
 	}
-
 	return executionErr
 }
