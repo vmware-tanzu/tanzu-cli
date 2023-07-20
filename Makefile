@@ -44,8 +44,9 @@ KUBECTL            := $(TOOLS_BIN_DIR)/kubectl
 KIND               := $(TOOLS_BIN_DIR)/kind
 GINKGO             := $(TOOLS_BIN_DIR)/ginkgo
 COSIGN             := $(TOOLS_BIN_DIR)/cosign
+GOJUNITREPORT	   := $(TOOLS_BIN_DIR)/go-junit-report
 
-TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN)
+TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
 
 # Build and version information
 
@@ -296,6 +297,11 @@ generate-fakes: ## Generate fakes for writing unit tests
 .PHONY: verify
 verify: gomod fmt generate ## Run all verification scripts
 	./hack/check/check-dirty.sh
+
+.PHONY: go-junit-report ## Install ginkgo
+go-junit-report:
+	mkdir -p $(TOOLS_BIN_DIR)
+	GOBIN=$(TOOLS_BIN_DIR) go install github.com/jstemmer/go-junit-report@latest
 
 ## --------------------------------------
 ## Generators

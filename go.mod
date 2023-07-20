@@ -24,6 +24,7 @@ require (
 	github.com/lithammer/dedent v1.1.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/novln/docker-parser v1.0.0
+	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/ginkgo/v2 v2.10.0
 	github.com/onsi/gomega v1.27.8
 	github.com/otiai10/copy v1.6.0
@@ -39,8 +40,13 @@ require (
 	github.com/vmware-tanzu/carvel-imgpkg v0.36.1
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-cli/test/e2e/framework v0.0.0-00010101000000-000000000000
+<<<<<<< HEAD
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686
 	github.com/vmware-tanzu/tanzu-plugin-runtime v1.0.0-dev.0.20230712185745-27ac1d59d87f
+=======
+	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230707192002-93a508a39d94
+	github.com/vmware-tanzu/tanzu-plugin-runtime v1.0.0-dev.0.20230706203022-6b662c0fddaa
+>>>>>>> f45dbd94 (report from junit and ginkgo reports)
 	go.pinniped.dev v0.20.0
 	go.uber.org/multierr v1.11.0
 	golang.org/x/mod v0.10.0
@@ -172,6 +178,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -227,6 +234,8 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
+	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
+	gotest.tools/v3 v3.3.0 // indirect
 	k8s.io/apiextensions-apiserver v0.26.1 // indirect
 	k8s.io/component-base v0.26.1 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
