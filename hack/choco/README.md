@@ -3,6 +3,16 @@
 This document describes how to build a Chocolatey package for the Tanzu CLI and
 how to install it.
 
+There are two package names that can be built:
+
+1. "tanzu-cli" for official releases
+2. "tanzu-cli-unstable" for pre-releases
+
+The name of the packages built is chosen automatically based on the version
+used; a version with a `-` in it is considered a pre-release and will use the
+`tanzu-cli-unstable` package name, while other versions will use the
+official `tanzu-cli` package name.
+
 ## Building the Chocolatey package
 
 Executing the `hack/choco/build_package.sh` script will build the Chocolatey
@@ -44,24 +54,40 @@ binary. Instead, when the package is installed, Chocolatey will download the
 CLI binary from Github. This has to do with distribution rights as we will
 probably publish the Chocolatey package in the community package repository.
 
-## Installing the Tanzu CLI using the built Chocolatey package
+## Testing the built Chocolatey package locally
 
 Installing the Tanzu CLI using the newly built Chocolatey package can be done
 on a Windows machine having `choco` installed. First, the Chocolatey package must
-be uploaded to the Windows machine.
+be manually uploaded to the Windows machine.
 
 For example, if we upload the package to the Windows machine under
-`$HOME\tanzu-cli.0.90.0-beta0.nupkg`, we can then simply do:
+`$HOME\tanzu-cli.0.90.1.nupkg`, we can then simply do:
 
 ```bash
-choco install -f "$HOME\tanzu-cli.0.90.0-beta0.nupkg"
+choco install -s="$HOME" tanzu-cli
 ```
 
 It is also possible to configure a local repository containing the local package:
 
 ```bash
 choco source add -n=local -s="file://$HOME"
-choco install tanzu-cli
+choco install -s=local tanzu-cli
+```
+
+### Installing a pre-release
+
+To install a pre-release package, the same procedure must be used as described above
+but for the actual installation the command should be:
+
+```bash
+choco install -s="$HOME" tanzu-cli-unstable --pre
+```
+
+or
+
+```bash
+choco source add -n=local -s="file://$HOME"
+choco install -s=local tanzu-cli-unstable --pre
 ```
 
 ## Uninstalling the Tanzu CLI
@@ -70,6 +96,12 @@ To uninstall the Tanzu CLI after it has been installed with Chocolatey:
 
 ```bash
 choco uninstall tanzu-cli
+```
+
+or for pre-releases:
+
+```bash
+choco uninstall tanzu-cli-unstable
 ```
 
 ## Publishing the package
@@ -82,12 +114,14 @@ This step currently needs to be done manually by running the command:
 choco push --source https://push.chocolatey.org/ --api-key <api-key> hack/choco/_output/choco/tanzu-cli.<version>.nupkg
 ```
 
-The result of the publication can take a couple of hours as tests are run
-on the community repo before the package becomes public.  Progress can be
-monitored at the following URL (note that you need to be logged in as vmware-tanzu):
+The package will almost immediately become available for installation using
+the `--version` flag.  However, for the package to become public and be installed
+by default without the use of the `--version` flag, it may take a couple of days
+as the package must be approved by a human maintainer of the Chocolatey project.
+
+Progress can be monitored at the following URL (note that you need to be logged
+in as vmware-tanzu):
 
 ```bash
 https://community.chocolatey.org/profiles/vmware-tanzu
 ```
-
-Once the publication is triggered, it seems to take 1 to 2 hours for the package to pass all tests and become available.
