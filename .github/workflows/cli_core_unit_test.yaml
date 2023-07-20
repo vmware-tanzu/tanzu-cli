@@ -1,0 +1,65 @@
+name: Tanzu CLI Unit Tests
+
+on:
+  pull_request:
+    branches: [main, release-*]
+  push:
+    branches: [main, release-*]
+
+jobs:
+  build:
+    name: Tanzu CLI Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+        id: go
+
+      - name: go cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Setup dependencies
+        run: |
+          make tools
+          echo "${PWD}/hack/tools/bin" >> $GITHUB_PATH
+          echo "${PWD}/bin" >> $GITHUB_PATH
+
+      - name: Cross build
+        run: |
+          make cross-build
+
+      - name: Run gomod
+        run: |
+          make gomod
+
+      - name: Run lint
+        run: |
+          make lint
+
+      - name: Run Unit Test
+        run: |
+          make test | tee ./make_test.output
+
+      - name: Generate ginkgo tests and code coverage report
+        run: |
+          cat ./make_test.output | go tool test2json > ./test_suite_output.json
+          ./hack/scripts/generate-cli-ginkgo-tests-summary.sh ./test_suite_output.json > ./CLI-ginkgo-tests-summary.txt
+          cat ./make_test.output | ./hack/tools/bin/go-junit-report  > ./CLI-junit-report.xml
+
+      - name: Tests Results Summary
+        if: always()
+        run: |
+          TEST_RESULTS_MD=$(./hack/scripts/generate-cli-unit-tests-report.sh ./CLI-junit-report.xml ./CLI-ginkgo-tests-summary.txt)
+          echo "$TEST_RESULTS_MD" >> $GITHUB_STEP_SUMMARY

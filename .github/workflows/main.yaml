@@ -53,10 +53,6 @@ jobs:
         make tools
         echo "${PWD}/hack/tools/bin" >> $GITHUB_PATH
 
-    - name: Test
-      run: |
-        make all
-
     - name: Run make verify
       run: |
         make verify

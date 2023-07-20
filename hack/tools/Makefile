@@ -45,6 +45,7 @@ KUBECTL            := $(BIN_DIR)/kubectl
 KIND               := $(BIN_DIR)/kind
 GINKGO             := $(BIN_DIR)/ginkgo
 COSIGN             := $(BIN_DIR)/cosign
+GOJUNITREPORT		   := $(BIN_DIR)/go-junit-report
 
 ## --------------------------------------
 ## Help
@@ -121,6 +122,11 @@ ginkgo: $(GINKGO) ## Install ginkgo
 $(GINKGO):
 	mkdir -p $(BIN_DIR)
 	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
+
+go-junit-report: $(GOJUNITREPORT) ## Install ginkgo
+$(GOJUNITREPORT):
+	mkdir -p $(BIN_DIR)
+	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/jstemmer/go-junit-report@latest
 
 ## --------------------------------------
 ## Cleanup
