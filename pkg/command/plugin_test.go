@@ -82,7 +82,7 @@ func TestPluginList(t *testing.T) {
 			centralRepoFeature: true,
 			args:               []string{"plugin", "list", "--local", "someDirectory"},
 			expectedFailure:    true,
-			expected:           "the '--local' flag does not apply to this command. Please use 'tanzu plugin search --local-source'",
+			expected:           "unknown flag: --local",
 		},
 		{
 			test:               "With empty config file(no discovery sources added) and no plugins installed",

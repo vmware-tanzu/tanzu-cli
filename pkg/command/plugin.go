@@ -67,22 +67,11 @@ func newPluginCmd() *cobra.Command {
 	discoverySourceCmd := newDiscoverySourceCmd()
 
 	listPluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
-	listPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local plugin source")
-	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
-		// The --local flag no longer applies to the "list" command.
-		// Instead of removing it completely, we mark it hidden and print out an error
-		// in the RunE() function if it is used.  This provides better guidance to the user.
-		if err := listPluginCmd.Flags().MarkHidden("local"); err != nil {
-			// Will only fail if the flag does not exist, which would indicate a coding error,
-			// so let's panic so we notice immediately.
-			panic(err)
-		}
-		installPluginCmd.Flags().StringVar(&group, "group", "", "install the plugins specified by a plugin-group version")
-	}
-
 	describePluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
 
 	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
+		installPluginCmd.Flags().StringVar(&group, "group", "", "install the plugins specified by a plugin-group version")
+
 		// --local is renamed to --local-source
 		installPluginCmd.Flags().StringVarP(&local, "local", "", "", "path to local plugin source")
 		msg := "this was done in the v1.0.0 release, it will be removed following the deprecation policy (6 months). Use the --local-source flag instead.\n"
@@ -92,7 +81,7 @@ func newPluginCmd() *cobra.Command {
 			panic(err)
 		}
 
-		// The --local-source flag for installing plugins is only used in development testing,
+		// The --local-source flag for installing plugins is only used in development testing
 		// and should not be used in production.  We mark it as hidden to help convey this reality.
 		installPluginCmd.Flags().StringVarP(&local, "local-source", "l", "", "path to local plugin source")
 		if err := installPluginCmd.Flags().MarkHidden("local-source"); err != nil {
@@ -102,6 +91,7 @@ func newPluginCmd() *cobra.Command {
 		}
 	} else {
 		installPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local discovery/distribution source")
+		listPluginCmd.Flags().StringVarP(&local, "local", "l", "", "path to local plugin source")
 	}
 	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
 	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "delete the plugin without asking for confirmation")
@@ -150,10 +140,6 @@ func newListPluginCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			errorList := make([]error, 0)
 			if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
-				if local != "" {
-					return fmt.Errorf("the '--local' flag does not apply to this command. Please use 'tanzu plugin search --local-source'")
-				}
-
 				// List installed standalone plugins
 				standalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
 				if err != nil {
