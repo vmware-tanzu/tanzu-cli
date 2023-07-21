@@ -25,4 +25,15 @@ const (
 	ControlPlaneEndpointType          = "TANZU_CLI_CONTROL_PLANE_ENDPOINT_TYPE"
 	ShowTelemetryConsoleLogs          = "TANZU_CLI_SHOW_TELEMETRY_CONSOLE_LOGS"
 	TelemetrySuperColliderEnvironment = "TANZU_CLI_SUPERCOLLIDER_ENVIRONMENT"
+
+	// TanzuCLIEssentialsPluginGroupName is used to override and customize the default essentials plugin group name
+	TanzuCLIEssentialsPluginGroupName = "TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_NAME"
+
+	// TanzuCLIEssentialsPluginGroupVersion is used to override and customize what version of essentials plugin group should be installed
+	TanzuCLIEssentialsPluginGroupVersion = "TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_VERSION"
+
+	// TanzuCLIShowPluginInstallationLogs is used to enable or disable the logs for essential plugin group installation process
+	// Possible values "True" or "False"
+	// by default logs are enabled
+	TanzuCLIShowPluginInstallationLogs = "TANZU_CLI_SHOW_PLUGIN_INSTALLATION_LOGS"
 )

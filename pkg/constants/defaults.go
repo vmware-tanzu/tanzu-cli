@@ -19,4 +19,7 @@ const (
 	// TanzuCLIDefaultCentralPluginDiscoveryImage defines the default discovery image
 	// from where the CLI will discover the plugins
 	TanzuCLIDefaultCentralPluginDiscoveryImage = "projects.registry.vmware.com/tanzu_cli/plugins/plugin-inventory:latest"
+
+	// DefaultCLIEssentialsPluginGroupName  name of the essentials plugin group which is used to install essential plugins
+	DefaultCLIEssentialsPluginGroupName = "vmware-tanzucli/essentials"
 )

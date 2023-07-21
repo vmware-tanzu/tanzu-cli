@@ -38,3 +38,83 @@ func TestSortVersion(t *testing.T) {
 		})
 	}
 }
+
+// TestIsNewVersion tests the IsNewVersion function.
+func TestIsNewVersion(t *testing.T) {
+	tests := []struct {
+		name                string
+		pluginVersionStr    string
+		installedVersionStr string
+		want                bool
+	}{
+		{
+			name:                "New version available",
+			pluginVersionStr:    "2.0.0",
+			installedVersionStr: "1.0.0",
+			want:                true,
+		},
+		{
+			name:                "Same version",
+			pluginVersionStr:    "1.0.0",
+			installedVersionStr: "1.0.0",
+			want:                false,
+		},
+		{
+			name:                "Old version",
+			pluginVersionStr:    "1.0.0",
+			installedVersionStr: "2.0.0",
+			want:                false,
+		},
+		{
+			name:                "Invalid plugin version",
+			pluginVersionStr:    "invalid",
+			installedVersionStr: "1.0.0",
+			want:                false,
+		},
+		{
+			name:                "Invalid installed version",
+			pluginVersionStr:    "1.0.0",
+			installedVersionStr: "invalid",
+			want:                false,
+		},
+
+		{
+			name:                "New version available",
+			pluginVersionStr:    "v2.0.0",
+			installedVersionStr: "v1.0.0",
+			want:                true,
+		},
+		{
+			name:                "Same version",
+			pluginVersionStr:    "v1.0.0",
+			installedVersionStr: "v1.0.0",
+			want:                false,
+		},
+		{
+			name:                "Old version",
+			pluginVersionStr:    "v1.0.0",
+			installedVersionStr: "v2.0.0",
+			want:                false,
+		},
+		{
+			name:                "Invalid plugin version",
+			pluginVersionStr:    "invalid",
+			installedVersionStr: "v1.0.0",
+			want:                false,
+		},
+		{
+			name:                "Invalid installed version",
+			pluginVersionStr:    "v1.0.0",
+			installedVersionStr: "invalid",
+			want:                false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsNewVersion(tt.pluginVersionStr, tt.installedVersionStr); got != tt.want {
+				t.Errorf("IsNewVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

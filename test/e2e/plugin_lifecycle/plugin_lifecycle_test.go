@@ -138,7 +138,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			// validate above plugin delete with plugin list command, plugin list should return 0 plugins
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
+			// This is because essential plugins will always be installed
+			Expect(len(pluginsList)).Should(Equal(1), "there should be only one plugin available after uninstall all this is because essential plugins will always be installed")
 		})
 	})
 	// use case: tanzu plugin clean, install, clean and list
