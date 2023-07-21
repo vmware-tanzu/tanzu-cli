@@ -47,7 +47,10 @@ chmod a+x ${OUTPUT_DIR}/chocolateyInstall.ps1
 # Also, chocolatey (nuspec) does not like a `.` in the pre-release part of the version.
 # For example if we have v0.90.0-beta.0 we need to remove the last `.`
 # First let's make sure we are dealing with a version that has a pre-release part
+UNSTABLE=""
 if [[ ${VERSION} == *-* ]];then
+   UNSTABLE="-unstable"
+
    mainVersion=${VERSION%%-*}  # this is the part before the `-` (e.g., v0.90.0)
    preVersion=${VERSION#*-}  # this is the part after the `-` (e.g, beta.0)
    preVersion=${preVersion//./}  # remove all the `.` in the pre-version part
@@ -56,13 +59,9 @@ else
    # Not a pre-release, so we can use the version directly
    finalVersion=$VERSION
 fi
-choco pack ${BASE_DIR}/tanzu-cli-release.nuspec --out ${OUTPUT_DIR} "cliVersion=${finalVersion}"
-# For unofficial builds.  This needs to be adapted to know which of the two packages to use
-# choco pack ${BASE_DIR}/tanzu-cli-release-unofficial.nuspec --out ${OUTPUT_DIR} "cliVersion=${finalVersion}"
+
+choco pack ${BASE_DIR}/tanzu-cli${UNSTABLE}.nuspec --out ${OUTPUT_DIR} "cliVersion=${finalVersion}"
 
 # Upload the nupkg file to the registry
 # Do this by hand until we have proper automation
-# choco push --source https://push.chocolatey.org/ --api-key ....... ${OUTPUT_DIR}/tanzu-cli.${finalVersion}.nupkg
-
-# For the unofficial builds
-# choco push --source https://push.chocolatey.org/ --api-key ....... ${OUTPUT_DIR}/tanzu-cli-unofficial.${finalVersion}.nupkg
+# choco push --source https://push.chocolatey.org/ --api-key ....... ${OUTPUT_DIR}/tanzu-cli${UNSTABLE}.${finalVersion}.nupkg
