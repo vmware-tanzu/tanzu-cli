@@ -114,6 +114,8 @@ func (ipuo *InventoryPluginUpdateOptions) preparePluginInventoryEntriesFromManif
 	return pluginInventoryEntries, nil
 }
 
+// Take the image download logic to get the digest out of the updatePluginInventoryEntry and run it in parallel
+// Pass the digest map to this function to update the plugin inventory entry in sync operation
 func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInventoryEntry *plugininventory.PluginInventoryEntry, plugin cli.Plugin, osArch cli.Arch, version string) (*plugininventory.PluginInventoryEntry, error) {
 	var err error
 	var digest string
