@@ -4,12 +4,16 @@
 package main
 
 import (
+	"fmt"
+
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/crane"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/plugin"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/registry"
 )
 
 // NewPluginCmd creates a new command for plugin operations.
@@ -110,6 +114,15 @@ func newPluginBuildPackageCmd() *cobra.Command {
 		Long:         "Build plugin packages OCI image as tar.gz file that can be published to any repository",
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if pbpFlags.localOCIRepository == "" {
+				registryPort, shutdownServerFunc, err := registry.ServeLocalRegistry("")
+				if err != nil {
+					return errors.Wrap(err, "error while starting build registry server")
+				}
+				defer shutdownServerFunc()
+				pbpFlags.localOCIRepository = fmt.Sprintf("localhost:%s", registryPort)
+			}
+
 			bppArgs := &plugin.BuildPluginPackageOptions{
 				BinaryArtifactDir:  pbpFlags.BinaryArtifactDir,
 				PackageArtifactDir: pbpFlags.PackageArtifactDir,
@@ -122,7 +135,7 @@ func newPluginBuildPackageCmd() *cobra.Command {
 
 	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.BinaryArtifactDir, "binary-artifacts", "", "./artifacts/plugins", "plugin binary artifact directory")
 	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.PackageArtifactDir, "package-artifacts", "", "./artifacts/packages", "plugin package artifacts directory")
-	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.localOCIRepository, "oci-registry", "", "", "local oci-registry to use for generating packages")
+	pluginBuildPackageCmd.Flags().StringVarP(&pbpFlags.localOCIRepository, "oci-registry", "", "", "local oci-registry to use for generating packages (optional)")
 
 	return pluginBuildPackageCmd
 }
