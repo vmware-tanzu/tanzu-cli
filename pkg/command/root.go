@@ -145,24 +145,27 @@ func newRootCmd() *cobra.Command {
 				}
 			}
 
-			// Prompt user for EULA and CEIP agreement if necessary
+			// Prompt user for EULA agreement if necessary
 			if !shouldSkipPrompts(cmd) {
 				if err := cliconfig.ConfigureEULA(false); err != nil {
 					return err
 				}
-
 				configVal, _ := config.GetEULAStatus()
 				if configVal != config.EULAStatusAccepted {
 					fmt.Fprintf(os.Stderr, "The Tanzu CLI is only usable with reduced functionality until the General Terms are agreed to.\nPlease use `tanzu config eula show` to review the terms, or `tanzu config eula accept` to accept them directly\n")
 					return errors.New("terms not accepted")
 				}
-				// TODO(prkalle): uncomment when the CEIP implementation is done in future release
-				// if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
-				//	return err
-				// }
 			}
+
 			// Install or update essential plugins
 			InstallEssentialPlugins(cmd)
+
+			// Prompt for CEIP agreement
+			if !shouldSkipPrompts(cmd) {
+				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
+					return err
+				}
+			}
 			return nil
 		},
 	}

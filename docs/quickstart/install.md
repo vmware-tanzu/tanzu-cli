@@ -147,11 +147,15 @@ available in the default central plugin repository.
 Note: to review the Terms and decide again on the acceptance, this same
 prompt can also be explicitly invoked with `tanzu config eula show`.
 
+****Customer Experience Improvement Program (CEIP) Prompt**** :
+The Tanzu CLI prompts the user to accept participation in CEIP or not.
+
 Systems and users (via automation scripts, for instance) that expect
 non-interactive use of the CLI can avoid being prompted with the
 above by running the following before any other CLI commands:
 
 - `tanzu config eula accept` to accept the EULA.
+- To set the CEIP participation status for automation, the environment variable `TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER` can be set to `No` or `Yes`.
 
 ## Installing and using the Tanzu CLI in internet-restricted environments
 
