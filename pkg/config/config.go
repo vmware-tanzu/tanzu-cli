@@ -108,6 +108,12 @@ func getCEIPUserOptIn() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
+	// Put a delimiter after the prompt as it can be followed by
+	// standard CLI output
+	fmt.Println("")
+	fmt.Println("==")
+
 	return strings.EqualFold(ceipOptIn, "Yes"), nil
 }
 
