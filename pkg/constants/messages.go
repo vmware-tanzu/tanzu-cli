@@ -4,6 +4,6 @@
 package constants
 
 const (
-	InstallEssentialPluginGroupsMsg = "Looks like you haven't installed essential plugins, installing the essential plugins. this will take a few seconds."
-	UpgradeEssentialPluginGroupsMsg = "We found essential plugins are outdated, updating the essential plugins. this will take a few seconds."
+	InstallEssentialPluginGroupsMsg = "The tanzu cli essential plugins have not been installed and are being installed now. The install may take a few seconds."
+	UpgradeEssentialPluginGroupsMsg = "The tanzu cli essential plugins are outdated and are being updated now. The update may take a few seconds."
 )
