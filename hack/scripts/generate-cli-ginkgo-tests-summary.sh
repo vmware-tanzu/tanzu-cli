@@ -3,13 +3,28 @@
 # Copyright 2023 VMware, Inc. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# This script accepts a file directory path which has ginkgo generated test reports json files as an argument and processes the json files and generates a github flavored markdown table of Test results summary
+#####################################################################
+# Script Name: generate-cli-ginkgo-tests-summary.sh
+# Description: This script takes output of "make test | go tool test2json" as input, process it and
+#     generates ginkgo test summary (if any ginkgo test suites) and code coverage per package
+# Created Date: 2023-07-21
+#####################################################################
 
-# Save the current time in seconds
+# Usage: make test | go tool test2json | generate-cli-ginkgo-tests-summary.sh
+
+# Dependencies: None
+
+# Save the current time in seconds to calculate the time taken to execute this script.
 start_time=$(date +%s)
 
-# Read the data from the file
-file_data=$(cat $1)
+# Read the data from the file.
+# The input file should be the output of "make test | go tool test2json".
+# It contains the test cases execution output organized by package.
+# The ginkgo tests are treated as one of the test cases, and their summary looks like this: SUCCESS! -- 16 Passed | 0 Failed | 0 Pending | 0 Skipped.
+# At the end of each package's test execution, there will be coverage information like this: github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier    coverage: 86.5% of statements.
+# We need to process this $make_test_output per package, first extracting ginkgo tests, then extracting coverage information.
+# Each package may have ginkgo tests or may not, but there should always be coverage information.
+make_test_output=$(cat $1)
 
 # Function to remove ASCII escape sequences from a string
 remove_escape_sequences() {
@@ -26,6 +41,7 @@ extract_numeric_value() {
 #echo "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"
 
 # Process the data and extract the required information
+ginkgo_tests_summary=""
 ginkgo_suites=""
 suite_coverage_per=""
 suite_full_path=""
@@ -46,36 +62,43 @@ while read -r line; do
     #        2. "github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder	coverage: 6.6% of statements"
     cleaned_line=$(remove_escape_sequences "$output")
 
-    # If the $cleaned_line has the coverage info then capture it.
-    # input: "github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder	coverage: 6.6% of statements"
-    # output: "6.6%"
-    if echo "$cleaned_line" | grep -qE "coverage: [0-9.]+% of statements"; then
-        input_data+=$cleaned_line
-        suite_full_path=$(echo "$cleaned_line" | grep -oE "\t.*\tcoverage: [0-9.]+% of statements" | cut -f 2)
-        suite_coverage_per=$(echo "$cleaned_line" | grep -oE "coverage: [0-9.]+% of statements" | cut -d ' ' -f 2)
-        coverage_data+="converageInfo: package:$suite_full_path, coverage:$suite_coverage_per \n"
-    fi
-
     # if the $cleaned_line has the "SUCCESS!" or "FAIL!" tests info then capture it
     # Check for lines with SUCCESS!, Passed, Failed, and Pending
     # eg: "SUCCESS! -- 23 Passed | 0 Failed | 0 Pending | 0 Skipped"
     if echo "$cleaned_line" | grep -qE "SUCCESS!.*Passed.*Failed.*Pending"; then
-        input_data+=$cleaned_line
+        input_data+="$cleaned_line \n"
         passed=$(extract_numeric_value "$cleaned_line" | sed -n '1p')
         failed=$(extract_numeric_value "$cleaned_line" | sed -n '2p')
         pending=$(extract_numeric_value "$cleaned_line" | sed -n '3p')
         skipped=$(extract_numeric_value "$cleaned_line" | sed -n '4p')
-        ginkgo_suites+="ginkgo-suite: package:$suite_full_path, Status: SUCCESS!, Passed: $passed, Failed: $failed, Pending: $pending\n"
+        ginkgo_tests_summary="Status: SUCCESS!, Passed: $passed, Failed: $failed, Pending: $pending\n"
     elif echo "$cleaned_line" | grep -qE "FAIL!.*Passed.*Failed.*Pending"; then
-        input_data+=$cleaned_line
+        input_data+="$cleaned_line \n"
         passed=$(extract_numeric_value "$cleaned_line" | sed -n '1p')
         failed=$(extract_numeric_value "$cleaned_line" | sed -n '2p')
         pending=$(extract_numeric_value "$cleaned_line" | sed -n '3p')
         skipped=$(extract_numeric_value "$cleaned_line" | sed -n '4p')
-        ginkgo_suites+="ginkgo-suite: package:$suite_full_path, Status: FAILED!, Passed: $passed, Failed: $failed, Pending: $pending, Skipped: $skipped\n"
+        ginkgo_tests_summary="Status: FAILED!, Passed: $passed, Failed: $failed, Pending: $pending, Skipped: $skipped\n"
     fi
     
-done <<< "$file_data"
+    # If the $cleaned_line has the code coverage information then capture it.
+    # input: "github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder	coverage: 6.6% of statements"
+    # output: "6.6%"
+    if echo "$cleaned_line" | grep -qE "^[^o][^k].*coverage: [0-9.]+% of statements"; then
+        input_data+="$cleaned_line \n"
+        suite_full_path=$(echo "$cleaned_line" | awk '{print $1}')
+        suite_coverage_per=$(echo "$cleaned_line" | grep -oE "coverage: [0-9.]+% of statements" | cut -d ' ' -f 2)
+        coverage_data+="converageInfo: package:$suite_full_path, coverage:$suite_coverage_per \n"
+        # $ginkgo_tests_summary is not empty means, there are ginkgo tests executed in this package
+        # capture ginkgo tests execution summary
+        if [ -n "$ginkgo_tests_summary" ]; then
+            ginkgo_suites+="ginkgo-suite: package:$suite_full_path, $ginkgo_tests_summary"
+        fi
+        ginkgo_tests_summary=""
+        suite_full_path=""
+    fi
+
+done <<< "$make_test_output"
 
 # Calculate the time take to process in seconds
 end_time=$(date +%s)
@@ -88,4 +111,4 @@ echo "Time taken: $minutes minutes and $seconds seconds"
 # Print the final processed data
 echo -e "$ginkgo_suites"
 echo -e "$coverage_data"
-echo -e "$input_data"
+#echo -e "INPUT DATA: \n $input_data"

@@ -28,21 +28,40 @@ junit_report_xml=$(cat $1)
 # "make test | go tool test2json" has the unit tests and ginkgo tests details
 # "process-unit-test-results.sh" captures the ginkgo tests results per package, and also code coverage per package
 ginkgo_tests_summary_with_codecoverage=$(cat $2)
+echo "ginkgo summary: $ginkgo_tests_summary_with_codecoverage"
 
 # Print the table header
-echo "| :memo: Package Path | Total Tests | Passed | Failed | Coverage"
-echo "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"
+echo "| :memo: Package Path | Total Tests | Passed | Failed | Coverage |"
+echo "| --- | ---: | ---: | ---: | ---: |"
 
 # Extract test count, failures count, and name for each testsuite using sed
 testsuites=$(echo "$junit_report_xml" | sed -n 's/.*<testsuite tests="\([^"]*\)" failures="\([^"]*\)" .*name="\([^"]*\)".*/\1 \2 \3/p')
 
+
+total_tests_count=0
+total_passed_count=0
+total_failed_count=0
 # Process each testsuite, tests_count is total test cases, failures_count number of failed test cases
 # name is the full package path
 while read -r tests_count failures_count name; do
     passed=0
     failed=0
-    pending=0
     coveragePercentage=""
+
+    #tests_count=$(expr "$tests_count" + 0)
+    #failures_count=$(expr "$failures_count" + 0)
+    #Check if the variables are non-empty and contain valid integer values
+    if [ -n "$tests_count" ] && [ "$tests_count" -eq "$tests_count" 2>/dev/null ]; then
+        tests_count=$(( tests_count + 0 ))
+    else
+        tests_count=0
+    fi
+
+    if [ -n "$failures_count" ] && [ "$failures_count" -eq "$failures_count" 2>/dev/null ]; then
+        failures_count=$((failures_count + 0))
+    else
+        failures_count=0
+    fi
     
     # Fetch ginkgo test cases details, and code coverage 
     package="$name"
@@ -56,11 +75,12 @@ while read -r tests_count failures_count name; do
           # Extract the test results (Passed, Failed, Pending) from the line
           passed=$(echo "$line" | grep -oE "Passed: [0-9]+" | cut -d ' ' -f 2)
           failed=$(echo "$line" | grep -oE "Failed: [0-9]+" | cut -d ' ' -f 2)
-          pending=$(echo "$line" | grep -oE "Pending: [0-9]+" | cut -d ' ' -f 2)
+          #pending=$(echo "$line" | grep -oE "Pending: [0-9]+" | cut -d ' ' -f 2)
       fi
       # Check if the given package path $coverageInfo exists 
       if [[ "$line" == "$coverageInfo,"* ]]; then
           coverage_val=$(echo "$line" | grep -oE "coverage:[0-9.]+%" | cut -d ':' -f 2)
+          #echo $coverage_val
           if [ -n "$coverage_val" ]; then
               coveragePercentage=$coverage_val
           fi
@@ -80,20 +100,32 @@ while read -r tests_count failures_count name; do
       failures_count=$((failures_count - 1 + failed))
     fi
 
-    
-    total_passed=$((tests_count - failures_count))
+    pass_count=$((tests_count - failures_count))
     row=""
     if [ "$failures_count"  -ne 0 ]; then
-      row+="| "$package" | $tests_count | $total_passed | :x: $failures_count "
+      row+="| $package | $tests_count | $pass_count | :x: $failures_count "
     else
-      row+="| "$package" | $tests_count | $total_passed |  $failures_count "
+      row+="| $package | $tests_count | $pass_count |  $failures_count "
     fi
     if [ -n "$coveragePercentage" ]; then
-      row+="| $coveragePercentage"
+      row+="| $coveragePercentage |"
     else
-      row+="| "NA""
+      row+="| NA |"
     fi
+    total_tests_count=$((total_tests_count + tests_count))
+    total_passed_count=$((total_passed_count + pass_count))
+    total_failed_count=$((total_failed_count + failures_count))
     echo $row
 done <<< "$testsuites"
+
+# Print the total line with color and icon depending on the result
+if [ "$total_failed_count" -eq 0 ]; then
+  echo "| **Total** | **$total_tests_count** | **$total_passed_count** | **$total_failed_count** |  |"
+else
+  echo "| **Total** | **$total_tests_count** | **$total_passed_count** | :x: **$total_failed_count** |  |"
+fi
+
+#echo "$ginkgo_tests_summary_with_codecoverage"
+#echo "$testsuites"
 
 

@@ -1,0 +1,51 @@
+Time taken: 5 minutes and 13 seconds
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/inventory, Status: SUCCESS!, Passed: 23, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/airgapped, Status: FAILED!, Passed: 12, Failed: 1, Pending: 0, Skipped: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/artifact, Status: SUCCESS!, Passed: 5, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp, Status: SUCCESS!, Passed: 2, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg, Status: SUCCESS!, Passed: 17, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig, Status: SUCCESS!, Passed: 3, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/net, Status: SUCCESS!, Passed: 4, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp, Status: SUCCESS!, Passed: 3, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers, Status: SUCCESS!, Passed: 3, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/cluster, Status: FAILED!, Passed: 8, Failed: 1, Pending: 0, Skipped: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/command, Status: FAILED!, Passed: 48, Failed: 1, Pending: 0, Skipped: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/config, Status: SUCCESS!, Passed: 19, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/configpaths, Status: SUCCESS!, Passed: 2, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier, Status: SUCCESS!, Passed: 6, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/discovery, Status: SUCCESS!, Passed: 18, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/distribution, Status: SUCCESS!, Passed: 9, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory, Status: SUCCESS!, Passed: 46, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier, Status: SUCCESS!, Passed: 16, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/registry, Status: SUCCESS!, Passed: 8, Failed: 0, Pending: 0
+ginkgo-suite: package:github.com/vmware-tanzu/tanzu-cli/pkg/telemetry, Status: FAILED!, Passed: 16, Failed: 1, Pending: 0, Skipped: 0
+
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder, coverage:6.6% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command/publish, coverage:26.5% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers, coverage:9.3% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/inventory, coverage:86.4% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/airgapped, coverage:86.6% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/artifact, coverage:85.3% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp, coverage:53.2% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg, coverage:73.5% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig, coverage:77.8% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/net, coverage:87.5% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp, coverage:100.0% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers, coverage:47.3% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/catalog, coverage:63.4% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/cli, coverage:62.0% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/cluster, coverage:73.2% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/command, coverage:51.5% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/config, coverage:54.9% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/configpaths, coverage:75.0% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier, coverage:72.5% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/discovery, coverage:61.1% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/distribution, coverage:47.8% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/plugincmdtree, coverage:84.5% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory, coverage:77.6% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager, coverage:72.7% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier, coverage:86.5% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/registry, coverage:20.5% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/telemetry, coverage:78.0% 
+converageInfo: package:github.com/vmware-tanzu/tanzu-cli/pkg/utils, coverage:47.9% 
+

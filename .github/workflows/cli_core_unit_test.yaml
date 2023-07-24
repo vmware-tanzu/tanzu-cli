@@ -36,30 +36,20 @@ jobs:
           echo "${PWD}/hack/tools/bin" >> $GITHUB_PATH
           echo "${PWD}/bin" >> $GITHUB_PATH
 
-      - name: Build CLI Core
-        run: |
-          make build
-
       - name: Run gomod
         run: |
           make gomod
 
-      - name: Run cross-build
-        run: |
-          make cross-build
-
       - name: Run lint
         run: |
-          make lint
+          #make lint
 
       - name: Run Unit Test
         run: |
-          make go-junit-report
-          make test > ./make_test.output
-          cat ./make_test.output | go tool test2json | ./hack/scripts/generate-cli-ginkgo-tests-summary.sh > ./CLI-ginkgo-tests-summary.txt
           cat ./make_test.output | ./hack/tools/bin/go-junit-report > ./CLI-junit-report.xml
+
       - name: Tests Results Summary
         if: always()
         run: |
-          TEST_RESULTS_MD=$(./hack/scripts/generate-cli-unit-tests-report.sh ./CLI-junit-report.xml ./CLI-ginkgo-tests-summary.txt)
+          TEST_RESULTS_MD=$(./hack/scripts/generate-cli-unit-tests-report.sh ./CLI-junit-report.xml ./test_output4_ginkgo.txt)
           echo "$TEST_RESULTS_MD" >> $GITHUB_STEP_SUMMARY

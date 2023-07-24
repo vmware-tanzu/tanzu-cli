@@ -1,0 +1,3057 @@
+make -C /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/hack/tools goimports
+make[1]: Nothing to be done for `goimports'.
+/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/hack/tools/bin/goimports -w -local github.com/vmware-tanzu ./
+go test `go list ./... | grep -v test/e2e | grep -v test/coexistence` -timeout 60m -race -coverprofile coverage.txt -v
+?   	github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/crane	[no test files]
+=== RUN   Test_BuilderInitAndAddPlugin
+-- file: go.mod --
+
+module testrepo
+
+go 1.20
+-- file: .gitignore --
+
+artifacts
+tools/bin-- file: Makefile --
+
+ROOT_DIR_RELATIVE := .
+
+include $(ROOT_DIR_RELATIVE)/common.mk
+include $(ROOT_DIR_RELATIVE)/plugin-tooling.mk
+
+TOOLS_DIR := tools
+TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
+GOLANGCI_LINT := $(TOOLS_BIN_DIR)/golangci-lint
+GOLANGCI_LINT_VERSION := 1.52.2
+
+.PHONY: lint
+lint: $(GOLANGCI_LINT) ## Lint the plugin
+	$(GOLANGCI_LINT) run -v
+
+.PHONY: gomod
+gomod: ## Update go module dependencies
+	go mod tidy
+
+.PHONY: test
+test:
+	go test ./...
+
+$(TOOLS_BIN_DIR):
+	-mkdir -p $@
+
+$(GOLANGCI_LINT): $(TOOLS_BIN_DIR) ## Install golangci-lint
+	curl -L https://github.com/golangci/golangci-lint/releases/download/v$(GOLANGCI_LINT_VERSION)/golangci-lint-$(GOLANGCI_LINT_VERSION)-$(GOHOSTOS)-$(GOHOSTARCH).tar.gz | tar -xz -C /tmp/
+	mv /tmp/golangci-lint-$(GOLANGCI_LINT_VERSION)-$(GOHOSTOS)-$(GOHOSTARCH)/golangci-lint $(@)
+-- file: CODEOWNERS --
+
+* # edit as appropriate-- file: README.md --
+
+# testrepo
+
+Welcome, lets get started with your new Tanzu plugin repository.
+
+## Getting Started
+
+First, run `make init` to ensure your plugins go.sum is generated.
+
+## Generate a plugin
+
+Add a plugin with the tanzu cli: `tanzu builder cli add-plugin myplugin`
+
+## Directory Structure
+
+artifacts/: Where you plugins build output will be located
+
+cmd/plugin/<plugin>: Path where you plugins main directory will live
+
+cmd/plugin/<plugin>/test: Plugins are required to have a test command defined
+
+## Commands
+
+`make build`: builds your plugin artifacts
+`make lint`: run the golangci linter on your plugin code
+-- file: .golangci.yaml --
+
+linters-settings:
+  dupl:
+    threshold: 100
+  funlen:
+    lines: 100
+    statements: 50
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+  gocyclo:
+    min-complexity: 15
+  govet:
+    check-shadowing: true
+  misspell:
+    locale: US
+  nolintlint:
+    allow-unused: false # report any unused nolint directives
+    require-explanation: false # don't require an explanation for nolint directives
+    require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+  whitespace:
+    multi-func: true
+
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - funlen
+    - goconst
+    - gocritic
+    - gocyclo
+    - goheader
+    - goimports
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - revive
+    - rowserrcheck
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace
+
+  # don't enable:
+  # - asciicheck
+  # - exhaustive
+  # - gochecknoinits
+  # - gochecknoglobals
+  # - gocognit
+  # - godot
+  # - godox
+  # - goerr113
+  # - interfacer
+  # - lll
+  # - nestif
+  # - prealloc
+  # - testpackage
+  # - scopelint
+  # - wsl
+-- file: common.mk --
+
+# Ensure Make is run with bash shell as some syntax below is bash-specific
+SHELL := /usr/bin/env bash
+
+.EXPORT_ALL_VARIABLES:
+.SHELLFLAGS := -eu -o pipefail -c
+.DELETE_ON_ERROR:
+MAKEFLAGS += --no-builtin-rules
+
+UID := $(shell id -u)
+GID := $(shell id -g)
+
+rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
+# Hosts running SELinux need :z added to volume mounts
+SELINUX_ENABLED := $(shell cat /sys/fs/selinux/enforce 2> /dev/null || echo 0)
+
+ifeq ($(SELINUX_ENABLED),1)
+  DOCKER_VOL_OPTS?=:z
+endif
+
+.DEFAULT_GOAL:=help
+
+# Use GOPROXY environment variable if set
+GOPROXY := $(shell go env GOPROXY)
+ifeq ($(GOPROXY),)
+GOPROXY := https://proxy.golang.org
+endif
+export GOPROXY
+
+## --------------------------------------
+## Help
+## --------------------------------------
+
+help:  ## Display this help
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+-- file: plugin-tooling.mk --
+
+# Copyright 2023 VMware, Inc. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+GOHOSTOS ?= $(shell go env GOHOSTOS)
+GOHOSTARCH ?= $(shell go env GOHOSTARCH)
+
+NUL = /dev/null
+ifeq ($(GOHOSTOS),windows)
+	NUL = NUL
+endif
+
+# Build and version information
+PLUGIN_BUILD_SHA ?= $(shell git describe --match=$(git rev-parse --short HEAD) --always --dirty)
+PLUGIN_BUILD_DATE ?= $(shell date -u +"%Y-%m-%d")
+PLUGIN_BUILD_VERSION ?= $(shell git describe --tags --abbrev=0 2>$(NUL))
+
+ifeq ($(strip $(PLUGIN_BUILD_VERSION)),)
+PLUGIN_BUILD_VERSION = v0.0.0
+endif
+PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Date=$(PLUGIN_BUILD_DATE)'
+PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.SHA=$(PLUGIN_BUILD_SHA)'
+PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Version=$(PLUGIN_BUILD_VERSION)'
+PLUGIN_GO_FLAGS ?=
+
+# Add supported OS-ARCHITECTURE combinations here
+PLUGIN_BUILD_OS_ARCH ?= linux-amd64 windows-amd64 darwin-amd64
+
+# Paths and Directory information
+ROOT_DIR := $(shell git rev-parse --show-toplevel)
+
+PLUGIN_DIR := ./cmd/plugin
+PLUGIN_BINARY_ARTIFACTS_DIR := $(ROOT_DIR)/artifacts/plugins
+PLUGIN_PACKAGE_ARTIFACTS_DIR := $(ROOT_DIR)/artifacts/packages
+PLUGIN_MANIFEST_FILE := $(PLUGIN_PACKAGE_ARTIFACTS_DIR)/plugin_manifest.yaml
+PLUGIN_GROUP_MANIFEST_FILE := $(PLUGIN_BINARY_ARTIFACTS_DIR)/plugin_group_manifest.yaml
+
+REGISTRY_PORT ?= 5001
+REGISTRY_ENDPOINT ?= localhost:$(REGISTRY_PORT)
+PLUGIN_NAME ?= *
+
+# Repository specific configuration
+TZBIN ?= tanzu
+BUILDER_PLUGIN ?= $(TZBIN) builder
+PUBLISHER ?= tanzucli
+VENDOR ?= vmware
+PLUGIN_PUBLISH_REPOSITORY ?= $(REGISTRY_ENDPOINT)/test/v1/tanzu-cli/plugins
+PLUGIN_INVENTORY_IMAGE_TAG ?= latest
+
+PLUGIN_SCOPE_ASSOCIATION_FILE ?= ""
+PLUGIN_GROUP_NAME_VERSION ?= # e.g. default:v1.0.0, app-developer:v0.1.0
+# Get the name and version of the plugin group from the PLUGIN_GROUP_NAME_VERSION variable
+# if the PLUGIN_GROUP_NAME/PLUGIN_GROUP_VERSION are not already set.  This is to make it
+# easier on the plugin developer to allow having to set one less variable.
+TMP=$(subst :, ,${PLUGIN_GROUP_NAME_VERSION})
+PLUGIN_GROUP_NAME ?= $(word 1,${TMP})
+PLUGIN_GROUP_VERSION ?= $(word 2,${TMP})
+
+# A plugin group description is only needed if a new group is being defined.
+# If we are publishing a new version of an existing group, the description is optional.
+PLUGIN_GROUP_DESCRIPTION ?=
+PLUGIN_GROUP_DESCRIPTION_FLAG_AND_VALUE =
+ifneq ($(strip $(PLUGIN_GROUP_DESCRIPTION)),)
+PLUGIN_GROUP_DESCRIPTION_FLAG_AND_VALUE = --description "$(PLUGIN_GROUP_DESCRIPTION)"
+endif
+
+# Process configuration and setup additional variables
+TANZU_BUILDER_OVERRIDE ?=
+OVERRIDE_FLAG = 
+ifneq ($(strip $(TANZU_BUILDER_OVERRIDE)),)
+OVERRIDE_FLAG = --override
+endif
+
+## --------------------------------------
+## Plugin Build and Publish Tooling
+## --------------------------------------
+
+PLUGIN_BUILD_TARGETS := $(addprefix plugin-build-,${PLUGIN_BUILD_OS_ARCH})
+
+.PHONY: plugin-build-install-local ## Build and Install all plugins using local plugin artifacts directory
+plugin-build-install-local: plugin-build-local plugin-install-local
+
+.PHONY: plugin-install-local ## Install all plugins from local plugin artifacts directory
+plugin-install-local:
+	tanzu plugin install all --local $(PLUGIN_BINARY_ARTIFACTS_DIR)/$(GOHOSTOS)/$(GOHOSTARCH)
+
+.PHONY: plugin-build
+plugin-build: $(PLUGIN_BUILD_TARGETS) generate-plugin-bundle ## Build all plugin binaries for all supported os-arch
+
+plugin-build-local: plugin-build-$(GOHOSTOS)-$(GOHOSTARCH) ## Build all plugin binaries for local platform
+	
+plugin-build-%:
+	$(eval ARCH = $(word 2,$(subst -, ,$*)))
+	$(eval OS = $(word 1,$(subst -, ,$*)))
+	$(BUILDER_PLUGIN) plugin build \
+		--path $(PLUGIN_DIR) \
+		--binary-artifacts $(PLUGIN_BINARY_ARTIFACTS_DIR) \
+		--version $(PLUGIN_BUILD_VERSION) \
+		--ldflags "$(PLUGIN_LD_FLAGS)" \
+		--goflags "$(PLUGIN_GO_FLAGS)" \
+		--os-arch $(OS)_$(ARCH) \
+		--match "$(PLUGIN_NAME)" \
+		--plugin-scope-association-file $(PLUGIN_SCOPE_ASSOCIATION_FILE)
+
+.PHONY: plugin-build-packages
+plugin-build-packages: plugin-local-registry ## Build plugin packages
+	$(BUILDER_PLUGIN) plugin build-package \
+		--binary-artifacts $(PLUGIN_BINARY_ARTIFACTS_DIR) \
+		--package-artifacts $(PLUGIN_PACKAGE_ARTIFACTS_DIR) \
+		--oci-registry $(REGISTRY_ENDPOINT)
+
+.PHONY: plugin-publish-packages
+plugin-publish-packages: plugin-build-packages ## Publish plugin packages
+	$(BUILDER_PLUGIN) plugin publish-package \
+		--package-artifacts $(PLUGIN_PACKAGE_ARTIFACTS_DIR) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY)
+
+.PHONY: plugin-build-and-publish-packages
+plugin-build-and-publish-packages: plugin-build plugin-publish-packages ## Build and Publish plugin packages
+
+.PHONY: inventory-init
+inventory-init: ## Initialize empty plugin inventory
+	$(BUILDER_PLUGIN) inventory init \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		$(OVERRIDE_FLAG)
+
+.PHONY: inventory-plugin-add
+inventory-plugin-add: ## Add plugins to the inventory database
+	$(BUILDER_PLUGIN) inventory plugin add \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--manifest $(PLUGIN_MANIFEST_FILE)
+
+.PHONY: inventory-plugin-activate
+inventory-plugin-activate: ## Activate plugins in the inventory database
+	$(BUILDER_PLUGIN) inventory plugin activate \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--manifest $(PLUGIN_MANIFEST_FILE)
+
+.PHONY: inventory-plugin-deactivate
+inventory-plugin-deactivate: ## Deactivate plugins in the inventory database
+	$(BUILDER_PLUGIN) inventory plugin deactivate \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--manifest $(PLUGIN_MANIFEST_FILE)
+
+.PHONY: inventory-plugin-group-add
+inventory-plugin-group-add: ## Add plugin-group to the inventory database. Requires PLUGIN_GROUP_NAME_VERSION
+	$(BUILDER_PLUGIN) inventory plugin-group add \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--manifest $(PLUGIN_GROUP_MANIFEST_FILE) \
+		--name $(PLUGIN_GROUP_NAME) \
+		--version $(PLUGIN_GROUP_VERSION) \
+		$(PLUGIN_GROUP_DESCRIPTION_FLAG_AND_VALUE) \
+		$(OVERRIDE_FLAG)
+
+.PHONY: inventory-plugin-group-activate
+inventory-plugin-group-activate: ## Activate plugin-group in the inventory database. Requires PLUGIN_GROUP_NAME_VERSION
+	$(BUILDER_PLUGIN) inventory plugin-group activate \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--name $(PLUGIN_GROUP_NAME) \
+		--version $(PLUGIN_GROUP_VERSION)
+
+.PHONY: inventory-plugin-group-deactivate
+inventory-plugin-group-deactivate: ## Deactivate plugin-group in the inventory database. Requires PLUGIN_GROUP_NAME_VERSION
+	$(BUILDER_PLUGIN) inventory plugin-group deactivate \
+		--repository $(PLUGIN_PUBLISH_REPOSITORY) \
+		--plugin-inventory-image-tag $(PLUGIN_INVENTORY_IMAGE_TAG) \
+		--publisher $(PUBLISHER) \
+		--vendor $(VENDOR) \
+		--name $(PLUGIN_GROUP_NAME) \
+		--version $(PLUGIN_GROUP_VERSION)
+
+## --------------------------------------
+## docker
+## --------------------------------------
+
+.PHONY: plugin-local-registry
+plugin-local-registry: plugin-clean-registry ## Starts up a local docker registry for generating packages
+	docker run -d -p $(REGISTRY_PORT):5000 --name temp-package-registry mirror.gcr.io/library/registry:2.7.1
+
+.PHONY: plugin-clean-registry
+plugin-clean-registry: ## Stops and removes local docker registry
+	docker stop temp-package-registry && docker rm -v temp-package-registry || true
+
+## --------------------------------------
+## Helpers
+## --------------------------------------
+
+generate-plugin-bundle:
+	cd $(PLUGIN_BINARY_ARTIFACTS_DIR) && tar -czvf ../plugin_bundle.tar.gz .
+-- file: .github/workflows/build.yaml --
+
+name: Build
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.20
+        id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v1
+
+    - name: Get dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ca-certificates
+        sudo echo "deb https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
+        sudo apt-get update --allow-insecure-repositories
+        sudo apt-get install -y tanzu-cli --allow-unauthenticated
+        tanzu ceip-participation set false
+        tanzu version
+        tanzu plugin install builder
+
+    - name: Build
+      run: make plugin-build-install-local
+
+    - name: Test
+      run: make test
+
+    - name: Lint
+      run: make lint
+2023-07-25T08:58:09-05:00 [ok] successfully created repository
+2023-07-25T08:58:09-05:00 [ok] successfully created plugin
+--- PASS: Test_BuilderInitAndAddPlugin (0.09s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder	coverage: 6.6% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder	0.924s	coverage: 6.6% of statements
+=== RUN   Test_DetectAvailablePluginInfo
+--- PASS: Test_DetectAvailablePluginInfo (0.00s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command/publish	coverage: 26.5% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command/publish	1.047s	coverage: 26.5% of statements
+=== RUN   TestNonEmptyValidatePluginBinary
+[i]  Validating Plugin Binary file: /var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/temp2697692354
+--- PASS: TestNonEmptyValidatePluginBinary (0.00s)
+=== RUN   TestEmptyValidatePluginBinary
+[i]  Validating Plugin Binary file: /var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/temp249990831
+--- PASS: TestEmptyValidatePluginBinary (0.00s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers	coverage: 9.3% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers	0.359s	coverage: 9.3% of statements
+?   	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/plugin	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/template	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/template/plugintemplates	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/test/test	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/test	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/types	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/cmd/tanzu	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo	[no test files]
+=== RUN   TestInventorySuite
+Running Suite: Builder Inventory Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/cmd/plugin/builder/inventory
+==========================================================================================================================
+Random Seed: [1m1690293494[0m
+
+Will run [1m23[0m of [1m23[0m specs
+[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] updating plugin inventory database with plugin group entry
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] updating plugin inventory database with plugin group entry
+[i] publishing plugin inventory database
+[i] successfully published plugin inventory database at: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] updating plugin inventory database with plugin group entry
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] updating plugin inventory database with plugin group entry
+[i] publishing plugin inventory database
+[i] successfully published plugin inventory database at: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] updating plugin inventory database with plugin group entry
+[i] publishing plugin inventory database
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] updating plugin inventory database with plugin group entry
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] updating plugin inventory database with plugin group entry
+[i] publishing plugin inventory database
+[i] successfully published plugin inventory database at: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] updating plugin inventory database with plugin group entry
+[i] publishing plugin inventory database
+[i] successfully published plugin inventory database at: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] updating plugin inventory database with plugin group entry
+[i] publishing plugin inventory database
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] validating plugin 'foo_global_linux_amd64_v0.0.2'
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] validating plugin 'foo_global_linux_amd64_v0.0.2'
+[i] validating plugin 'foo_global_darwin_amd64_v0.0.2'
+[i] validating plugin 'foo_global_windows_amd64_v0.0.2'
+[i] publishing plugin inventory database
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] validating plugin 'foo_global_linux_amd64_v0.0.2'
+[i] validating plugin 'foo_global_darwin_amd64_v0.0.2'
+[i] validating plugin 'foo_global_windows_amd64_v0.0.2'
+[i] publishing plugin inventory database
+[i] successfully published plugin inventory database at: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] validating plugin 'foo_global_linux_amd64_v0.0.2'
+[i] validating plugin 'foo_global_darwin_amd64_v0.0.2'
+[i] validating plugin 'foo_global_windows_amd64_v0.0.2'
+[i] publishing plugin inventory database
+[i] successfully published plugin inventory database at: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] validating plugin 'foo_global_linux_amd64_v0.0.2'
+[i] validating plugin 'foo_global_darwin_amd64_v0.0.2'
+[i] validating plugin 'foo_global_windows_amd64_v0.0.2'
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] validating plugin 'foo_global_linux_amd64_v0.0.2'
+[i] validating plugin 'foo_global_darwin_amd64_v0.0.2'
+[i] validating plugin 'foo_global_windows_amd64_v0.0.2'
+[i] publishing plugin inventory database
+[i] successfully published plugin inventory database at: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] pulling plugin inventory database from: "test-repo.com/plugin-inventory:latest"
+[i] validating plugin 'foo_global_linux_amd64_v0.0.2'
+[i] validating plugin 'foo_global_darwin_amd64_v0.0.2'
+[i] validating plugin 'foo_global_windows_amd64_v0.0.2'
+[i] publishing plugin inventory database
+[i] successfully published plugin inventory database at: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m[i] created database locally at: "/var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/plugin_inventory.db"
+[i] publishing database at: "test-repo.com/plugin-inventory:latest"
+[i] successfully published plugin inventory database
+[38;5;10m•[0m[38;5;10m•[0m[i] created database locally at: "/var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/plugin_inventory.db"
+[i] publishing database at: "test-repo.com/plugin-inventory:latest"
+[38;5;10m•[0m
+
+[38;5;10m[1mRan 23 of 23 Specs in 0.666 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m23 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestInventorySuite (0.67s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/inventory	coverage: 86.4% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/inventory	1.936s	coverage: 86.4% of statements
+=== RUN   Test_GetPluginInventoryMetadataImage
+=== RUN   Test_GetPluginInventoryMetadataImage/fake.repo.com/plugin/plugin-inventory:latest
+=== RUN   Test_GetPluginInventoryMetadataImage/fake.repo.com/plugin/airgapped:v1.0.0
+=== RUN   Test_GetPluginInventoryMetadataImage/fake.repo.com/plugin/metadata
+=== RUN   Test_GetPluginInventoryMetadataImage/invalid-inventory-image$#
+--- PASS: Test_GetPluginInventoryMetadataImage (0.00s)
+    --- PASS: Test_GetPluginInventoryMetadataImage/fake.repo.com/plugin/plugin-inventory:latest (0.00s)
+    --- PASS: Test_GetPluginInventoryMetadataImage/fake.repo.com/plugin/airgapped:v1.0.0 (0.00s)
+    --- PASS: Test_GetPluginInventoryMetadataImage/fake.repo.com/plugin/metadata (0.00s)
+    --- PASS: Test_GetPluginInventoryMetadataImage/invalid-inventory-image$# (0.00s)
+=== RUN   Test_GetImageRelativePath
+=== RUN   Test_GetImageRelativePath/fake.repo.com/plugin/plugin-inventory:latest
+=== RUN   Test_GetImageRelativePath/fake.repo.com/plugin/plugin-inventory:latest#01
+=== RUN   Test_GetImageRelativePath/fake.repo.com/plugin/airgapped:v1.0.0
+=== RUN   Test_GetImageRelativePath/fake.repo.com/plugin/metadata
+=== RUN   Test_GetImageRelativePath/fake.repo.com/plugin/metadata:latest
+--- PASS: Test_GetImageRelativePath (0.00s)
+    --- PASS: Test_GetImageRelativePath/fake.repo.com/plugin/plugin-inventory:latest (0.00s)
+    --- PASS: Test_GetImageRelativePath/fake.repo.com/plugin/plugin-inventory:latest#01 (0.00s)
+    --- PASS: Test_GetImageRelativePath/fake.repo.com/plugin/airgapped:v1.0.0 (0.00s)
+    --- PASS: Test_GetImageRelativePath/fake.repo.com/plugin/metadata (0.00s)
+    --- PASS: Test_GetImageRelativePath/fake.repo.com/plugin/metadata:latest (0.00s)
+=== RUN   TestAirgappedSuite
+Running Suite: Airgapped package Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/airgapped
+===========================================================================================================
+Random Seed: [1m1690293495[0m
+
+Will run [1m13[0m of [1m13[0m specs
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+
+[38;5;243m------------------------------[0m
+[38;5;9m• [FAILED] [0.010 seconds][0m
+[0mUnit tests for download and upload bundle [38;5;243mTests for downloading plugin bundle [38;5;9m[1m[It] when downloading plugin inventory image fail with error, it should return an error[0m
+[38;5;243m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/airgapped/plugin_bundle_test.go:235[0m
+
+  [38;5;9m[FAILED] Expected
+      <string>: error while getting selected plugin and plugin group information: failed to download plugin inventory image 'fake.fakerepo.abc/plugin/plugin-inventory:latest': fake error
+  to contain substring
+      <string>: fake error REVERIT[0m
+  [38;5;9mIn [1m[It][0m[38;5;9m at: [1m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/airgapped/plugin_bundle_test.go:242[0m [38;5;243m@ 07/25/23 08:58:15.733[0m
+[38;5;243m------------------------------[0m
+[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[i] will be downloading the 2 plugins from: fake.fakerepo.abc/plugin/plugin-inventory:latest
+[i] downloading image "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[i] will be downloading the 2 plugins from: fake.fakerepo.abc/plugin/plugin-inventory:latest
+[i] downloading image "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/global/foo:v0.0.2"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/linux/amd64/global/foo:v0.0.2"
+[i] saving plugin bundle at: /var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/3814933521/plugin_bundle.tar
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[i] will be downloading the one plugin from group: fakevendor-fakepublisher/default:v1.0.0
+[i] downloading image "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1"
+[i] saving plugin bundle at: /var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/3689958304/plugin_bundle.tar
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[i] will be downloading the 2 plugins from: fake.fakerepo.abc/plugin/plugin-inventory:latest
+[i] Saving the list of images to download...
+[i] images:
+    - fake.fakerepo.abc/plugin/plugin-inventory:latest
+    - fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1
+    - fake.fakerepo.abc/plugin/path/darwin/amd64/global/foo:v0.0.2
+    - fake.fakerepo.abc/plugin/path/linux/amd64/global/foo:v0.0.2
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[i] will be downloading the 2 plugins from: fake.fakerepo.abc/plugin/plugin-inventory:latest
+[i] downloading image "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/global/foo:v0.0.2"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/linux/amd64/global/foo:v0.0.2"
+[i] saving plugin bundle at: /var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/975883126/plugin_bundle.tar
+[i] extracting "does-not-exists.tar" for processing...
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[i] will be downloading the 2 plugins from: fake.fakerepo.abc/plugin/plugin-inventory:latest
+[i] downloading image "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/global/foo:v0.0.2"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/linux/amd64/global/foo:v0.0.2"
+[i] saving plugin bundle at: /var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/551379018/plugin_bundle.tar
+[i] extracting "/var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/551379018/incorrect-plugin-bundle.tar" for processing...
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[i] will be downloading the 2 plugins from: fake.fakerepo.abc/plugin/plugin-inventory:latest
+[i] downloading image "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/global/foo:v0.0.2"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/linux/amd64/global/foo:v0.0.2"
+[i] saving plugin bundle at: /var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/2433220449/plugin_bundle.tar
+[i] extracting "/var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/2433220449/plugin_bundle.tar" for processing...
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/plugin-inventory"
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[i] will be downloading the 2 plugins from: fake.fakerepo.abc/plugin/plugin-inventory:latest
+[i] downloading image "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/global/foo:v0.0.2"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/linux/amd64/global/foo:v0.0.2"
+[i] saving plugin bundle at: /var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/2499288437/plugin_bundle.tar
+[i] extracting "/var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/2499288437/plugin_bundle.tar" for processing...
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/plugin-inventory"
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar"
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/path/darwin/amd64/global/foo"
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/path/linux/amd64/global/foo"
+[i] ---------------------------
+[i] ---------------------------
+[i] publishing plugin inventory metadata image...
+[i] plugin inventory metadata image "fake.newfakerepo.abc/plugin/plugin-inventory-metadata:latest" is not present. Skipping merging of the plugin inventory metadata
+[i] uploading image "fake.newfakerepo.abc/plugin/plugin-inventory-metadata:latest"
+[i] ---------------------------
+[i] successfully published all plugin images to "fake.newfakerepo.abc/plugin/plugin-inventory:latest"
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[i] will be downloading the 2 plugins from: fake.fakerepo.abc/plugin/plugin-inventory:latest
+[i] downloading image "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/global/foo:v0.0.2"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/linux/amd64/global/foo:v0.0.2"
+[i] saving plugin bundle at: /var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/3390948229/plugin_bundle.tar
+[i] extracting "/var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/3390948229/plugin_bundle.tar" for processing...
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/plugin-inventory"
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar"
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/path/darwin/amd64/global/foo"
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/path/linux/amd64/global/foo"
+[i] ---------------------------
+[i] ---------------------------
+[i] publishing plugin inventory metadata image...
+[i] plugin inventory metadata image "fake.newfakerepo.abc/plugin/plugin-inventory-metadata:latest" is present. Merging the plugin inventory metadata
+[i] uploading image "fake.newfakerepo.abc/plugin/plugin-inventory-metadata:latest"
+[i] ---------------------------
+[i] successfully published all plugin images to "fake.newfakerepo.abc/plugin/plugin-inventory:latest"
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+ 
+[i] Getting selected plugin information...
+[i] will be downloading the 2 plugins from: fake.fakerepo.abc/plugin/plugin-inventory:latest
+[i] downloading image "fake.fakerepo.abc/plugin/plugin-inventory:latest"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar:v0.0.1"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/darwin/amd64/global/foo:v0.0.2"
+[i] ---------------------------
+[i] downloading image "fake.fakerepo.abc/plugin/path/linux/amd64/global/foo:v0.0.2"
+[i] saving plugin bundle at: /var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/3461256554/plugin_bundle.tar
+[i] extracting "/var/folders/ky/1d6rcjc13lg8l8l1kkvmnpv80000gn/T/3461256554/plugin_bundle.tar" for processing...
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/plugin-inventory"
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/path/darwin/amd64/kubernetes/bar"
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/path/darwin/amd64/global/foo"
+[i] ---------------------------
+[i] uploading image "fake.newfakerepo.abc/plugin/path/linux/amd64/global/foo"
+[i] ---------------------------
+[i] ---------------------------
+[i] publishing plugin inventory metadata image...
+[i] plugin inventory metadata image "fake.newfakerepo.abc/plugin/plugin-inventory-metadata:latest" is present. Merging the plugin inventory metadata
+[i] uploading image "fake.newfakerepo.abc/plugin/plugin-inventory-metadata:latest"
+[i] ---------------------------
+[i] successfully published all plugin images to "fake.newfakerepo.abc/plugin/plugin-inventory:latest"
+[38;5;10m•[0m
+
+[38;5;9m[1mSummarizing 1 Failure:[0m
+  [38;5;9m[FAIL][0m [0mUnit tests for download and upload bundle [38;5;243mTests for downloading plugin bundle [38;5;9m[1m[It] when downloading plugin inventory image fail with error, it should return an error[0m
+  [38;5;243m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/airgapped/plugin_bundle_test.go:242[0m
+
+[38;5;9m[1mRan 13 of 13 Specs in 1.128 seconds[0m
+[38;5;9m[1mFAIL![0m -- [38;5;10m[1m12 Passed[0m | [38;5;9m[1m1 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- FAIL: TestAirgappedSuite (1.13s)
+FAIL
+	github.com/vmware-tanzu/tanzu-cli/pkg/airgapped	coverage: 86.6% of statements
+FAIL	github.com/vmware-tanzu/tanzu-cli/pkg/airgapped	3.033s
+=== RUN   TestHttpArtifact_successful
+--- PASS: TestHttpArtifact_successful (0.00s)
+=== RUN   TestHttpArtifact_statusCode500
+--- PASS: TestHttpArtifact_statusCode500 (0.00s)
+=== RUN   TestHttpArtifact_errorResponse
+--- PASS: TestHttpArtifact_errorResponse (0.00s)
+=== RUN   TestCliCorePkgArtifactSuite
+Running Suite: cli/core/pkg/artifact Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/artifact
+==============================================================================================================
+Random Seed: [1m1690293496[0m
+
+Will run [1m5[0m of [1m5[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 5 of 5 Specs in 0.001 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m5 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestCliCorePkgArtifactSuite (0.00s)
+=== RUN   TestLocalArtifactWhenArtifactAndTestDirExists
+--- PASS: TestLocalArtifactWhenArtifactAndTestDirExists (0.00s)
+=== RUN   TestLocalArtifactWhenArtifactDoesntExistsAndMultipleFilesUnderTest
+--- PASS: TestLocalArtifactWhenArtifactDoesntExistsAndMultipleFilesUnderTest (0.00s)
+=== RUN   TestOCIArtifactWhenMultipleFilesFound
+--- PASS: TestOCIArtifactWhenMultipleFilesFound (0.00s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/artifact	coverage: 85.3% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/artifact	3.011s	coverage: 85.3% of statements
+=== RUN   Test
+Running Suite: cli/core/pkg/auth/csp Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/auth/csp
+==============================================================================================================
+Random Seed: [1m1690293497[0m
+
+Will run [1m2[0m of [1m2[0m specs
+[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 2 of 2 Specs in 0.001 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m2 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: Test (0.00s)
+=== RUN   TestGetAccessTokenFromSelfManagedIDP_ValidRefreshToken
+--- PASS: TestGetAccessTokenFromSelfManagedIDP_ValidRefreshToken (0.00s)
+=== RUN   TestGetAuthCodeURL_validResponse
+--- PASS: TestGetAuthCodeURL_validResponse (0.00s)
+=== RUN   TestGetAccessTokenFromAPIToken
+--- PASS: TestGetAccessTokenFromAPIToken (0.00s)
+=== RUN   TestGetAccessTokenFromAPIToken_Err
+--- PASS: TestGetAccessTokenFromAPIToken_Err (0.00s)
+=== RUN   TestGetAccessTokenFromAPIToken_FailStatus
+--- PASS: TestGetAccessTokenFromAPIToken_FailStatus (0.00s)
+=== RUN   TestGetAccessTokenFromAPIToken_InvalidResponse
+--- PASS: TestGetAccessTokenFromAPIToken_InvalidResponse (0.00s)
+=== RUN   TestIsExpired
+--- PASS: TestIsExpired (0.00s)
+=== RUN   TestParseToken_ParseFailure
+--- PASS: TestParseToken_ParseFailure (0.00s)
+=== RUN   TestIDTokenFromTokenSource_getIDToken
+--- PASS: TestIDTokenFromTokenSource_getIDToken (0.00s)
+=== RUN   TestParseToken_MissingUsername
+[!] could not parse perms from token
+--- PASS: TestParseToken_MissingUsername (0.00s)
+=== RUN   TestParseToken_MissingContextName
+[!] could not parse perms from token
+--- PASS: TestParseToken_MissingContextName (0.00s)
+=== RUN   TestParseToken
+[!] could not parse perms from token
+--- PASS: TestParseToken (0.00s)
+=== RUN   TestGetToken_Valid_NotExpired
+--- PASS: TestGetToken_Valid_NotExpired (0.00s)
+=== RUN   TestGetToken_Expired
+--- PASS: TestGetToken_Expired (0.00s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp	coverage: 53.2% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp	3.729s	coverage: 53.2% of statements
+=== RUN   TestTkgAuth
+Running Suite: cli/core/pkg/auth/tkg Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/auth/tkg
+==============================================================================================================
+Random Seed: [1m1690293498[0m
+
+Will run [1m17[0m of [1m17[0m specs
+2023/07/25 08:58:18 http: TLS handshake error from 127.0.0.1:58906: remote error: tls: bad certificate
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m2023/07/25 08:58:18 http: TLS handshake error from 127.0.0.1:58930: remote error: tls: bad certificate
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 17 of 17 Specs in 0.543 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m17 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestTkgAuth (0.55s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg	coverage: 73.5% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg	4.885s	coverage: 73.5% of statements
+=== RUN   TestTkgAuth
+Running Suite: cli/core/pkg/auth/tkg/util/kubeconfig Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/auth/utils/kubeconfig
+===========================================================================================================================================
+Random Seed: [1m1690293495[0m
+
+Will run [1m3[0m of [1m3[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 3 of 3 Specs in 0.027 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m3 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestTkgAuth (0.03s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig	coverage: 77.8% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig	2.042s	coverage: 77.8% of statements
+=== RUN   TestNetUtil
+Running Suite: Net util suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/auth/utils/net
+=======================================================================================================
+Random Seed: [1m1690293497[0m
+
+Will run [1m4[0m of [1m4[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 4 of 4 Specs in 0.002 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m4 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestNetUtil (0.00s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/net	coverage: 87.5% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/net	3.758s	coverage: 87.5% of statements
+=== RUN   TestWCPAuth
+Running Suite: WCP Auth Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/auth/wcp
+=================================================================================================
+Random Seed: [1m1690293498[0m
+
+Will run [1m3[0m of [1m3[0m specs
+[38;5;10m•[0m[i] Could not get login banner from server, response code = 404
+[38;5;10m•[0m[i] Failed to test for vSphere supervisor: Get "https://127.0.0.1:58928/wcp/loginbanner": an error occurred
+[38;5;10m•[0m
+
+[38;5;10m[1mRan 3 of 3 Specs in 0.061 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m3 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestWCPAuth (0.06s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp	coverage: 100.0% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp	4.603s	coverage: 100.0% of statements
+?   	github.com/vmware-tanzu/tanzu-cli/pkg/command/templates	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/pkg/common	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/pkg/constants	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper	[no test files]
+=== RUN   Test_ResolveImagesInPackage_Success
+--- PASS: Test_ResolveImagesInPackage_Success (0.01s)
+=== RUN   Test_ResolveImagesInPackage_When_Image_Not_Present_In_ImageLock
+--- PASS: Test_ResolveImagesInPackage_When_Image_Not_Present_In_ImageLock (1.27s)
+=== RUN   Test_ProcessYTTPackage
+--- PASS: Test_ProcessYTTPackage (0.01s)
+=== RUN   Test_ProcessYTTPackage_When_Error
+--- PASS: Test_ProcessYTTPackage_When_Error (0.01s)
+=== RUN   TestClient
+Running Suite: cli/core/pkg/carvelhelpers Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/carvelhelpers
+========================================================================================================================
+Random Seed: [1m1690293499[0m
+
+Will run [1m3[0m of [1m3[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 3 of 3 Specs in 0.823 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m3 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestClient (0.83s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers	coverage: 47.3% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers	6.171s	coverage: 47.3% of statements
+=== RUN   Test_ContextCatalog_With_Empty_Context
+--- PASS: Test_ContextCatalog_With_Empty_Context (0.01s)
+=== RUN   Test_ContextCatalog_With_Context
+--- PASS: Test_ContextCatalog_With_Context (0.01s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/catalog	coverage: 63.4% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/catalog	3.612s	coverage: 63.4% of statements
+=== RUN   TestPluginNameFromBin
+=== RUN   TestPluginNameFromBin/tanzu-plugin-test_name
+=== RUN   TestPluginNameFromBin/tanzu-plugin-test-charlie_1_name
+--- PASS: TestPluginNameFromBin (0.00s)
+    --- PASS: TestPluginNameFromBin/tanzu-plugin-test_name (0.00s)
+    --- PASS: TestPluginNameFromBin/tanzu-plugin-test-charlie_1_name (0.00s)
+=== RUN   TestBinFromPluginName
+=== RUN   TestBinFromPluginName/test_name
+=== RUN   TestBinFromPluginName/test-charlie_1_name
+--- PASS: TestBinFromPluginName (0.00s)
+    --- PASS: TestBinFromPluginName/test_name (0.00s)
+    --- PASS: TestBinFromPluginName/test-charlie_1_name (0.00s)
+=== RUN   TestMakeArtifactName
+=== RUN   TestMakeArtifactName/linux_amd64_test
+=== RUN   TestMakeArtifactName/windows_amd64_test
+--- PASS: TestMakeArtifactName (0.00s)
+    --- PASS: TestMakeArtifactName/linux_amd64_test (0.00s)
+    --- PASS: TestMakeArtifactName/windows_amd64_test (0.00s)
+=== RUN   TestGetCmdForPlugin
+hello
+--- PASS: TestGetCmdForPlugin (0.83s)
+=== RUN   TestEnvForPlugin
+--- PASS: TestEnvForPlugin (2.38s)
+=== RUN   TestGetTestCmdForPlugin
+hello
+--- PASS: TestGetTestCmdForPlugin (1.13s)
+=== RUN   TestGenerateDescriptor
+Usage:
+  tanzu [command]
+
+Available command groups:
+
+  system
+    sub                     subcommand 
+	
+
+Flags:
+
+
+Use "tanzu [command] --help" for more information about a command.
+--- PASS: TestGenerateDescriptor (0.00s)
+=== RUN   TestSubcommandUsage
+Usage:
+--- PASS: TestSubcommandUsage (0.00s)
+=== RUN   TestSelectVersionStable
+=== RUN   TestSelectVersionStable/basic_patch
+=== RUN   TestSelectVersionStable/release_candidates
+=== RUN   TestSelectVersionStable/release_candidates_same
+--- PASS: TestSelectVersionStable (0.00s)
+    --- PASS: TestSelectVersionStable/basic_patch (0.00s)
+    --- PASS: TestSelectVersionStable/release_candidates (0.00s)
+    --- PASS: TestSelectVersionStable/release_candidates_same (0.00s)
+=== RUN   TestSelectVersionAny
+=== RUN   TestSelectVersionAny/basic_patch
+=== RUN   TestSelectVersionAny/release_candidates
+=== RUN   TestSelectVersionAny/release_candidates_same
+--- PASS: TestSelectVersionAny (0.00s)
+    --- PASS: TestSelectVersionAny/basic_patch (0.00s)
+    --- PASS: TestSelectVersionAny/release_candidates (0.00s)
+    --- PASS: TestSelectVersionAny/release_candidates_same (0.00s)
+=== RUN   TestSelectVersionAlpha
+=== RUN   TestSelectVersionAlpha/basic_patch
+=== RUN   TestSelectVersionAlpha/alpha_prerelease_mixed_with_release_candidate
+=== RUN   TestSelectVersionAlpha/release_candidates_same
+--- PASS: TestSelectVersionAlpha (0.00s)
+    --- PASS: TestSelectVersionAlpha/basic_patch (0.00s)
+    --- PASS: TestSelectVersionAlpha/alpha_prerelease_mixed_with_release_candidate (0.00s)
+    --- PASS: TestSelectVersionAlpha/release_candidates_same (0.00s)
+=== RUN   TestSelectVersionExperimental
+=== RUN   TestSelectVersionExperimental/basic_patch
+=== RUN   TestSelectVersionExperimental/experimental_builds_and_prereleases
+=== RUN   TestSelectVersionExperimental/stable_release_candidates
+--- PASS: TestSelectVersionExperimental (0.00s)
+    --- PASS: TestSelectVersionExperimental/basic_patch (0.00s)
+    --- PASS: TestSelectVersionExperimental/experimental_builds_and_prereleases (0.00s)
+    --- PASS: TestSelectVersionExperimental/stable_release_candidates (0.00s)
+=== RUN   TestFilterVersions
+=== RUN   TestFilterVersions/ignore_bad_versions
+=== RUN   TestFilterVersions/ignore_bad_versions_including_unstable
+--- PASS: TestFilterVersions (0.00s)
+    --- PASS: TestFilterVersions/ignore_bad_versions (0.00s)
+    --- PASS: TestFilterVersions/ignore_bad_versions_including_unstable (0.00s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/cli	coverage: 62.0% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/cli	8.533s	coverage: 62.0% of statements
+=== RUN   TestCliCorePkgClusterSuite
+Running Suite: cli/core/pkg/cluster Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/cluster
+============================================================================================================
+Random Seed: [1m1690293500[0m
+
+Will run [1m9[0m of [1m9[0m specs
+[38;5;243m------------------------------[0m
+[38;5;9m• [FAILED] [0.012 seconds][0m
+[0mNew Cluster Client Tests [38;5;243mwhen kubeconfig and context is valid  [38;5;9m[1m[It] return cluster client[0m
+[38;5;243m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/cluster/client_test.go:49[0m
+
+  [38;5;9m[FAILED] Expected
+      <nil>: nil
+  not to be nil[0m
+  [38;5;9mIn [1m[It][0m[38;5;9m at: [1m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/cluster/client_test.go:52[0m [38;5;243m@ 07/25/23 08:58:20.104[0m
+[38;5;243m------------------------------[0m
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;9m[1mSummarizing 1 Failure:[0m
+  [38;5;9m[FAIL][0m [0mNew Cluster Client Tests [38;5;243mwhen kubeconfig and context is valid  [38;5;9m[1m[It] return cluster client[0m
+  [38;5;243m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/cluster/client_test.go:52[0m
+
+[38;5;9m[1mRan 9 of 9 Specs in 0.033 seconds[0m
+[38;5;9m[1mFAIL![0m -- [38;5;10m[1m8 Passed[0m | [38;5;9m[1m1 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- FAIL: TestCliCorePkgClusterSuite (0.04s)
+FAIL
+	github.com/vmware-tanzu/tanzu-cli/pkg/cluster	coverage: 73.2% of statements
+FAIL	github.com/vmware-tanzu/tanzu-cli/pkg/cluster	1.663s
+?   	github.com/vmware-tanzu/tanzu-cli/pkg/fakes	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/pkg/fakes/helper	[no test files]
+?   	github.com/vmware-tanzu/tanzu-cli/pkg/interfaces	[no test files]
+=== RUN   Test_runCompletion_MissingArg
+--- PASS: Test_runCompletion_MissingArg (0.00s)
+=== RUN   Test_runCompletion_InvalidArg
+--- PASS: Test_runCompletion_InvalidArg (0.00s)
+=== RUN   Test_runCompletion_WrongArgs
+--- PASS: Test_runCompletion_WrongArgs (0.00s)
+=== RUN   Test_runCompletion_Bash
+--- PASS: Test_runCompletion_Bash (0.00s)
+=== RUN   Test_runCompletion_Zsh
+--- PASS: Test_runCompletion_Zsh (0.00s)
+=== RUN   Test_runCompletion_Fish
+--- PASS: Test_runCompletion_Fish (0.00s)
+=== RUN   Test_runCompletion_Pwsh
+--- PASS: Test_runCompletion_Pwsh (0.00s)
+=== RUN   TestConfigMalformedPathArg
+--- PASS: TestConfigMalformedPathArg (0.00s)
+=== RUN   TestConfigInvalidPathArg
+--- PASS: TestConfigInvalidPathArg (0.00s)
+=== RUN   TestConfigUnstableVersions
+--- PASS: TestConfigUnstableVersions (0.00s)
+=== RUN   TestConfigCliUnstableVersions
+--- PASS: TestConfigCliUnstableVersions (0.00s)
+=== RUN   TestConfigInvalidUnstableVersions
+--- PASS: TestConfigInvalidUnstableVersions (0.00s)
+=== RUN   TestConfigGlobalFeature
+--- PASS: TestConfigGlobalFeature (0.00s)
+=== RUN   TestConfigFeature
+--- PASS: TestConfigFeature (0.00s)
+=== RUN   TestConfigSetUnsetEnv
+--- PASS: TestConfigSetUnsetEnv (0.01s)
+=== RUN   TestConfigIncorrectConfigLiteral
+--- PASS: TestConfigIncorrectConfigLiteral (0.00s)
+=== RUN   TestConfigEnv
+--- PASS: TestConfigEnv (0.00s)
+=== RUN   TestConfigEditionCommunity
+--- PASS: TestConfigEditionCommunity (0.00s)
+=== RUN   TestConfigEditionStandard
+--- PASS: TestConfigEditionStandard (0.00s)
+=== RUN   TestConfigEditionInvalid
+--- PASS: TestConfigEditionInvalid (0.00s)
+=== RUN   TestCliCmdSuite
+Running Suite: cli core command suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/command
+========================================================================================================
+Random Seed: [1m1690293501[0m
+
+Will run [1m49[0m of [1m49[0m specs
+[ok] Marking agreement as accepted.
+[38;5;10m•[0m7[?25l8[0G[2K[1;36m? [0m[1;99mYou must agree to the VMware General Terms in order to download, install, or
+use software from this registry via Tanzu CLI. Acceptance of the VMware General
+Terms covers all software installed via the Tanzu CLI during any Session.
+“Session” means the period from acceptance until any of the following occurs:
+(1) a change to VMware General Terms, (2) a new major release of the Tanzu CLI
+is installed, (3) software is accessed in a separate software distribution
+registry, or (4) re-acceptance of the General Terms is prompted by VMware.
+
+To view the VMware General Terms, please see https://www.vmware.com/vmware-general-terms.html
+
+If you agree, the essential plugins will be installed that are necessary for the tanzu cli experience
+
+Do you agree to the VMware General Terms?
+[0m  [36m[Use arrows to move, type to filter][0m
+[1;36m> Yes[0m
+[39m  No[0m
+7[1A[0G[1A[0G8[?25hError: failed to get EULA status: prompt failed: EOF
+Usage:
+eula show [flags]
+
+Flags:
+  -h, --help   help for show
+
+[38;5;10m•[0m[ok] Marking agreement as accepted.
+7[?25l8[0G[2K[1;36m? [0m[1;99mYou must agree to the VMware General Terms in order to download, install, or
+use software from this registry via Tanzu CLI. Acceptance of the VMware General
+Terms covers all software installed via the Tanzu CLI during any Session.
+“Session” means the period from acceptance until any of the following occurs:
+(1) a change to VMware General Terms, (2) a new major release of the Tanzu CLI
+is installed, (3) software is accessed in a separate software distribution
+registry, or (4) re-acceptance of the General Terms is prompted by VMware.
+
+To view the VMware General Terms, please see https://www.vmware.com/vmware-general-terms.html
+
+If you agree, the essential plugins will be installed that are necessary for the tanzu cli experience
+
+Do you agree to the VMware General Terms?
+[0m  [36m[Use arrows to move, type to filter][0m
+[1;36m> Yes[0m
+[39m  No[0m
+7[1A[0G[1A[0G8[?25hError: failed to get EULA status: prompt failed: EOF
+Usage:
+eula show [flags]
+
+Flags:
+  -h, --help   help for show
+
+[38;5;10m•[0mThe Tanzu CLI is only usable with reduced functionality until the General Terms are agreed to.
+Please use `tanzu config eula show` to review the terms, or `tanzu config eula accept` to accept them directly
+[38;5;10m•[0mTarget:  kubernetes
+  NAME  ISACTIVE  ENDPOINT  KUBECONFIGPATH  KUBECONTEXT  
+Target:  mission-control
+  NAME  ISACTIVE  ENDPOINT  
+[38;5;10m•[0m[i] Could not get login banner from server, response code = 404
+[x] : error creating kubeconfig with tanzu pinniped-auth login plugin: failed to get cluster-info: failed to get cluster-info from the end-point
+[38;5;10m•[0m[i] Could not get login banner from server, response code = 404
+[38;5;10m•[0m[i] Could not get login banner from server, response code = 404
+[38;5;10m•[0m[ok] successfully added certificate data for host test.vmware.com
+[38;5;10m•[0m[ok] successfully added certificate data for host test.vmware.com
+
+[38;5;243m------------------------------[0m
+[38;5;9m• [FAILED] [0.007 seconds][0m
+[0mconfig cert command tests [38;5;243mconfig cert add/list command tests [0mconfig cert add with all the options [38;5;9m[1m[It] should return error if the cert for a host already exists[0m
+[38;5;243m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/command/cert_test.go:73[0m
+
+  [38;5;9m[FAILED] Expected
+      <nil>: nil
+  not to be nil[0m
+  [38;5;9mIn [1m[It][0m[38;5;9m at: [1m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/command/cert_test.go:79[0m [38;5;243m@ 07/25/23 08:58:22.171[0m
+[38;5;243m------------------------------[0m
+Error: incorrect boolean argument for '--insecure' option : "fakeint"
+Usage:
+cert add [flags]
+
+Examples:
+  
+    # Add CA certificate for a host
+    tanzu config cert add --host test.vmware.com --ca-certificate path/to/ca/ert
+
+    # Add CA certificate for a host:port
+    tanzu config cert add --host test.vmware.com:8443 --ca-certificate path/to/ca/ert
+
+    # Set to skip verifying the certificate while interacting with host
+    tanzu config cert add --host test.vmware.com  --skip-cert-verify true
+
+    # Set to allow insecure (http) connection while interacting with host
+    tanzu config cert add --host test.vmware.com  --insecure true
+
+Flags:
+      --ca-certificate string     path to the public certificate
+  -h, --help                      help for add
+      --host string               host or host:port
+      --insecure string           allow the use of http when interacting with the host (default "false")
+      --skip-cert-verify string   skip server's TLS certificate verification (default "false")
+
+Error: incorrect boolean argument for '--skip-cert-verify' option : "fakebool"
+Usage:
+cert add [flags]
+
+Examples:
+  
+    # Add CA certificate for a host
+    tanzu config cert add --host test.vmware.com --ca-certificate path/to/ca/ert
+
+    # Add CA certificate for a host:port
+    tanzu config cert add --host test.vmware.com:8443 --ca-certificate path/to/ca/ert
+
+    # Set to skip verifying the certificate while interacting with host
+    tanzu config cert add --host test.vmware.com  --skip-cert-verify true
+
+    # Set to allow insecure (http) connection while interacting with host
+    tanzu config cert add --host test.vmware.com  --insecure true
+
+Flags:
+      --ca-certificate string     path to the public certificate
+  -h, --help                      help for add
+      --host string               host or host:port
+      --insecure string           allow the use of http when interacting with the host (default "false")
+      --skip-cert-verify string   skip server's TLS certificate verification (default "false")
+
+[38;5;10m•[0m[ok] successfully added certificate data for host test.vmware.com
+[38;5;10m•[0m[ok] successfully added certificate data for host test.vmware.com
+[ok] updated certificate data for host test.vmware.com
+[38;5;10m•[0m[ok] successfully added certificate data for host test.vmware.com
+[ok] updated certificate data for host test.vmware.com
+[38;5;10m•[0m[ok] successfully added certificate data for host test.vmware.com
+[ok] deleted certificate data for host test.vmware.com
+Error: cert configuration for test.vmware.com not found
+Usage:
+cert delete HOST [flags]
+
+Examples:
+  
+    # Delete a certificate for host
+    tanzu config cert delete test.vmware.com
+
+    # Delete a certificate for host:port
+    tanzu config cert delete test.vmware.com:5443
+
+Flags:
+  -h, --help   help for delete
+
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0mError: incorrect boolean argument: "fakebool"
+Usage:
+  set OPT_IN_BOOL [flags]
+
+Flags:
+  -h, --help   help for set
+
+[38;5;10m•[0mError: accepts 1 arg(s), received 0
+Usage:
+  set OPT_IN_BOOL [flags]
+
+Flags:
+  -h, --help   help for set
+
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0mTarget:  kubernetes
+Target:  mission-control
+[38;5;10m•[0mTarget:  kubernetes
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[i] Deleting entry for cluster fake-mc
+[38;5;10m•[0m[i] Deleting entry for cluster test-mc
+[38;5;10m•[0m[38;5;10m•[0m[i] Checking for required plugins...
+[!] unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '[unable to create discovery: unknown plugin discovery source, unable to list plugins from discovery source 'default-test-mc': Failed to load Kubeconfig file from "test-path", unable to list plugins from discovery source 'default-test-use-context': Get "https://test-endpoint3/v1alpha1/system/binaries/plugins": dial tcp: lookup test-endpoint3: no such host]'
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0mThe context test-mc for the target kubernetes has been set as inactive
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0mThe context test-tmc-context for the target mission-control has been set as inactive
+[38;5;10m•[0mThe context test-mc for the target kubernetes has been set as inactive
+[38;5;10m•[0m
+
+[38;5;9m[1mSummarizing 1 Failure:[0m
+  [38;5;9m[FAIL][0m [0mconfig cert command tests [38;5;243mconfig cert add/list command tests [0mconfig cert add with all the options [38;5;9m[1m[It] should return error if the cert for a host already exists[0m
+  [38;5;243m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/command/cert_test.go:79[0m
+
+[38;5;9m[1mRan 49 of 49 Specs in 1.363 seconds[0m
+[38;5;9m[1mFAIL![0m -- [38;5;10m[1m48 Passed[0m | [38;5;9m[1m1 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- FAIL: TestCliCmdSuite (1.37s)
+=== RUN   TestRunCommandAndGetStdOutAndErr
+--- PASS: TestRunCommandAndGetStdOutAndErr (0.00s)
+=== RUN   TestTKGKubeconfigFetcherOptions_getKubeconfigUsingPinnipedAuthPlugin
+=== RUN   TestTKGKubeconfigFetcherOptions_getKubeconfigUsingPinnipedAuthPlugin/when_only_'endpoint'_is_provided_and_if_'pinniped-auth_kubeconfig_get'_command_returns_success,_it_should_return_success
+=== RUN   TestTKGKubeconfigFetcherOptions_getKubeconfigUsingPinnipedAuthPlugin/when_'endpoint'_and_'insecure-skip-tls-verify'_options_are_provided_and_if_'pinniped-auth_kubeconfig_get'_command_returns_success,_it_should_return_success
+=== RUN   TestTKGKubeconfigFetcherOptions_getKubeconfigUsingPinnipedAuthPlugin/when_invalid_caCertPath_is_provided_it_should_return_error_before_executing_the_pinniped-auth_plugin_command
+=== RUN   TestTKGKubeconfigFetcherOptions_getKubeconfigUsingPinnipedAuthPlugin/when_'pinniped-auth'_plugin_(command_executor)_return_error._it_should_return_the_error
+--- PASS: TestTKGKubeconfigFetcherOptions_getKubeconfigUsingPinnipedAuthPlugin (0.22s)
+    --- PASS: TestTKGKubeconfigFetcherOptions_getKubeconfigUsingPinnipedAuthPlugin/when_only_'endpoint'_is_provided_and_if_'pinniped-auth_kubeconfig_get'_command_returns_success,_it_should_return_success (0.04s)
+    --- PASS: TestTKGKubeconfigFetcherOptions_getKubeconfigUsingPinnipedAuthPlugin/when_'endpoint'_and_'insecure-skip-tls-verify'_options_are_provided_and_if_'pinniped-auth_kubeconfig_get'_command_returns_success,_it_should_return_success (0.09s)
+    --- PASS: TestTKGKubeconfigFetcherOptions_getKubeconfigUsingPinnipedAuthPlugin/when_invalid_caCertPath_is_provided_it_should_return_error_before_executing_the_pinniped-auth_plugin_command (0.05s)
+    --- PASS: TestTKGKubeconfigFetcherOptions_getKubeconfigUsingPinnipedAuthPlugin/when_'pinniped-auth'_plugin_(command_executor)_return_error._it_should_return_the_error (0.04s)
+=== RUN   Test_createDiscoverySource
+--- PASS: Test_createDiscoverySource (0.25s)
+=== RUN   Test_createAndListDiscoverySources
+[ok] successfully initialized discovery source
+--- PASS: Test_createAndListDiscoverySources (0.17s)
+=== RUN   Test_addDiscoverySource
+--- PASS: Test_addDiscoverySource (0.00s)
+=== RUN   Test_updateDiscoverySources
+--- PASS: Test_updateDiscoverySources (0.00s)
+=== RUN   Test_deleteDiscoverySource
+--- PASS: Test_deleteDiscoverySource (0.00s)
+=== RUN   TestPluginSearch
+=== RUN   TestPluginSearch/no_'plugin_search'_without_central_repo
+Usage:
+  tanzu plugin [command]
+
+Available Commands:
+  clean       Clean the plugins
+  delete      Delete a plugin
+  describe    Describe a plugin
+  install     Install a plugin
+  list        List installed plugins
+  source      Manage plugin discovery sources
+  sync        Installs all plugins recommended by the active contexts
+  upgrade     Upgrade a plugin
+
+Flags:
+  -h, --help   help for plugin
+
+Use "tanzu plugin [command] --help" for more information about a command.
+=== RUN   TestPluginSearch/invalid_target
+=== RUN   TestPluginSearch/no_--local_and_--name_together
+=== RUN   TestPluginSearch/no_--local_and_--target_together
+=== RUN   TestPluginSearch/no_--local_and_--show-details_together
+--- PASS: TestPluginSearch (0.12s)
+    --- PASS: TestPluginSearch/no_'plugin_search'_without_central_repo (0.03s)
+    --- PASS: TestPluginSearch/invalid_target (0.03s)
+    --- PASS: TestPluginSearch/no_--local_and_--name_together (0.02s)
+    --- PASS: TestPluginSearch/no_--local_and_--target_together (0.02s)
+    --- PASS: TestPluginSearch/no_--local_and_--show-details_together (0.02s)
+=== RUN   TestPluginList
+=== RUN   TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_no_plugins_installed_with_no_central_repo
+[!] unable to discover standalone plugins, there are no plugin discovery sources available. Please run 'tanzu plugin source init'
+Standalone Plugins
+=== RUN   TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_when_one_additional_plugin_installed_with_no_central_repo
+[!] unable to discover standalone plugins, there are no plugin discovery sources available. Please run 'tanzu plugin source init'
+Standalone Plugins
+=== RUN   TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_when_more_than_one_plugin_is_installed_with_no_central_repo
+[!] unable to discover standalone plugins, there are no plugin discovery sources available. Please run 'tanzu plugin source init'
+Standalone Plugins
+=== RUN   TestPluginList/when_json_output_is_requested_with_no_central_repo
+[!] unable to discover standalone plugins, there are no plugin discovery sources available. Please run 'tanzu plugin source init'
+=== RUN   TestPluginList/when_yaml_output_is_requested_with_no_central_repo
+[!] unable to discover standalone plugins, there are no plugin discovery sources available. Please run 'tanzu plugin source init'
+=== RUN   TestPluginList/no_'--local'_option
+=== RUN   TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_no_plugins_installed
+Standalone Plugins
+=== RUN   TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_when_one_additional_plugin_installed
+Standalone Plugins
+=== RUN   TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_when_more_than_one_plugin_is_installed
+Standalone Plugins
+=== RUN   TestPluginList/when_json_output_is_requested
+=== RUN   TestPluginList/when_yaml_output_is_requested
+=== RUN   TestPluginList/plugin_describe_json_output_requested
+--- PASS: TestPluginList (0.84s)
+    --- PASS: TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_no_plugins_installed_with_no_central_repo (0.07s)
+    --- PASS: TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_when_one_additional_plugin_installed_with_no_central_repo (0.07s)
+    --- PASS: TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_when_more_than_one_plugin_is_installed_with_no_central_repo (0.08s)
+    --- PASS: TestPluginList/when_json_output_is_requested_with_no_central_repo (0.08s)
+    --- PASS: TestPluginList/when_yaml_output_is_requested_with_no_central_repo (0.07s)
+    --- PASS: TestPluginList/no_'--local'_option (0.03s)
+    --- PASS: TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_no_plugins_installed (0.05s)
+    --- PASS: TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_when_one_additional_plugin_installed (0.07s)
+    --- PASS: TestPluginList/With_empty_config_file(no_discovery_sources_added)_and_when_more_than_one_plugin_is_installed (0.06s)
+    --- PASS: TestPluginList/when_json_output_is_requested (0.06s)
+    --- PASS: TestPluginList/when_yaml_output_is_requested (0.06s)
+    --- PASS: TestPluginList/plugin_describe_json_output_requested (0.05s)
+=== RUN   TestDeletePlugin
+=== RUN   TestDeletePlugin/delete_an_uninstalled_plugin
+=== RUN   TestDeletePlugin/delete_an_installed_plugin
+[ok] successfully deleted plugin 'foo'
+--- PASS: TestDeletePlugin (0.14s)
+    --- PASS: TestDeletePlugin/delete_an_uninstalled_plugin (0.07s)
+    --- PASS: TestDeletePlugin/delete_an_installed_plugin (0.07s)
+=== RUN   TestInstallPlugin
+=== RUN   TestInstallPlugin/need_plugin_name_or_'all'_with_no_central_repo
+=== RUN   TestInstallPlugin/need_plugin_name_or_'all'_if_no_group
+=== RUN   TestInstallPlugin/no_'all'_option
+=== RUN   TestInstallPlugin/invalid_target
+=== RUN   TestInstallPlugin/no_--group_and_--local_together
+Flag --local has been deprecated, this was done in the v1.0.0 release, it will be removed following the deprecation policy (6 months). Use the --local-source flag instead.
+
+=== RUN   TestInstallPlugin/no_--group_and_--target_together
+=== RUN   TestInstallPlugin/no_--group_and_--version_together
+--- PASS: TestInstallPlugin (0.32s)
+    --- PASS: TestInstallPlugin/need_plugin_name_or_'all'_with_no_central_repo (0.05s)
+    --- PASS: TestInstallPlugin/need_plugin_name_or_'all'_if_no_group (0.05s)
+    --- PASS: TestInstallPlugin/no_'all'_option (0.05s)
+    --- PASS: TestInstallPlugin/invalid_target (0.05s)
+    --- PASS: TestInstallPlugin/no_--group_and_--local_together (0.04s)
+    --- PASS: TestInstallPlugin/no_--group_and_--target_together (0.05s)
+    --- PASS: TestInstallPlugin/no_--group_and_--version_together (0.04s)
+=== RUN   TestUpgradePlugin
+=== RUN   TestUpgradePlugin/invalid_target
+--- PASS: TestUpgradePlugin (0.05s)
+    --- PASS: TestUpgradePlugin/invalid_target (0.05s)
+=== RUN   TestExecute
+Usage:
+  tanzu [command]
+
+Available command groups:
+
+  System
+    completion              Output shell completion code 
+    config                  Configuration for the CLI 
+    context                 Configure and manage contexts for the Tanzu CLI 
+    init                    Initialize the CLI 
+    plugin                  Manage CLI plugins 
+    version                 Version information 
+	
+  Target
+    kubernetes              Tanzu CLI plugins that target a Kubernetes cluster 
+    mission-control         Tanzu CLI plugins that target a Tanzu Mission Control endpoint 
+	
+
+Flags:
+  -h, --help   help for tanzu
+
+Use "tanzu [command] --help" for more information about a command.
+--- PASS: TestExecute (0.06s)
+=== RUN   TestRootCmdWithNoAdditionalPlugins
+Usage:
+  tanzu [command]
+
+Available command groups:
+
+  System
+    completion              Output shell completion code 
+    config                  Configuration for the CLI 
+    context                 Configure and manage contexts for the Tanzu CLI 
+    init                    Initialize the CLI 
+    plugin                  Manage CLI plugins 
+    version                 Version information 
+	
+  Target
+    kubernetes              Tanzu CLI plugins that target a Kubernetes cluster 
+    mission-control         Tanzu CLI plugins that target a Tanzu Mission Control endpoint 
+	
+
+Flags:
+  -h, --help   help for tanzu
+
+Use "tanzu [command] --help" for more information about a command.
+--- PASS: TestRootCmdWithNoAdditionalPlugins (0.05s)
+=== RUN   TestSubcommandNonexistent
+--- PASS: TestSubcommandNonexistent (0.04s)
+=== RUN   TestSubcommands
+=== RUN   TestSubcommands/no_arg_test
+=== RUN   TestSubcommands/k8s_target
+=== RUN   TestSubcommands/global_target
+=== RUN   TestSubcommands/unknown_target_(backwards-compatibility)
+=== RUN   TestSubcommands/tmc_target
+=== RUN   TestSubcommands/run_info_subcommand
+=== RUN   TestSubcommands/execute_known_bad_command
+=== RUN   TestSubcommands/invoke_missing_command
+=== RUN   TestSubcommands/when_post-install_succeeds
+=== RUN   TestSubcommands/when_post-install_fails
+=== RUN   TestSubcommands/all_args_after_command_are_passed
+=== RUN   TestSubcommands/hidden_plugin_not_visible_in_root_command
+--- PASS: TestSubcommands (5.56s)
+    --- PASS: TestSubcommands/no_arg_test (0.05s)
+    --- PASS: TestSubcommands/k8s_target (1.00s)
+    --- PASS: TestSubcommands/global_target (2.37s)
+    --- PASS: TestSubcommands/unknown_target_(backwards-compatibility) (0.30s)
+    --- PASS: TestSubcommands/tmc_target (0.14s)
+    --- PASS: TestSubcommands/run_info_subcommand (0.54s)
+    --- PASS: TestSubcommands/execute_known_bad_command (0.31s)
+    --- PASS: TestSubcommands/invoke_missing_command (0.20s)
+    --- PASS: TestSubcommands/when_post-install_succeeds (0.21s)
+    --- PASS: TestSubcommands/when_post-install_fails (0.19s)
+    --- PASS: TestSubcommands/all_args_after_command_are_passed (0.19s)
+    --- PASS: TestSubcommands/hidden_plugin_not_visible_in_root_command (0.04s)
+=== RUN   TestEnvVarsSet
+--- PASS: TestEnvVarsSet (0.05s)
+=== RUN   TestVersion
+--- PASS: TestVersion (0.00s)
+FAIL
+	github.com/vmware-tanzu/tanzu-cli/pkg/command	coverage: 51.5% of statements
+FAIL	github.com/vmware-tanzu/tanzu-cli/pkg/command	11.397s
+=== RUN   TestCliCorePkgConfigSuite
+Running Suite: pkg/config Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/config
+=================================================================================================
+Random Seed: [1m1690293502[0m
+
+Will run [1m19[0m of [1m19[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 19 of 19 Specs in 0.193 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m19 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestCliCorePkgConfigSuite (0.20s)
+=== RUN   TestConfigFeaturesDefaultEditionAdded
+--- PASS: TestConfigFeaturesDefaultEditionAdded (0.00s)
+=== RUN   TestConfigFeaturesDefaultEditionNotAdded
+--- PASS: TestConfigFeaturesDefaultEditionNotAdded (0.00s)
+=== RUN   TestConfigFeatures
+--- PASS: TestConfigFeatures (0.00s)
+=== RUN   TestConfigFeaturesDefault
+--- PASS: TestConfigFeaturesDefault (0.00s)
+=== RUN   TestConfigFeaturesDefaultInvalid
+--- PASS: TestConfigFeaturesDefaultInvalid (0.00s)
+=== RUN   TestConfigFeaturesInvalidName
+--- PASS: TestConfigFeaturesInvalidName (0.00s)
+=== RUN   TestConfigFeaturesInvalidValue
+--- PASS: TestConfigFeaturesInvalidValue (0.00s)
+=== RUN   TestConfigFeaturesSplitName
+--- PASS: TestConfigFeaturesSplitName (0.00s)
+=== RUN   TestConfigFeaturesSplitNameInvalid
+--- PASS: TestConfigFeaturesSplitNameInvalid (0.00s)
+=== RUN   TestConfigFeaturesDefaultsAdded
+--- PASS: TestConfigFeaturesDefaultsAdded (0.00s)
+=== RUN   TestConfigFeaturesDefaultsNoneAdded
+--- PASS: TestConfigFeaturesDefaultsNoneAdded (0.00s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/config	coverage: 54.9% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/config	3.082s	coverage: 54.9% of statements
+=== RUN   TestUtils
+Running Suite: configpaths Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/configpaths
+=======================================================================================================
+Random Seed: [1m1690293500[0m
+
+Will run [1m2[0m of [1m2[0m specs
+[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 2 of 2 Specs in 0.002 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m2 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestUtils (0.00s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/configpaths	coverage: 75.0% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/configpaths	0.603s	coverage: 75.0% of statements
+=== RUN   TestSigVerifierSuite
+Running Suite: sigverifier package Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/cosignhelper/sigverifier
+============================================================================================================================
+Random Seed: [1m1690293503[0m
+
+Will run [1m6[0m of [1m6[0m specs
+[38;5;10m•[0m[!] Skipping the plugins discovery image signature verification for "test-image:latest"
+ 
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 6 of 6 Specs in 0.035 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m6 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestSigVerifierSuite (0.04s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier	coverage: 72.5% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier	1.367s	coverage: 72.5% of statements
+=== RUN   Test_CreateDiscoveryFromV1alpha1
+--- PASS: Test_CreateDiscoveryFromV1alpha1 (0.00s)
+=== RUN   Test_CreateGroupDiscovery
+--- PASS: Test_CreateGroupDiscovery (0.00s)
+=== RUN   Test_ProcessOCIPluginManifest
+--- PASS: Test_ProcessOCIPluginManifest (0.01s)
+=== RUN   Test_NewOCIDiscovery
+--- PASS: Test_NewOCIDiscovery (0.02s)
+=== RUN   Test_NewOCIGroupDiscovery
+--- PASS: Test_NewOCIGroupDiscovery (0.00s)
+=== RUN   TestRESTDiscovery
+--- PASS: TestRESTDiscovery (0.00s)
+=== RUN   TestRESTDiscoveryWithInvalidPlugins
+--- PASS: TestRESTDiscoveryWithInvalidPlugins (0.00s)
+=== RUN   Test_CheckDiscoveryName
+--- PASS: Test_CheckDiscoveryName (0.00s)
+=== RUN   Test_CompareDiscoverySource
+--- PASS: Test_CompareDiscoverySource (0.00s)
+=== RUN   TestClient
+Running Suite: Discovery Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/discovery
+===================================================================================================
+Random Seed: [1m1690293505[0m
+
+Will run [1m18[0m of [1m18[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[i] unable to get image repository override information for some of the plugins. Error: fake-error-image-repo-override
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 18 of 18 Specs in 0.036 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m18 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestClient (0.04s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/discovery	coverage: 61.1% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/discovery	1.469s	coverage: 61.1% of statements
+=== RUN   TestArtifact
+Running Suite: Distribution Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/distribution
+=========================================================================================================
+Random Seed: [1m1690293505[0m
+
+Will run [1m9[0m of [1m9[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 9 of 9 Specs in 0.006 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m9 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestArtifact (0.02s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/distribution	coverage: 47.8% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/distribution	1.634s	coverage: 47.8% of statements
+=== RUN   Test_RepeatConstructAndAddTree
+--- PASS: Test_RepeatConstructAndAddTree (4.19s)
+=== RUN   TestCache_GetTree
+--- PASS: TestCache_GetTree (0.00s)
+=== RUN   TestCache_DeleteTree
+--- PASS: TestCache_DeleteTree (0.00s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/plugincmdtree	coverage: 84.5% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/plugincmdtree	6.006s	coverage: 84.5% of statements
+=== RUN   TestClient
+Running Suite: Plugin Inventory Suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/plugininventory
+================================================================================================================
+Random Seed: [1m1690293506[0m
+
+Will run [1m46[0m of [1m46[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 46 of 46 Specs in 1.465 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m46 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestClient (1.47s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory	coverage: 77.6% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory	3.789s	coverage: 77.6% of statements
+=== RUN   Test_defaultDiscoverySourceBasedOnServer
+--- PASS: Test_defaultDiscoverySourceBasedOnServer (0.00s)
+=== RUN   Test_defaultDiscoverySourceBasedOnContext
+--- PASS: Test_defaultDiscoverySourceBasedOnContext (0.00s)
+=== RUN   Test_appendURLScheme
+=== RUN   Test_appendURLScheme/url_does_not_start_with_any_scheme_and_not_port
+=== RUN   Test_appendURLScheme/url_does_not_start_with_any_scheme,_but_ends_with_https_port
+=== RUN   Test_appendURLScheme/url_does_not_start_with_any_scheme,_but_ends_with_non-default_https_port
+=== RUN   Test_appendURLScheme/url_does_start_with_http,_but_ends_with_https_port
+=== RUN   Test_appendURLScheme/url_does_start_with_https,_but_ends_with_https_port
+=== RUN   Test_appendURLScheme/url_start_with_http,_but_ends_with_non-default_http/https_port
+=== RUN   Test_appendURLScheme/url_start_with_http,_but_ends_with_default_http_port
+--- PASS: Test_appendURLScheme (0.00s)
+    --- PASS: Test_appendURLScheme/url_does_not_start_with_any_scheme_and_not_port (0.00s)
+    --- PASS: Test_appendURLScheme/url_does_not_start_with_any_scheme,_but_ends_with_https_port (0.00s)
+    --- PASS: Test_appendURLScheme/url_does_not_start_with_any_scheme,_but_ends_with_non-default_https_port (0.00s)
+    --- PASS: Test_appendURLScheme/url_does_start_with_http,_but_ends_with_https_port (0.00s)
+    --- PASS: Test_appendURLScheme/url_does_start_with_https,_but_ends_with_https_port (0.00s)
+    --- PASS: Test_appendURLScheme/url_start_with_http,_but_ends_with_non-default_http/https_port (0.00s)
+    --- PASS: Test_appendURLScheme/url_start_with_http,_but_ends_with_default_http_port (0.00s)
+=== RUN   TestGetEssentialsPluginGroupDetails
+=== RUN   TestGetEssentialsPluginGroupDetails/Default_values
+=== RUN   TestGetEssentialsPluginGroupDetails/Environment_variable_set_for_name
+=== RUN   TestGetEssentialsPluginGroupDetails/Environment_variable_set_for_version
+=== RUN   TestGetEssentialsPluginGroupDetails/Environment_variables_set_for_both_name_and_version
+--- PASS: TestGetEssentialsPluginGroupDetails (0.00s)
+    --- PASS: TestGetEssentialsPluginGroupDetails/Default_values (0.00s)
+    --- PASS: TestGetEssentialsPluginGroupDetails/Environment_variable_set_for_name (0.00s)
+    --- PASS: TestGetEssentialsPluginGroupDetails/Environment_variable_set_for_version (0.00s)
+    --- PASS: TestGetEssentialsPluginGroupDetails/Environment_variables_set_for_both_name_and_version (0.00s)
+=== RUN   TestIsAllPluginsFromGroupInstalled
+=== RUN   TestIsAllPluginsFromGroupInstalled/All_plugins_installed
+=== RUN   TestIsAllPluginsFromGroupInstalled/Some_plugins_not_installed
+=== RUN   TestIsAllPluginsFromGroupInstalled/No_plugins_installed
+=== RUN   TestIsAllPluginsFromGroupInstalled/Installed_plugins_list_is_empty
+=== RUN   TestIsAllPluginsFromGroupInstalled/Mandatory_plugin_not_installed
+--- PASS: TestIsAllPluginsFromGroupInstalled (0.00s)
+    --- PASS: TestIsAllPluginsFromGroupInstalled/All_plugins_installed (0.00s)
+    --- PASS: TestIsAllPluginsFromGroupInstalled/Some_plugins_not_installed (0.00s)
+    --- PASS: TestIsAllPluginsFromGroupInstalled/No_plugins_installed (0.00s)
+    --- PASS: TestIsAllPluginsFromGroupInstalled/Installed_plugins_list_is_empty (0.00s)
+    --- PASS: TestIsAllPluginsFromGroupInstalled/Mandatory_plugin_not_installed (0.00s)
+=== RUN   TestIsNewPluginVersionAvailable
+=== RUN   TestIsNewPluginVersionAvailable/New_version_available
+=== RUN   TestIsNewPluginVersionAvailable/Same_version
+=== RUN   TestIsNewPluginVersionAvailable/Old_version
+=== RUN   TestIsNewPluginVersionAvailable/Plugin_not_installed
+=== RUN   TestIsNewPluginVersionAvailable/New_version_available#01
+=== RUN   TestIsNewPluginVersionAvailable/Same_version#01
+=== RUN   TestIsNewPluginVersionAvailable/Old_version#01
+=== RUN   TestIsNewPluginVersionAvailable/Plugin_not_installed#01
+--- PASS: TestIsNewPluginVersionAvailable (0.00s)
+    --- PASS: TestIsNewPluginVersionAvailable/New_version_available (0.00s)
+    --- PASS: TestIsNewPluginVersionAvailable/Same_version (0.00s)
+    --- PASS: TestIsNewPluginVersionAvailable/Old_version (0.00s)
+    --- PASS: TestIsNewPluginVersionAvailable/Plugin_not_installed (0.00s)
+    --- PASS: TestIsNewPluginVersionAvailable/New_version_available#01 (0.00s)
+    --- PASS: TestIsNewPluginVersionAvailable/Same_version#01 (0.00s)
+    --- PASS: TestIsNewPluginVersionAvailable/Old_version#01 (0.00s)
+    --- PASS: TestIsNewPluginVersionAvailable/Plugin_not_installed#01 (0.00s)
+=== RUN   TestGetLogMode
+=== RUN   TestGetLogMode/ShowLogs_is_true
+=== RUN   TestGetLogMode/ShowLogs_is_false
+--- PASS: TestGetLogMode (0.00s)
+    --- PASS: TestGetLogMode/ShowLogs_is_true (0.00s)
+    --- PASS: TestGetLogMode/ShowLogs_is_false (0.00s)
+=== RUN   TestSetLogMode
+=== RUN   TestSetLogMode/Environment_variable_is_true
+=== RUN   TestSetLogMode/Environment_variable_is_false
+=== RUN   TestSetLogMode/Environment_variable_is_not_set_and_enable_logs
+=== RUN   TestSetLogMode/Environment_variable_is_not_set_and_disable_logs
+--- PASS: TestSetLogMode (0.00s)
+    --- PASS: TestSetLogMode/Environment_variable_is_true (0.00s)
+    --- PASS: TestSetLogMode/Environment_variable_is_false (0.00s)
+    --- PASS: TestSetLogMode/Environment_variable_is_not_set_and_enable_logs (0.00s)
+    --- PASS: TestSetLogMode/Environment_variable_is_not_set_and_disable_logs (0.00s)
+=== RUN   TestResetLogMode
+=== RUN   TestResetLogMode/Reset_log_mode
+--- PASS: TestResetLogMode (0.00s)
+    --- PASS: TestResetLogMode/Reset_log_mode (0.00s)
+=== RUN   Test_DiscoverPlugins
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+--- PASS: Test_DiscoverPlugins (0.07s)
+=== RUN   Test_InstallPlugin_InstalledPlugins_No_Central_Repo
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'login:v0.2.0'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'cluster:v0.2.0' with target 'mission-control'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'cluster:v1.0.0' with target 'kubernetes'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'cluster:v1.6.0' with target 'kubernetes'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'management-cluster:v1.6.0' with target 'kubernetes'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+--- PASS: Test_InstallPlugin_InstalledPlugins_No_Central_Repo (2.59s)
+=== RUN   Test_InstallPlugin_InstalledPlugins_Central_Repo
+[i] Installing plugin 'login:v0.2.0'
+[i] Installing plugin 'myplugin:v0.2.0' with target 'mission-control'
+[i] Installing plugin 'myplugin:v1.0.0' with target 'kubernetes'
+[i] Installing plugin 'myplugin:v1.6.0' with target 'kubernetes'
+[i] Installing plugin 'management-cluster:v1.6.0' with target 'kubernetes'
+--- PASS: Test_InstallPlugin_InstalledPlugins_Central_Repo (1.69s)
+=== RUN   Test_InstallPluginFromGroup
+--- PASS: Test_InstallPluginFromGroup (0.05s)
+=== RUN   Test_DiscoverPluginGroups
+--- PASS: Test_DiscoverPluginGroups (0.03s)
+=== RUN   Test_AvailablePlugins
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'login:v0.2.0'
+[i] Installing plugin 'myplugin:v0.2.0' with target 'mission-control'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'management-cluster:v1.6.0' with target 'kubernetes'
+[i] Installing plugin 'feature:v0.2.0' with target 'kubernetes'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+--- PASS: Test_AvailablePlugins (1.63s)
+=== RUN   Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_One_Installed_Getting_Discovered
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'login:v0.2.0'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Discovered: management-cluster, mission-control, not installed, 
+[i] Discovered: cluster, kubernetes, not installed, 
+[i] Discovered: management-cluster, kubernetes, not installed, 
+[i] Discovered: feature, kubernetes, not installed, 
+[i] Discovered: login, kubernetes, installed, v0.2.0
+[i] Discovered: myplugin, kubernetes, not installed, 
+[i] Discovered: myplugin, mission-control, not installed, 
+[i] Discovered: cluster, mission-control, not installed, 
+--- PASS: Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_One_Installed_Getting_Discovered (0.48s)
+=== RUN   Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_Plugin_Installed_But_Not_Getting_Discovered
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'login:v0.2.0'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+--- PASS: Test_AvailablePlugins_With_K8s_None_Target_Plugin_Name_Conflict_With_Plugin_Installed_But_Not_Getting_Discovered (0.51s)
+=== RUN   Test_AvailablePlugins_From_LocalSource
+--- PASS: Test_AvailablePlugins_From_LocalSource (0.05s)
+=== RUN   Test_InstallPlugin_InstalledPlugins_From_LocalSource
+[i] Installing plugin 'login:v0.2.0'
+[i] Installing plugin 'cluster:v0.2.0' with target 'mission-control'
+--- PASS: Test_InstallPlugin_InstalledPlugins_From_LocalSource (0.83s)
+=== RUN   Test_DescribePlugin
+[i] Installing plugin 'login:v0.2.0'
+[i] Installing plugin 'myplugin:v0.2.0' with target 'mission-control'
+[i] Installing plugin 'feature:v0.2.0' with target 'kubernetes'
+--- PASS: Test_DescribePlugin (1.22s)
+=== RUN   Test_DeletePlugin
+[i] Installing plugin 'myplugin:v0.2.0' with target 'mission-control'
+[i] Installing plugin 'myplugin:v0.2.0' with target 'mission-control'
+[i] Installing plugin 'feature:v0.2.0' with target 'kubernetes'
+[i] Installing plugin 'myplugin:v0.2.0' with target 'mission-control'
+[i] Installing plugin 'myplugin:v1.6.0' with target 'kubernetes'
+--- PASS: Test_DeletePlugin (1.90s)
+=== RUN   Test_ValidatePlugin
+--- PASS: Test_ValidatePlugin (0.00s)
+=== RUN   Test_SyncPlugins_All_Plugins_No_Central_Repo
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Checking for required plugins...
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'cluster:v1.6.0' with target 'kubernetes'
+log entry cannot have odd number off keyAndValues[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'myplugin:v1.6.0' with target 'kubernetes'
+log entry cannot have odd number off keyAndValues[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'myplugin:v0.2.0' with target 'mission-control'
+log entry cannot have odd number off keyAndValues[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'management-cluster:v1.6.0' with target 'kubernetes'
+log entry cannot have odd number off keyAndValues[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'feature:v0.2.0' with target 'kubernetes'
+log entry cannot have odd number off keyAndValues[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'login:v0.2.0'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'cluster:v0.2.0' with target 'mission-control'
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+[i] Installing plugin 'management-cluster:v0.2.0' with target 'mission-control'
+[i] Successfully installed all required plugins
+[!] unable to discover server plugins, unable to list plugins from discovery source 'default-mgmt': Failed to load Kubeconfig file from "config"
+--- PASS: Test_SyncPlugins_All_Plugins_No_Central_Repo (3.51s)
+=== RUN   Test_getInstalledButNotDiscoveredStandalonePlugins
+--- PASS: Test_getInstalledButNotDiscoveredStandalonePlugins (0.00s)
+=== RUN   Test_setAvailablePluginsStatus
+--- PASS: Test_setAvailablePluginsStatus (0.00s)
+=== RUN   Test_DiscoverPluginsFromLocalSourceBasedOnManifestFile
+--- PASS: Test_DiscoverPluginsFromLocalSourceBasedOnManifestFile (0.00s)
+=== RUN   Test_InstallPluginsFromLocalSourceWithLegacyDirectoryStructure
+[i] Installing plugin 'foo:v0.12.0'
+[i] Installing plugin 'bar:v0.10.0'
+--- PASS: Test_InstallPluginsFromLocalSourceWithLegacyDirectoryStructure (0.73s)
+=== RUN   Test_VerifyRegistry
+--- PASS: Test_VerifyRegistry (0.02s)
+=== RUN   TestVerifyArtifactLocation
+=== RUN   TestVerifyArtifactLocation/trusted_location
+=== RUN   TestVerifyArtifactLocation/untrusted_location
+=== RUN   TestVerifyArtifactLocation/trusted_location#01
+--- PASS: TestVerifyArtifactLocation (0.00s)
+    --- PASS: TestVerifyArtifactLocation/trusted_location (0.00s)
+    --- PASS: TestVerifyArtifactLocation/untrusted_location (0.00s)
+    --- PASS: TestVerifyArtifactLocation/trusted_location#01 (0.00s)
+=== RUN   TestVerifyPluginPostDownload
+=== RUN   TestVerifyPluginPostDownload/success_-_no_source_digest
+=== RUN   TestVerifyPluginPostDownload/success_-_with_source_digest
+=== RUN   TestVerifyPluginPostDownload/failure_-_digest_mismatch
+--- PASS: TestVerifyPluginPostDownload (0.00s)
+    --- PASS: TestVerifyPluginPostDownload/success_-_no_source_digest (0.00s)
+    --- PASS: TestVerifyPluginPostDownload/success_-_with_source_digest (0.00s)
+    --- PASS: TestVerifyPluginPostDownload/failure_-_digest_mismatch (0.00s)
+=== RUN   Test_removeDuplicates
+=== RUN   Test_removeDuplicates/when_plugin_name-target_conflict_happens_with_''_and_'k8s'_targeted_plugins_
+=== RUN   Test_removeDuplicates/when_same_plugin_exists_for_'',_'k8s'_and_'tmc'_target_as_standalone_plugin
+=== RUN   Test_removeDuplicates/when_foo_standalone_plugin_is_available_with_`k8s`_and_``_target_and_also_available_as_context-scoped_plugin_with_`k8s`_target
+=== RUN   Test_removeDuplicates/when_tmc_targeted_plugin_exists_as_standalone_as_well_as_context-scope
+--- PASS: Test_removeDuplicates (0.00s)
+    --- PASS: Test_removeDuplicates/when_plugin_name-target_conflict_happens_with_''_and_'k8s'_targeted_plugins_ (0.00s)
+    --- PASS: Test_removeDuplicates/when_same_plugin_exists_for_'',_'k8s'_and_'tmc'_target_as_standalone_plugin (0.00s)
+    --- PASS: Test_removeDuplicates/when_foo_standalone_plugin_is_available_with_`k8s`_and_``_target_and_also_available_as_context-scoped_plugin_with_`k8s`_target (0.00s)
+    --- PASS: Test_removeDuplicates/when_tmc_targeted_plugin_exists_as_standalone_as_well_as_context-scope (0.00s)
+=== RUN   TestHelperProcess
+--- PASS: TestHelperProcess (0.00s)
+=== RUN   TestGetAdditionalTestPluginDiscoveries
+--- PASS: TestGetAdditionalTestPluginDiscoveries (0.00s)
+=== RUN   TestGetPluginDiscoveries
+--- PASS: TestGetPluginDiscoveries (0.05s)
+=== RUN   TestMergeDuplicatePlugins
+--- PASS: TestMergeDuplicatePlugins (0.00s)
+=== RUN   TestMergeDuplicatePluginsWithReplacedVersion
+--- PASS: TestMergeDuplicatePluginsWithReplacedVersion (0.00s)
+=== RUN   TestMergeDuplicateGroups
+--- PASS: TestMergeDuplicateGroups (0.00s)
+=== RUN   TestMergeDuplicateGroupsWithReplacedVersion
+--- PASS: TestMergeDuplicateGroupsWithReplacedVersion (0.00s)
+=== RUN   TestClean
+--- PASS: TestClean (0.01s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager	coverage: 72.7% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager	17.394s	coverage: 72.7% of statements
+=== RUN   TestPluginSupplierSuite
+Running Suite: plugin supplier test suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/pluginsupplier
+===================================================================================================================
+Random Seed: [1m1690293506[0m
+
+Will run [1m16[0m of [1m16[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 16 of 16 Specs in 0.332 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m16 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestPluginSupplierSuite (0.33s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier	coverage: 86.5% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier	0.927s	coverage: 86.5% of statements
+=== RUN   TestRegistrySuite
+Running Suite: pkg/registry suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/registry
+=====================================================================================================
+Random Seed: [1m1690293506[0m
+
+Will run [1m8[0m of [1m8[0m specs
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;10m[1mRan 8 of 8 Specs in 0.083 seconds[0m
+[38;5;10m[1mSUCCESS![0m -- [38;5;10m[1m8 Passed[0m | [38;5;9m[1m0 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- PASS: TestRegistrySuite (0.09s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/registry	coverage: 20.5% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/registry	0.866s	coverage: 20.5% of statements
+=== RUN   TestClient
+Running Suite: Telemetry plugin test suite - /Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/telemetry
+===============================================================================================================
+Random Seed: [1m1690293508[0m
+
+Will run [1m17[0m of [1m17[0m specs
+[38;5;243m------------------------------[0m
+[38;5;9m• [FAILED] [0.020 seconds][0m
+[0mInserting CLI metrics to database and verifying it by fetching the metrics from database [38;5;243mWhen inserting the cli metrics data [38;5;9m[1m[It] operation should be successful inserted into the database[0m
+[38;5;243m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/telemetry/sqlite_metrics_db_test.go:42[0m
+
+  [38;5;9m[FAILED] Expected
+      <int>: 1
+  to equal
+      <int>: 5[0m
+  [38;5;9mIn [1m[It][0m[38;5;9m at: [1m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/telemetry/sqlite_metrics_db_test.go:65[0m [38;5;243m@ 07/25/23 08:58:28.779[0m
+[38;5;243m------------------------------[0m
+[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m[38;5;10m•[0m
+
+[38;5;9m[1mSummarizing 1 Failure:[0m
+  [38;5;9m[FAIL][0m [0mInserting CLI metrics to database and verifying it by fetching the metrics from database [38;5;243mWhen inserting the cli metrics data [38;5;9m[1m[It] operation should be successful inserted into the database[0m
+  [38;5;243m/Users/cpamuluri/tkg/tasks/cli_core_main_2/tanzu-cli/pkg/telemetry/sqlite_metrics_db_test.go:65[0m
+
+[38;5;9m[1mRan 17 of 17 Specs in 0.127 seconds[0m
+[38;5;9m[1mFAIL![0m -- [38;5;10m[1m16 Passed[0m | [38;5;9m[1m1 Failed[0m | [38;5;11m[1m0 Pending[0m | [38;5;14m[1m0 Skipped[0m
+--- FAIL: TestClient (0.13s)
+=== RUN   TestClient_Client
+--- PASS: TestClient_Client (0.00s)
+=== RUN   TestTelemetryClient_UpdateCmdPostRunMetrics
+--- PASS: TestTelemetryClient_UpdateCmdPostRunMetrics (0.00s)
+=== RUN   TestTelemetryClient_isCoreCommand
+--- PASS: TestTelemetryClient_isCoreCommand (0.00s)
+=== RUN   TestTraverseFlagNames
+--- PASS: TestTraverseFlagNames (0.00s)
+=== RUN   TestFlagNamesToJSONString
+--- PASS: TestFlagNamesToJSONString (0.00s)
+=== RUN   TestProcessFlagNames
+--- PASS: TestProcessFlagNames (0.00s)
+=== RUN   TestIsFlagArg
+--- PASS: TestIsFlagArg (0.00s)
+FAIL
+	github.com/vmware-tanzu/tanzu-cli/pkg/telemetry	coverage: 78.0% of statements
+FAIL	github.com/vmware-tanzu/tanzu-cli/pkg/telemetry	2.787s
+=== RUN   TestContainsString
+=== RUN   TestContainsString/String_present
+=== RUN   TestContainsString/String_absent
+=== RUN   TestContainsString/Empty_array
+=== RUN   TestContainsString/Empty_string
+--- PASS: TestContainsString (0.00s)
+    --- PASS: TestContainsString/String_present (0.00s)
+    --- PASS: TestContainsString/String_absent (0.00s)
+    --- PASS: TestContainsString/Empty_array (0.00s)
+    --- PASS: TestContainsString/Empty_string (0.00s)
+=== RUN   TestGenerateKey
+=== RUN   TestGenerateKey/No_parts
+=== RUN   TestGenerateKey/One_part
+=== RUN   TestGenerateKey/Two_parts
+=== RUN   TestGenerateKey/Three_parts
+--- PASS: TestGenerateKey (0.00s)
+    --- PASS: TestGenerateKey/No_parts (0.00s)
+    --- PASS: TestGenerateKey/One_part (0.00s)
+    --- PASS: TestGenerateKey/Two_parts (0.00s)
+    --- PASS: TestGenerateKey/Three_parts (0.00s)
+=== RUN   TestSortVersion
+=== RUN   TestSortVersion/Success
+=== RUN   TestSortVersion/Success#01
+--- PASS: TestSortVersion (0.00s)
+    --- PASS: TestSortVersion/Success (0.00s)
+    --- PASS: TestSortVersion/Success#01 (0.00s)
+=== RUN   TestIsNewVersion
+=== RUN   TestIsNewVersion/New_version_available
+=== RUN   TestIsNewVersion/Same_version
+=== RUN   TestIsNewVersion/Old_version
+=== RUN   TestIsNewVersion/Invalid_plugin_version
+=== RUN   TestIsNewVersion/Invalid_installed_version
+=== RUN   TestIsNewVersion/New_version_available#01
+=== RUN   TestIsNewVersion/Same_version#01
+=== RUN   TestIsNewVersion/Old_version#01
+=== RUN   TestIsNewVersion/Invalid_plugin_version#01
+=== RUN   TestIsNewVersion/Invalid_installed_version#01
+--- PASS: TestIsNewVersion (0.00s)
+    --- PASS: TestIsNewVersion/New_version_available (0.00s)
+    --- PASS: TestIsNewVersion/Same_version (0.00s)
+    --- PASS: TestIsNewVersion/Old_version (0.00s)
+    --- PASS: TestIsNewVersion/Invalid_plugin_version (0.00s)
+    --- PASS: TestIsNewVersion/Invalid_installed_version (0.00s)
+    --- PASS: TestIsNewVersion/New_version_available#01 (0.00s)
+    --- PASS: TestIsNewVersion/Same_version#01 (0.00s)
+    --- PASS: TestIsNewVersion/Old_version#01 (0.00s)
+    --- PASS: TestIsNewVersion/Invalid_plugin_version#01 (0.00s)
+    --- PASS: TestIsNewVersion/Invalid_installed_version#01 (0.00s)
+=== RUN   TestJoinUrl
+=== RUN   TestJoinUrl/,/
+=== RUN   TestJoinUrl/,
+=== RUN   TestJoinUrl/,/test/path
+=== RUN   TestJoinUrl//,/
+=== RUN   TestJoinUrl//,
+=== RUN   TestJoinUrl/127.0.0.1,
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/127.0.0.1:5001/,/test/path/
+=== RUN   TestJoinUrl/127.0.0.1:5001,/test/path/
+=== RUN   TestJoinUrl/127.0.0.1:5001,test/path/
+=== RUN   TestJoinUrl/127.0.0.1:5001/,test/path/
+=== RUN   TestJoinUrl/127.0.0.1:5001,test/path
+=== RUN   TestJoinUrl/127.0.0.1:5001/,/test/path
+=== RUN   TestJoinUrl/127.0.0.1:5001/,test/path
+=== RUN   TestJoinUrl/127.0.0.1:5001,/test/path
+=== RUN   TestJoinUrl/127.0.0.1:5001,
+=== RUN   TestJoinUrl/127.0.0.1:5001/,
+=== RUN   TestJoinUrl/127.0.0.1:5001/,/
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/,/test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1:5001,/test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1:5001,test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/,test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1:5001,test/path
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/,/test/path
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/,test/path
+=== RUN   TestJoinUrl/http://127.0.0.1:5001,/test/path
+=== RUN   TestJoinUrl/http://127.0.0.1:5001,
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/,
+=== RUN   TestJoinUrl/http://127.0.0.1:5001/,/
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/,/test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1:5001,/test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1:5001,test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/,test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/,test/path
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/,/test/path
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/,test/path#01
+=== RUN   TestJoinUrl/https://127.0.0.1:5001,/test/path
+=== RUN   TestJoinUrl/https://127.0.0.1:5001,
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/,
+=== RUN   TestJoinUrl/https://127.0.0.1:5001/,/
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins,
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins/,
+=== RUN   TestJoinUrl/127.0.0.1/tanzu-plugins/,/
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins,
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins/,
+=== RUN   TestJoinUrl/http://127.0.0.1/tanzu-plugins/,/
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins,
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins/,
+=== RUN   TestJoinUrl/https://127.0.0.1/tanzu-plugins/,/
+=== RUN   TestJoinUrl/127.0.0.1/,/test/path/
+=== RUN   TestJoinUrl/127.0.0.1,/test/path/
+=== RUN   TestJoinUrl/127.0.0.1,test/path/
+=== RUN   TestJoinUrl/127.0.0.1/,test/path/
+=== RUN   TestJoinUrl/127.0.0.1,test/path
+=== RUN   TestJoinUrl/127.0.0.1/,/test/path
+=== RUN   TestJoinUrl/127.0.0.1/,test/path
+=== RUN   TestJoinUrl/127.0.0.1,/test/path
+=== RUN   TestJoinUrl/127.0.0.1,#01
+=== RUN   TestJoinUrl/127.0.0.1/,
+=== RUN   TestJoinUrl/127.0.0.1/,/
+=== RUN   TestJoinUrl/http://127.0.0.1/,/test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1,/test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1,test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1/,test/path/
+=== RUN   TestJoinUrl/http://127.0.0.1,test/path
+=== RUN   TestJoinUrl/http://127.0.0.1/,/test/path
+=== RUN   TestJoinUrl/http://127.0.0.1/,test/path
+=== RUN   TestJoinUrl/http://127.0.0.1,/test/path
+=== RUN   TestJoinUrl/http://127.0.0.1,
+=== RUN   TestJoinUrl/http://127.0.0.1/,
+=== RUN   TestJoinUrl/http://127.0.0.1/,/
+=== RUN   TestJoinUrl/https://127.0.0.1/,/test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1,/test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1,test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1/,test/path/
+=== RUN   TestJoinUrl/https://127.0.0.1/,test/path
+=== RUN   TestJoinUrl/https://127.0.0.1/,/test/path
+=== RUN   TestJoinUrl/https://127.0.0.1/,test/path#01
+=== RUN   TestJoinUrl/https://127.0.0.1,/test/path
+=== RUN   TestJoinUrl/https://127.0.0.1,
+=== RUN   TestJoinUrl/https://127.0.0.1/,
+=== RUN   TestJoinUrl/https://127.0.0.1/,/
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/localhost:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/http://localhost:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/https://localhost:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/localhost:5001/,/test/path/
+=== RUN   TestJoinUrl/localhost:5001,/test/path/
+=== RUN   TestJoinUrl/localhost:5001,test/path/
+=== RUN   TestJoinUrl/localhost:5001/,test/path/
+=== RUN   TestJoinUrl/localhost:5001,test/path
+=== RUN   TestJoinUrl/localhost:5001/,/test/path
+=== RUN   TestJoinUrl/localhost:5001/,test/path
+=== RUN   TestJoinUrl/localhost:5001,/test/path
+=== RUN   TestJoinUrl/localhost:5001,
+=== RUN   TestJoinUrl/localhost:5001/,
+=== RUN   TestJoinUrl/localhost:5001/,/
+=== RUN   TestJoinUrl/http://localhost:5001/,/test/path/
+=== RUN   TestJoinUrl/http://localhost:5001,/test/path/
+=== RUN   TestJoinUrl/http://localhost:5001,test/path/
+=== RUN   TestJoinUrl/http://localhost:5001/,test/path/
+=== RUN   TestJoinUrl/http://localhost:5001,test/path
+=== RUN   TestJoinUrl/http://localhost:5001/,/test/path
+=== RUN   TestJoinUrl/http://localhost:5001/,test/path
+=== RUN   TestJoinUrl/http://localhost:5001,/test/path
+=== RUN   TestJoinUrl/http://localhost:5001,
+=== RUN   TestJoinUrl/http://localhost:5001/,
+=== RUN   TestJoinUrl/http://localhost:5001/,/
+=== RUN   TestJoinUrl/https://localhost:5001/,/test/path/
+=== RUN   TestJoinUrl/https://localhost:5001,/test/path/
+=== RUN   TestJoinUrl/https://localhost:5001,test/path/
+=== RUN   TestJoinUrl/https://localhost:5001/,test/path/
+=== RUN   TestJoinUrl/https://localhost:5001/,test/path
+=== RUN   TestJoinUrl/https://localhost:5001/,/test/path
+=== RUN   TestJoinUrl/https://localhost:5001/,test/path#01
+=== RUN   TestJoinUrl/https://localhost:5001,/test/path
+=== RUN   TestJoinUrl/https://localhost:5001,
+=== RUN   TestJoinUrl/https://localhost:5001/,
+=== RUN   TestJoinUrl/https://localhost:5001/,/
+=== RUN   TestJoinUrl/localhost/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/localhost/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/localhost/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/localhost/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/localhost/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/localhost/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/localhost/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/localhost/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/localhost/tanzu-plugins,
+=== RUN   TestJoinUrl/localhost/tanzu-plugins/,
+=== RUN   TestJoinUrl/localhost/tanzu-plugins/,/
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins,
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins/,
+=== RUN   TestJoinUrl/http://localhost/tanzu-plugins/,/
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins,
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins/,
+=== RUN   TestJoinUrl/https://localhost/tanzu-plugins/,/
+=== RUN   TestJoinUrl/localhost/,/test/path/
+=== RUN   TestJoinUrl/localhost,/test/path/
+=== RUN   TestJoinUrl/localhost,test/path/
+=== RUN   TestJoinUrl/localhost/,test/path/
+=== RUN   TestJoinUrl/localhost,test/path
+=== RUN   TestJoinUrl/localhost/,/test/path
+=== RUN   TestJoinUrl/localhost/,test/path
+=== RUN   TestJoinUrl/localhost,/test/path
+=== RUN   TestJoinUrl/localhost,
+=== RUN   TestJoinUrl/localhost/,
+=== RUN   TestJoinUrl/localhost/,/
+=== RUN   TestJoinUrl/http://localhost/,/test/path/
+=== RUN   TestJoinUrl/http://localhost,/test/path/
+=== RUN   TestJoinUrl/http://localhost,test/path/
+=== RUN   TestJoinUrl/http://localhost/,test/path/
+=== RUN   TestJoinUrl/http://localhost,test/path
+=== RUN   TestJoinUrl/http://localhost/,/test/path
+=== RUN   TestJoinUrl/http://localhost/,test/path
+=== RUN   TestJoinUrl/http://localhost,/test/path
+=== RUN   TestJoinUrl/http://localhost,
+=== RUN   TestJoinUrl/http://localhost/,
+=== RUN   TestJoinUrl/http://localhost/,/
+=== RUN   TestJoinUrl/https://localhost/,/test/path/
+=== RUN   TestJoinUrl/https://localhost,/test/path/
+=== RUN   TestJoinUrl/https://localhost,test/path/
+=== RUN   TestJoinUrl/https://localhost/,test/path/
+=== RUN   TestJoinUrl/https://localhost/,test/path
+=== RUN   TestJoinUrl/https://localhost/,/test/path
+=== RUN   TestJoinUrl/https://localhost/,test/path#01
+=== RUN   TestJoinUrl/https://localhost,/test/path
+=== RUN   TestJoinUrl/https://localhost,
+=== RUN   TestJoinUrl/https://localhost/,
+=== RUN   TestJoinUrl/https://localhost/,/
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins,
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins/,
+=== RUN   TestJoinUrl/www.example.com/tanzu-plugins/,/
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins,
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins/,
+=== RUN   TestJoinUrl/http://www.example.com/tanzu-plugins/,/
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins,
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins/,
+=== RUN   TestJoinUrl/https://www.example.com/tanzu-plugins/,/
+=== RUN   TestJoinUrl/www.example.com/,/test/path/
+=== RUN   TestJoinUrl/www.example.com,/test/path/
+=== RUN   TestJoinUrl/www.example.com,test/path/
+=== RUN   TestJoinUrl/www.example.com/,test/path/
+=== RUN   TestJoinUrl/www.example.com,test/path
+=== RUN   TestJoinUrl/www.example.com/,/test/path
+=== RUN   TestJoinUrl/www.example.com/,test/path
+=== RUN   TestJoinUrl/www.example.com,/test/path
+=== RUN   TestJoinUrl/www.example.com,
+=== RUN   TestJoinUrl/www.example.com/,
+=== RUN   TestJoinUrl/www.example.com/,/
+=== RUN   TestJoinUrl/http://www.example.com/,/test/path/
+=== RUN   TestJoinUrl/http://www.example.com,/test/path/
+=== RUN   TestJoinUrl/http://www.example.com,test/path/
+=== RUN   TestJoinUrl/http://www.example.com/,test/path/
+=== RUN   TestJoinUrl/http://www.example.com,test/path
+=== RUN   TestJoinUrl/http://www.example.com/,/test/path
+=== RUN   TestJoinUrl/http://www.example.com/,test/path
+=== RUN   TestJoinUrl/http://www.example.com,/test/path
+=== RUN   TestJoinUrl/http://www.example.com,
+=== RUN   TestJoinUrl/http://www.example.com/,
+=== RUN   TestJoinUrl/http://www.example.com/,/
+=== RUN   TestJoinUrl/https://www.example.com/,/test/path/
+=== RUN   TestJoinUrl/https://www.example.com,/test/path/
+=== RUN   TestJoinUrl/https://www.example.com,test/path/
+=== RUN   TestJoinUrl/https://www.example.com/,test/path/
+=== RUN   TestJoinUrl/https://www.example.com/,test/path
+=== RUN   TestJoinUrl/https://www.example.com/,/test/path
+=== RUN   TestJoinUrl/https://www.example.com/,test/path#01
+=== RUN   TestJoinUrl/https://www.example.com,/test/path
+=== RUN   TestJoinUrl/https://www.example.com,
+=== RUN   TestJoinUrl/https://www.example.com/,
+=== RUN   TestJoinUrl/https://www.example.com/,/
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/www.example.com:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/www.example.com:5001/,/test/path/
+=== RUN   TestJoinUrl/www.example.com:5001,/test/path/
+=== RUN   TestJoinUrl/www.example.com:5001,test/path/
+=== RUN   TestJoinUrl/www.example.com:5001/,test/path/
+=== RUN   TestJoinUrl/www.example.com:5001,test/path
+=== RUN   TestJoinUrl/www.example.com:5001/,/test/path
+=== RUN   TestJoinUrl/www.example.com:5001/,test/path
+=== RUN   TestJoinUrl/www.example.com:5001,/test/path
+=== RUN   TestJoinUrl/www.example.com:5001,
+=== RUN   TestJoinUrl/www.example.com:5001/,
+=== RUN   TestJoinUrl/www.example.com:5001/,/
+=== RUN   TestJoinUrl/http://www.example.com:5001/,/test/path/
+=== RUN   TestJoinUrl/http://www.example.com:5001,/test/path/
+=== RUN   TestJoinUrl/http://www.example.com:5001,test/path/
+=== RUN   TestJoinUrl/http://www.example.com:5001/,test/path/
+=== RUN   TestJoinUrl/http://www.example.com:5001,test/path
+=== RUN   TestJoinUrl/http://www.example.com:5001/,/test/path
+=== RUN   TestJoinUrl/http://www.example.com:5001/,test/path
+=== RUN   TestJoinUrl/http://www.example.com:5001,/test/path
+=== RUN   TestJoinUrl/http://www.example.com:5001,
+=== RUN   TestJoinUrl/http://www.example.com:5001/,
+=== RUN   TestJoinUrl/http://www.example.com:5001/,/
+=== RUN   TestJoinUrl/https://www.example.com:5001/,/test/path/
+=== RUN   TestJoinUrl/https://www.example.com:5001,/test/path/
+=== RUN   TestJoinUrl/https://www.example.com:5001,test/path/
+=== RUN   TestJoinUrl/https://www.example.com:5001/,test/path/
+=== RUN   TestJoinUrl/https://www.example.com:5001/,test/path
+=== RUN   TestJoinUrl/https://www.example.com:5001/,/test/path
+=== RUN   TestJoinUrl/https://www.example.com:5001/,test/path#01
+=== RUN   TestJoinUrl/https://www.example.com:5001,/test/path
+=== RUN   TestJoinUrl/https://www.example.com:5001,
+=== RUN   TestJoinUrl/https://www.example.com:5001/,
+=== RUN   TestJoinUrl/https://www.example.com:5001/,/
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/example.com:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/http://example.com:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins,
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins/,
+=== RUN   TestJoinUrl/https://example.com:5001/tanzu-plugins/,/
+=== RUN   TestJoinUrl/example.com:5001/,/test/path/
+=== RUN   TestJoinUrl/example.com:5001,/test/path/
+=== RUN   TestJoinUrl/example.com:5001,test/path/
+=== RUN   TestJoinUrl/example.com:5001/,test/path/
+=== RUN   TestJoinUrl/example.com:5001,test/path
+=== RUN   TestJoinUrl/example.com:5001/,/test/path
+=== RUN   TestJoinUrl/example.com:5001/,test/path
+=== RUN   TestJoinUrl/example.com:5001,/test/path
+=== RUN   TestJoinUrl/example.com:5001,
+=== RUN   TestJoinUrl/example.com:5001/,
+=== RUN   TestJoinUrl/example.com:5001/,/
+=== RUN   TestJoinUrl/http://example.com:5001/,/test/path/
+=== RUN   TestJoinUrl/http://example.com:5001,/test/path/
+=== RUN   TestJoinUrl/http://example.com:5001,test/path/
+=== RUN   TestJoinUrl/http://example.com:5001/,test/path/
+=== RUN   TestJoinUrl/http://example.com:5001,test/path
+=== RUN   TestJoinUrl/http://example.com:5001/,/test/path
+=== RUN   TestJoinUrl/http://example.com:5001/,test/path
+=== RUN   TestJoinUrl/http://example.com:5001,/test/path
+=== RUN   TestJoinUrl/http://example.com:5001,
+=== RUN   TestJoinUrl/http://example.com:5001/,
+=== RUN   TestJoinUrl/http://example.com:5001/,/
+=== RUN   TestJoinUrl/https://example.com:5001/,/test/path/
+=== RUN   TestJoinUrl/https://example.com:5001,/test/path/
+=== RUN   TestJoinUrl/https://example.com:5001,test/path/
+=== RUN   TestJoinUrl/https://example.com:5001/,test/path/
+=== RUN   TestJoinUrl/https://example.com:5001/,test/path
+=== RUN   TestJoinUrl/https://example.com:5001/,/test/path
+=== RUN   TestJoinUrl/https://example.com:5001/,test/path#01
+=== RUN   TestJoinUrl/https://example.com:5001,/test/path
+=== RUN   TestJoinUrl/https://example.com:5001,
+=== RUN   TestJoinUrl/https://example.com:5001/,
+=== RUN   TestJoinUrl/https://example.com:5001/,/
+=== RUN   TestJoinUrl/example.com/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/example.com/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/example.com/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/example.com/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/example.com/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/example.com/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/example.com/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/example.com/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/example.com/tanzu-plugins,
+=== RUN   TestJoinUrl/example.com/tanzu-plugins/,
+=== RUN   TestJoinUrl/example.com/tanzu-plugins/,/
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins,
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins/,
+=== RUN   TestJoinUrl/http://example.com/tanzu-plugins/,/
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins/,/test/path/
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins,/test/path/
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins,test/path/
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins/,test/path/
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins,test/path
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins/,/test/path
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins/,test/path
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins,/test/path
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins,
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins/,
+=== RUN   TestJoinUrl/https://example.com/tanzu-plugins/,/
+=== RUN   TestJoinUrl/example.com/,/test/path/
+=== RUN   TestJoinUrl/example.com,/test/path/
+=== RUN   TestJoinUrl/example.com,test/path/
+=== RUN   TestJoinUrl/example.com/,test/path/
+=== RUN   TestJoinUrl/example.com,test/path
+=== RUN   TestJoinUrl/example.com/,/test/path
+=== RUN   TestJoinUrl/example.com/,test/path
+=== RUN   TestJoinUrl/example.com,/test/path
+=== RUN   TestJoinUrl/example.com,
+=== RUN   TestJoinUrl/example.com/,
+=== RUN   TestJoinUrl/example.com/,/
+=== RUN   TestJoinUrl/http://example.com/,/test/path/
+=== RUN   TestJoinUrl/http://example.com,/test/path/
+=== RUN   TestJoinUrl/http://example.com,test/path/
+=== RUN   TestJoinUrl/http://example.com/,test/path/
+=== RUN   TestJoinUrl/http://example.com,test/path
+=== RUN   TestJoinUrl/http://example.com/,/test/path
+=== RUN   TestJoinUrl/http://example.com/,test/path
+=== RUN   TestJoinUrl/http://example.com,/test/path
+=== RUN   TestJoinUrl/http://example.com,
+=== RUN   TestJoinUrl/http://example.com/,
+=== RUN   TestJoinUrl/http://example.com/,/
+=== RUN   TestJoinUrl/https://example.com/,/test/path/
+=== RUN   TestJoinUrl/https://example.com,/test/path/
+=== RUN   TestJoinUrl/https://example.com,test/path/
+=== RUN   TestJoinUrl/https://example.com/,test/path/
+=== RUN   TestJoinUrl/https://example.com/,test/path
+=== RUN   TestJoinUrl/https://example.com/,/test/path
+=== RUN   TestJoinUrl/https://example.com/,test/path#01
+=== RUN   TestJoinUrl/https://example.com,/test/path
+=== RUN   TestJoinUrl/https://example.com,
+=== RUN   TestJoinUrl/https://example.com/,
+=== RUN   TestJoinUrl/https://example.com/,/
+--- PASS: TestJoinUrl (0.05s)
+    --- PASS: TestJoinUrl/,/ (0.00s)
+    --- PASS: TestJoinUrl/, (0.00s)
+    --- PASS: TestJoinUrl/,/test/path (0.00s)
+    --- PASS: TestJoinUrl//,/ (0.00s)
+    --- PASS: TestJoinUrl//, (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1, (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001,test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001, (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/, (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001, (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/, (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/,test/path#01 (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001, (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/, (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1,test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/,test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1,/test/path (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1,#01 (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/, (0.00s)
+    --- PASS: TestJoinUrl/127.0.0.1/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1, (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/, (0.00s)
+    --- PASS: TestJoinUrl/http://127.0.0.1/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/,test/path#01 (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1, (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/, (0.00s)
+    --- PASS: TestJoinUrl/https://127.0.0.1/,/ (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001,test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001, (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/, (0.00s)
+    --- PASS: TestJoinUrl/localhost:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001, (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/, (0.00s)
+    --- PASS: TestJoinUrl/http://localhost:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/,test/path#01 (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001, (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/, (0.00s)
+    --- PASS: TestJoinUrl/https://localhost:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/localhost/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/localhost/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/localhost,test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost/,test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost,/test/path (0.00s)
+    --- PASS: TestJoinUrl/localhost, (0.00s)
+    --- PASS: TestJoinUrl/localhost/, (0.00s)
+    --- PASS: TestJoinUrl/localhost/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://localhost,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://localhost, (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/, (0.00s)
+    --- PASS: TestJoinUrl/http://localhost/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/,test/path#01 (0.00s)
+    --- PASS: TestJoinUrl/https://localhost,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://localhost, (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/, (0.00s)
+    --- PASS: TestJoinUrl/https://localhost/,/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com,test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/,test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com,/test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com, (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/, (0.00s)
+    --- PASS: TestJoinUrl/www.example.com/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com, (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/, (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/,test/path#01 (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com, (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/, (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com/,/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001,test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001, (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/, (0.00s)
+    --- PASS: TestJoinUrl/www.example.com:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001, (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/, (0.00s)
+    --- PASS: TestJoinUrl/http://www.example.com:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/,test/path#01 (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001, (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/, (0.00s)
+    --- PASS: TestJoinUrl/https://www.example.com:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001,test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001, (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/, (0.00s)
+    --- PASS: TestJoinUrl/example.com:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001, (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/, (0.00s)
+    --- PASS: TestJoinUrl/http://example.com:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/,test/path#01 (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001, (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/, (0.00s)
+    --- PASS: TestJoinUrl/https://example.com:5001/,/ (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/example.com/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins, (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins/, (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/tanzu-plugins/,/ (0.00s)
+    --- PASS: TestJoinUrl/example.com/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/example.com,test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com/,test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com,/test/path (0.00s)
+    --- PASS: TestJoinUrl/example.com, (0.00s)
+    --- PASS: TestJoinUrl/example.com/, (0.00s)
+    --- PASS: TestJoinUrl/example.com/,/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/http://example.com,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/,test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com,/test/path (0.00s)
+    --- PASS: TestJoinUrl/http://example.com, (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/, (0.00s)
+    --- PASS: TestJoinUrl/http://example.com/,/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com,/test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/,test/path/ (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/,test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/,test/path#01 (0.00s)
+    --- PASS: TestJoinUrl/https://example.com,/test/path (0.00s)
+    --- PASS: TestJoinUrl/https://example.com, (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/, (0.00s)
+    --- PASS: TestJoinUrl/https://example.com/,/ (0.00s)
+PASS
+	github.com/vmware-tanzu/tanzu-cli/pkg/utils	coverage: 47.9% of statements
+ok  	github.com/vmware-tanzu/tanzu-cli/pkg/utils	0.997s	coverage: 47.9% of statements
+FAIL

@@ -298,11 +298,6 @@ generate-fakes: ## Generate fakes for writing unit tests
 verify: gomod fmt generate ## Run all verification scripts
 	./hack/check/check-dirty.sh
 
-.PHONY: go-junit-report ## Install ginkgo
-go-junit-report:
-	mkdir -p $(TOOLS_BIN_DIR)
-	GOBIN=$(TOOLS_BIN_DIR) go install github.com/jstemmer/go-junit-report@latest
-
 ## --------------------------------------
 ## Generators
 ## --------------------------------------
