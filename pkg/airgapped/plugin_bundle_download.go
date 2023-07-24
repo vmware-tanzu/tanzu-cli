@@ -16,7 +16,9 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/essentials"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
+
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -147,6 +149,14 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 	} else {
 		// If groups were provided as argument select only provided plugin groups and
 		// plugins available from the specified plugin groups
+
+		// Add essential plugins
+		name, version := essentials.GetEssentialsPluginGroupDetails()
+		pluginGroupName := name
+		if version != "" {
+			pluginGroupName = fmt.Sprintf("%v:%v", pluginGroupName, version)
+		}
+		o.Groups = append(o.Groups, pluginGroupName)
 		for _, groupID := range o.Groups {
 			pluginGroups, pluginEntries, err := o.getAllPluginGroupsAndPluginEntriesFromPluginGroupVersion(groupID, pi)
 			if err != nil {

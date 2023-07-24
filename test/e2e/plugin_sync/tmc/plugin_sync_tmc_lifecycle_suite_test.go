@@ -23,19 +23,20 @@ func TestPluginSyncLifecycle(t *testing.T) {
 }
 
 var (
-	tf                                *framework.Framework
-	e2eTestLocalCentralRepoURL        string
-	pluginsSearchList                 []*framework.PluginInfo
-	pluginGroups                      []*framework.PluginGroup
-	pluginGroupToPluginListMap        map[string][]*framework.PluginInfo
-	usePluginsFromTmcPluginGroup      string
-	usePluginsFromK8sPluginGroup      string
-	K8SCRDFilePath                    string
-	tmcMappingsDir                    string
-	tmcPluginsMockFilePath            string
-	tmcConfigFolderPath               string
-	e2eTestLocalCentralRepoPluginHost string
-	e2eTestLocalCentralRepoCACertPath string
+	tf                                  *framework.Framework
+	e2eTestLocalCentralRepoURL          string
+	pluginsSearchList                   []*framework.PluginInfo
+	pluginGroups                        []*framework.PluginGroup
+	pluginGroupToPluginListMap          map[string][]*framework.PluginInfo
+	usePluginsFromTmcPluginGroup        string
+	usePluginsFromK8sPluginGroup        string
+	usePluginsFromEssentialsPluginGroup string
+	K8SCRDFilePath                      string
+	tmcMappingsDir                      string
+	tmcPluginsMockFilePath              string
+	tmcConfigFolderPath                 string
+	e2eTestLocalCentralRepoPluginHost   string
+	e2eTestLocalCentralRepoCACertPath   string
 )
 
 const tmcPluginsMockFile = "tmcPluginsMock.json"
@@ -124,6 +125,10 @@ var _ = BeforeSuite(func() {
 	// Retrieve the k8s specific plugin group from which plugins will be used to perform E2E tests.
 	usePluginsFromK8sPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(framework.PluginGroupsForLifeCycleTests, framework.K8SPluginGroupPrefix)
 	Expect(usePluginsFromTmcPluginGroup).NotTo(BeEmpty(), "there should be a k8s specific plugin group")
+
+	// Retrieve the Essentials plugin group from which plugins will be used to perform E2E tests.
+	usePluginsFromEssentialsPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(framework.EssentialPluginGroups, framework.EssentialsPluginGroupPrefix)
+	Expect(usePluginsFromEssentialsPluginGroup).NotTo(BeEmpty(), "there should be a essentials plugin group")
 
 	// search plugins and make sure there are plugins available
 	pluginsSearchList, err = helper.SearchAllPlugins(tf)
