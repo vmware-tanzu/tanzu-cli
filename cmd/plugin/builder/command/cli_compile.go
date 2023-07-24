@@ -334,7 +334,7 @@ var archMap = map[cli.Arch]targetBuilder{
 	cli.Linux386: func(pluginName, outPath string) target {
 		return target{
 			env: []string{
-				"CGO_ENABLED=0",
+				CGOEnabled(),
 				"GOARCH=386",
 				"GOOS=linux",
 			},
@@ -346,7 +346,7 @@ var archMap = map[cli.Arch]targetBuilder{
 	cli.LinuxAMD64: func(pluginName, outPath string) target {
 		return target{
 			env: []string{
-				"CGO_ENABLED=0",
+				CGOEnabled(),
 				"GOARCH=amd64",
 				"GOOS=linux",
 			},
@@ -358,7 +358,7 @@ var archMap = map[cli.Arch]targetBuilder{
 	cli.LinuxARM64: func(pluginName, outPath string) target {
 		return target{
 			env: []string{
-				"CGO_ENABLED=0",
+				CGOEnabled(),
 				"GOARCH=arm64",
 				"GOOS=linux",
 			},
@@ -625,4 +625,12 @@ func savePluginGroupManifest(plugins []cli.Plugin, artifactsDir, pluginScopeAsso
 	}
 
 	return nil
+}
+
+func CGOEnabled() string {
+	cgoEnabled := os.Getenv("CGO_ENABLED")
+	if cgoEnabled != "" {
+		return fmt.Sprintf("CGO_ENABLED=%s", cgoEnabled)
+	}
+	return "CGO_ENABLED=0"
 }
