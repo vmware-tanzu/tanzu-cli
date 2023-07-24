@@ -29,7 +29,7 @@ const (
 	SQliteDBFileName = "cli_metrics.db"
 
 	// TanzuCLITelemetryMaxRowCount Max metric instances to be accumulated before pausing the collection
-	TanzuCLITelemetryMaxRowCount = 1000
+	TanzuCLITelemetryMaxRowCount = 10000
 
 	// cliOperationMetricRowClause is the SELECT section of the SQL query to be used when querying the Metric DB row count.
 	cliOperationMetricRowClause = "SELECT count(*) FROM tanzu_cli_operations"
