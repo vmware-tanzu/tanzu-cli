@@ -107,7 +107,7 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 			Expect(err.Error()).To(ContainSubstring("error while getting plugin binary digest"))
 		})
 
-		var _ = It("when plugin inventory database can be pulled, plugin binary digest can be calculated by publishing image fails", func() {
+		var _ = It("when plugin inventory database can be pulled, plugin binary digest can be calculated but publishing image fails", func() {
 			fakeImgpkgWrapper.ResolveImageReturns(nil)
 			fakeImgpkgWrapper.PushImageReturns(errors.New("image not found"))
 			fakeImgpkgWrapper.DownloadImageAndSaveFilesToDirCalls(pullDBImageStub)

@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/pkg/errors"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -96,12 +98,20 @@ func (ipuo *InventoryPluginUpdateOptions) preparePluginInventoryEntriesFromManif
 
 	var pluginInventoryEntries []*plugininventory.PluginInventoryEntry
 
+	pluginBinaryDigestMap := map[string]string{}
+	if !ipuo.ValidateOnly {
+		pluginBinaryDigestMap, err = ipuo.fetchPluginBinaryDigest(pluginManifest)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	for i := range pluginManifest.Plugins {
 		var pluginInventoryEntry *plugininventory.PluginInventoryEntry
 
 		for _, osArch := range cli.MinOSArch {
 			for _, version := range pluginManifest.Plugins[i].Versions {
-				pluginInventoryEntry, err = ipuo.updatePluginInventoryEntry(pluginInventoryEntry, pluginManifest.Plugins[i], osArch, version)
+				pluginInventoryEntry, err = ipuo.updatePluginInventoryEntry(pluginInventoryEntry, pluginManifest.Plugins[i], osArch, version, pluginBinaryDigestMap)
 				if err != nil {
 					return nil, err
 				}
@@ -114,20 +124,75 @@ func (ipuo *InventoryPluginUpdateOptions) preparePluginInventoryEntriesFromManif
 	return pluginInventoryEntries, nil
 }
 
-func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInventoryEntry *plugininventory.PluginInventoryEntry, plugin cli.Plugin, osArch cli.Arch, version string) (*plugininventory.PluginInventoryEntry, error) {
-	var err error
-	var digest string
+func (ipuo *InventoryPluginUpdateOptions) fetchPluginBinaryDigest(pluginManifest *cli.Manifest) (map[string]string, error) {
+	pluginBinaryDigestMap := map[string]string{}
 
-	log.Infof("validating plugin '%s_%s_%s_%s'", plugin.Name, plugin.Target, osArch.String(), version)
+	// Limit the number of concurrent operations we perform so we don't overwhelm the system.
+	maxConcurrent := helpers.GetMaxParallelism()
+	guard := make(chan struct{}, maxConcurrent)
+	var wg sync.WaitGroup
+	fatalErrors := make(chan helpers.ErrInfo, helpers.GetNumberOfIndividualPluginBinariesFromManifest(pluginManifest))
+	var mutex = &sync.RWMutex{}
+
+	fetchPluginBinaryDigestFromImage := func(threadID string, pluginImage string, filename string) {
+		defer func() {
+			<-guard
+			wg.Done()
+		}()
+
+		log.Infof("%s getting plugin digest from image: '%s'", threadID, pluginImage)
+
+		digest, err := ipuo.ImageOperationsImpl.GetFileDigestFromImage(pluginImage, filename)
+		if err != nil {
+			fatalErrors <- helpers.ErrInfo{Err: errors.Wrapf(err, "error while getting plugin binary digest from the image %q", pluginImage), ID: threadID, Path: pluginImage}
+		}
+		mutex.Lock()
+		pluginBinaryDigestMap[pluginImage] = digest
+		mutex.Unlock()
+	}
+
+	if !ipuo.ValidateOnly {
+		id := 0
+		for i := range pluginManifest.Plugins {
+			for _, osArch := range cli.MinOSArch {
+				for _, version := range pluginManifest.Plugins[i].Versions {
+					wg.Add(1)
+					guard <- struct{}{}
+					pluginImageBasePath := fmt.Sprintf("%s/%s/%s/%s/%s/%s:%s", ipuo.Vendor, ipuo.Publisher, osArch.OS(), osArch.Arch(), pluginManifest.Plugins[i].Target, pluginManifest.Plugins[i].Name, version)
+					pluginImage := fmt.Sprintf("%s/%s", ipuo.Repository, pluginImageBasePath)
+					go fetchPluginBinaryDigestFromImage(helpers.GetID(id), pluginImage, cli.MakeArtifactName(pluginManifest.Plugins[i].Name, osArch))
+					id++
+				}
+			}
+		}
+		wg.Wait()
+		close(fatalErrors)
+
+		errList := []error{}
+		for err := range fatalErrors {
+			log.Errorf("%s - error while getting plugin binary digest - %v", err.ID, err.Err)
+			errList = append(errList, err.Err)
+		}
+		if len(errList) > 0 {
+			return pluginBinaryDigestMap, kerrors.NewAggregate(errList)
+		}
+	}
+	return pluginBinaryDigestMap, nil
+}
+
+// Take the image download logic to get the digest out of the updatePluginInventoryEntry and run it in parallel
+// Pass the digest map to this function to update the plugin inventory entry in sync operation
+func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInventoryEntry *plugininventory.PluginInventoryEntry, plugin cli.Plugin, osArch cli.Arch, version string, pluginBinaryDigestMap map[string]string) (*plugininventory.PluginInventoryEntry, error) {
+	var digest string
 
 	pluginImageBasePath := fmt.Sprintf("%s/%s/%s/%s/%s/%s:%s", ipuo.Vendor, ipuo.Publisher, osArch.OS(), osArch.Arch(), plugin.Target, plugin.Name, version)
 	if !ipuo.ValidateOnly {
 		// If we are only validating the plugin's existence, we don't need to waste
 		// resources downloading the image to get the digest which won't actually be used.
 		pluginImage := fmt.Sprintf("%s/%s", ipuo.Repository, pluginImageBasePath)
-		digest, err = ipuo.ImageOperationsImpl.GetFileDigestFromImage(pluginImage, cli.MakeArtifactName(plugin.Name, osArch))
-		if err != nil {
-			return nil, errors.Wrapf(err, "error while getting plugin binary digest from the image %q", pluginImage)
+		digest = pluginBinaryDigestMap[pluginImage]
+		if digest == "" {
+			return nil, errors.Errorf("plugin binary digest cannot be empty for image %q", pluginImage)
 		}
 	}
 
