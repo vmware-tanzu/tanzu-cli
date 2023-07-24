@@ -79,3 +79,7 @@ var pluginsNotInAnyPG999 = []*framework.PluginInfo{
 var essentialPlugins = []*framework.PluginInfo{
 	{Name: "telemetry", Target: "global", Version: "v9.9.9", Description: "Desc for telemetry"},
 }
+
+var pluginsNotInAnyPGAndUsingSha = []*framework.PluginInfo{
+	{Name: "plugin-with-sha", Target: "global", Version: "v9.9.9", Description: "Desc for plugin-with-sha"},
+}

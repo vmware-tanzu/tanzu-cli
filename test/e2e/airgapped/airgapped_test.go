@@ -203,6 +203,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			expectedPlugins := append(pluginsForPGTKG999, pluginsForPGTMC999...)
 			expectedPlugins = append(expectedPlugins, pluginsNotInAnyPG999...)
 			expectedPlugins = append(expectedPlugins, essentialPlugins...) // Essential plugin will be always installed
+			expectedPlugins = append(expectedPlugins, pluginsNotInAnyPGAndUsingSha...)
 			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
@@ -234,6 +235,17 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			Expect(err).To(BeNil())
 			expectedPlugins := append(pluginsNotInAnyPG999, essentialPlugins...) // Essential plugin will be always installed
 			Expect(framework.CheckAllPluginsExists(installedPlugins, expectedPlugins)).To(BeTrue())
+		})
+
+		// Test case: validate thaa plugin using a sha can be installed
+		It("validate that a plugin using a sha can be installed", func() {
+			err := tf.PluginCmd.InstallPlugin("plugin-with-sha", "", "")
+			Expect(err).To(BeNil())
+
+			// Verify above plugin got installed with `tanzu plugin list`
+			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
+			Expect(err).To(BeNil())
+			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsNotInAnyPGAndUsingSha)).To(BeTrue())
 		})
 
 		// Test case: (negative use case) empty path for --to-tar

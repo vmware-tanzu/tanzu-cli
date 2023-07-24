@@ -118,6 +118,7 @@ func init() {
 		{Name: "cluster", Target: "mission-control", Version: "v9.9.9", Description: "cluster functionality"},
 		{Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "pinniped-auth functionality"},
 		{Name: "telemetry", Target: "global", Version: "v9.9.9", Description: "telemetry functionality"},
+		{Name: "plugin-with-sha", Target: "global", Version: "v9.9.9", Description: "plugin-with-sha functionality"},
 	}
 
 	// TODO:cpamuluri: need to move Plugin Groups to configuration file with positive and negative use cases - github issue: https://github.com/vmware-tanzu/tanzu-cli/issues/122
