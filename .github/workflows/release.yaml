@@ -49,16 +49,18 @@ jobs:
         if [ "$revision" -gt 0 ];then
           revision=$(($revision-1))
           RELEASE_BRANCH="release-${major}.${minor}"
+          LAST_TAG="v${major}.${minor}.${revision}"
         elif [ "$minor" -gt 0 ]; then
           minor=$(($minor-1))
+          LAST_TAG=$(git tag | grep -E "^v${major}\.${minor}\.[0-9]+$" | tail -1)
         elif [ "$major" -gt 0 ]; then
           major=$(($major-1))
+          LAST_TAG=$(git tag | grep -E "^v${major}\.[0-9]+\.[0-9]+$" | tail -1)
         else
           echo "Please validate that the tag release version(${RELEASE_VERSION}) conforms to semver."
           exit 1
         fi
         git log -3 --format=oneline
-        LAST_TAG="v${major}.${minor}.${revision}"
         echo "Last release tag - $LAST_TAG"
         START_SHA=$(git rev-list -n 1 $LAST_TAG)
         echo "Release note generator start SHA - $START_SHA"
