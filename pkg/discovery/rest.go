@@ -43,7 +43,7 @@ type Plugin struct {
 	Optional bool `json:"optional"`
 
 	// Target the target of the plugin
-	Target configtypes.Target `json:"target"`
+	Target string `json:"target"`
 }
 
 // ListPluginsResponse defines the response from List Plugins API.
@@ -145,7 +145,7 @@ func DiscoveredFromREST(p *Plugin) (Discovered, error) {
 		Description:        p.Description,
 		RecommendedVersion: p.RecommendedVersion,
 		Optional:           p.Optional,
-		Target:             configtypes.StringToTarget(string(p.Target)),
+		Target:             configtypes.StringToTargetString(p.Target),
 	}
 	dp.SupportedVersions = make([]string, 0)
 	for v := range p.Artifacts {

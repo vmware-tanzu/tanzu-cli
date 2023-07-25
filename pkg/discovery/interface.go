@@ -75,7 +75,7 @@ type PluginDiscoveryCriteria struct {
 	// Name is the name of the plugin
 	Name string
 	// Target is the target of the plugin
-	Target configtypes.Target
+	Target string
 	// Version is the version for the plugin
 	Version string
 	// OS of the plugin binary in `GOOS` format.

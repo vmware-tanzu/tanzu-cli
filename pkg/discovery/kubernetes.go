@@ -109,7 +109,7 @@ func DiscoveredFromK8sV1alpha1WithImageRepositoryOverride(p *cliv1alpha1.CLIPlug
 		Description:        p.Spec.Description,
 		RecommendedVersion: p.Spec.RecommendedVersion,
 		Optional:           p.Spec.Optional,
-		Target:             configtypes.StringToTarget(string(p.Spec.Target)),
+		Target:             configtypes.StringToTargetString(p.Spec.Target),
 	}
 	dp.SupportedVersions = make([]string, 0)
 	for v := range p.Spec.Artifacts {

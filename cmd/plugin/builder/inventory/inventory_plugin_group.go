@@ -13,7 +13,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -80,7 +79,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*pl
 		pge := plugininventory.PluginGroupPluginEntry{
 			PluginIdentifier: plugininventory.PluginIdentifier{
 				Name:    plugin.Name,
-				Target:  types.Target(plugin.Target),
+				Target:  plugin.Target,
 				Version: plugin.Version,
 			},
 			Mandatory: !plugin.IsContextScoped,

@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
@@ -199,7 +198,7 @@ func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInven
 	if pluginInventoryEntry == nil {
 		pluginInventoryEntry = &plugininventory.PluginInventoryEntry{
 			Name:        plugin.Name,
-			Target:      configtypes.Target(plugin.Target),
+			Target:      plugin.Target,
 			Description: plugin.Description,
 			Publisher:   ipuo.Publisher,
 			Vendor:      ipuo.Vendor,

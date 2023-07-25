@@ -239,7 +239,7 @@ clusterOpts:
 			err = useCtx(cmd, []string{testUseContext})
 			Expect(err).To(BeNil())
 
-			cctx, err := config.GetCurrentContext(configtypes.Target(targetStr))
+			cctx, err := config.GetCurrentContext(targetStr)
 			Expect(err).To(BeNil())
 			Expect(cctx.Name).To(ContainSubstring(testUseContext))
 		})

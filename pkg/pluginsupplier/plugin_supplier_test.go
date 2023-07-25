@@ -461,7 +461,7 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 	})
 })
 
-func fakeInstallPlugin(contextName, pluginName string, target types.Target, version string) (*cli.PluginInfo, error) {
+func fakeInstallPlugin(contextName, pluginName string, target string, version string) (*cli.PluginInfo, error) {
 	cc, err := catalog.NewContextCatalog(contextName)
 	if err != nil {
 		return nil, err

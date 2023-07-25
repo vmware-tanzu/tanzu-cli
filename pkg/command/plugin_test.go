@@ -29,7 +29,7 @@ func TestPluginList(t *testing.T) {
 		centralRepoFeature bool
 		plugins            []string
 		versions           []string
-		targets            []configtypes.Target
+		targets            []string
 		args               []string
 		expected           string
 		expectedFailure    bool
@@ -45,7 +45,7 @@ func TestPluginList(t *testing.T) {
 			test:            "With empty config file(no discovery sources added) and when one additional plugin installed with no central repo",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
-			targets:         []configtypes.Target{configtypes.TargetK8s},
+			targets:         []string{configtypes.TargetK8s},
 			args:            []string{"plugin", "list"},
 			expectedFailure: false,
 			expected:        "NAME DESCRIPTION TARGET DISCOVERY VERSION STATUS foo some foo description kubernetes v0.1.0 installed",
@@ -54,7 +54,7 @@ func TestPluginList(t *testing.T) {
 			test:            "With empty config file(no discovery sources added) and when more than one plugin is installed with no central repo",
 			plugins:         []string{"foo", "bar"},
 			versions:        []string{"v0.1.0", "v0.2.0"},
-			targets:         []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s},
+			targets:         []string{configtypes.TargetTMC, configtypes.TargetK8s},
 			args:            []string{"plugin", "list"},
 			expectedFailure: false,
 			expected:        "NAME DESCRIPTION TARGET DISCOVERY VERSION STATUS bar some bar description kubernetes v0.2.0 installed foo some foo description mission-control v0.1.0 installed",
@@ -63,7 +63,7 @@ func TestPluginList(t *testing.T) {
 			test:            "when json output is requested with no central repo",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
-			targets:         []configtypes.Target{configtypes.TargetK8s},
+			targets:         []string{configtypes.TargetK8s},
 			args:            []string{"plugin", "list", "-o", "json"},
 			expectedFailure: false,
 			expected:        `[ { "description": "some foo description", "discovery": "", "name": "foo", "scope": "Standalone", "status": "installed", "version": "v0.1.0" } ]`,
@@ -72,7 +72,7 @@ func TestPluginList(t *testing.T) {
 			test:            "when yaml output is requested with no central repo",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
-			targets:         []configtypes.Target{configtypes.TargetK8s},
+			targets:         []string{configtypes.TargetK8s},
 			args:            []string{"plugin", "list", "-o", "yaml"},
 			expectedFailure: false,
 			expected:        `- description: some foo description discovery: "" name: foo scope: Standalone status: installed version: v0.1.0`,
@@ -97,7 +97,7 @@ func TestPluginList(t *testing.T) {
 			centralRepoFeature: true,
 			plugins:            []string{"foo"},
 			versions:           []string{"v0.1.0"},
-			targets:            []configtypes.Target{configtypes.TargetK8s},
+			targets:            []string{configtypes.TargetK8s},
 			args:               []string{"plugin", "list"},
 			expectedFailure:    false,
 			expected:           "NAME DESCRIPTION TARGET VERSION STATUS foo some foo description kubernetes v0.1.0 installed",
@@ -107,7 +107,7 @@ func TestPluginList(t *testing.T) {
 			centralRepoFeature: true,
 			plugins:            []string{"foo", "bar"},
 			versions:           []string{"v0.1.0", "v0.2.0"},
-			targets:            []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s},
+			targets:            []string{configtypes.TargetTMC, configtypes.TargetK8s},
 			args:               []string{"plugin", "list"},
 			expectedFailure:    false,
 			expected:           "NAME DESCRIPTION TARGET VERSION STATUS bar some bar description kubernetes v0.2.0 installed foo some foo description mission-control v0.1.0 installed",
@@ -117,7 +117,7 @@ func TestPluginList(t *testing.T) {
 			centralRepoFeature: true,
 			plugins:            []string{"foo"},
 			versions:           []string{"v0.1.0"},
-			targets:            []configtypes.Target{configtypes.TargetK8s},
+			targets:            []string{configtypes.TargetK8s},
 			args:               []string{"plugin", "list", "-o", "json"},
 			expectedFailure:    false,
 			expected:           `[ { "context": "", "description": "some foo description", "name": "foo", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
@@ -127,7 +127,7 @@ func TestPluginList(t *testing.T) {
 			centralRepoFeature: true,
 			plugins:            []string{"foo"},
 			versions:           []string{"v0.1.0"},
-			targets:            []configtypes.Target{configtypes.TargetK8s},
+			targets:            []string{configtypes.TargetK8s},
 			args:               []string{"plugin", "list", "-o", "yaml"},
 			expectedFailure:    false,
 			expected:           `- context: "" description: some foo description name: foo status: installed target: kubernetes version: v0.1.0`,
@@ -137,7 +137,7 @@ func TestPluginList(t *testing.T) {
 			centralRepoFeature: true,
 			plugins:            []string{"foo"},
 			versions:           []string{"v0.1.0"},
-			targets:            []configtypes.Target{configtypes.TargetK8s},
+			targets:            []string{configtypes.TargetK8s},
 			args:               []string{"plugin", "describe", "foo", "-o", "json"},
 			expectedFailure:    false,
 			expected:           `[ { "description": "some foo description", "installationpath": "%v", "name": "foo", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
@@ -235,7 +235,7 @@ func TestDeletePlugin(t *testing.T) {
 		test             string
 		plugins          []string
 		versions         []string
-		targets          []configtypes.Target
+		targets          []string
 		args             []string
 		expectedErrorMsg string
 		expectedFailure  bool
@@ -252,7 +252,7 @@ func TestDeletePlugin(t *testing.T) {
 			test:            "delete an installed plugin",
 			plugins:         []string{"foo"},
 			versions:        []string{"v0.1.0"},
-			targets:         []configtypes.Target{configtypes.TargetK8s},
+			targets:         []string{configtypes.TargetK8s},
 			args:            []string{"plugin", "delete", "foo", "-y"},
 			expectedFailure: false,
 		},

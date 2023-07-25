@@ -4,8 +4,6 @@
 package discovery
 
 import (
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 )
 
@@ -57,7 +55,7 @@ type Discovered struct {
 	DiscoveryType string
 
 	// Target defines the target to which this plugin is applicable to
-	Target configtypes.Target
+	Target string
 
 	// Status is the installed/uninstalled status of the plugin.
 	Status string

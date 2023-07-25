@@ -268,7 +268,7 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 			return allPlugins, err
 		}
 
-		target := configtypes.StringToTarget(strings.ToLower(row.target))
+		target := configtypes.StringToTargetString(strings.ToLower(row.target))
 		pluginIDFromRow := catalog.PluginNameTarget(row.name, target)
 		if currentPluginID != pluginIDFromRow {
 			// Found a new plugin.
@@ -464,7 +464,7 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 		pge := PluginGroupPluginEntry{
 			PluginIdentifier: PluginIdentifier{
 				Name:    row.pluginName,
-				Target:  configtypes.StringToTarget(row.target),
+				Target:  configtypes.StringToTargetString(row.target),
 				Version: row.pluginVersion,
 			},
 			Mandatory: mandatory,

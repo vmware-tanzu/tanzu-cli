@@ -5,8 +5,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // ArtifactList contains an Artifact object for every supported platform of a version.
@@ -45,7 +43,7 @@ type CLIPluginSpec struct {
 	// to download a specific plugin run, `tanzu plugin install <plugin-name>`
 	Optional bool `json:"optional,omitempty"`
 	// Target specifies the target of the plugin. Only needed for standalone plugins
-	Target configtypes.Target `json:"target,omitempty"`
+	Target string `json:"target,omitempty"`
 }
 
 //+kubebuilder:object:root=true

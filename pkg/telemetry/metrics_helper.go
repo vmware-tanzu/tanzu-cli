@@ -27,7 +27,7 @@ func getEndpointSHA(plugin *cli.PluginInfo) string {
 }
 
 // computeEndpointSHAForContext computes the endpoint SHA for based on the target type(context type) used
-func computeEndpointSHAForContext(curCtx map[configtypes.Target]*configtypes.Context, targetType configtypes.Target) string {
+func computeEndpointSHAForContext(curCtx map[string]*configtypes.Context, targetType string) string {
 	switch targetType {
 	case configtypes.TargetK8s:
 		ctx, exists := curCtx[configtypes.TargetK8s]

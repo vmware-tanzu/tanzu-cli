@@ -717,6 +717,6 @@ func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginI
 	outputWriter.Render()
 }
 
-func getTarget() configtypes.Target {
-	return configtypes.StringToTarget(strings.ToLower(targetStr))
+func getTarget() string {
+	return configtypes.StringToTargetString(strings.ToLower(targetStr))
 }

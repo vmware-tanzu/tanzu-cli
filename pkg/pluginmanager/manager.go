@@ -60,7 +60,7 @@ const (
 var execCommand = exec.Command
 
 type DeletePluginOptions struct {
-	Target      configtypes.Target
+	Target      string
 	PluginName  string
 	ForceDelete bool
 }
@@ -632,7 +632,7 @@ func pluginIndexForName(availablePlugins []discovery.Discovered, p *discovery.Di
 }
 
 // DescribePlugin describes a plugin.
-func DescribePlugin(pluginName string, target configtypes.Target) (info *cli.PluginInfo, err error) {
+func DescribePlugin(pluginName string, target string) (info *cli.PluginInfo, err error) {
 	plugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return nil, err
@@ -684,12 +684,12 @@ func InitializePlugin(plugin *cli.PluginInfo) error {
 }
 
 // InstallStandalonePlugin installs a plugin by name, version and target as a standalone plugin.
-func InstallStandalonePlugin(pluginName, version string, target configtypes.Target) error {
+func InstallStandalonePlugin(pluginName, version string, target string) error {
 	return installPlugin(pluginName, version, target, "")
 }
 
 // InstallPluginFromContext installs a plugin by name, version and target as a context-scope plugin.
-func InstallPluginFromContext(pluginName, version string, target configtypes.Target, contextName string) error {
+func InstallPluginFromContext(pluginName, version string, target string, contextName string) error {
 	if contextName == "" {
 		log.Warning("Missing context name for a context-scope plugin: %s/%s/%s", pluginName, version, string(target))
 	}
@@ -700,7 +700,7 @@ func InstallPluginFromContext(pluginName, version string, target configtypes.Tar
 // If the contextName is not empty, it implies the plugin is a context-scope plugin, otherwise
 // we are installing a standalone plugin.
 // nolint: gocyclo
-func installPlugin(pluginName, version string, target configtypes.Target, contextName string) error {
+func installPlugin(pluginName, version string, target string, contextName string) error {
 	if configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		// The legacy installation can figure out if the plugin is from a context
 		// because it searches all contexts for plugins.  So, we don't need to pass on that parameter.
@@ -783,7 +783,7 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 
 // legacyInstallPlugin installs a plugin by name, version and target.
 // This function is only used without the Central Repository feature.
-func legacyPluginInstall(pluginName, version string, target configtypes.Target) error {
+func legacyPluginInstall(pluginName, version string, target string) error {
 	availablePlugins, err := AvailablePlugins()
 	if err != nil {
 		return err
@@ -817,7 +817,7 @@ func legacyPluginInstall(pluginName, version string, target configtypes.Target) 
 }
 
 // UpgradePlugin upgrades a plugin from the given repository.
-func UpgradePlugin(pluginName, version string, target configtypes.Target) error {
+func UpgradePlugin(pluginName, version string, target string) error {
 	// Upgrade is only triggered from a manual user operation.
 	// This means a plugin is installed manually, which means it is installed as a standalone plugin.
 	return InstallStandalonePlugin(pluginName, version, target)
@@ -923,7 +923,7 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 }
 
 // GetRecommendedVersionOfPlugin returns recommended version of the plugin
-func GetRecommendedVersionOfPlugin(pluginName string, target configtypes.Target) (string, error) {
+func GetRecommendedVersionOfPlugin(pluginName string, target string) (string, error) {
 	availablePlugins, err := AvailablePlugins()
 	if err != nil {
 		return "", err
@@ -1215,7 +1215,7 @@ func DeletePlugin(options DeletePluginOptions) error {
 	// TODO: delete the plugin binary if it is not used by any server
 }
 
-func doDeletePluginFromCatalog(pluginName string, target configtypes.Target, catalogNames []string) error {
+func doDeletePluginFromCatalog(pluginName string, target string, catalogNames []string) error {
 	for _, n := range catalogNames {
 		// We must create one catalog at a time to be able to delete a plugin.
 		// If we re-use the catalogs created above, when we delete the plugin
@@ -1292,7 +1292,7 @@ func SyncPlugins() error {
 
 // InstallPluginsFromLocalSource installs plugin from local source directory
 // nolint: gocyclo
-func InstallPluginsFromLocalSource(pluginName, version string, target configtypes.Target, localPath string, installTestPlugin bool) error {
+func InstallPluginsFromLocalSource(pluginName, version string, target string, localPath string, installTestPlugin bool) error {
 	// Set default local plugin distro to local-path as while installing the plugin
 	// from local source we should take t
 	common.DefaultLocalPluginDistroDir = localPath
@@ -1495,7 +1495,7 @@ func discoverPluginsFromLocalSourceBasedOnManifestFile(localPath string) ([]disc
 		pluginInfo := cli.PluginInfo{
 			Name:        p.Name,
 			Description: p.Description,
-			Target:      configtypes.Target(p.Target),
+			Target:      p.Target,
 		}
 
 		if len(p.Versions) != 0 {

@@ -17,7 +17,6 @@ import (
 
 	apimachineryjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
 
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	rtplugin "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
@@ -124,7 +123,7 @@ func newCLIPluginResource(plugin, target, description, version string, artifacts
 	cliPlugin.Spec.Description = description
 	cliPlugin.Spec.RecommendedVersion = version
 	cliPlugin.Spec.Artifacts = artifacts
-	cliPlugin.Spec.Target = configtypes.Target(target)
+	cliPlugin.Spec.Target = target
 	return cliPlugin
 }
 

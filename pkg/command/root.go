@@ -60,7 +60,7 @@ func NewRootCmd() (*cobra.Command, error) { //nolint:gocyclo
 			k8sCmd,
 			tmcCmd,
 		)
-		mapTargetToCmd := map[configtypes.Target]*cobra.Command{
+		mapTargetToCmd := map[string]*cobra.Command{
 			configtypes.TargetK8s: k8sCmd,
 			configtypes.TargetTMC: tmcCmd,
 		}
@@ -223,7 +223,7 @@ var tmcCmd = &cobra.Command{
 	},
 }
 
-func addPluginsToTarget(mapTargetToCmd map[configtypes.Target]*cobra.Command) error {
+func addPluginsToTarget(mapTargetToCmd map[string]*cobra.Command) error {
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return fmt.Errorf("unable to find installed plugins: %w", err)

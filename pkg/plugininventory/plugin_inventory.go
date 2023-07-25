@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // PluginInventory is the interface to interact with a plugin inventory.
@@ -53,7 +52,7 @@ type PluginInventoryEntry struct {
 	// Name of the plugin
 	Name string
 	// Target to which the plugin applies
-	Target configtypes.Target
+	Target string
 	// Description of the plugin
 	Description string
 	// Publisher is the name of the publisher of this plugin
@@ -77,7 +76,7 @@ type PluginInventoryFilter struct {
 	// Name of the plugin to look for
 	Name string
 	// Target to which the plugins apply
-	Target configtypes.Target
+	Target string
 	// Version for the plugins to look for
 	Version string
 	// OS of the plugin binary in `GOOS` format.
@@ -97,7 +96,7 @@ type PluginIdentifier struct {
 	// Name is the name of the plugin
 	Name string
 	// Target is the target of the plugin
-	Target configtypes.Target
+	Target string
 	// Version is the version for the plugin
 	Version string
 }

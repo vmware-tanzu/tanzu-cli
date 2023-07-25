@@ -58,7 +58,7 @@ func newSearchPluginCmd() *cobra.Command {
 				// Show plugins found in the central repos
 				criteria := &discovery.PluginDiscoveryCriteria{
 					Name:   pluginName,
-					Target: configtypes.StringToTarget(targetStr),
+					Target: configtypes.StringToTargetString(targetStr),
 				}
 				allPlugins, err = pluginmanager.DiscoverStandalonePlugins(discovery.WithPluginDiscoveryCriteria(criteria))
 				if err != nil {

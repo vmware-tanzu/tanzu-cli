@@ -698,7 +698,7 @@ func getKeys(m map[string]*configtypes.Context) []string {
 	return keys
 }
 
-func getValues(m map[configtypes.Target]*configtypes.Context) []*configtypes.Context {
+func getValues(m map[string]*configtypes.Context) []*configtypes.Context {
 	values := make([]*configtypes.Context, 0, len(m))
 	for _, value := range m {
 		values = append(values, value)
@@ -796,7 +796,7 @@ func unsetCtx(_ *cobra.Command, args []string) error {
 	return unsetGivenContext(name, target)
 }
 
-func unsetGivenContext(name string, target configtypes.Target) error {
+func unsetGivenContext(name string, target string) error {
 	var err error
 	var unset bool
 	currentCtxMap, err := config.GetAllCurrentContextsMap()
