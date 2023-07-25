@@ -372,7 +372,7 @@ func Execute() error {
 		telemetry.LogError(updateErr, "")
 	} else if saveErr := telemetry.Client().SaveMetrics(); saveErr != nil {
 		telemetry.LogError(saveErr, "")
-	} else if sendErr := telemetry.Client().SendMetrics(context.Background(), 1); sendErr != nil {
+	} else if sendErr := telemetry.Client().SendMetrics(context.Background(), 2); sendErr != nil {
 		telemetry.LogError(sendErr, "")
 	}
 	return executionErr
