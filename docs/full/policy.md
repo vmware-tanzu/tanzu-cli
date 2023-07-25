@@ -23,12 +23,11 @@ This section specifies the version, support, and deprecation policies for Alpha,
 
     | Tanzu CLI Version | Compatible Tanzu Plugin Runtime Versions |
     |-------------------|------------------------------------------|
-    | v1.0.x            | v0.11.x                                  |
+    | v0.90.x           | v0.11.x                                  |
     |                   | v0.25.x                                  |
     |                   | v0.28.x                                  |
     |                   | v0.29.x                                  |
     |                   | v0.90.x                                  |
-    |                   | v1.0.x                                   |
 
 - ***Important***: Based on this compatibility policy, the user can always upgrade the Tanzu CLI to the latest version without worrying about existing plugin compatibility.
 - This means any change in the contract between Tanzu CLI and Tanzu Plugin Runtime must be done in a backward-compatible manner.
