@@ -159,9 +159,9 @@ func (tc *telemetryClient) SendMetrics(ctx context.Context, timeoutInSecs int) e
 		args = append(args, "--timeout", strconv.Itoa(timeoutInSecs))
 	}
 	runner := cli.NewRunner(plugin.Name, plugin.InstallationPath, args)
-	_, _, err = runner.RunOutput(ctx)
+	_, stdErr, err := runner.RunOutput(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, stdErr)
 	}
 	return nil
 }
