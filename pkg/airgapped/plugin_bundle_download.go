@@ -152,14 +152,18 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 
 		// Add essential plugins
 		name, version := essentials.GetEssentialsPluginGroupDetails()
-		pluginGroupName := name
+		essentialPluginGroup := name
 		if version != "" {
-			pluginGroupName = fmt.Sprintf("%v:%v", pluginGroupName, version)
+			essentialPluginGroup = fmt.Sprintf("%v:%v", essentialPluginGroup, version)
 		}
-		o.Groups = append(o.Groups, pluginGroupName)
+		o.Groups = append(o.Groups, essentialPluginGroup)
 		for _, groupID := range o.Groups {
 			pluginGroups, pluginEntries, err := o.getAllPluginGroupsAndPluginEntriesFromPluginGroupVersion(groupID, pi)
 			if err != nil {
+				// Continue to download rest of the plugin groups if essentials is not available
+				if groupID == essentialPluginGroup {
+					continue
+				}
 				return nil, nil, err
 			}
 			selectedPluginGroups = append(selectedPluginGroups, pluginGroups...)
