@@ -11,8 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-
 	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
@@ -145,7 +143,7 @@ func DiscoveredFromREST(p *Plugin) (Discovered, error) {
 		Description:        p.Description,
 		RecommendedVersion: p.RecommendedVersion,
 		Optional:           p.Optional,
-		Target:             configtypes.StringToTargetString(p.Target),
+		Target:             common.StringToTargetString(p.Target),
 	}
 	dp.SupportedVersions = make([]string, 0)
 	for v := range p.Artifacts {

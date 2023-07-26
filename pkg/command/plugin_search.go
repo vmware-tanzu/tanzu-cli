@@ -17,7 +17,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 var (
@@ -38,7 +37,7 @@ func newSearchPluginCmd() *cobra.Command {
 		Args:              cobra.MaximumNArgs(0),
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !configtypes.IsValidTarget(targetStr, true, true) {
+			if !common.IsValidTarget(targetStr, true, true) {
 				return errors.New(invalidTargetMsg)
 			}
 			errorList := make([]error, 0)
@@ -58,7 +57,7 @@ func newSearchPluginCmd() *cobra.Command {
 				// Show plugins found in the central repos
 				criteria := &discovery.PluginDiscoveryCriteria{
 					Name:   pluginName,
-					Target: configtypes.StringToTargetString(targetStr),
+					Target: common.StringToTargetString(targetStr),
 				}
 				allPlugins, err = pluginmanager.DiscoverStandalonePlugins(discovery.WithPluginDiscoveryCriteria(criteria))
 				if err != nil {

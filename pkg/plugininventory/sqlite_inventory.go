@@ -17,10 +17,10 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // SQLiteInventory is an inventory stored using SQLite
@@ -268,7 +268,7 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 			return allPlugins, err
 		}
 
-		target := configtypes.StringToTargetString(strings.ToLower(row.target))
+		target := common.StringToTargetString(strings.ToLower(row.target))
 		pluginIDFromRow := catalog.PluginNameTarget(row.name, target)
 		if currentPluginID != pluginIDFromRow {
 			// Found a new plugin.
@@ -464,7 +464,7 @@ func (b *SQLiteInventory) extractGroupsFromRows(rows *sql.Rows) ([]*PluginGroup,
 		pge := PluginGroupPluginEntry{
 			PluginIdentifier: PluginIdentifier{
 				Name:    row.pluginName,
-				Target:  configtypes.StringToTargetString(row.target),
+				Target:  common.StringToTargetString(row.target),
 				Version: row.pluginVersion,
 			},
 			Mandatory: mandatory,

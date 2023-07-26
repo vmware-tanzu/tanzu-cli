@@ -31,6 +31,7 @@ import (
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
 	wcpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -587,7 +588,7 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
-	if !configtypes.IsValidTarget(targetStr, false, true) {
+	if !common.IsValidTarget(targetStr, false, true) {
 		return errors.New(invalidTarget)
 	}
 
@@ -779,7 +780,7 @@ var unsetCtxCmd = &cobra.Command{
 
 func unsetCtx(_ *cobra.Command, args []string) error {
 	var name string
-	if !configtypes.IsValidTarget(targetStr, false, true) {
+	if !common.IsValidTarget(targetStr, false, true) {
 		return errors.New(invalidTarget)
 	}
 	target := getTarget()

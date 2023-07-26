@@ -20,12 +20,12 @@ import (
 	"github.com/gobwas/glob"
 	"gopkg.in/yaml.v3"
 
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	rtplugin "github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/helpers"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/types"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -524,7 +524,7 @@ func getPluginTarget(pd *rtplugin.PluginDescriptor, pluginPath, id string) (stri
 	}
 
 	// If target is specified in the plugin descriptor use it
-	if configtypes.IsValidTarget(string(pd.Target), true, false) {
+	if common.IsValidTarget(string(pd.Target), true, false) {
 		return string(pd.Target), nil
 	}
 

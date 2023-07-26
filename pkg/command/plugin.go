@@ -17,7 +17,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
@@ -212,7 +211,7 @@ func newDescribePluginCmd() *cobra.Command {
 			}
 			pluginName := args[0]
 
-			if !configtypes.IsValidTarget(targetStr, true, true) {
+			if !common.IsValidTarget(targetStr, true, true) {
 				return errors.New(invalidTargetMsg)
 			}
 
@@ -238,7 +237,7 @@ func newInstallPluginCmd() *cobra.Command {
 			var err error
 			var pluginName string
 
-			if !configtypes.IsValidTarget(targetStr, true, true) {
+			if !common.IsValidTarget(targetStr, true, true) {
 				return errors.New(invalidTargetMsg)
 			}
 
@@ -392,7 +391,7 @@ func newUpgradePluginCmd() *cobra.Command {
 			}
 			pluginName := args[0]
 
-			if !configtypes.IsValidTarget(targetStr, true, true) {
+			if !common.IsValidTarget(targetStr, true, true) {
 				return errors.New(invalidTargetMsg)
 			}
 
@@ -431,7 +430,7 @@ func newDeletePluginCmd() *cobra.Command {
 			}
 			pluginName := args[0]
 
-			if !configtypes.IsValidTarget(targetStr, true, true) {
+			if !common.IsValidTarget(targetStr, true, true) {
 				return errors.New(invalidTargetMsg)
 			}
 
@@ -718,5 +717,5 @@ func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginI
 }
 
 func getTarget() string {
-	return configtypes.StringToTargetString(strings.ToLower(targetStr))
+	return common.StringToTargetString(strings.ToLower(targetStr))
 }
