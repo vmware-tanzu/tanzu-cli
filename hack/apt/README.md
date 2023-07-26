@@ -114,7 +114,8 @@ The above procedure applies just as much to the `tanzu-cli-unstable` packages.
 $ docker run --rm -it ubuntu
 apt update
 apt install -y ca-certificates curl gpg
-curl -fsSL https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub | sudo gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub | gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
 echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | tee /etc/apt/sources.list.d/tanzu.list
 apt update
 apt install -y tanzu-cli
