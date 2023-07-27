@@ -207,7 +207,7 @@ func createPluginWhereClause(filter *PluginInventoryFilter) (string, error) {
 			whereClause = fmt.Sprintf("%s PluginName='%s' AND", whereClause, filter.Name)
 		}
 		if filter.Target != "" {
-			whereClause = fmt.Sprintf("%s Target='%s' AND", whereClause, string(filter.Target))
+			whereClause = fmt.Sprintf("%s Target='%s' AND", whereClause, filter.Target)
 		}
 		if filter.Version != "" {
 			if filter.Version == cli.VersionLatest {
@@ -594,7 +594,7 @@ func (b *SQLiteInventory) InsertPlugin(pluginInventoryEntry *PluginInventoryEntr
 		for _, a := range artifacts {
 			row := pluginDBRow{
 				name:               pluginInventoryEntry.Name,
-				target:             string(pluginInventoryEntry.Target),
+				target:             pluginInventoryEntry.Target,
 				recommendedVersion: "",
 				version:            version,
 				hidden:             strconv.FormatBool(pluginInventoryEntry.Hidden),
@@ -669,7 +669,7 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 				groupVersion:  version,
 				description:   description,
 				pluginName:    pi.Name,
-				target:        string(pi.Target),
+				target:        pi.Target,
 				pluginVersion: pi.Version,
 				mandatory:     strconv.FormatBool(pi.Mandatory),
 				hidden:        strconv.FormatBool(pg.Hidden),
@@ -694,16 +694,16 @@ func (b *SQLiteInventory) UpdatePluginActivationState(pluginInventoryEntry *Plug
 	defer db.Close()
 
 	for version := range pluginInventoryEntry.Artifacts {
-		result, err := db.Exec("UPDATE PluginBinaries SET hidden = ? WHERE PluginName = ? AND Target = ? AND Version = ? AND Publisher = ? AND Vendor = ? ;", strconv.FormatBool(pluginInventoryEntry.Hidden), pluginInventoryEntry.Name, string(pluginInventoryEntry.Target), version, pluginInventoryEntry.Publisher, pluginInventoryEntry.Vendor)
+		result, err := db.Exec("UPDATE PluginBinaries SET hidden = ? WHERE PluginName = ? AND Target = ? AND Version = ? AND Publisher = ? AND Vendor = ? ;", strconv.FormatBool(pluginInventoryEntry.Hidden), pluginInventoryEntry.Name, pluginInventoryEntry.Target, version, pluginInventoryEntry.Publisher, pluginInventoryEntry.Vendor)
 		if err != nil {
-			return errors.Wrapf(err, "unable to update plugin %v_%v", pluginInventoryEntry.Name, string(pluginInventoryEntry.Target))
+			return errors.Wrapf(err, "unable to update plugin %v_%v", pluginInventoryEntry.Name, pluginInventoryEntry.Target)
 		}
 		rowsAffected, _ := result.RowsAffected()
 		if rowsAffected == 0 {
-			return errors.Errorf("unable to update plugin %v_%v", pluginInventoryEntry.Name, string(pluginInventoryEntry.Target))
+			return errors.Errorf("unable to update plugin %v_%v", pluginInventoryEntry.Name, pluginInventoryEntry.Target)
 		}
 		// Write sql statement logs if required
-		writeSQLStatementLogs(fmt.Sprintf("UPDATE PluginBinaries SET hidden = %v WHERE PluginName = %v AND Target = %v AND Version = %v AND Publisher = %v AND Vendor = %v ;\n", strconv.FormatBool(pluginInventoryEntry.Hidden), pluginInventoryEntry.Name, string(pluginInventoryEntry.Target), version, pluginInventoryEntry.Publisher, pluginInventoryEntry.Vendor))
+		writeSQLStatementLogs(fmt.Sprintf("UPDATE PluginBinaries SET hidden = %v WHERE PluginName = %v AND Target = %v AND Version = %v AND Publisher = %v AND Vendor = %v ;\n", strconv.FormatBool(pluginInventoryEntry.Hidden), pluginInventoryEntry.Name, pluginInventoryEntry.Target, version, pluginInventoryEntry.Publisher, pluginInventoryEntry.Vendor))
 	}
 
 	return nil

@@ -524,8 +524,8 @@ func getPluginTarget(pd *rtplugin.PluginDescriptor, pluginPath, id string) (stri
 	}
 
 	// If target is specified in the plugin descriptor use it
-	if common.IsValidTarget(string(pd.Target), true, false) {
-		return string(pd.Target), nil
+	if common.IsValidTarget(pd.Target, true, false) {
+		return pd.Target, nil
 	}
 
 	// If target is not specified in the plugin descriptor check `metadata.yaml` in the

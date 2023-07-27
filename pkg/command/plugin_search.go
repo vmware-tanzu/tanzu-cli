@@ -112,7 +112,7 @@ func displayPluginsFound(plugins []discovery.Discovered, writer io.Writer) {
 		outputWriter.AddRow(
 			plugins[i].Name,
 			plugins[i].Description,
-			string(plugins[i].Target),
+			plugins[i].Target,
 			plugins[i].RecommendedVersion)
 	}
 
@@ -138,7 +138,7 @@ func displayPluginDetails(plugins []discovery.Discovered, writer io.Writer) {
 			details := detailedObject{
 				Name:        plugins[i].Name,
 				Description: plugins[i].Description,
-				Target:      string(plugins[i].Target),
+				Target:      plugins[i].Target,
 				Latest:      plugins[i].RecommendedVersion,
 				Versions:    plugins[i].SupportedVersions,
 			}
@@ -155,7 +155,7 @@ func displayPluginDetails(plugins []discovery.Discovered, writer io.Writer) {
 		details = append(details, detailedObject{
 			Name:        plugins[i].Name,
 			Description: plugins[i].Description,
-			Target:      string(plugins[i].Target),
+			Target:      plugins[i].Target,
 			Latest:      plugins[i].RecommendedVersion,
 			Versions:    plugins[i].SupportedVersions,
 		})

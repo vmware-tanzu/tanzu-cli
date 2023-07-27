@@ -217,7 +217,7 @@ func (tc *telemetryClient) updateMetricsForPlugin(cmd *cobra.Command, args []str
 	if plugin != nil {
 		tc.currentOperationMetrics.PluginName = plugin.Name
 		tc.currentOperationMetrics.PluginVersion = plugin.Version
-		tc.currentOperationMetrics.Target = string(plugin.Target)
+		tc.currentOperationMetrics.Target = plugin.Target
 		tc.currentOperationMetrics.Endpoint = getEndpointSHA(plugin)
 		// for plugins, cobra can only parse the command upto the plugin name,
 		// and the rest of the subcommands and args would be captured as args

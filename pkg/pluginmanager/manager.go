@@ -632,7 +632,7 @@ func pluginIndexForName(availablePlugins []discovery.Discovered, p *discovery.Di
 }
 
 // DescribePlugin describes a plugin.
-func DescribePlugin(pluginName string, target string) (info *cli.PluginInfo, err error) {
+func DescribePlugin(pluginName, target string) (info *cli.PluginInfo, err error) {
 	plugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return nil, err
@@ -647,7 +647,7 @@ func DescribePlugin(pluginName string, target string) (info *cli.PluginInfo, err
 
 	if len(matchedPlugins) == 0 {
 		if target != configtypes.TargetUnknown {
-			return nil, errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+			return nil, errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, target)
 		}
 		return nil, errors.Errorf("unable to find plugin '%v'", pluginName)
 	}
@@ -684,14 +684,14 @@ func InitializePlugin(plugin *cli.PluginInfo) error {
 }
 
 // InstallStandalonePlugin installs a plugin by name, version and target as a standalone plugin.
-func InstallStandalonePlugin(pluginName, version string, target string) error {
+func InstallStandalonePlugin(pluginName, version, target string) error {
 	return installPlugin(pluginName, version, target, "")
 }
 
 // InstallPluginFromContext installs a plugin by name, version and target as a context-scope plugin.
-func InstallPluginFromContext(pluginName, version string, target string, contextName string) error {
+func InstallPluginFromContext(pluginName, version, target, contextName string) error {
 	if contextName == "" {
-		log.Warning("Missing context name for a context-scope plugin: %s/%s/%s", pluginName, version, string(target))
+		log.Warning("Missing context name for a context-scope plugin: %s/%s/%s", pluginName, version, target)
 	}
 	return installPlugin(pluginName, version, target, contextName)
 }
@@ -700,7 +700,7 @@ func InstallPluginFromContext(pluginName, version string, target string, context
 // If the contextName is not empty, it implies the plugin is a context-scope plugin, otherwise
 // we are installing a standalone plugin.
 // nolint: gocyclo
-func installPlugin(pluginName, version string, target string, contextName string) error {
+func installPlugin(pluginName, version, target, contextName string) error {
 	if configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		// The legacy installation can figure out if the plugin is from a context
 		// because it searches all contexts for plugins.  So, we don't need to pass on that parameter.
@@ -729,7 +729,7 @@ func installPlugin(pluginName, version string, target string, contextName string
 
 	if len(availablePlugins) == 0 {
 		if target != configtypes.TargetUnknown {
-			errorList = append(errorList, errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target)))
+			errorList = append(errorList, errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, target))
 			return kerrors.NewAggregate(errorList)
 		}
 		errorList = append(errorList, errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version))
@@ -752,7 +752,7 @@ func installPlugin(pluginName, version string, target string, contextName string
 	}
 	if len(matchedPlugins) == 0 {
 		if target != configtypes.TargetUnknown {
-			errorList = append(errorList, errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target)))
+			errorList = append(errorList, errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, target))
 			return kerrors.NewAggregate(errorList)
 		}
 		errorList = append(errorList, errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version))
@@ -783,7 +783,7 @@ func installPlugin(pluginName, version string, target string, contextName string
 
 // legacyInstallPlugin installs a plugin by name, version and target.
 // This function is only used without the Central Repository feature.
-func legacyPluginInstall(pluginName, version string, target string) error {
+func legacyPluginInstall(pluginName, version, target string) error {
 	availablePlugins, err := AvailablePlugins()
 	if err != nil {
 		return err
@@ -798,7 +798,7 @@ func legacyPluginInstall(pluginName, version string, target string) error {
 	}
 	if len(matchedPlugins) == 0 {
 		if target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target))
+			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, target)
 		}
 		return errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version)
 	}
@@ -817,7 +817,7 @@ func legacyPluginInstall(pluginName, version string, target string) error {
 }
 
 // UpgradePlugin upgrades a plugin from the given repository.
-func UpgradePlugin(pluginName, version string, target string) error {
+func UpgradePlugin(pluginName, version, target string) error {
 	// Upgrade is only triggered from a manual user operation.
 	// This means a plugin is installed manually, which means it is installed as a standalone plugin.
 	return InstallStandalonePlugin(pluginName, version, target)
@@ -923,7 +923,7 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 }
 
 // GetRecommendedVersionOfPlugin returns recommended version of the plugin
-func GetRecommendedVersionOfPlugin(pluginName string, target string) (string, error) {
+func GetRecommendedVersionOfPlugin(pluginName, target string) (string, error) {
 	availablePlugins, err := AvailablePlugins()
 	if err != nil {
 		return "", err
@@ -938,7 +938,7 @@ func GetRecommendedVersionOfPlugin(pluginName string, target string) (string, er
 	}
 	if len(matchedPlugins) == 0 {
 		if target != configtypes.TargetUnknown {
-			return "", errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
+			return "", errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, target)
 		}
 		return "", errors.Errorf("unable to find plugin '%v'", pluginName)
 	}
@@ -1183,7 +1183,7 @@ func DeletePlugin(options DeletePluginOptions) error {
 
 	if len(matchedPlugins) == 0 {
 		if options.Target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' for target '%s'", options.PluginName, string(options.Target))
+			return errors.Errorf("unable to find plugin '%v' for target '%s'", options.PluginName, options.Target)
 		}
 		return errors.Errorf("unable to find plugin '%v'", options.PluginName)
 	}
@@ -1201,7 +1201,7 @@ func DeletePlugin(options DeletePluginOptions) error {
 	if !options.ForceDelete {
 		if err := component.AskForConfirmation(
 			fmt.Sprintf("Deleting Plugin '%s' for target '%s'. Are you sure?",
-				options.PluginName, string(uniqueTarget))); err != nil {
+				options.PluginName, uniqueTarget)); err != nil {
 			return err
 		}
 	}
@@ -1215,7 +1215,7 @@ func DeletePlugin(options DeletePluginOptions) error {
 	// TODO: delete the plugin binary if it is not used by any server
 }
 
-func doDeletePluginFromCatalog(pluginName string, target string, catalogNames []string) error {
+func doDeletePluginFromCatalog(pluginName, target string, catalogNames []string) error {
 	for _, n := range catalogNames {
 		// We must create one catalog at a time to be able to delete a plugin.
 		// If we re-use the catalogs created above, when we delete the plugin
@@ -1292,7 +1292,7 @@ func SyncPlugins() error {
 
 // InstallPluginsFromLocalSource installs plugin from local source directory
 // nolint: gocyclo
-func InstallPluginsFromLocalSource(pluginName, version string, target string, localPath string, installTestPlugin bool) error {
+func InstallPluginsFromLocalSource(pluginName, version, target, localPath string, installTestPlugin bool) error {
 	// Set default local plugin distro to local-path as while installing the plugin
 	// from local source we should take t
 	common.DefaultLocalPluginDistroDir = localPath
@@ -1314,13 +1314,13 @@ func InstallPluginsFromLocalSource(pluginName, version string, target string, lo
 	if len(matchedPlugins) == 0 {
 		if pluginName == cli.AllPlugins {
 			if target != configtypes.TargetUnknown {
-				return errors.Errorf("unable to find any plugins for target '%s'", string(target))
+				return errors.Errorf("unable to find any plugins for target '%s'", target)
 			}
 			return errors.Errorf("unable to find any plugins at the specified location")
 		}
 
 		if target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target))
+			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, target)
 		}
 		return errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version)
 	}
@@ -1519,7 +1519,7 @@ func discoverPluginsFromLocalSourceBasedOnManifestFile(localPath string) ([]disc
 		// Sample path: cli/[target]/<plugin-name>/<plugin-version>/tanzu-<plugin-name>-<os>_<arch>
 		// 				cli/[target]/v0.14.0/tanzu-login-darwin_amd64
 		// As mentioned above, we expect the binary for user's OS-ARCH is present and hence creating path accordingly
-		pluginBinaryPath := filepath.Join(absLocalPath, string(pluginInfo.Target), p.Name, pluginInfo.Version, fmt.Sprintf("tanzu-%s-%s_%s", p.Name, runtime.GOOS, runtime.GOARCH))
+		pluginBinaryPath := filepath.Join(absLocalPath, pluginInfo.Target, p.Name, pluginInfo.Version, fmt.Sprintf("tanzu-%s-%s_%s", p.Name, runtime.GOOS, runtime.GOARCH))
 		if cli.BuildArch().IsWindows() {
 			pluginBinaryPath += exe
 		}
@@ -1747,14 +1747,14 @@ func isAllPluginsFromGroupInstalled(plugins []*plugininventory.PluginGroupPlugin
 	for i := range installedPlugins {
 		// Use the plugin name, target, and version as the key.
 		installedPlugin := installedPlugins[i]
-		key := utils.GenerateKey(installedPlugin.Name, string(installedPlugin.Target), installedPlugin.Version)
+		key := utils.GenerateKey(installedPlugin.Name, installedPlugin.Target, installedPlugin.Version)
 		installedPluginsMap[key] = &installedPlugin
 	}
 
 	// Iterate over each plugin in the group.
 	for _, plugin := range plugins {
 		// Check if the current plugin is installed.
-		key := utils.GenerateKey(plugin.Name, string(plugin.Target), plugin.Version)
+		key := utils.GenerateKey(plugin.Name, plugin.Target, plugin.Version)
 		if _, ok := installedPluginsMap[key]; !ok {
 			// If the plugin is not installed, return false.
 			return false
@@ -1770,12 +1770,12 @@ func isNewPluginVersionAvailable(plugins []*plugininventory.PluginGroupPluginEnt
 	installedPluginsMap := make(map[string]*cli.PluginInfo)
 	for i := range installedPlugins {
 		installedPlugin := installedPlugins[i]
-		key := utils.GenerateKey(installedPlugin.Name, string(installedPlugin.Target))
+		key := utils.GenerateKey(installedPlugin.Name, installedPlugin.Target)
 		installedPluginsMap[key] = &installedPlugin
 	}
 
 	for _, plugin := range plugins {
-		key := utils.GenerateKey(plugin.Name, string(plugin.Target))
+		key := utils.GenerateKey(plugin.Name, plugin.Target)
 		installedPlugin, ok := installedPluginsMap[key]
 		if !ok {
 			continue // Plugin not installed, skip to next plugin

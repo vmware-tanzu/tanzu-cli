@@ -248,7 +248,7 @@ func testPath() string {
 
 // PluginNameTarget constructs a string to uniquely refer to a plugin associated
 // with a specific target when target is provided.
-func PluginNameTarget(pluginName string, target string) string {
+func PluginNameTarget(pluginName, target string) string {
 	if target == "" {
 		return pluginName
 	}

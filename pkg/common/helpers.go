@@ -5,13 +5,13 @@ package common
 
 // StringToTargetString converts string to Target type
 func StringToTargetString(target string) string {
-	if target == string(targetK8s) || target == string(TargetK8s) {
+	if target == targetK8s || target == TargetK8s {
 		return TargetK8s
-	} else if target == string(targetTMC) || target == string(TargetTMC) {
+	} else if target == targetTMC || target == TargetTMC {
 		return TargetTMC
-	} else if target == string(TargetGlobal) {
+	} else if target == TargetGlobal {
 		return TargetGlobal
-	} else if target == string(TargetUnknown) {
+	} else if target == TargetUnknown {
 		return TargetUnknown
 	}
 	return TargetUnknown
@@ -21,10 +21,10 @@ func StringToTargetString(target string) string {
 // TargetGlobal and TargetUnknown are special targets and hence this function
 // provide flexibility additional arguments to allow them based on the requirement
 func IsValidTarget(target string, allowGlobal, allowUnknown bool) bool {
-	return target == string(targetK8s) ||
-		target == string(TargetK8s) ||
-		target == string(targetTMC) ||
-		target == string(TargetTMC) ||
-		(allowGlobal && target == string(TargetGlobal)) ||
-		(allowUnknown && target == string(TargetUnknown))
+	return target == targetK8s ||
+		target == TargetK8s ||
+		target == targetTMC ||
+		target == TargetTMC ||
+		(allowGlobal && target == TargetGlobal) ||
+		(allowUnknown && target == TargetUnknown)
 }

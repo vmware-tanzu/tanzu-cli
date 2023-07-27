@@ -506,7 +506,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					for _, p := range plugins {
 						if p.Name == "management-cluster" { // nolint: goconst
 							Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
-							Expect(string(p.Target)).To(Equal("kubernetes"))
+							Expect(p.Target).To(Equal("kubernetes"))
 							Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
 							Expect(p.Vendor).To(Equal("vmware"))
 							Expect(p.Publisher).To(Equal("tkg"))
@@ -571,7 +571,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(p.Name).To(Equal("management-cluster"))
 
 					Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
-					Expect(string(p.Target)).To(Equal("kubernetes"))
+					Expect(p.Target).To(Equal("kubernetes"))
 					Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
 					Expect(p.Vendor).To(Equal("vmware"))
 					Expect(p.Publisher).To(Equal("tkg"))
@@ -602,7 +602,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(p.Name).To(Equal("management-cluster"))
 
 					Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
-					Expect(string(p.Target)).To(Equal("kubernetes"))
+					Expect(p.Target).To(Equal("kubernetes"))
 					Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
 					Expect(p.Vendor).To(Equal("vmware"))
 					Expect(p.Publisher).To(Equal("tkg"))
@@ -632,7 +632,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(p.Artifacts["v0.28.0"]).ToNot(BeNil())
 
 					Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
-					Expect(string(p.Target)).To(Equal("kubernetes"))
+					Expect(p.Target).To(Equal("kubernetes"))
 					Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
 					Expect(p.Vendor).To(Equal("vmware"))
 					Expect(p.Publisher).To(Equal("tkg"))
@@ -667,7 +667,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					for _, p := range plugins {
 						if p.Name == "management-cluster" {
 							Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
-							Expect(string(p.Target)).To(Equal("kubernetes"))
+							Expect(p.Target).To(Equal("kubernetes"))
 							Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
 							Expect(p.Vendor).To(Equal("vmware"))
 							Expect(p.Publisher).To(Equal("tkg"))
@@ -780,7 +780,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(p.Artifacts["v0.0.2"]).ToNot(BeNil())
 
 					Expect(p.RecommendedVersion).To(Equal("v0.0.2"))
-					Expect(string(p.Target)).To(Equal("mission-control"))
+					Expect(p.Target).To(Equal("mission-control"))
 					Expect(p.Vendor).To(Equal("vmware"))
 					Expect(p.Publisher).To(Equal("tmc"))
 
@@ -807,7 +807,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(p.Artifacts["v0.0.3"]).ToNot(BeNil())
 
 					Expect(p.RecommendedVersion).To(Equal("v0.0.3"))
-					Expect(string(p.Target)).To(Equal("mission-control"))
+					Expect(p.Target).To(Equal("mission-control"))
 					Expect(p.Vendor).To(Equal("vmware"))
 					Expect(p.Publisher).To(Equal("tmc"))
 
@@ -1242,7 +1242,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(len(plugins)).To(Equal(1))
 				p := plugins[0]
 				Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
-				Expect(string(p.Target)).To(Equal("kubernetes"))
+				Expect(p.Target).To(Equal("kubernetes"))
 				Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
 				Expect(p.Vendor).To(Equal("vmware"))
 				Expect(p.Publisher).To(Equal("tkg"))

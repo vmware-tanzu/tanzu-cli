@@ -573,11 +573,11 @@ func displayPluginListOutputSplitViewContext(availablePlugins []discovery.Discov
 
 	for index := range availablePlugins {
 		if availablePlugins[index].Scope == common.PluginScopeStandalone {
-			newRow := []string{availablePlugins[index].Name, availablePlugins[index].Description, string(availablePlugins[index].Target),
+			newRow := []string{availablePlugins[index].Name, availablePlugins[index].Description, availablePlugins[index].Target,
 				availablePlugins[index].Source, getInstalledElseAvailablePluginVersion(&availablePlugins[index]), availablePlugins[index].Status}
 			dataStandalone = append(dataStandalone, newRow)
 		} else {
-			newRow := []string{availablePlugins[index].Name, availablePlugins[index].Description, string(availablePlugins[index].Target),
+			newRow := []string{availablePlugins[index].Name, availablePlugins[index].Description, availablePlugins[index].Target,
 				getInstalledElseAvailablePluginVersion(&availablePlugins[index]), availablePlugins[index].Status}
 			outputContext[availablePlugins[index].ContextName] = component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status")
 			data := dataContext[availablePlugins[index].ContextName]
@@ -622,7 +622,7 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 		outputStandalone.AddRow(
 			installedStandalonePlugins[index].Name,
 			installedStandalonePlugins[index].Description,
-			string(installedStandalonePlugins[index].Target),
+			installedStandalonePlugins[index].Target,
 			installedStandalonePlugins[index].Version,
 			common.PluginStatusInstalled,
 		)
@@ -662,7 +662,7 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 			outputWriter.AddRow(
 				ctxPluginsByContext[context][i].Name,
 				ctxPluginsByContext[context][i].Description,
-				string(ctxPluginsByContext[context][i].Target),
+				ctxPluginsByContext[context][i].Target,
 				version,
 				ctxPluginsByContext[context][i].Status,
 			)
@@ -683,7 +683,7 @@ func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginI
 		outputWriter.AddRow(
 			installedStandalonePlugins[index].Name,
 			installedStandalonePlugins[index].Description,
-			string(installedStandalonePlugins[index].Target),
+			installedStandalonePlugins[index].Target,
 			installedStandalonePlugins[index].Version,
 			installedStandalonePlugins[index].Status,
 			"", // No context
@@ -695,7 +695,7 @@ func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginI
 		outputWriter.AddRow(
 			installedContextPlugins[i].Name,
 			installedContextPlugins[i].Description,
-			string(installedContextPlugins[i].Target),
+			installedContextPlugins[i].Target,
 			installedContextPlugins[i].InstalledVersion,
 			installedContextPlugins[i].Status,
 			installedContextPlugins[i].ContextName,
@@ -707,7 +707,7 @@ func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginI
 		outputWriter.AddRow(
 			missingContextPlugins[i].Name,
 			missingContextPlugins[i].Description,
-			string(missingContextPlugins[i].Target),
+			missingContextPlugins[i].Target,
 			missingContextPlugins[i].RecommendedVersion,
 			common.PluginStatusNotInstalled,
 			missingContextPlugins[i].ContextName,

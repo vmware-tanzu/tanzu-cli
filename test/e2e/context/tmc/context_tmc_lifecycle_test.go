@@ -65,7 +65,7 @@ func tmcStressTestCases() bool {
 			for i := 0; i < len(contextNamesStress); i++ {
 				err := tf.ContextCmd.UseContext(contextNamesStress[i])
 				Expect(err).To(BeNil(), "use context should set context without any error")
-				active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+				active, err := tf.ContextCmd.GetActiveContext(types.TargetTMC)
 				Expect(err).To(BeNil(), "there should be a active context")
 				Expect(active).To(Equal(contextNamesStress[i]), "the active context should be recently set context")
 			}
@@ -109,7 +109,7 @@ func tmcAndK8sContextTests() bool {
 				_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(tmcCtx, tmcClusterInfo.EndPoint)
 				Expect(err).To(BeNil(), "context should create without any error")
 				Expect(framework.IsContextExists(tf, tmcCtx)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, tmcCtx))
-				active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+				active, err := tf.ContextCmd.GetActiveContext(types.TargetTMC)
 				Expect(err).To(BeNil(), "there should be a active context")
 				Expect(active).To(Equal(tmcCtx), "the active context should be recently added context")
 			})
@@ -121,7 +121,7 @@ func tmcAndK8sContextTests() bool {
 				Expect(err).To(BeNil(), "context should create without any error")
 				Expect(framework.IsContextExists(tf, k8sCtx)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, k8sCtx))
 
-				active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
+				active, err := tf.ContextCmd.GetActiveContext(types.TargetK8s)
 				Expect(err).To(BeNil(), "there should be a active context")
 				Expect(active).To(Equal(k8sCtx), "the active context should be recently added context")
 			})
@@ -165,7 +165,7 @@ func tmcAndK8sContextTests() bool {
 					_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(tmcCtx, tmcClusterInfo.EndPoint)
 					Expect(err).To(BeNil(), "context should create without any error")
 					Expect(framework.IsContextExists(tf, tmcCtx)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, tmcCtx))
-					active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+					active, err := tf.ContextCmd.GetActiveContext(types.TargetTMC)
 					Expect(err).To(BeNil(), "there should be a active context")
 					Expect(active).To(Equal(tmcCtx), "the active context should be recently added context")
 					tmcCtxs = append(tmcCtxs, tmcCtx)
@@ -180,7 +180,7 @@ func tmcAndK8sContextTests() bool {
 					Expect(err).To(BeNil(), "context should create without any error")
 					Expect(framework.IsContextExists(tf, k8sCtx)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, k8sCtx))
 
-					active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
+					active, err := tf.ContextCmd.GetActiveContext(types.TargetK8s)
 					Expect(err).To(BeNil(), "there should be a active context")
 					Expect(active).To(Equal(k8sCtx), "the active context should be recently added context")
 					k8sCtxs = append(k8sCtxs, k8sCtx)
@@ -290,7 +290,7 @@ func tmcLifeCycleTests() bool {
 			Expect(err).To(BeNil(), "context should create without any error")
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(ContextShouldExistsAsCreated, ctxName))
 			contextNames = append(contextNames, ctxName)
-			activeCtx, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			activeCtx, err := tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(activeCtx).To(Equal(ctxName), "the active context should be recently added context")
 		})
@@ -298,7 +298,7 @@ func tmcLifeCycleTests() bool {
 		It("use context command", func() {
 			err := tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
-			activeCtx, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			activeCtx, err := tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(activeCtx).To(Equal(contextNames[0]), "the active context should be same as the context set by use context command")
 		})
@@ -307,14 +307,14 @@ func tmcLifeCycleTests() bool {
 		It("unset context command: by context name", func() {
 			err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
-			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err = tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
 
 			stdOut, _, err := tf.ContextCmd.UnsetContext(contextNames[0])
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
 			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForTargetSetInactive, contextNames[0], framework.MissionControlTarget)))
-			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err = tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
 			Expect(active).To(Equal(""), "there should not be any active context as unset performed")
 		})
@@ -322,7 +322,7 @@ func tmcLifeCycleTests() bool {
 		It("unset context command: negative use case: by random context name", func() {
 			err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
-			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err = tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
 
@@ -334,14 +334,14 @@ func tmcLifeCycleTests() bool {
 		It("unset context command: by target", func() {
 			err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
-			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err = tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
 
 			stdOut, _, err := tf.ContextCmd.UnsetContext("", framework.AddAdditionalFlagAndValue("--target tmc"))
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
 			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForTargetSetInactive, contextNames[0], framework.MissionControlTarget)))
-			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err = tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
 			Expect(active).To(Equal(""), "there should not be any active context as unset performed")
 		})
@@ -349,14 +349,14 @@ func tmcLifeCycleTests() bool {
 		It("unset context command: by target and context name", func() {
 			err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
-			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err = tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
 
 			stdOut, _, err := tf.ContextCmd.UnsetContext(contextNames[0], framework.AddAdditionalFlagAndValue("--target tmc"))
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
 			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForTargetSetInactive, contextNames[0], framework.MissionControlTarget)))
-			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err = tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
 			Expect(active).To(Equal(""), "there should not be any active context as unset performed")
 		})
@@ -364,13 +364,13 @@ func tmcLifeCycleTests() bool {
 		It("unset context command: negative use case: by target and context name: incorrect target", func() {
 			err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
-			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err = tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
 
 			_, _, err := tf.ContextCmd.UnsetContext(contextNames[0], framework.AddAdditionalFlagAndValue("--target k8s"))
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.ContextNotExistsForTarget, contextNames[0], framework.KubernetesTarget)))
-			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err = tf.ContextCmd.GetActiveContext(types.TargetTMC)
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
 			Expect(active).To(Equal(contextNames[0]), "there should be an active context as unset failed")
 		})

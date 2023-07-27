@@ -797,7 +797,7 @@ func unsetCtx(_ *cobra.Command, args []string) error {
 	return unsetGivenContext(name, target)
 }
 
-func unsetGivenContext(name string, target string) error {
+func unsetGivenContext(name, target string) error {
 	var err error
 	var unset bool
 	currentCtxMap, err := config.GetAllCurrentContextsMap()

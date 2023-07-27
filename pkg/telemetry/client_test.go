@@ -270,7 +270,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 				Expect(metricsPayload.CommandName).To(Equal("kubernetes k8s-plugin1"))
 				Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
 				Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
-				Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
+				Expect(metricsPayload.Target).To(Equal(configtypes.TargetK8s))
 				Expect(metricsPayload.Endpoint).To(BeEmpty())
 				Expect(metricsPayload.NameArg).To(BeEmpty())
 
@@ -349,7 +349,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 					Expect(metricsPayload.CommandName).To(Equal("kubernetes k8s-plugin1 plugin-subcmd1 plugin-subcmd2"))
 					Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
 					Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
-					Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
+					Expect(metricsPayload.Target).To(Equal(configtypes.TargetK8s))
 					Expect(metricsPayload.Endpoint).To(BeEmpty())
 					Expect(metricsPayload.NameArg).To(BeEmpty())
 
@@ -381,7 +381,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 					Expect(metricsPayload.CommandName).To(Equal("kubernetes k8s-plugin1 pscmd1-alias plugin-subcmd2"))
 					Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
 					Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
-					Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
+					Expect(metricsPayload.Target).To(Equal(configtypes.TargetK8s))
 					Expect(metricsPayload.Endpoint).To(BeEmpty())
 					Expect(metricsPayload.NameArg).To(BeEmpty())
 
@@ -412,7 +412,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 					Expect(metricsPayload.CommandName).To(Equal("kubernetes k8s-plugin1 plugin-subcmd1"))
 					Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
 					Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
-					Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
+					Expect(metricsPayload.Target).To(Equal(configtypes.TargetK8s))
 					Expect(metricsPayload.Endpoint).To(BeEmpty())
 					Expect(metricsPayload.NameArg).To(BeEmpty())
 
