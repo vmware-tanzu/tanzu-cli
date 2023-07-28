@@ -52,7 +52,6 @@ a specific version by first extracting it to a local tap:
 
 ```console
 brew tap-new local/tap
-brew tap local/tap
 brew extract --version=0.90.1 vmware-tanzu/tanzu/tanzu-cli local/tap
 brew install tanzu-cli@0.90.1
 
