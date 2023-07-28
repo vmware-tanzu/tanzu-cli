@@ -46,6 +46,8 @@ func (k *KubernetesDiscovery) Name() string {
 
 // Manifest returns the manifest for a kubernetes repository.
 func (k *KubernetesDiscovery) Manifest() ([]Discovered, error) {
+	log.V(6).Infof("creating kubernetes client with kubeconfig %q, kubecontext %q", k.kubeconfigPath, k.kubecontext)
+
 	// Create cluster client
 	clusterClient, err := cluster.NewClient(k.kubeconfigPath, k.kubecontext, cluster.Options{RequestTimeout: defaultTimeout})
 	if err != nil {
@@ -72,8 +74,11 @@ func (k *KubernetesDiscovery) GetDiscoveredPlugins(clusterClient cluster.Client)
 	// get all cliplugins resources available on the cluster
 	cliplugins, err := clusterClient.ListCLIPluginResources()
 	if err != nil {
+		log.V(4).Infof("error while fetching the list of CLIPlugin resources. %v", err.Error())
 		return nil, err
 	}
+
+	log.V(4).Infof("found %v CLIPlugin resources.", len(cliplugins))
 
 	imageRepositoryOverride, err := clusterClient.GetCLIPluginImageRepositoryOverride()
 	if err != nil {
@@ -86,6 +91,7 @@ func (k *KubernetesDiscovery) GetDiscoveredPlugins(clusterClient cluster.Client)
 		if err != nil {
 			return nil, err
 		}
+		log.V(5).Infof("processing CLIPlugin %q", cliplugins[i].Name)
 		dp.Source = k.name
 		dp.DiscoveryType = k.Type()
 		plugins = append(plugins, dp)
