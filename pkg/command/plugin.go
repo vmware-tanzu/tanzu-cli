@@ -117,6 +117,7 @@ func newPluginCmd() *cobra.Command {
 
 	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 		installPluginCmd.MarkFlagsMutuallyExclusive("group", "local")
+		installPluginCmd.MarkFlagsMutuallyExclusive("group", "local-source")
 		installPluginCmd.MarkFlagsMutuallyExclusive("group", "version")
 		if config.IsFeatureActivated(constants.FeatureContextCommand) {
 			installPluginCmd.MarkFlagsMutuallyExclusive("group", "target")
