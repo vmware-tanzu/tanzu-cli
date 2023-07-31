@@ -56,7 +56,7 @@ To find out more about how to set up autocompletion for your specific shell, run
 
 `tanzu completion --help`
 
-### List plugin groups found in the local test central repository
+### List plugin groups found in the configured central repository
 
 ```console
 $ tanzu plugin group search
