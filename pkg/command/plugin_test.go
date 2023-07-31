@@ -324,18 +324,18 @@ func TestInstallPlugin(t *testing.T) {
 			expectedErrorMsg:    "missing plugin name or 'all' as an argument",
 		},
 		{
-			test:                "need plugin name or 'all' if no group",
+			test:                "need plugin name if no group",
 			centralRepoDisabled: "false",
 			args:                []string{"plugin", "install"},
 			expectedFailure:     true,
-			expectedErrorMsg:    "missing plugin name or 'all' as an argument",
+			expectedErrorMsg:    "missing plugin name as an argument",
 		},
 		{
 			test:                "no 'all' option",
 			centralRepoDisabled: "false",
 			args:                []string{"plugin", "install", "all"},
 			expectedFailure:     true,
-			expectedErrorMsg:    "the 'all' argument can only be used with the --group or --local flags",
+			expectedErrorMsg:    "the 'all' argument can only be used with the '--group' flag",
 		},
 		{
 			test:                "invalid target",
