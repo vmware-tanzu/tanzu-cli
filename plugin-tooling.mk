@@ -27,7 +27,7 @@ PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/build
 PLUGIN_GO_FLAGS ?=
 
 # Add supported OS-ARCHITECTURE combinations here
-PLUGIN_BUILD_OS_ARCH ?= linux-amd64 windows-amd64 darwin-amd64
+PLUGIN_BUILD_OS_ARCH ?= linux-amd64 windows-amd64 darwin-amd64 darwin-arm64 linux-arm64
 
 # Paths and Directory information
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
