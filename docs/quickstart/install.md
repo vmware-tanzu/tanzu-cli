@@ -28,6 +28,8 @@ download these particular assets, which are only provided for convenience.
    destination (`mv v0.90.0/tanzu-cli-darwin_amd64 /usr/local/bin/tanzu`), provide it executable permission (`chmod u+x /usr/local/bin/tanzu`) if necessary.
 4. Verify the correct version of CLI is properly installed: `tanzu version`
 
+To uninstall the binary: `rm /usr/local/bin/tanzu`
+
 ## Via Package Managers
 
 A recent, supported version of the Tanzu CLI is also available for install
@@ -40,17 +42,38 @@ brew update
 brew install vmware-tanzu/tanzu/tanzu-cli
 ```
 
-At the time of writing, Homebrew did not officially support installing older
-versions of a formula, however the following approach works:
+To uninstall: `brew uninstall tanzu-cli`
+
+#### Installing a Specific Version
+
+At the time of writing, Homebrew only officially supported installing the
+latest version of a formula, however the following workaround allows to install
+a specific version by first extracting it to a local tap:
 
 ```console
 brew tap-new local/tap
-brew tap local/tap
 brew extract --version=0.90.1 vmware-tanzu/tanzu/tanzu-cli local/tap
 brew install tanzu-cli@0.90.1
 
 # To uninstall such an installation
 brew uninstall tanzu-cli@0.90.1
+```
+
+#### Installing a Pre-Release
+
+Pre-releases of the Tanzu CLI are made available to get early feedback before
+a new version is released.  Pre-releases are available through Homebrew
+using a different package name: `tanzu-cli-unstable`.
+
+**Note**: Just like installing a new version, installing a pre-release will
+replace the `tanzu` binary of any previous installation.
+
+```console
+brew update
+brew install vmware-tanzu/tanzu/tanzu-cli-unstable --overwrite
+
+# To uninstall such an installation
+brew uninstall tanzu-cli-unstable
 ```
 
 ### Chocolatey (Windows)
@@ -71,21 +94,51 @@ choco install tanzu-cli --version <version>
 # example: choco install tanzu-cli --version 0.90.0
 ```
 
-You can also use the `--version` flag as described above to install older
-versions of the Tanzu CLI.
+To uninstall: `choco uninstall tanzu-cli`
+
+#### Installing a Specific Version
+
+You can also use the `--version` flag to install any specific version of the Tanzu CLI.
+
+```console
+choco install tanzu-cli --version <version>
+```
+
+To uninstall: `choco uninstall tanzu-cli`
+
+#### Installing a Pre-Release
+
+Pre-releases of the Tanzu CLI are made available to get early feedback before
+a new version is released.  Pre-releases are available through Chocolatey
+using a different package name: `tanzu-cli-unstable`.  Notice also the need to use
+the `--pre` flag.
+
+**Note**: Just like installing a new version, installing a pre-release will
+replace the `tanzu.exe` binary of any previous installation.
+
+```console
+choco install tanzu-cli-unstable --pre
+```
+
+To uninstall: `choco uninstall tanzu-cli-unstable`
 
 ### Apt (Debian/Ubuntu)
 
 ```console
 sudo apt update
 sudo apt install -y ca-certificates curl gpg
+sudo mkdir -p /etc/apt/keyrings
 curl -fsSL https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub | sudo gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
 echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
 sudo apt update
 sudo apt install -y tanzu-cli
 ```
 
-To install older versions of the Tanzu CLI you can specify the version explicitly:
+To uninstall: `sudo apt remove tanzu-cli`
+
+#### Installing a Specific Version
+
+To install a specific version of the Tanzu CLI you can specify the version explicitly:
 
 ```console
 # To list the available versions
@@ -94,6 +147,28 @@ sudo apt list tanzu-cli -a
 # To install a specific version (notice the '=' before the version)
 sudo apt install tanzu-cli=0.90.1
 ```
+
+To uninstall: `sudo apt remove tanzu-cli`
+
+#### Installing a Pre-Release
+
+Pre-releases of the Tanzu CLI are made available to get early feedback before
+a new version is released.  Pre-releases are available through `apt` using the
+same repository configuration steps described above, but the installation
+command uses a different package name: `tanzu-cli-unstable`.
+
+**Note**: Just like installing a new version, installing a pre-release will
+replace the `tanzu` binary of any previous installation.
+
+```console
+# Remove any installed tanzu cli binary
+sudo apt remove tanzu-cli
+
+# First setup the repository if it is not setup already, then run:
+sudo apt install tanzu-cli-unstable
+```
+
+To uninstall: `sudo apt remove tanzu-cli-unstable`
 
 ### From yum/dnf (RHEL)
 
@@ -111,7 +186,11 @@ EOF
 sudo yum install -y tanzu-cli # dnf install can also be used
 ```
 
-To install older versions of the Tanzu CLI you can specify the version explicitly:
+To uninstall: `sudo yum remove tanzu-cli`
+
+#### Installing a Specific Version
+
+To install a specific version of the Tanzu CLI you can specify the version explicitly:
 
 ```console
 # To list the available versions
@@ -120,6 +199,28 @@ sudo yum list tanzu-cli --showduplicates
 # To install a specific version (notice the '-' before the version)
 sudo yum install tanzu-cli-0.90.1
 ```
+
+To uninstall: `sudo yum remove tanzu-cli`
+
+#### Installing a Pre-Release
+
+Pre-releases of the Tanzu CLI are made available to get early feedback before
+a new version is released.  Pre-releases are available through `yum/dnf` using the
+same repository configuration steps described above, but the installation
+command uses a different package name: `tanzu-cli-unstable`.
+
+**Note**: Just like installing a new version, installing a pre-release will
+replace the `tanzu` binary of any previous installation.
+
+```console
+# Remove any installed tanzu cli binary
+sudo yum remove tanzu-cli
+
+# First setup the repository if it is not setup already, then run:
+sudo yum install tanzu-cli-unstable
+```
+
+To uninstall: `sudo yum remove tanzu-cli-unstable`
 
 ### Note on installation paths
 

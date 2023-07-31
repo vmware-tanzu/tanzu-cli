@@ -229,6 +229,7 @@ func newDescribePluginCmd() *cobra.Command {
 	return describeCmd
 }
 
+// nolint: gocyclo
 func newInstallPluginCmd() *cobra.Command {
 	var installCmd = &cobra.Command{
 		Use:   "install [" + pluginNameCaps + "]",
@@ -241,7 +242,6 @@ func newInstallPluginCmd() *cobra.Command {
 			if !configtypes.IsValidTarget(targetStr, true, true) {
 				return errors.New(invalidTargetMsg)
 			}
-
 			if config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
 				return legacyPluginInstall(cmd, args)
 			}
@@ -269,13 +269,13 @@ func newInstallPluginCmd() *cobra.Command {
 				return nil
 			}
 
-			if len(args) == 0 {
-				return fmt.Errorf("missing plugin name or '%s' as an argument, or the use of '--group'", cli.AllPlugins)
-			}
-			pluginName = args[0]
-
 			// Invoke install plugin from local source if local files are provided
 			if local != "" {
+				if len(args) == 0 {
+					return fmt.Errorf("missing plugin name or '%s' as an argument", cli.AllPlugins)
+				}
+				pluginName = args[0]
+
 				// get absolute local path
 				local, err = filepath.Abs(local)
 				if err != nil {
@@ -293,9 +293,13 @@ func newInstallPluginCmd() *cobra.Command {
 				return nil
 			}
 
+			if len(args) == 0 {
+				return errors.New("missing plugin name as an argument or the use of '--group'")
+			}
+			pluginName = args[0]
+
 			if pluginName == cli.AllPlugins {
-				return fmt.Errorf("the '%s' argument can only be used with the --group or --local flags",
-					cli.AllPlugins)
+				return fmt.Errorf("the '%s' argument can only be used with the '--group' flag", cli.AllPlugins)
 			}
 
 			pluginVersion := version
