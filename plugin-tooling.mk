@@ -87,7 +87,7 @@ plugin-build-install-local: plugin-build-local plugin-install-local
 
 .PHONY: plugin-install-local ## Install all plugins from local plugin artifacts directory
 plugin-install-local:
-	tanzu plugin install all --local $(PLUGIN_BINARY_ARTIFACTS_DIR)/$(GOHOSTOS)/$(GOHOSTARCH)
+	tanzu plugin install all --local-source $(PLUGIN_BINARY_ARTIFACTS_DIR)/$(GOHOSTOS)/$(GOHOSTARCH)
 
 .PHONY: plugin-build
 plugin-build: $(PLUGIN_BUILD_TARGETS) generate-plugin-bundle ## Build all plugin binaries for all supported os-arch
