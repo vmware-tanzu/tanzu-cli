@@ -111,6 +111,12 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 				Expect(pd[0].Name).To(Equal(plugin.Name), framework.PluginNameShouldMatch)
 			}
 		})
+		It("explicitly verify that the plugin using a sha reference was installed", func() {
+			pd, err := tf.PluginCmd.DescribePlugin("plugin-with-sha", "global", framework.GetJsonOutputFormatAdditionalFlagFunction())
+			Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
+			Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
+			Expect(pd[0].Name).To(Equal("plugin-with-sha"), framework.PluginNameShouldMatch)
+		})
 		// Test case: (negative) describe plugin with incorrect target type
 		It("plugin describe: describe installed plugin with incorrect target type", func() {
 			_, err := tf.PluginCmd.DescribePlugin(framework.PluginsForLifeCycleTests[0].Name, framework.RandomString(5), framework.GetJsonOutputFormatAdditionalFlagFunction())
