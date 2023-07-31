@@ -123,7 +123,7 @@ $(GINKGO):
 	mkdir -p $(BIN_DIR)
 	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
 
-go-junit-report: $(GOJUNITREPORT) ## Install ginkgo
+go-junit-report: $(GOJUNITREPORT) ## Install go-junit-report
 $(GOJUNITREPORT):
 	mkdir -p $(BIN_DIR)
 	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/jstemmer/go-junit-report@latest

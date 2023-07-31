@@ -44,7 +44,7 @@ KUBECTL            := $(TOOLS_BIN_DIR)/kubectl
 KIND               := $(TOOLS_BIN_DIR)/kind
 GINKGO             := $(TOOLS_BIN_DIR)/ginkgo
 COSIGN             := $(TOOLS_BIN_DIR)/cosign
-GOJUNITREPORT	   := $(TOOLS_BIN_DIR)/go-junit-report
+GOJUNITREPORT      := $(TOOLS_BIN_DIR)/go-junit-report
 
 TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
 
@@ -210,6 +210,15 @@ choco-package: ## Build a Chocolatey package
 .PHONY: test
 test: fmt ## Run Tests
 	${GO} test `go list ./... | grep -v test/e2e | grep -v test/coexistence` -timeout 60m -race -coverprofile coverage.txt ${GOTEST_VERBOSE}
+
+.PHONY: test-with-summary-report ## Execute all unit test cases, process the output and present the summary report
+test-with-summary-report: tools
+	make test | tee ./make_test.output
+	cat ./make_test.output | go tool test2json > ./test_suite_output.json
+	./hack/scripts/generate-cli-ginkgo-tests-summary.sh ./test_suite_output.json > ./CLI-ginkgo-tests-summary.txt
+	cat ./make_test.output | ./hack/tools/bin/go-junit-report  > ./CLI-junit-report.xml
+	./hack/scripts/generate-cli-unit-tests-report.sh ./CLI-junit-report.xml ./CLI-ginkgo-tests-summary.txt
+	rm ./make_test.output ./test_suite_output.json ./CLI-ginkgo-tests-summary.txt ./CLI-junit-report.xml
 
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
 e2e-cli-core: start-test-central-repo start-airgapped-local-registry e2e-cli-core-all ## Execute all CLI Core E2E Tests
