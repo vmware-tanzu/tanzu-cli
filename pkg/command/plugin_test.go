@@ -345,11 +345,11 @@ func TestInstallPlugin(t *testing.T) {
 			expectedErrorMsg:    invalidTargetMsg,
 		},
 		{
-			test:                "no --group and --local together",
+			test:                "no --group and --local-source together",
 			centralRepoDisabled: "false",
-			args:                []string{"plugin", "install", "--group", "testgroup", "--local", "./", "myplugin"},
+			args:                []string{"plugin", "install", "--group", "testgroup", "--local-source", "./", "myplugin"},
 			expectedFailure:     true,
-			expectedErrorMsg:    "if any flags in the group [group local] are set none of the others can be",
+			expectedErrorMsg:    "if any flags in the group [group local-source] are set none of the others can be",
 		},
 		{
 			test:                "no --group and --target together",
