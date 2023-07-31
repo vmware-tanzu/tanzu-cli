@@ -183,6 +183,7 @@ tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster 
             continuousdelivery tanzupackage)
 globalPlugins=(isolated-cluster pinniped-auth)
 essentialPlugins=(telemetry)
+pluginUsingSha=(plugin-with-sha)
 
 echo "======================================"
 echo "Creating small test Central Repository: $repoBasePath/$smallImage"
@@ -208,6 +209,11 @@ for name in ${tmcPlugins[*]}; do
     addPlugin $name mission-control true
     addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1
     addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
+done
+
+for name in ${pluginUsingSha[*]}; do
+    addPlugin $name global true v0.0.1 useSha
+    addPlugin $name global true v9.9.9 useSha
 done
 
 # Push small inventory file
@@ -327,6 +333,11 @@ for name in ${tmcPlugins[0]}; do
     addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
 done
 
+for name in ${pluginUsingSha[0]}; do
+    addPlugin $name global true v0.0.1 useSha
+    addPlugin $name global true v9.9.9 useSha
+done
+
 # Push airgapped inventory file
 ${dry_run} imgpkg push -i $repoBasePath/$smallAirgappedImage -f $database --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$smallAirgappedImage
@@ -364,6 +375,11 @@ for name in ${tmcPlugins[*]}; do
     addPlugin $name mission-control true v9.9.9
     addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1
     addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
+done
+
+for name in ${pluginUsingSha[*]}; do
+    addPlugin $name global true v0.0.1 useSha
+    addPlugin $name global true v9.9.9 useSha
 done
 
 # Push airgapped inventory file
