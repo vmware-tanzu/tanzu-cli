@@ -102,6 +102,9 @@ func newSearchPluginCmd() *cobra.Command {
 	searchCmd.MarkFlagsMutuallyExclusive("local", "name")
 	searchCmd.MarkFlagsMutuallyExclusive("local", "target")
 	searchCmd.MarkFlagsMutuallyExclusive("local", "show-details")
+	searchCmd.MarkFlagsMutuallyExclusive("local-source", "name")
+	searchCmd.MarkFlagsMutuallyExclusive("local-source", "target")
+	searchCmd.MarkFlagsMutuallyExclusive("local-source", "show-details")
 
 	return searchCmd
 }
