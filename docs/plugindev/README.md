@@ -232,6 +232,50 @@ make inventory-init
 make inventory-plugin-add
 ```
 
+### Creating a plugin group
+
+A Plugin groups define a list of plugin/version combinations that are applicable together. They facilitate an efficient installation of these plugins. Below are instructions on how to create and publish a plugin group.
+
+Create a `plugin-scope-association.yaml` file under `cmd/plugin/plugin-scope-association.yaml` of your plugin repository.
+
+Sample file content
+
+```yaml
+plugins:
+- name: builder
+  target: global
+  isContextScoped: false
+- name: test
+  target: global
+  isContextScoped: false
+```
+
+Update the `PLUGIN_SCOPE_ASSOCIATION_FILE` variable in the `plugin-tooling.mk` file to point to the created association file:
+
+``` makefile
+PLUGIN_SCOPE_ASSOCIATION_FILE ?= $(ROOT_DIR)/cmd/plugin/plugin-scope-association.yaml
+```
+
+Whenever you change the `plugin-scope-association.yaml`, the plugins must be rebuilt to generate the proper plugin group information.
+
+``` sh
+make plugin-build
+```
+
+Run the below command to add a plugin group with the respective plugins:
+
+```sh
+make inventory-plugin-group-add PLUGIN_GROUP_NAME_VERSION=name:version PLUGIN_GROUP_DESCRIPTION="description"
+```
+
+name:version format ```{vendor-publisher/plugin_group_name}:vX.X.X```
+
+Examples
+
+- vmware-tanzucli/essentials:v1.0.0
+- vmware-tkg/default:v2.3.0
+- vmware-tap/default:v1.6.1
+
 will update the inventory database image at the plugin repository with the new plugin entries
 
 ### Using the published plugins
