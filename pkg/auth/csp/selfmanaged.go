@@ -6,6 +6,7 @@ package csp
 import (
 	"context"
 	"fmt"
+	"html"
 	"net/http"
 	"net/url"
 	"os"
@@ -63,7 +64,7 @@ func callbackHandler(w http.ResponseWriter, r *http.Request) {
 	defer tokenExchangeComplete()
 	code := r.URL.Query().Get("code")
 	if code == "" {
-		errMsg := fmt.Sprintf("[state] query params is required, URL %s did not have this query parameters", r.URL.String())
+		errMsg := fmt.Sprintf("[state] query params is required, URL %s did not have this query parameters", html.EscapeString(r.URL.String()))
 		http.Error(w, errMsg, http.StatusBadRequest)
 		log.Info(errMsg)
 		return
