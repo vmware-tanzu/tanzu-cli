@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -546,12 +547,23 @@ func getPluginTarget(pd *rtplugin.PluginDescriptor, pluginPath, id string) (stri
 }
 
 func savePluginManifest(manifest cli.Manifest, artifactsDir string, groupByOSArch bool) error {
-	b, err := yaml.Marshal(manifest)
-	if err != nil {
-		return err
-	}
+	log.Info("saving plugin manifest...")
 
 	if groupByOSArch {
+		pluginBundleOverwrite, _ := strconv.ParseBool(os.Getenv("PLUGIN_BUNDLE_OVERWRITE"))
+		existingManifest, err := helpers.ReadPluginManifest(filepath.Join(artifactsDir, cli.PluginManifestFileName))
+		if err == nil && !pluginBundleOverwrite {
+			// Since a manifest already exists, merge it with the newly generated manifest.
+			// Note that we are appending the existing manifest to the generated one
+			// which gives the generated one priority if there is already an existing plugin with
+			// a different version.
+			manifest = mergePluginManifest(manifest, *existingManifest)
+		}
+		b, err := yaml.Marshal(manifest)
+		if err != nil {
+			return err
+		}
+
 		arrTargetArch := getBuildArch(targetArch)
 		arrTargetArch = append(arrTargetArch, "")
 		for _, osarch := range arrTargetArch {
@@ -562,10 +574,37 @@ func savePluginManifest(manifest cli.Manifest, artifactsDir string, groupByOSArc
 			}
 		}
 	} else {
+		b, err := yaml.Marshal(manifest)
+		if err != nil {
+			return err
+		}
 		manifestPath := filepath.Join(artifactsDir, cli.ManifestFileName)
 		err = os.WriteFile(manifestPath, b, 0644)
 		if err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// mergePluginManifest merges 'incomingManifest' into 'baseManifest' giving 'baseManifest'
+// higher precedence in case of overlaps.
+func mergePluginManifest(baseManifest, incomingManifest cli.Manifest) cli.Manifest {
+	mergedManifest := baseManifest
+	for _, p := range incomingManifest.Plugins {
+		// if plugin not found in base manifest append
+		if findpluginInManifest(baseManifest, p) == nil {
+			mergedManifest.Plugins = append(mergedManifest.Plugins, p)
+		}
+	}
+	return mergedManifest
+}
+
+// findpluginInManifest checks if the plugin already specified in the manifest or not
+func findpluginInManifest(manifest cli.Manifest, plugin cli.Plugin) *cli.Plugin {
+	for _, p := range manifest.Plugins {
+		if p.Name == plugin.Name && p.Target == plugin.Target {
+			return &p
 		}
 	}
 	return nil
