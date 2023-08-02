@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -549,8 +550,9 @@ func savePluginManifest(manifest cli.Manifest, artifactsDir string, groupByOSArc
 	log.Info("saving plugin manifest...")
 
 	if groupByOSArch {
+		pluginBundleOverwrite, _ := strconv.ParseBool(os.Getenv("PLUGIN_BUNDLE_OVERWRITE"))
 		existingManifest, err := helpers.ReadPluginManifest(filepath.Join(artifactsDir, cli.PluginManifestFileName))
-		if err == nil {
+		if err == nil && !pluginBundleOverwrite {
 			// Since a manifest already exists, merge it with the newly generated manifest.
 			// Note that we are appending the existing manifest to the generated one
 			// which gives the generated one priority if there is already an existing plugin with

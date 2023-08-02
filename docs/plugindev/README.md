@@ -210,7 +210,7 @@ make plugin-build PLUGIN_NAME="baz" PLUGIN_BUILD_VERSION=v3.0.0
 ```
 
 **Note:** Because the builder plugin will automatically create merged plugin bundle if the `plugin_manifest.yaml` already exists,
-To remove all the already built plugins and start from fresh, please remove the artifacts directly by running `rm -rf ./artifacts`.
+For each new plugin build to replace any previous available bundle and start fresh, please configure the environment variable `PLUGIN_BUNDLE_OVERWRITE=true`
 
 The next steps are to write the plugin code to implement what the plugin is meant to do.
 
