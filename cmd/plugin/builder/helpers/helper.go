@@ -97,3 +97,14 @@ func GetNumberOfIndividualPluginBinariesFromManifest(pluginManifest *cli.Manifes
 	}
 	return numberOfPluginPackages * len(cli.AllOSArch)
 }
+
+// IsRequiredOSArch returns true if 'osArch' is one of the require OSArch
+// combinations that a plugin must support.
+func IsRequiredOSArch(osArch cli.Arch) bool {
+	for _, requiredOSArch := range cli.MinOSArch {
+		if osArch == requiredOSArch {
+			return true
+		}
+	}
+	return false
+}
