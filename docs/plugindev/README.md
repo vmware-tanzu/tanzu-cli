@@ -147,7 +147,7 @@ the plugins. These capabilities are most easily accessed through Makefile
 targets already set up for the same purposes. All plugin-related tooling has been
 added using the `plugin-tooling.mk` file.
 
-#### Build the plugin binary
+#### Build the plugin binary for local install
 
 ```sh
 # Building all plugins within the repository
@@ -180,6 +180,37 @@ Your plugin is now available for you through the Tanzu CLI. You can confirm
 this by running `tanzu plugin list` which will now show your plugin.
 
 Plugins are installed into `$XDG_DATA_HOME`, (read more about the XDG Base Directory Specification [here.](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html)
+
+#### Build the plugin binary for publishing
+
+```sh
+# Building all plugins within the repository for all required os-arch combination
+make plugin-build
+
+# Building only a single plugin for all required os-arch combination
+make plugin-build PLUGIN_NAME="<plugin-name>"
+
+# Building multiple plugins at a time for all required os-arch combination
+make plugin-build PLUGIN_NAME="{plugin-name-1,plugin-name-2}"
+```
+
+The `builder` plugin v1.0.0 or greater, supports generating the correct `plugin_manifest.yaml` and
+`plugin_bundle.tar.gz` when the user runs `make plugin-build PLUGIN_NAME="<plugin-name>"` individually
+multiple times to build different plugins possibly with different plugin versions. For example:
+
+```sh
+# Build `foo`. This will generate `plugin_bundle.tar.gz` containing just `foo:v1.0.0` plugin
+make plugin-build PLUGIN_NAME="foo" PLUGIN_BUILD_VERSION=v1.0.0
+
+# Build `bar`. This will generate `plugin_bundle.tar.gz` containing `foo:v1.0.0` and `bar:v2.0.0`
+make plugin-build PLUGIN_NAME="bar" PLUGIN_BUILD_VERSION=v2.0.0
+
+# Build `baz`. This will generate `plugin_bundle.tar.gz` containing `foo:v1.0.0`, `bar:v2.0.0`, `baz:v3.0.0`
+make plugin-build PLUGIN_NAME="baz" PLUGIN_BUILD_VERSION=v3.0.0
+```
+
+**Note:** Because the builder plugin will automatically create merged plugin bundle if the `plugin_manifest.yaml` already exists,
+For each new plugin build to replace any previous available bundle and start fresh, please configure the environment variable `PLUGIN_BUNDLE_OVERWRITE=true`
 
 The next steps are to write the plugin code to implement what the plugin is meant to do.
 
