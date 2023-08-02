@@ -81,7 +81,7 @@ CHOCO_IMAGE=$(CHOCO_BUILDER_IMAGE)
 endif
 
 # Add supported OS-ARCHITECTURE combinations here
-ENVS ?= linux-amd64 windows-amd64 darwin-amd64
+ENVS ?= linux-amd64 windows-amd64 darwin-amd64 linux-arm64 darwin-arm64
 
 CLI_TARGETS := $(addprefix build-cli-,${ENVS})
 
