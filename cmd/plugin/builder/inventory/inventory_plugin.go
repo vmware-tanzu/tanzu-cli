@@ -109,7 +109,7 @@ func (ipuo *InventoryPluginUpdateOptions) preparePluginInventoryEntriesFromManif
 	for i := range pluginManifest.Plugins {
 		var pluginInventoryEntry *plugininventory.PluginInventoryEntry
 
-		for _, osArch := range cli.MinOSArch {
+		for _, osArch := range cli.AllOSArch {
 			for _, version := range pluginManifest.Plugins[i].Versions {
 				pluginInventoryEntry, err = ipuo.updatePluginInventoryEntry(pluginInventoryEntry, pluginManifest.Plugins[i], osArch, version, pluginBinaryDigestMap)
 				if err != nil {
@@ -134,7 +134,7 @@ func (ipuo *InventoryPluginUpdateOptions) fetchPluginBinaryDigest(pluginManifest
 	fatalErrors := make(chan helpers.ErrInfo, helpers.GetNumberOfIndividualPluginBinariesFromManifest(pluginManifest))
 	var mutex = &sync.RWMutex{}
 
-	fetchPluginBinaryDigestFromImage := func(threadID string, pluginImage string, filename string) {
+	fetchPluginBinaryDigestFromImage := func(threadID string, pluginImage string, filename string, osArch cli.Arch) {
 		defer func() {
 			<-guard
 			wg.Done()
@@ -144,23 +144,37 @@ func (ipuo *InventoryPluginUpdateOptions) fetchPluginBinaryDigest(pluginManifest
 
 		digest, err := ipuo.ImageOperationsImpl.GetFileDigestFromImage(pluginImage, filename)
 		if err != nil {
-			fatalErrors <- helpers.ErrInfo{Err: errors.Wrapf(err, "error while getting plugin binary digest from the image %q", pluginImage), ID: threadID, Path: pluginImage}
+			// Return an error only for require OSArch combinations.
+			// For optional OSArch combinations, we can just ignore the missing plugin binary
+			// by not inserting the key to this pluginImage in the pluginBinaryDigestMap.
+			if helpers.IsRequiredOSArch(osArch) {
+				fatalErrors <- helpers.ErrInfo{Err: errors.Wrapf(err, "error while getting plugin binary digest from the image %q", pluginImage), ID: threadID, Path: pluginImage}
+
+				// Store an empty digest to differentiate between an optional OSArch that can be ignored
+				// and a required OSArch that is missing a digest due to an error
+				mutex.Lock()
+				pluginBinaryDigestMap[pluginImage] = ""
+				mutex.Unlock()
+			} else {
+				log.Infof("%s ignoring unavailable plugin for optional os/arch: %s", threadID, osArch.String())
+			}
+		} else {
+			mutex.Lock()
+			pluginBinaryDigestMap[pluginImage] = digest
+			mutex.Unlock()
 		}
-		mutex.Lock()
-		pluginBinaryDigestMap[pluginImage] = digest
-		mutex.Unlock()
 	}
 
 	if !ipuo.ValidateOnly {
 		id := 0
 		for i := range pluginManifest.Plugins {
-			for _, osArch := range cli.MinOSArch {
+			for _, osArch := range cli.AllOSArch {
 				for _, version := range pluginManifest.Plugins[i].Versions {
 					wg.Add(1)
 					guard <- struct{}{}
 					pluginImageBasePath := fmt.Sprintf("%s/%s/%s/%s/%s/%s:%s", ipuo.Vendor, ipuo.Publisher, osArch.OS(), osArch.Arch(), pluginManifest.Plugins[i].Target, pluginManifest.Plugins[i].Name, version)
 					pluginImage := fmt.Sprintf("%s/%s", ipuo.Repository, pluginImageBasePath)
-					go fetchPluginBinaryDigestFromImage(helpers.GetID(id), pluginImage, cli.MakeArtifactName(pluginManifest.Plugins[i].Name, osArch))
+					go fetchPluginBinaryDigestFromImage(helpers.GetID(id), pluginImage, cli.MakeArtifactName(pluginManifest.Plugins[i].Name, osArch), osArch)
 					id++
 				}
 			}
@@ -184,13 +198,19 @@ func (ipuo *InventoryPluginUpdateOptions) fetchPluginBinaryDigest(pluginManifest
 // Pass the digest map to this function to update the plugin inventory entry in sync operation
 func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInventoryEntry *plugininventory.PluginInventoryEntry, plugin cli.Plugin, osArch cli.Arch, version string, pluginBinaryDigestMap map[string]string) (*plugininventory.PluginInventoryEntry, error) {
 	var digest string
+	var exists bool
 
 	pluginImageBasePath := fmt.Sprintf("%s/%s/%s/%s/%s/%s:%s", ipuo.Vendor, ipuo.Publisher, osArch.OS(), osArch.Arch(), plugin.Target, plugin.Name, version)
 	if !ipuo.ValidateOnly {
 		// If we are only validating the plugin's existence, we don't need to waste
 		// resources downloading the image to get the digest which won't actually be used.
 		pluginImage := fmt.Sprintf("%s/%s", ipuo.Repository, pluginImageBasePath)
-		digest = pluginBinaryDigestMap[pluginImage]
+		digest, exists = pluginBinaryDigestMap[pluginImage]
+		if !exists {
+			// For optional OSArch combinations, we can just ignore the missing plugin binary
+			return pluginInventoryEntry, nil
+		}
+		// For required OSArch, an empty digest is not expected
 		if digest == "" {
 			return nil, errors.Errorf("plugin binary digest cannot be empty for image %q", pluginImage)
 		}
@@ -207,7 +227,7 @@ func (ipuo *InventoryPluginUpdateOptions) updatePluginInventoryEntry(pluginInven
 			Hidden:      ipuo.DeactivatePlugins,
 		}
 	}
-	_, exists := pluginInventoryEntry.Artifacts[version]
+	_, exists = pluginInventoryEntry.Artifacts[version]
 	if !exists {
 		pluginInventoryEntry.Artifacts[version] = make([]distribution.Artifact, 0)
 	}
