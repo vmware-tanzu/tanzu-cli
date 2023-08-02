@@ -1,4 +1,4 @@
-name: Main
+name: Build
 
 on:
   pull_request:
@@ -53,6 +53,14 @@ jobs:
         make tools
         echo "${PWD}/hack/tools/bin" >> $GITHUB_PATH
 
+    - name: Run lint
+      run: |
+        make lint
+
     - name: Run make verify
       run: |
         make verify
+
+    - name: Cross build
+      run: |
+        make cross-build

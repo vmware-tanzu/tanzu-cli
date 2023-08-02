@@ -36,18 +36,6 @@ jobs:
           echo "${PWD}/hack/tools/bin" >> $GITHUB_PATH
           echo "${PWD}/bin" >> $GITHUB_PATH
 
-      - name: Run gomod
-        run: |
-          make gomod
-
-      - name: Cross build
-        run: |
-          make cross-build
-
-      - name: Run lint
-        run: |
-          make lint
-
       - name: Run Unit Test
         run: |
           make test | tee ./make_test.output
