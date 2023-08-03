@@ -108,10 +108,18 @@ choco uninstall tanzu-cli-unstable
 
 The Tanzu CLI Chocolatey package is published to the main Chocolatey
 community package repository under the `vmware-tanzu` user account.
-This step currently needs to be done manually by running the command:
+This step currently needs to be done manually by running the following
+commands.  Note that the docker `chocolatey/choco:v1.4.0` needs to be
+run under AMD64 for the `choco` command to work.
 
 ```bash
-choco push --source https://push.chocolatey.org/ --api-key <api-key> hack/choco/_output/choco/tanzu-cli.<version>.nupkg
+$ docker run --rm -it chocolatey/choco:v1.4.0
+curl -sLO <URL of Choco package build>/chocorepo.tgz
+tar xf chocorepo.tgz
+# For final releases
+choco push --source https://push.chocolatey.org/ --api-key <api-key> choco/tanzu-cli.<version>.nupkg
+# or for the tanzu-cli-unstable package
+choco push --source https://push.chocolatey.org/ --api-key <api-key> choco/tanzu-cli-unstable.<version>.nupkg
 ```
 
 The package will almost immediately become available for installation using
@@ -125,3 +133,9 @@ in as vmware-tanzu):
 ```bash
 https://community.chocolatey.org/profiles/vmware-tanzu
 ```
+
+## Testing after publication
+
+As soon as the `choco push` command is done, the package should be available
+using the `--version` flag.  To install it please refer to
+[the installation documentation](../../docs/quickstart/install.md#chocolatey-windows).
