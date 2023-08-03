@@ -42,6 +42,21 @@ if ! command -v bzip2 &> /dev/null || ! command -v curl &> /dev/null; then
    ${PKG_MGR} install -y bzip2 curl
 fi
 
+function cleanPackageFile {
+   file=$1
+
+   # There must be an empty line between each package section.
+   # Our package sections alwaya end with the "Description: " line,
+   # so let's append an empty line after that Description line.
+   # But to avoid accumulating empty lines from one release to the other
+   # we then pass the output to 'uniq' which will remove duplicate lines
+   # including such empty ones.
+   # We do this cleanup because we need to recover from a Packages file
+   # that is missing a couple of empty lines; this error happened
+   # when we published the v1.0.0-rc.1 tanzu-cli-unstable package.
+   sed '/Description: / a\\' $file | uniq > $file.tmp && \mv $file.tmp $file
+}
+
 # Generate the repo metadata
 DIST_DIR=${OUTPUT_DIR}/apt/dists/tanzu-cli-jessie
 for arch in amd64 arm64; do
@@ -65,9 +80,11 @@ for arch in amd64 arm64; do
    else
       # To build a brand new repo, we must pass in DEB_METADATA_BASE_URI=new
       curl -sLo ${FINAL_DIR}/Packages ${DEB_METADATA_BASE_URI}/apt/dists/tanzu-cli-jessie/main/binary-${arch}/Packages
+      cleanPackageFile ${FINAL_DIR}/Packages
    fi
 
-   # Generate the new entry for the new package and add it to the existing file of packages
+   # Generate the new entry for the new package and add it to the existing file of packages.
+   # The last empty line is essential to separate different package entries.
    cat << EOF >> ${FINAL_DIR}/Packages
 Package: tanzu-cli${UNSTABLE}
 Version: ${VERSION}
@@ -83,6 +100,7 @@ SHA1: $(sha1sum ${PKG} | cut -f1 -d' ')
 MD5sum: $(md5sum ${PKG} | cut -f1 -d' ')
 SHA512: $(sha512sum ${PKG} | cut -f1 -d' ')
 Description: The core Tanzu CLI
+
 EOF
 
    # Create the two compressed Packages file
