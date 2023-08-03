@@ -41,6 +41,10 @@ echoImages() {
     echo "    - a small amount of plugins matching product plugin names"
     echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
     echo "    - SHAs are used to reference the v9.9.9 plugin binaries and tags for v0.0.1"
+    echo "=> localhost:9876/tanzu-cli/plugins/extra:small"
+    echo "    - a small amount of plugins matching product plugin names"
+    echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
+    echo "    - both tables contain an extra column"
 }
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     usage
@@ -69,6 +73,7 @@ sanboxImage2=sandbox2:small
 smallAirgappedImage=airgapped:small
 largeAirgappedImage=airgapped:large
 smallImageUsingSHAs=shas:small
+extraColumn=extra:small
 database=/tmp/plugin_inventory.db
 publisher="vmware/tkg"
 
@@ -97,6 +102,7 @@ addPlugin() {
     local pushBinary=$3
     local versions=$4
     local useSHAs=$5
+    local extra=$6
 
     local tmpPluginPhase1="/tmp/fakeplugin1.sh"
     local tmpPluginPhase2="/tmp/fakeplugin2.sh"
@@ -146,6 +152,12 @@ addPlugin() {
                 local image_ref="$image_path:$version"
                 [ -n "$useSHAs" ] && image_ref="$image_path@$sha"
                 local sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$recommended','$version','false','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_ref');"
+
+                # With "extra" specified, we need to insert an extra value for the extra column
+                if [ -n "$extra" ]; then
+                    sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$extra','$recommended','$version','false','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_ref');"
+                fi
+                
                 if [ "$dry_run" = "echo" ]; then
                     echo $sql_cmd
                 else
@@ -164,12 +176,19 @@ addGroup() {
     local plugin=$5
     local target=$6
     local pluginVersion=$7
+    local extra=$8
     local mandatory='true'
     local hidden='false'
 
     echo "Adding $plugin/$target version $pluginVersion to plugin group $vendor-$publisher/$name:$groupVersion"
 
     local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$groupVersion','Desc for $vendor-$publisher/$name:$groupVersion','$plugin','$target','$pluginVersion', '$mandatory', '$hidden');"
+
+    # With "extra" specified, we need to insert an extra value for the extra column
+    if [ -n "$extra" ]; then
+        local sql_cmd="INSERT INTO PluginGroups VALUES('$vendor','$publisher','$name','$groupVersion','$extra','Desc for $vendor-$publisher/$name:$groupVersion','$plugin','$target','$pluginVersion', '$mandatory', '$hidden');"
+    fi
+
     if [ "$dry_run" = "echo" ]; then
         echo $sql_cmd
     else
@@ -417,5 +436,46 @@ done
 # Push airgapped inventory file
 ${dry_run} imgpkg push -i $repoBasePath/$smallImageUsingSHAs -f $database --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$smallImageUsingSHAs
+
+# Create an additional image that has an extra column in each table
+echo "======================================"
+echo "Creating a test Central Repository as an extracolumn build: $repoBasePath/$extraColumn"
+echo "======================================"
+# Reset the DB
+rm -f $database
+touch $database
+# Create the DB tables with the extra column
+cat $ROOT_DIR/create_tables_extra.sql | sqlite3 -batch $database
+
+for name in ${globalPlugins[*]}; do
+    addPlugin $name global true '' '' extra_global
+done
+
+for name in ${essentialPlugins[*]}; do
+    addPlugin $name global true '' '' extra_essential
+    addGroup vmware tanzucli essentials v0.0.1 $name global v0.0.1 extra_essential_1
+    addGroup vmware tanzucli essentials v9.9.9 $name global v9.9.9 extra_essential_9
+done
+
+for name in ${k8sPlugins[*]}; do
+    addPlugin $name kubernetes true '' '' extra_k8s
+    addGroup vmware tkg default v0.0.1 $name kubernetes v0.0.1 extra_k8s_1
+    addGroup vmware tkg default v9.9.9 $name kubernetes v9.9.9 extra_k8s_9
+done
+
+for name in ${tmcPlugins[*]}; do
+    addPlugin $name mission-control true '' '' extra_tmc
+    addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1 extra_tmc_1
+    addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9 extra_tmc_9
+done
+
+for name in ${pluginUsingSha[*]}; do
+    addPlugin $name global true v0.0.1 useSha extra_sha_1
+    addPlugin $name global true v9.9.9 useSha extra_sha_9
+done
+
+# Push extra column inventory file
+${dry_run} imgpkg push -i $repoBasePath/$extraColumn -f $database --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$extraColumn
 
 rm -f $database
