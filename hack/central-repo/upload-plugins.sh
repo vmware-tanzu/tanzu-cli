@@ -151,11 +151,11 @@ addPlugin() {
 
                 local image_ref="$image_path:$version"
                 [ -n "$useSHAs" ] && image_ref="$image_path@$sha"
-                local sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$recommended','$version','false','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_ref');"
+                local sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$recommended','$version','false','$name functionality','TKG','VMware','$os','$arch','$digest','$image_ref');"
 
                 # With "extra" specified, we need to insert an extra value for the extra column
                 if [ -n "$extra" ]; then
-                    sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$extra','$recommended','$version','false','Desc for $name','TKG','VMware','$os','$arch','$digest','$image_ref');"
+                    sql_cmd="INSERT INTO PluginBinaries VALUES('$name','$target','$extra','$recommended','$version','false','$name functionality','TKG','VMware','$os','$arch','$digest','$image_ref');"
                 fi
                 
                 if [ "$dry_run" = "echo" ]; then
