@@ -35,6 +35,7 @@ docker build -t ${IMAGE} ${ROOT_DIR} -f - <<- EOF
    COPY upload-plugins.sh .
    COPY fakeplugin.sh .
    COPY create_tables.sql .
+   COPY create_tables_extra.sql .
    COPY cosign-key-pair ./cosign-key-pair
 EOF
 
