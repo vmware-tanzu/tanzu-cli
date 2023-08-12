@@ -473,6 +473,10 @@ func TestUpgradePlugin(t *testing.T) {
 }
 
 func TestCompletionPlugin(t *testing.T) {
+	// This is global logic and needs not be tested for each
+	// command.  Let's deactivate it.
+	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
+
 	// Test local discovery
 	localSourcePath := filepath.Join("..", "fakes", "plugins", cli.GOOS, cli.GOARCH)
 
@@ -964,6 +968,8 @@ func TestCompletionPlugin(t *testing.T) {
 			resetPluginCommandFlags()
 		})
 	}
+
+	os.Unsetenv("TANZU_ACTIVE_HELP")
 }
 
 func resetPluginCommandFlags() {

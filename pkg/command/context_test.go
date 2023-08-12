@@ -947,7 +947,7 @@ var _ = Describe("testing context use", func() {
 	})
 })
 
-func Test_completionContext(t *testing.T) {
+func TestCompletionContext(t *testing.T) {
 	ctxK8s1 := &configtypes.Context{
 		Name:        "tkg1",
 		ContextType: configtypes.ContextTypeK8s,
@@ -1010,6 +1010,10 @@ func Test_completionContext(t *testing.T) {
 
 	// Set the default config file to the second file
 	os.Setenv("KUBECONFIG", kubeconfigFile2.Name())
+
+	// This is global logic and needs not be tested for each
+	// command.  Let's deactivate it.
+	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
 
 	tests := []struct {
 		test     string
@@ -1263,6 +1267,8 @@ func Test_completionContext(t *testing.T) {
 	os.Unsetenv("KUBECONFIG")
 	os.RemoveAll(kubeconfigFile1.Name())
 	os.RemoveAll(kubeconfigFile2.Name())
+
+	os.Unsetenv("TANZU_ACTIVE_HELP")
 }
 
 func resetContextCommandFlags() {
