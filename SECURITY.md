@@ -6,7 +6,7 @@ The community has adopted this security disclosure and response policy to ensure
 
 ## Supported Versions
 
-The Tanzu CLI is released every three months, and supported via this [support policy](https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/full/policy.md#tanzu-cli-support-policy).
+Minor versions of the Tanzu CLI are expected to be released every three months. These releases, along with possible patch releases will be supported under this [support policy](https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/full/policy.md#tanzu-cli-support-policy).
 
 ## Reporting a Vulnerability - Private Disclosure Process
 
@@ -43,7 +43,7 @@ The VMware Security Team will respond to vulnerability reports as follows:
 5. The Security Team will also create a [CVSS](https://www.first.org/cvss/specification-document) using the [CVSS Calculator](https://www.first.org/cvss/calculator/3.0). The Security Team makes the final call on the calculated CVSS; it is better to move quickly than making the CVSS perfect. Issues may also be reported to [Mitre](https://cve.mitre.org/) using this [scoring calculator](https://nvd.nist.gov/vuln-metrics/cvss/v3-calculator). The CVE will initially be set to private.
 6. The Security Team will work on fixing the vulnerability and perform internal testing before preparing to roll out the fix.
 7. The Security Team will provide early disclosure of the vulnerability by emailing the Tanzu CLI Distributors (`tanzu-cli-distributors@googlegroups.com`) mailing list. Distributors can initially plan for the vulnerability patch ahead of the fix, and later can test the fix and provide feedback to the Tanzu CLI team. See the section **Early Disclosure to Tanzu CLI Distributors List** for details about how to join this mailing list.
-8. A public disclosure date is negotiated by the VMware SecurityTeam, the bug submitter, and the distributors list. We prefer to fully disclose the bug as soon as possible once a user mitigation or patch is available. It is reasonable to delay disclosure when the bug or the fix is not yet fully understood, the solution is not well-tested, or for distributor coordination. The timeframe for disclosure is from immediate (especially if it’s already publicly known) to a few weeks. For a critical vulnerability with a straightforward mitigation, we expect the report date for the public disclosure date to be on the order of 14 business days. The VMware Security Team holds the final say when setting a public disclosure date.
+8. A public disclosure date is negotiated by the VMware Security Team, the bug submitter, and the distributors list. We prefer to fully disclose the bug as soon as possible once a user mitigation or patch is available. It is reasonable to delay disclosure when the bug or the fix is not yet fully understood, the solution is not well-tested, or for distributor coordination. The timeframe for disclosure is from immediate (especially if it’s already publicly known) to a few weeks. For a critical vulnerability with a straightforward mitigation, we expect the report date for the public disclosure date to be on the order of 14 business days. The VMware Security Team holds the final say when setting a public disclosure date.
 9. Once the fix is confirmed, the Security Team will patch the vulnerability in the next patch or minor release, and backport a patch release into all earlier supported releases. Upon release of the patched version of Tanzu CLI, we will follow the **Public Disclosure Process**.
 
 ## Public Disclosure Process
