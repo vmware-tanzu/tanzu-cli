@@ -116,6 +116,34 @@ spec:
   description: Feature plugin operations
 ```
 
+For Tanzu CLI to read these `CLIPlugin` resources available on the kubernetes
+cluster `get` and `list` RBAC permission needs to be given to all the users.
+To do that please configure below RBAC rules on your kubernetes cluster.
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: read-cli-plugins
+rules:
+- apiGroups: ["cli.tanzu.vmware.com"]
+  resources: ["cliplugins"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+ name: read-cli-plugins-rolebinding
+subjects:
+- kind: Group
+  name: system:authenticated
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: read-cli-plugins
+  apiGroup: rbac.authorization.k8s.io
+```
+
 ### When the context is of type Mission-Control
 
 When the context is of type mission control, the Tanzu CLI uses a REST discovery to fetch the
