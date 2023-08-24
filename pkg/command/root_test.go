@@ -283,8 +283,9 @@ func TestSubcommands(t *testing.T) {
 				InstallationPath: filepath.Join(dir, spec.plugin),
 				Target:           spec.target,
 			}
-			cc, err := catalog.NewContextCatalog("")
+			cc, err := catalog.NewContextCatalogUpdater("")
 			assert.Nil(err)
+			defer cc.Unlock()
 			err = cc.Upsert(pi)
 			assert.Nil(err)
 

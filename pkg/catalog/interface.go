@@ -14,11 +14,22 @@ type PluginSupplier interface {
 	GetInstalledPlugins() ([]*cli.PluginInfo, error)
 }
 
-// PluginCatalog is the interface to a collection of installed plugins.
-type PluginCatalog interface {
-	// Upsert inserts/updates the given plugin.
-	Upsert(plugin cli.PluginInfo)
+// PluginCatalogUpdater is the interface to read and update a collection of installed plugins.
+type PluginCatalogUpdater interface {
+	PluginCatalogReader
 
+	// Upsert inserts/updates the given plugin.
+	Upsert(plugin *cli.PluginInfo) error
+
+	// Delete deletes the given plugin from the catalog, but it does not delete the installation.
+	Delete(plugin string) error
+
+	// Unlock unlocks the catalog for other process to read/write
+	Unlock()
+}
+
+// PluginCatalogReader is the interface to a read collection of installed plugins.
+type PluginCatalogReader interface {
 	// Get looks up the info of a plugin given its name.
 	Get(pluginName string) (cli.PluginInfo, bool)
 
@@ -26,7 +37,4 @@ type PluginCatalog interface {
 	// Active plugin means the plugin that are available to the user
 	// based on the current logged-in server.
 	List() []cli.PluginInfo
-
-	// Delete deletes the given plugin from the catalog, but it does not delete the installation.
-	Delete(plugin string)
 }

@@ -1104,13 +1104,14 @@ func doInstallTestPlugin(p *discovery.Discovered, pluginPath, version string) er
 }
 
 func updatePluginInfoAndInitializePlugin(p *discovery.Discovered, plugin *cli.PluginInfo) error {
-	c, err := catalog.NewContextCatalog(p.ContextName)
+	c, err := catalog.NewContextCatalogUpdater(p.ContextName)
 	if err != nil {
 		return err
 	}
 	if err := c.Upsert(plugin); err != nil {
 		log.Info("Plugin Info could not be updated in cache")
 	}
+	c.Unlock()
 	if err := InitializePlugin(plugin); err != nil {
 		log.Infof("could not initialize plugin after installing: %v", err.Error())
 	}
@@ -1221,7 +1222,7 @@ func doDeletePluginFromCatalog(pluginName string, target configtypes.Target, cat
 		// If we re-use the catalogs created above, when we delete the plugin
 		// in one catalog, the next catalog will put it back since that catalog
 		// was created before the plugin was deleted.
-		c, err := catalog.NewContextCatalog(n)
+		c, err := catalog.NewContextCatalogUpdater(n)
 		if err != nil {
 			continue
 		}
@@ -1230,6 +1231,7 @@ func doDeletePluginFromCatalog(pluginName string, target configtypes.Target, cat
 		if err != nil {
 			return fmt.Errorf("plugin %q could not be deleted from cache", pluginName)
 		}
+		c.Unlock()
 	}
 
 	return nil

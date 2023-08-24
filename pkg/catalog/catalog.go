@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/rogpeppe/go-internal/lockedfile"
 	"gopkg.in/yaml.v3"
 
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -33,11 +34,24 @@ var (
 type ContextCatalog struct {
 	sharedCatalog *Catalog
 	plugins       PluginAssociation
+	unlock        func()
 }
 
-// NewContextCatalog creates context-aware catalog
-func NewContextCatalog(context string) (*ContextCatalog, error) {
-	sc, err := getCatalogCache()
+// NewContextCatalog creates context-aware catalog for reading the catalog
+func NewContextCatalog(context string) (PluginCatalogReader, error) {
+	return newContextCatalog(context, false)
+}
+
+// NewContextCatalogUpdater creates context-aware catalog for reading/updating the catalog
+// When using this API invoker needs to call `Unlock` API to unlock the WriteLock
+// acquired to update the catalog
+func NewContextCatalogUpdater(context string) (PluginCatalogUpdater, error) {
+	return newContextCatalog(context, true)
+}
+
+// newContextCatalog creates a new context-aware catalog object
+func newContextCatalog(context string, lockCatalog bool) (*ContextCatalog, error) {
+	sc, unlock, err := getCatalogCache(lockCatalog)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +71,7 @@ func NewContextCatalog(context string) (*ContextCatalog, error) {
 	return &ContextCatalog{
 		sharedCatalog: sc,
 		plugins:       plugins,
+		unlock:        unlock,
 	}, nil
 }
 
@@ -77,23 +92,14 @@ func (c *ContextCatalog) Upsert(plugin *cli.PluginInfo) error {
 	// When inserting the "global" or "k8s" target we should remove any similar plugin using
 	// the "unknown" target and vice versa.
 	if plugin.Target == configtypes.TargetGlobal || plugin.Target == configtypes.TargetK8s {
-		c.deleteOldTargetEntries(PluginNameTarget(plugin.Name, configtypes.TargetUnknown))
+		delete(c.plugins, PluginNameTarget(plugin.Name, configtypes.TargetUnknown))
 	} else if plugin.Target == configtypes.TargetUnknown {
 		// This could be a global plugin or a k8s plugin (but not both), so let's
 		// delete either pre-existing entry from the catalog
-		c.deleteOldTargetEntries(PluginNameTarget(plugin.Name, configtypes.TargetGlobal))
-		c.deleteOldTargetEntries(PluginNameTarget(plugin.Name, configtypes.TargetK8s))
+		delete(c.plugins, PluginNameTarget(plugin.Name, configtypes.TargetUnknown))
+		delete(c.plugins, PluginNameTarget(plugin.Name, configtypes.TargetUnknown))
 	}
-
 	return saveCatalogCache(c.sharedCatalog)
-}
-
-func (c *ContextCatalog) deleteOldTargetEntries(key string) {
-	if oldInstallationPath, exists := c.plugins[key]; exists {
-		delete(c.sharedCatalog.IndexByPath, oldInstallationPath)
-		delete(c.plugins, key)
-		delete(c.sharedCatalog.IndexByName, key)
-	}
 }
 
 // Get looks up the descriptor of a plugin given its name.
@@ -131,8 +137,12 @@ func (c *ContextCatalog) Delete(plugin string) error {
 	if ok {
 		delete(c.plugins, plugin)
 	}
-
 	return saveCatalogCache(c.sharedCatalog)
+}
+
+// Unlock unlocks the catalog for other process to read/write
+func (c *ContextCatalog) Unlock() {
+	c.unlock()
 }
 
 // getCatalogCacheDir returns the local directory in which tanzu state is stored.
@@ -161,21 +171,43 @@ func newSharedCatalog() (*Catalog, error) {
 	return c, nil
 }
 
-// getCatalogCache retrieves the catalog from the local directory.
-func getCatalogCache() (catalog *Catalog, err error) {
-	b, err := os.ReadFile(getCatalogCachePath())
+// getCatalogCache retrieves the catalog from the local directory along with locking the catalog file
+// If `setWriteLock` is false, it will read the catalog file with ReadLock and release the lock at the same time
+// If `setWriteLock` is true, it will apply WriteLock to the catalog file, read the catalog file
+// and keep the WriteLock to the file along with returning `unlock` function. It is caller
+// functions responsibility to unlock the WriteLock after the catalog update
+func getCatalogCache(setWriteLock bool) (catalog *Catalog, unlock func(), err error) {
+	unlock = func() {}
+	var b []byte
+
+	if setWriteLock {
+		var lockedFile *lockedfile.File
+		lockedFile, err = lockedfile.Edit(getCatalogCachePath())
+		if err != nil {
+			return nil, nil, err
+		}
+		unlock = func() {
+			if lockedFile != nil {
+				lockedFile.Close()
+			}
+		}
+		b, err = os.ReadFile(getCatalogCachePath())
+	} else {
+		b, err = lockedfile.Read(getCatalogCachePath())
+	}
+
 	if err != nil {
 		catalog, err = newSharedCatalog()
 		if err != nil {
-			return nil, err
+			return nil, unlock, err
 		}
-		return catalog, nil
+		return catalog, unlock, nil
 	}
 
 	var c Catalog
 	err = yaml.Unmarshal(b, &c)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not decode catalog file")
+		return nil, unlock, errors.Wrap(err, "could not decode catalog file")
 	}
 
 	if c.IndexByPath == nil {
@@ -191,7 +223,7 @@ func getCatalogCache() (catalog *Catalog, err error) {
 		c.ServerPlugins = map[string]PluginAssociation{}
 	}
 
-	return &c, nil
+	return &c, unlock, nil
 }
 
 // saveCatalogCache saves the catalog in the local directory.

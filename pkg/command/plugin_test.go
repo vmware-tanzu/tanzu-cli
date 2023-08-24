@@ -175,8 +175,9 @@ func TestPluginList(t *testing.T) {
 		var completionType uint8
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
-			cc, err := catalog.NewContextCatalog("")
+			cc, err := catalog.NewContextCatalogUpdater("")
 			assert.Nil(err)
+			defer cc.Unlock()
 			pluginInstallationPath := ""
 			for i, pluginName := range spec.plugins {
 				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
@@ -268,8 +269,9 @@ func TestDeletePlugin(t *testing.T) {
 		var completionType uint8
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
-			cc, err := catalog.NewContextCatalog("")
+			cc, err := catalog.NewContextCatalogUpdater("")
 			assert.Nil(err)
+			defer cc.Unlock()
 
 			for i, pluginName := range spec.plugins {
 				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})

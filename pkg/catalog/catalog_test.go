@@ -27,9 +27,10 @@ func Test_ContextCatalog_With_Empty_Context(t *testing.T) {
 	defer os.RemoveAll(pluginRootDir)
 
 	// Create catalog without context
-	cc, err := NewContextCatalog("")
+	cc, err := NewContextCatalogUpdater("")
 	assert.Nil(err)
 	assert.NotNil(cc)
+	defer cc.Unlock()
 
 	pd1 := cli.PluginInfo{
 		Name:             "fakeplugin1",
@@ -105,9 +106,10 @@ func Test_ContextCatalog_With_Context(t *testing.T) {
 	common.DefaultPluginRoot = pluginRootDir
 	defer os.RemoveAll(pluginRootDir)
 
-	cc, err := NewContextCatalog("server")
+	cc, err := NewContextCatalogUpdater("server")
 	assert.Nil(err)
 	assert.NotNil(cc)
+	defer cc.Unlock()
 
 	pd1 := cli.PluginInfo{
 		Name:             "fakeplugin1",
