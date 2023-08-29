@@ -37,7 +37,7 @@ func DeleteIncorrectPluginEntriesFromCatalog() {
 			// If we have a plugin with the "global" or "k8s" target we should remove any similar plugin using
 			// the "unknown" target.
 			if pluginInfo.Target == configtypes.TargetGlobal || pluginInfo.Target == configtypes.TargetK8s {
-				delete(c.StandAlonePlugins, PluginNameTarget(pluginInfo.Name, configtypes.TargetUnknown))
+				delete(pluginAssociations[i], PluginNameTarget(pluginInfo.Name, configtypes.TargetUnknown))
 			}
 		}
 	}

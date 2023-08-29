@@ -1228,10 +1228,10 @@ func doDeletePluginFromCatalog(pluginName string, target configtypes.Target, cat
 		}
 
 		err = c.Delete(catalog.PluginNameTarget(pluginName, target))
+		c.Unlock()
 		if err != nil {
 			return fmt.Errorf("plugin %q could not be deleted from cache", pluginName)
 		}
-		c.Unlock()
 	}
 
 	return nil

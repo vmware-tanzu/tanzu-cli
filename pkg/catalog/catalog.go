@@ -5,6 +5,7 @@ package catalog
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -191,7 +192,7 @@ func getCatalogCache(setWriteLock bool) (catalog *Catalog, unlock func(), err er
 				lockedFile.Close()
 			}
 		}
-		b, err = os.ReadFile(getCatalogCachePath())
+		b, err = io.ReadAll(lockedFile)
 	} else {
 		b, err = lockedfile.Read(getCatalogCachePath())
 	}
