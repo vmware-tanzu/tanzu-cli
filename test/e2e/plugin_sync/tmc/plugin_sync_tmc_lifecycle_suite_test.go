@@ -82,7 +82,7 @@ var _ = BeforeSuite(func() {
 	os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 	// Check whether the TMC token is set and whether TANZU_CLI_E2E_TEST_ENVIRONMENT is set to skip HTTPS hardcoding when mocking TMC response.
-	Expect(os.Getenv(framework.TanzuAPIToken)).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with TMC API Token", framework.TanzuAPIToken))
+	// Expect(os.Getenv(framework.TanzuAPIToken)).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with TMC API Token", framework.TanzuAPIToken))
 	Expect(os.Getenv(framework.CLIE2ETestEnvironment)).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set as true otherwise e2e tests will fails", framework.CLIE2ETestEnvironment))
 
 	// create tmc/mappings config folder, in $HOME/.tanzu-cli-e2e/temp directory
