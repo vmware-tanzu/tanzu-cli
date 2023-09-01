@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     name: Tanzu CLI Unit Tests
-    runs-on: rhel-latest
+    runs-on: [self-hosted, rhel-runner]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
