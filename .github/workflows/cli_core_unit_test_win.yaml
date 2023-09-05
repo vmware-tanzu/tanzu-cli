@@ -1,4 +1,4 @@
-name: Tanzu CLI Unit Tests on rhel-latest
+name: Tanzu CLI Unit Tests on Windows
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     name: Tanzu CLI Unit Tests
-    runs-on: [rhel-runner]
+    runs-on: [windows-latest]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
