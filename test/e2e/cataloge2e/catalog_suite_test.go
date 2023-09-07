@@ -24,7 +24,7 @@ var (
 	e2eTestLocalCentralRepoURL string
 )
 
-// BeforeSuite initializes and set up the environment to execute the plugin life cycle and plugin group life cycle end-to-end test cases
+// BeforeSuite initializes and set up the environment to execute the catalog updates end-to-end test cases
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
 

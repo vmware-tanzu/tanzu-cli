@@ -1111,7 +1111,12 @@ func updatePluginInfoAndInitializePlugin(p *discovery.Discovered, plugin *cli.Pl
 	if err := c.Upsert(plugin); err != nil {
 		log.Info("Plugin Info could not be updated in cache")
 	}
+
+	// We are not using defer `c.Unlock()` to release the lock here because we want to unlock the lock as soon as possible
+	// Using `defer` here will release the lock after `InitializePlugin`, `ConfigureDefaultFeatureFlagsIfMissing`,
+	// `addPluginToCommandTreeCache` invocations which is not what we want.
 	c.Unlock()
+
 	if err := InitializePlugin(plugin); err != nil {
 		log.Infof("could not initialize plugin after installing: %v", err.Error())
 	}

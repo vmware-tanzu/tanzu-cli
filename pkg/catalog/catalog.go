@@ -95,10 +95,12 @@ func (c *ContextCatalog) Upsert(plugin *cli.PluginInfo) error {
 	if plugin.Target == configtypes.TargetGlobal || plugin.Target == configtypes.TargetK8s {
 		delete(c.plugins, PluginNameTarget(plugin.Name, configtypes.TargetUnknown))
 	} else if plugin.Target == configtypes.TargetUnknown {
-		// This could be a global plugin or a k8s plugin (but not both), so let's
-		// delete either pre-existing entry from the catalog
-		delete(c.plugins, PluginNameTarget(plugin.Name, configtypes.TargetUnknown))
-		delete(c.plugins, PluginNameTarget(plugin.Name, configtypes.TargetUnknown))
+		// An older plugin binary may not specify a target (through its 'info' command).
+		// Therefore the plugin could be a global plugin or a k8s plugin (but not both).
+		// We need to delete either pre-existing entries from the catalog to avoid having
+		// a double entry.
+		delete(c.plugins, PluginNameTarget(plugin.Name, configtypes.TargetGlobal))
+		delete(c.plugins, PluginNameTarget(plugin.Name, configtypes.TargetK8s))
 	}
 	return saveCatalogCache(c.sharedCatalog)
 }
