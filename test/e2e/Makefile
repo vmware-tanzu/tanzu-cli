@@ -146,3 +146,14 @@ e2e-airgapped-tests:
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/airgapped  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+
+.PHONY: e2e-catalog-tests ## Execute E2E catalog tests
+e2e-catalog-tests:
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH) ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
+	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
+	export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
+	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
+	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/cataloge2e  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
