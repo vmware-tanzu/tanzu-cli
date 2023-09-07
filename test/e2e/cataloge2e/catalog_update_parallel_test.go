@@ -1,6 +1,7 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
+// Package cataloge2e implements e2e tests specific to catalog cache updates
 package cataloge2e
 
 import (
@@ -8,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 )
 
@@ -41,7 +43,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Catalog-Update]", func() 
 					wg.Add(1)
 					go func() {
 						defer wg.Done()
-						tf.CliOps.CLIVersion()
+						_, _ = tf.CliOps.CLIVersion()
 					}()
 				}
 				wg.Wait()
@@ -73,7 +75,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Catalog-Update]", func() 
 				wg.Add(1)
 				go func(pluginGroup *framework.PluginGroupGet) {
 					defer wg.Done()
-					tf.PluginCmd.InstallPlugin(pluginGroup.PluginName, pluginGroup.PluginTarget, pluginGroup.PluginVersion)
+					_ = tf.PluginCmd.InstallPlugin(pluginGroup.PluginName, pluginGroup.PluginTarget, pluginGroup.PluginVersion)
 				}(pluginGroupGet[i])
 			}
 			wg.Wait()
