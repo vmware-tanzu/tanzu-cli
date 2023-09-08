@@ -30,7 +30,6 @@ func Test_ContextCatalog_With_Empty_Context(t *testing.T) {
 	cc, err := NewContextCatalogUpdater("")
 	assert.Nil(err)
 	assert.NotNil(cc)
-	defer cc.Unlock()
 
 	pd1 := cli.PluginInfo{
 		Name:             "fakeplugin1",
@@ -76,6 +75,7 @@ func Test_ContextCatalog_With_Empty_Context(t *testing.T) {
 
 	pds = cc.List()
 	assert.Equal(len(pds), 1)
+	cc.Unlock()
 
 	// Create another catalog without context
 	// The new catalog should also have the same information
@@ -109,7 +109,6 @@ func Test_ContextCatalog_With_Context(t *testing.T) {
 	cc, err := NewContextCatalogUpdater("server")
 	assert.Nil(err)
 	assert.NotNil(cc)
-	defer cc.Unlock()
 
 	pd1 := cli.PluginInfo{
 		Name:             "fakeplugin1",
@@ -155,6 +154,7 @@ func Test_ContextCatalog_With_Context(t *testing.T) {
 
 	pds = cc.List()
 	assert.Equal(len(pds), 1)
+	cc.Unlock()
 
 	// Create another catalog with same context
 	// The new catalog should also have the same information

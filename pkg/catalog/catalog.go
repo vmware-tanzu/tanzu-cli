@@ -185,7 +185,13 @@ func getCatalogCache(setWriteLock bool) (catalog *Catalog, unlock func(), err er
 
 	if setWriteLock {
 		var lockedFile *lockedfile.File
-		lockedFile, err = lockedfile.Edit(getCatalogCachePath())
+		if utils.PathExists(getCatalogCachePath()) {
+			lockedFile, err = lockedfile.Edit(getCatalogCachePath())
+		} else {
+			// Create directory path if missing before locking the file
+			_ = os.MkdirAll(filepath.Dir(getCatalogCachePath()), 0777)
+			lockedFile, err = lockedfile.Create(getCatalogCachePath())
+		}
 		if err != nil {
 			return nil, nil, err
 		}

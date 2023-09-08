@@ -177,7 +177,6 @@ func TestPluginList(t *testing.T) {
 			assert := assert.New(t)
 			cc, err := catalog.NewContextCatalogUpdater("")
 			assert.Nil(err)
-			defer cc.Unlock()
 			pluginInstallationPath := ""
 			for i, pluginName := range spec.plugins {
 				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
@@ -197,6 +196,7 @@ func TestPluginList(t *testing.T) {
 				err = cc.Upsert(pi)
 				assert.Nil(err)
 			}
+			cc.Unlock()
 
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
@@ -271,7 +271,6 @@ func TestDeletePlugin(t *testing.T) {
 			assert := assert.New(t)
 			cc, err := catalog.NewContextCatalogUpdater("")
 			assert.Nil(err)
-			defer cc.Unlock()
 
 			for i, pluginName := range spec.plugins {
 				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
@@ -288,6 +287,7 @@ func TestDeletePlugin(t *testing.T) {
 				err = cc.Upsert(pi)
 				assert.Nil(err)
 			}
+			cc.Unlock()
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)

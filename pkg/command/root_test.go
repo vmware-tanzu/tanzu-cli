@@ -285,8 +285,8 @@ func TestSubcommands(t *testing.T) {
 			}
 			cc, err := catalog.NewContextCatalogUpdater("")
 			assert.Nil(err)
-			defer cc.Unlock()
 			err = cc.Upsert(pi)
+			cc.Unlock()
 			assert.Nil(err)
 
 			rootCmd, err := NewRootCmd()
