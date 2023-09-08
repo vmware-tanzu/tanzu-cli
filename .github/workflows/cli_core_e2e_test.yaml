@@ -56,3 +56,6 @@ jobs:
         run: |
           TEST_RESULTS_MD=$(./hack/scripts/process-ginkgo-test-results.sh ./test/e2e/testresults)
           echo "$TEST_RESULTS_MD" >> $GITHUB_STEP_SUMMARY
+          if [[ $TEST_RESULTS_MD == *":x:"* ]]; then
+            exit 1
+          fi
