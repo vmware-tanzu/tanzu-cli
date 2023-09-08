@@ -11,7 +11,7 @@ const functionality = "functionality"
 // TODO(anujc): Remove the hardcoding of the plugins within the plugin-groups here once the `tanzu plugin group get`
 // command is implemented. We can use the output of `tanzu plugin group get` command with the original repository
 // and use the created plugin map to do the validation of plugins availability after plugin gets migrated to new repository.
-var pluginsForPGTKG001 = []*framework.PluginInfo{
+var pluginsForPGTKG001 = []*framework.PluginInfo{ //nolint: dupl
 	{Name: "cluster", Target: "kubernetes", Version: "v0.0.1", Description: "cluster " + functionality},
 	{Name: "feature", Target: "kubernetes", Version: "v0.0.1", Description: "feature " + functionality},
 	{Name: "kubernetes-release", Target: "kubernetes", Version: "v0.0.1", Description: "kubernetes-release " + functionality},
@@ -21,7 +21,7 @@ var pluginsForPGTKG001 = []*framework.PluginInfo{
 	{Name: "telemetry", Target: "kubernetes", Version: "v0.0.1", Description: "telemetry " + functionality},
 }
 
-var pluginsForPGTKG999 = []*framework.PluginInfo{
+var pluginsForPGTKG999 = []*framework.PluginInfo{ //nolint: dupl
 	{Name: "cluster", Target: "kubernetes", Version: "v9.9.9", Description: "cluster " + functionality},
 	{Name: "feature", Target: "kubernetes", Version: "v9.9.9", Description: "feature " + functionality},
 	{Name: "kubernetes-release", Target: "kubernetes", Version: "v9.9.9", Description: "kubernetes-release " + functionality},
