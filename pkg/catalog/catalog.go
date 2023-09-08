@@ -46,6 +46,8 @@ func NewContextCatalog(context string) (PluginCatalogReader, error) {
 // NewContextCatalogUpdater creates context-aware catalog for reading/updating the catalog
 // When using this API invoker needs to call `Unlock` API to unlock the WriteLock
 // acquired to update the catalog
+// After Unlock() is called, the ContextCatalog object can no longer be used,
+// and a new one must be obtained for any further operation on the catalog
 func NewContextCatalogUpdater(context string) (PluginCatalogUpdater, error) {
 	return newContextCatalog(context, true)
 }
@@ -144,6 +146,8 @@ func (c *ContextCatalog) Delete(plugin string) error {
 }
 
 // Unlock unlocks the catalog for other process to read/write
+// After Unlock() is called, the ContextCatalog object can no longer be used,
+// and a new one must be obtained for any further operation on the catalog
 func (c *ContextCatalog) Unlock() {
 	c.unlock()
 }
@@ -179,34 +183,10 @@ func newSharedCatalog() (*Catalog, error) {
 // If `setWriteLock` is true, it will apply WriteLock to the catalog file, read the catalog file
 // and keep the WriteLock to the file along with returning `unlock` function. It is caller
 // functions responsibility to unlock the WriteLock after the catalog update
-func getCatalogCache(setWriteLock bool) (catalog *Catalog, unlock func(), err error) {
-	unlock = func() {}
-	var b []byte
-
-	if setWriteLock {
-		var lockedFile *lockedfile.File
-		if utils.PathExists(getCatalogCachePath()) {
-			lockedFile, err = lockedfile.Edit(getCatalogCachePath())
-		} else {
-			// Create directory path if missing before locking the file
-			_ = os.MkdirAll(filepath.Dir(getCatalogCachePath()), 0777)
-			lockedFile, err = lockedfile.Create(getCatalogCachePath())
-		}
-		if err != nil {
-			return nil, nil, err
-		}
-		unlock = func() {
-			if lockedFile != nil {
-				lockedFile.Close()
-			}
-		}
-		b, err = io.ReadAll(lockedFile)
-	} else {
-		b, err = lockedfile.Read(getCatalogCachePath())
-	}
-
+func getCatalogCache(setWriteLock bool) (*Catalog, func(), error) {
+	b, unlock, err := getCatalogCacheBytes(setWriteLock)
 	if err != nil {
-		catalog, err = newSharedCatalog()
+		catalog, err := newSharedCatalog()
 		if err != nil {
 			return nil, unlock, err
 		}
@@ -233,6 +213,33 @@ func getCatalogCache(setWriteLock bool) (catalog *Catalog, unlock func(), err er
 	}
 
 	return &c, unlock, nil
+}
+
+func getCatalogCacheBytes(setWriteLock bool) ([]byte, func(), error) {
+	unlock := func() {}
+	var err error
+	var b []byte
+
+	if setWriteLock {
+		var lockedFile *lockedfile.File
+		if !utils.PathExists(getCatalogCachePath()) {
+			// Create directory path if missing before locking the file
+			_ = os.MkdirAll(getCatalogCacheDir(), 0755)
+		}
+		lockedFile, err = lockedfile.Edit(getCatalogCachePath())
+		if err != nil {
+			return nil, unlock, err
+		}
+		unlock = func() {
+			if lockedFile != nil {
+				lockedFile.Close()
+			}
+		}
+		b, err = io.ReadAll(lockedFile)
+	} else {
+		b, err = lockedfile.Read(getCatalogCachePath())
+	}
+	return b, unlock, err
 }
 
 // saveCatalogCache saves the catalog in the local directory.

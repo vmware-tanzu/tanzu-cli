@@ -25,6 +25,8 @@ type PluginCatalogUpdater interface {
 	Delete(plugin string) error
 
 	// Unlock unlocks the catalog for other process to read/write
+	// After Unlock() is called, the ContextCatalog object can no longer be used,
+	// and a new one must be obtained for any further operation on the catalog
 	Unlock()
 }
 
