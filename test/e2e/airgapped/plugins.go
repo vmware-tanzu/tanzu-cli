@@ -18,6 +18,7 @@ var pluginsForPGTKG001 = []*framework.PluginInfo{
 	{Name: "management-cluster", Target: "kubernetes", Version: "v0.0.1", Description: "management-cluster " + functionality},
 	{Name: "package", Target: "kubernetes", Version: "v0.0.1", Description: "package " + functionality},
 	{Name: "secret", Target: "kubernetes", Version: "v0.0.1", Description: "secret " + functionality},
+	{Name: "telemetry", Target: "kubernetes", Version: "v0.0.1", Description: "telemetry " + functionality},
 }
 
 var pluginsForPGTKG999 = []*framework.PluginInfo{
@@ -27,6 +28,7 @@ var pluginsForPGTKG999 = []*framework.PluginInfo{
 	{Name: "management-cluster", Target: "kubernetes", Version: "v9.9.9", Description: "management-cluster " + functionality},
 	{Name: "package", Target: "kubernetes", Version: "v9.9.9", Description: "package " + functionality},
 	{Name: "secret", Target: "kubernetes", Version: "v9.9.9", Description: "secret " + functionality},
+	{Name: "telemetry", Target: "kubernetes", Version: "v9.9.9", Description: "telemetry " + functionality},
 }
 
 //nolint:dupl

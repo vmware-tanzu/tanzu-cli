@@ -1,7 +1,6 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// cataloge2e implements e2e tests specific to catalog cache updates
 package cataloge2e
 
 import (

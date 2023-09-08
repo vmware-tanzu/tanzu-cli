@@ -118,6 +118,7 @@ func init() {
 		{Name: "cluster", Target: "mission-control", Version: "v9.9.9", Description: "cluster functionality"},
 		{Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "pinniped-auth functionality"},
 		{Name: "telemetry", Target: "global", Version: "v9.9.9", Description: "telemetry functionality"},
+		{Name: "telemetry", Target: "kubernetes", Version: "v9.9.9", Description: "telemetry functionality"},
 		{Name: "plugin-with-sha", Target: "global", Version: "v9.9.9", Description: "plugin-with-sha functionality"},
 	}
 
