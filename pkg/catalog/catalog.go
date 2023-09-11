@@ -80,6 +80,10 @@ func newContextCatalog(context string, lockCatalog bool) (*ContextCatalog, error
 
 // Upsert inserts/updates the given plugin.
 func (c *ContextCatalog) Upsert(plugin *cli.PluginInfo) error {
+	if c.unlock == nil {
+		return errors.Errorf("cannot complete the upsert plugin operation for plugin %q. catalog is not locked", plugin.Name)
+	}
+
 	pluginNameTarget := PluginNameTarget(plugin.Name, plugin.Target)
 
 	c.plugins[pluginNameTarget] = plugin.InstallationPath
@@ -138,6 +142,9 @@ func (c *ContextCatalog) List() []cli.PluginInfo {
 // Delete deletes the given plugin from the catalog, but it does not delete
 // the installation.
 func (c *ContextCatalog) Delete(plugin string) error {
+	if c.unlock == nil {
+		return errors.Errorf("cannot complete the delete plugin operation for plugin %q. catalog is not locked", plugin)
+	}
 	_, ok := c.plugins[plugin]
 	if ok {
 		delete(c.plugins, plugin)
@@ -149,7 +156,10 @@ func (c *ContextCatalog) Delete(plugin string) error {
 // After Unlock() is called, the ContextCatalog object can no longer be used,
 // and a new one must be obtained for any further operation on the catalog
 func (c *ContextCatalog) Unlock() {
-	c.unlock()
+	if c.unlock != nil {
+		c.unlock()
+		c.unlock = nil
+	}
 }
 
 // getCatalogCacheDir returns the local directory in which tanzu state is stored.
