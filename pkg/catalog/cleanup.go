@@ -13,11 +13,11 @@ import (
 // where we allow plugins to be installed when target value is different even if target
 // values of “(empty), `global` and `kubernetes` can correspond to same root level command
 func DeleteIncorrectPluginEntriesFromCatalog() {
-	c, unlock, err := getCatalogCache(true)
+	c, lockedFile, err := getCatalogCache(true)
 	if err != nil {
 		return
 	}
-	defer unlock()
+	defer lockedFile.Close()
 
 	pluginAssociations := []PluginAssociation{c.StandAlonePlugins}
 	for _, spa := range c.ServerPlugins {
@@ -42,5 +42,5 @@ func DeleteIncorrectPluginEntriesFromCatalog() {
 		}
 	}
 
-	_ = saveCatalogCache(c)
+	_ = saveCatalogCache(c, lockedFile)
 }

@@ -35,7 +35,7 @@ var (
 type ContextCatalog struct {
 	sharedCatalog *Catalog
 	plugins       PluginAssociation
-	unlock        func()
+	lockedFile    *lockedfile.File
 }
 
 // NewContextCatalog creates context-aware catalog for reading the catalog
@@ -54,7 +54,7 @@ func NewContextCatalogUpdater(context string) (PluginCatalogUpdater, error) {
 
 // newContextCatalog creates a new context-aware catalog object
 func newContextCatalog(context string, lockCatalog bool) (*ContextCatalog, error) {
-	sc, unlock, err := getCatalogCache(lockCatalog)
+	sc, lockedFile, err := getCatalogCache(lockCatalog)
 	if err != nil {
 		return nil, err
 	}
@@ -74,13 +74,13 @@ func newContextCatalog(context string, lockCatalog bool) (*ContextCatalog, error
 	return &ContextCatalog{
 		sharedCatalog: sc,
 		plugins:       plugins,
-		unlock:        unlock,
+		lockedFile:    lockedFile,
 	}, nil
 }
 
 // Upsert inserts/updates the given plugin.
 func (c *ContextCatalog) Upsert(plugin *cli.PluginInfo) error {
-	if c.unlock == nil {
+	if c.lockedFile == nil {
 		return errors.Errorf("cannot complete the upsert plugin operation for plugin %q. catalog is not locked", plugin.Name)
 	}
 
@@ -108,7 +108,7 @@ func (c *ContextCatalog) Upsert(plugin *cli.PluginInfo) error {
 		delete(c.plugins, PluginNameTarget(plugin.Name, configtypes.TargetGlobal))
 		delete(c.plugins, PluginNameTarget(plugin.Name, configtypes.TargetK8s))
 	}
-	return saveCatalogCache(c.sharedCatalog)
+	return saveCatalogCache(c.sharedCatalog, c.lockedFile)
 }
 
 // Get looks up the descriptor of a plugin given its name.
@@ -142,23 +142,23 @@ func (c *ContextCatalog) List() []cli.PluginInfo {
 // Delete deletes the given plugin from the catalog, but it does not delete
 // the installation.
 func (c *ContextCatalog) Delete(plugin string) error {
-	if c.unlock == nil {
+	if c.lockedFile == nil {
 		return errors.Errorf("cannot complete the delete plugin operation for plugin %q. catalog is not locked", plugin)
 	}
 	_, ok := c.plugins[plugin]
 	if ok {
 		delete(c.plugins, plugin)
 	}
-	return saveCatalogCache(c.sharedCatalog)
+	return saveCatalogCache(c.sharedCatalog, c.lockedFile)
 }
 
 // Unlock unlocks the catalog for other process to read/write
 // After Unlock() is called, the ContextCatalog object can no longer be used,
 // and a new one must be obtained for any further operation on the catalog
 func (c *ContextCatalog) Unlock() {
-	if c.unlock != nil {
-		c.unlock()
-		c.unlock = nil
+	if c.lockedFile != nil {
+		c.lockedFile.Close()
+		c.lockedFile = nil
 	}
 }
 
@@ -191,26 +191,25 @@ func newSharedCatalog() (*Catalog, error) {
 // getCatalogCache retrieves the catalog from the local directory along with locking the catalog file
 // If `setWriteLock` is false, it will read the catalog file with ReadLock and release the lock at the same time
 // If `setWriteLock` is true, it will apply WriteLock to the catalog file, read the catalog file
-// and keep the WriteLock to the file along with returning `unlock` function. It is caller
-// functions responsibility to unlock the WriteLock after the catalog update
-func getCatalogCache(setWriteLock bool) (*Catalog, func(), error) {
-	b, unlock, err := getCatalogCacheBytes(setWriteLock)
+// and keep the WriteLock to the file along with returning `lockedFile` object. It is caller's
+// responsibility to unlock the WriteLock after the catalog update
+func getCatalogCache(setWriteLock bool) (*Catalog, *lockedfile.File, error) {
+	b, lockedFile, err := getCatalogCacheBytes(setWriteLock)
 	if err != nil {
 		if os.IsNotExist(err) {
 			catalog, err := newSharedCatalog()
 			if err != nil {
-				return nil, unlock, err
+				return nil, lockedFile, err
 			}
-			return catalog, unlock, nil
-		} else {
-			return nil, unlock, err
+			return catalog, lockedFile, nil
 		}
+		return nil, lockedFile, err
 	}
 
 	var c Catalog
 	err = yaml.Unmarshal(b, &c)
 	if err != nil {
-		return nil, unlock, errors.Wrap(err, "could not decode catalog file")
+		return nil, lockedFile, errors.Wrap(err, "could not decode catalog file")
 	}
 
 	if c.IndexByPath == nil {
@@ -226,38 +225,36 @@ func getCatalogCache(setWriteLock bool) (*Catalog, func(), error) {
 		c.ServerPlugins = map[string]PluginAssociation{}
 	}
 
-	return &c, unlock, nil
+	return &c, lockedFile, nil
 }
 
-func getCatalogCacheBytes(setWriteLock bool) ([]byte, func(), error) {
-	unlock := func() {}
+func getCatalogCacheBytes(setWriteLock bool) ([]byte, *lockedfile.File, error) {
+	var lockedFile *lockedfile.File
 	var err error
 	var b []byte
 
 	if setWriteLock {
-		var lockedFile *lockedfile.File
 		if !utils.PathExists(getCatalogCachePath()) {
 			// Create directory path if missing before locking the file
 			_ = os.MkdirAll(getCatalogCacheDir(), 0755)
 		}
 		lockedFile, err = lockedfile.Edit(getCatalogCachePath())
 		if err != nil {
-			return nil, unlock, err
-		}
-		unlock = func() {
-			if lockedFile != nil {
-				lockedFile.Close()
-			}
+			return nil, lockedFile, err
 		}
 		b, err = io.ReadAll(lockedFile)
 	} else {
 		b, err = lockedfile.Read(getCatalogCachePath())
 	}
-	return b, unlock, err
+	return b, lockedFile, err
 }
 
 // saveCatalogCache saves the catalog in the local directory.
-func saveCatalogCache(catalog *Catalog) error {
+func saveCatalogCache(catalog *Catalog, lockedCatalogFile *lockedfile.File) error {
+	if lockedCatalogFile == nil {
+		return errors.New("cannot save the catalog file. catalog is not locked")
+	}
+
 	catalogCachePath := getCatalogCachePath()
 	_, err := os.Stat(catalogCachePath)
 	if os.IsNotExist(err) {
@@ -274,7 +271,13 @@ func saveCatalogCache(catalog *Catalog) error {
 		return errors.Wrap(err, "failed to encode catalog cache file")
 	}
 
-	if err = os.WriteFile(catalogCachePath, out, 0644); err != nil {
+	if err := lockedCatalogFile.Truncate(0); err != nil {
+		return errors.Wrap(err, "failed to write catalog cache file. truncate failed")
+	}
+	if _, err := lockedCatalogFile.Seek(0, 0); err != nil {
+		return errors.Wrap(err, "failed to write catalog cache file. seek failed")
+	}
+	if _, err := lockedCatalogFile.Write(out); err != nil {
 		return errors.Wrap(err, "failed to write catalog cache file")
 	}
 	return nil
