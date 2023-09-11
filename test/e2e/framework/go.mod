@@ -1,6 +1,6 @@
 module github.com/vmware-tanzu/tanzu-cli/test/e2e/framework
 
-go 1.19
+go 1.21
 
 require (
 	github.com/onsi/ginkgo/v2 v2.10.0
