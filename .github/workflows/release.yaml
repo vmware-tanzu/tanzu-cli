@@ -27,10 +27,10 @@ jobs:
         echo "free space after cleanup:"
         df -h
 
-    - name: Set up Go 1.x
+    - name: Set up Go 1.21
       uses: actions/setup-go@v3
       with:
-        go-version: 1.18
+        go-version: 1.21
       id: go
 
     - name: Check out code into the Go module directory
