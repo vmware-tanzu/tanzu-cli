@@ -196,11 +196,15 @@ func newSharedCatalog() (*Catalog, error) {
 func getCatalogCache(setWriteLock bool) (*Catalog, func(), error) {
 	b, unlock, err := getCatalogCacheBytes(setWriteLock)
 	if err != nil {
-		catalog, err := newSharedCatalog()
-		if err != nil {
+		if os.IsNotExist(err) {
+			catalog, err := newSharedCatalog()
+			if err != nil {
+				return nil, unlock, err
+			}
+			return catalog, unlock, nil
+		} else {
 			return nil, unlock, err
 		}
-		return catalog, unlock, nil
 	}
 
 	var c Catalog
