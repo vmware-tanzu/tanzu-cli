@@ -89,7 +89,8 @@ func (d *RESTDiscovery) doRequest(req *http.Request, v interface{}) error {
 		return fmt.Errorf("API error, status code: %d", res.StatusCode)
 	}
 
-	if err := json.NewDecoder(res.Body).Decode(v); err != nil {
+	err = json.NewDecoder(res.Body).Decode(v)
+	if err != nil {
 		return err
 	}
 

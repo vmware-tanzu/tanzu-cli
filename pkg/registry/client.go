@@ -104,7 +104,7 @@ func getFilesFromLayer(imgLayer regv1.Layer) (map[string][]byte, error) {
 			}
 			return files, err
 		}
-		if hdr.Typeflag == tar.TypeReg || hdr.Typeflag == tar.TypeRegA {
+		if hdr.Typeflag == tar.TypeReg {
 			buf, err := io.ReadAll(tarReader)
 			if err != nil {
 				return files, err

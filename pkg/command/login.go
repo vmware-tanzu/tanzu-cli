@@ -51,9 +51,9 @@ func init() {
 	loginCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
 	loginCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
 	loginCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
-	loginCmd.Flags().MarkHidden("stderr-only") // nolint
-	loginCmd.Flags().MarkHidden("force-csp")   // nolint
-	loginCmd.Flags().MarkHidden("staging")     // nolint
+	loginCmd.Flags().MarkHidden("stderr-only") //nolint
+	loginCmd.Flags().MarkHidden("force-csp")   //nolint
+	loginCmd.Flags().MarkHidden("staging")     //nolint
 	loginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 	loginCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
 
@@ -87,14 +87,14 @@ func init() {
     default kubeconfig file ($HOME/.kube/config) will be used.`
 }
 
-func login(cmd *cobra.Command, args []string) (err error) {
+func login(_ *cobra.Command, _ []string) (err error) {
 	cfg, err := config.GetClientConfig()
 	if err != nil {
 		return err
 	}
 
 	newServerSelector := "+ new server"
-	var serverTarget *configtypes.Server // nolint:staticcheck // Deprecated
+	var serverTarget *configtypes.Server //nolint:staticcheck // Deprecated
 	if name != "" {
 		serverTarget, err = createNewServer()
 		if err != nil {
@@ -106,7 +106,7 @@ func login(cmd *cobra.Command, args []string) (err error) {
 			return err
 		}
 	} else {
-		serverTarget, err = config.GetServer(server) // nolint:staticcheck // Deprecated
+		serverTarget, err = config.GetServer(server) //nolint:staticcheck // Deprecated
 		if err != nil {
 			return err
 		}
@@ -119,7 +119,7 @@ func login(cmd *cobra.Command, args []string) (err error) {
 		}
 	}
 
-	if serverTarget.Type == configtypes.GlobalServerType { // nolint:staticcheck // Deprecated
+	if serverTarget.Type == configtypes.GlobalServerType { //nolint:staticcheck // Deprecated
 		err = globalLoginUsingServer(serverTarget)
 	} else {
 		err = managementClusterLogin(serverTarget)
@@ -137,11 +137,11 @@ func login(cmd *cobra.Command, args []string) (err error) {
 	return nil
 }
 
-func getServerTarget(cfg *configtypes.ClientConfig, newServerSelector string) (*configtypes.Server, error) { // nolint:staticcheck // Deprecated
+func getServerTarget(cfg *configtypes.ClientConfig, newServerSelector string) (*configtypes.Server, error) { //nolint:staticcheck // Deprecated
 	promptOpts := getPromptOpts()
-	servers := map[string]*configtypes.Server{} // nolint:staticcheck // Deprecated
-	for _, server := range cfg.KnownServers {   // nolint:staticcheck // Deprecated
-		ep, err := config.EndpointFromServer(server) // nolint:staticcheck // Deprecated
+	servers := map[string]*configtypes.Server{} //nolint:staticcheck // Deprecated
+	for _, server := range cfg.KnownServers {   //nolint:staticcheck // Deprecated
+		ep, err := config.EndpointFromServer(server) //nolint:staticcheck // Deprecated
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +159,7 @@ func getServerTarget(cfg *configtypes.ClientConfig, newServerSelector string) (*
 	}
 	serverKeys := getKeysFromServerMap(servers)
 	serverKeys = append(serverKeys, newServerSelector)
-	servers[newServerSelector] = &configtypes.Server{} // nolint:staticcheck // Deprecated
+	servers[newServerSelector] = &configtypes.Server{} //nolint:staticcheck // Deprecated
 	err := component.Prompt(
 		&component.PromptConfig{
 			Message: "Select a server",
@@ -175,7 +175,7 @@ func getServerTarget(cfg *configtypes.ClientConfig, newServerSelector string) (*
 	return servers[server], nil
 }
 
-func getKeysFromServerMap(m map[string]*configtypes.Server) []string { // nolint:staticcheck // Deprecated
+func getKeysFromServerMap(m map[string]*configtypes.Server) []string { //nolint:staticcheck // Deprecated
 	keys := make([]string, 0, len(m))
 	for key := range m {
 		keys = append(keys, key)
@@ -194,7 +194,7 @@ func isGlobalServer(endpoint string) bool {
 	return false
 }
 
-func createNewServer() (server *configtypes.Server, err error) { // nolint:staticcheck // Deprecated
+func createNewServer() (server *configtypes.Server, err error) { //nolint:staticcheck // Deprecated
 	// user provided command line options to create a server using kubeconfig[optional] and context
 	if kubeContext != "" {
 		return createServerWithKubeconfig()
@@ -227,7 +227,7 @@ func createNewServer() (server *configtypes.Server, err error) { // nolint:stati
 	return createServerWithKubeconfig()
 }
 
-func createServerWithKubeconfig() (server *configtypes.Server, err error) { // nolint:staticcheck // Deprecated
+func createServerWithKubeconfig() (server *configtypes.Server, err error) { //nolint:staticcheck // Deprecated
 	promptOpts := getPromptOpts()
 	if kubeConfig == "" && kubeContext == "" {
 		err = component.Prompt(
@@ -238,7 +238,7 @@ func createServerWithKubeconfig() (server *configtypes.Server, err error) { // n
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return server, err
 		}
 	}
 	kubeConfig = strings.TrimSpace(kubeConfig)
@@ -255,7 +255,7 @@ func createServerWithKubeconfig() (server *configtypes.Server, err error) { // n
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return server, err
 		}
 	}
 	kubeContext = strings.TrimSpace(kubeContext)
@@ -268,25 +268,25 @@ func createServerWithKubeconfig() (server *configtypes.Server, err error) { // n
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return server, err
 		}
 	}
 	name = strings.TrimSpace(name)
-	nameExists, err := config.ServerExists(name) // nolint:staticcheck // Deprecated
+	nameExists, err := config.ServerExists(name) //nolint:staticcheck // Deprecated
 	if err != nil {
 		return server, err
 	}
 	if nameExists {
 		err = fmt.Errorf("server %q already exists", name)
-		return
+		return server, err
 	}
 
-	endpointType := configtypes.ManagementClusterServerType // nolint:staticcheck // Deprecated
+	endpointType := configtypes.ManagementClusterServerType //nolint:staticcheck // Deprecated
 
-	server = &configtypes.Server{ // nolint:staticcheck // Deprecated
+	server = &configtypes.Server{ //nolint:staticcheck // Deprecated
 		Name: name,
 		Type: endpointType,
-		ManagementClusterOpts: &configtypes.ManagementClusterServer{ // nolint:staticcheck // Deprecated
+		ManagementClusterOpts: &configtypes.ManagementClusterServer{ //nolint:staticcheck // Deprecated
 			Path:     kubeConfig,
 			Context:  kubeContext,
 			Endpoint: endpoint},
@@ -294,7 +294,7 @@ func createServerWithKubeconfig() (server *configtypes.Server, err error) { // n
 	return server, err
 }
 
-func createServerWithEndpoint() (server *configtypes.Server, err error) { // nolint:staticcheck // Deprecated
+func createServerWithEndpoint() (server *configtypes.Server, err error) { //nolint:staticcheck // Deprecated
 	promptOpts := getPromptOpts()
 	if endpoint == "" {
 		err = component.Prompt(
@@ -305,7 +305,7 @@ func createServerWithEndpoint() (server *configtypes.Server, err error) { // nol
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return server, err
 		}
 	}
 	endpoint = strings.TrimSpace(endpoint)
@@ -318,35 +318,35 @@ func createServerWithEndpoint() (server *configtypes.Server, err error) { // nol
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return server, err
 		}
 	}
 	name = strings.TrimSpace(name)
-	nameExists, err := config.ServerExists(name) // nolint:staticcheck // Deprecated
+	nameExists, err := config.ServerExists(name) //nolint:staticcheck // Deprecated
 	if err != nil {
 		return server, err
 	}
 	if nameExists {
 		err = fmt.Errorf("server %q already exists", name)
-		return
+		return server, err
 	}
 	if isGlobalServer(endpoint) {
-		server = &configtypes.Server{ // nolint:staticcheck // Deprecated
+		server = &configtypes.Server{ //nolint:staticcheck // Deprecated
 			Name:       name,
-			Type:       configtypes.GlobalServerType, // nolint:staticcheck // Deprecated
+			Type:       configtypes.GlobalServerType, //nolint:staticcheck // Deprecated
 			GlobalOpts: &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 		}
 	} else {
 		tkf := NewTKGKubeconfigFetcher(endpoint, endpointCACertPath, skipTLSVerify)
 		kubeConfig, kubeContext, err = tkf.GetPinnipedKubeconfig()
 		if err != nil {
-			return
+			return server, err
 		}
 
-		server = &configtypes.Server{ // nolint:staticcheck // Deprecated
+		server = &configtypes.Server{ //nolint:staticcheck // Deprecated
 			Name: name,
-			Type: configtypes.ManagementClusterServerType, // nolint:staticcheck // Deprecated
-			ManagementClusterOpts: &configtypes.ManagementClusterServer{ // nolint:staticcheck // Deprecated
+			Type: configtypes.ManagementClusterServerType, //nolint:staticcheck // Deprecated
+			ManagementClusterOpts: &configtypes.ManagementClusterServer{ //nolint:staticcheck // Deprecated
 				Path:     kubeConfig,
 				Context:  kubeContext,
 				Endpoint: endpoint},
@@ -355,7 +355,7 @@ func createServerWithEndpoint() (server *configtypes.Server, err error) { // nol
 	return server, err
 }
 
-func globalLoginUsingServer(s *configtypes.Server) (err error) { // nolint:staticcheck // Deprecated
+func globalLoginUsingServer(s *configtypes.Server) (err error) { //nolint:staticcheck // Deprecated
 	a := configtypes.GlobalServerAuth{}
 	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
 
@@ -396,7 +396,7 @@ func globalLoginUsingServer(s *configtypes.Server) (err error) { // nolint:stati
 		s.GlobalOpts.Auth = a
 	}
 
-	err = config.PutServer(s, true) // nolint:staticcheck // Deprecated
+	err = config.PutServer(s, true) //nolint:staticcheck // Deprecated
 	if err != nil {
 		return err
 	}
@@ -406,7 +406,7 @@ func globalLoginUsingServer(s *configtypes.Server) (err error) { // nolint:stati
 	return nil
 }
 
-func managementClusterLogin(s *configtypes.Server) error { // nolint:staticcheck // Deprecated
+func managementClusterLogin(s *configtypes.Server) error { //nolint:staticcheck // Deprecated
 	if s != nil && s.ManagementClusterOpts != nil && s.ManagementClusterOpts.Path != "" && s.ManagementClusterOpts.Context != "" {
 		_, err := tkgauth.GetServerKubernetesVersion(s.ManagementClusterOpts.Path, s.ManagementClusterOpts.Context)
 		if err != nil {
@@ -414,7 +414,7 @@ func managementClusterLogin(s *configtypes.Server) error { // nolint:staticcheck
 			log.Error(err, "")
 			return err
 		}
-		err = config.PutServer(s, true) // nolint:staticcheck // Deprecated
+		err = config.PutServer(s, true) //nolint:staticcheck // Deprecated
 		if err != nil {
 			return err
 		}

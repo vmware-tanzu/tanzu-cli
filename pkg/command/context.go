@@ -250,7 +250,7 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return context, err
 		}
 	} else if kubeConfig == "" {
 		kubeConfig = getDefaultKubeconfigPath()
@@ -266,7 +266,7 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	kubeContext = strings.TrimSpace(kubeContext)
@@ -280,7 +280,7 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	ctxName = strings.TrimSpace(ctxName)
@@ -290,7 +290,7 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 	}
 	if exists {
 		err = fmt.Errorf("context %q already exists", ctxName)
-		return
+		return context, err
 	}
 
 	context = &configtypes.Context{
@@ -317,7 +317,7 @@ func createContextWithEndpoint() (context *configtypes.Context, err error) {
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	endpoint = strings.TrimSpace(endpoint)
@@ -331,7 +331,7 @@ func createContextWithEndpoint() (context *configtypes.Context, err error) {
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	ctxName = strings.TrimSpace(ctxName)
@@ -341,7 +341,7 @@ func createContextWithEndpoint() (context *configtypes.Context, err error) {
 	}
 	if exists {
 		err = fmt.Errorf("context %q already exists", ctxName)
-		return
+		return context, err
 	}
 
 	if isGlobalContext(endpoint) || selfManaged {
@@ -355,7 +355,7 @@ func createContextWithEndpoint() (context *configtypes.Context, err error) {
 		tkf := NewTKGKubeconfigFetcher(endpoint, endpointCACertPath, skipTLSVerify)
 		kubeConfig, kubeContext, err = tkf.GetPinnipedKubeconfig()
 		if err != nil {
-			return
+			return context, err
 		}
 
 		context = &configtypes.Context{

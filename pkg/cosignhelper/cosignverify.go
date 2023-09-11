@@ -118,9 +118,8 @@ func (vo *CosignVerifyOptions) Verify(ctx context.Context, images []string) erro
 			_, _, err = cosign.VerifyImageSignatures(ctx, ref, co)
 			if err == nil {
 				break // if signature verification successful break the loop
-			} else {
-				arrErr = append(arrErr, fmt.Errorf("failed validating the signature of the image %s :%w", img, err))
 			}
+			arrErr = append(arrErr, fmt.Errorf("failed validating the signature of the image %s :%w", img, err))
 		}
 		// If all the verifier has returned error then mark the verification as failed
 		// and return the error

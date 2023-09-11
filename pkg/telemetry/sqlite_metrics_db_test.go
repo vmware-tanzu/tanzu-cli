@@ -100,6 +100,7 @@ func getOperationMetrics(metricsDB *sqliteMetricsDB) ([]*cliOperationsRow, error
 	defer db.Close()
 
 	dbQuery := selectAllFromCLIOperationMetrics
+	//nolint:rowserrcheck
 	rows, err := db.Query(dbQuery)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to execute the DB query : %v", dbQuery)
