@@ -12,7 +12,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/command"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/crane"
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/plugin"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/registry"
 )
 
@@ -22,8 +21,6 @@ func NewPluginCmd() *cobra.Command {
 		Use:   "plugin",
 		Short: "Plugin Operations",
 	}
-
-	pluginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 
 	pluginCmd.AddCommand(
 		newPluginBuildCmd(),
