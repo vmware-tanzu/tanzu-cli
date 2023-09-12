@@ -10,6 +10,9 @@ jobs:
   build:
     name: Tanzu CLI Core E2E Tests
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
