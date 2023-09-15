@@ -204,7 +204,7 @@ func Test_InstallStandalonePlugin(t *testing.T) {
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
 
-	// Install login (standalone) plugin
+	// Install login (standalone) plugin with just vMajor.Minor.Patch as version
 	err = InstallStandalonePlugin("login", "v0.2.0", configtypes.TargetUnknown)
 	assertions.Nil(err)
 	// Verify installed plugin
@@ -212,6 +212,26 @@ func Test_InstallStandalonePlugin(t *testing.T) {
 	assertions.Nil(err)
 	assertions.Equal(1, len(installedPlugins))
 	assertions.Equal("login", installedPlugins[0].Name)
+
+	// Install login (standalone) plugin with just vMajor as version
+	err = InstallStandalonePlugin("login", "v0", configtypes.TargetUnknown)
+	assertions.Nil(err)
+	// Verify installed plugin
+	installedPlugins, err = pluginsupplier.GetInstalledPlugins()
+	assertions.Nil(err)
+	assertions.Equal(1, len(installedPlugins))
+	assertions.Equal("login", installedPlugins[0].Name)
+	assertions.Equal("v0.2.0", installedPlugins[0].Version)
+
+	// Install login (standalone) plugin with just vMajor.Minor as version
+	err = InstallStandalonePlugin("login", "v0.2", configtypes.TargetUnknown)
+	assertions.Nil(err)
+	// Verify installed plugin
+	installedPlugins, err = pluginsupplier.GetInstalledPlugins()
+	assertions.Nil(err)
+	assertions.Equal(1, len(installedPlugins))
+	assertions.Equal("login", installedPlugins[0].Name)
+	assertions.Equal("v0.2.0", installedPlugins[0].Version)
 
 	// Try installing myplugin plugin with no context-type and no specific version
 	err = InstallStandalonePlugin("myplugin", cli.VersionLatest, configtypes.TargetUnknown)

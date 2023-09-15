@@ -221,8 +221,12 @@ func createPluginWhereClause(filter *PluginInventoryFilter) (string, error) {
 				// RecommendedVersion column with correct values.
 				whereClause = fmt.Sprintf("%s Version=RecommendedVersion AND", whereClause)
 			} else {
-				// We want a specific version of the plugin
-				whereClause = fmt.Sprintf("%s Version='%s' AND", whereClause, filter.Version)
+				// We want a specific version of the plugin or the plugin version that matches vMAJOR or vMAJOR.MINOR pattern
+				// In following condition, "Version Like '%s.%%'" condition should handle the cases where only major or major.minor version is specified
+				// e.g. If specified version is `v1` it matches with all versions like v1.MINOR.PATCH
+				//      If specified version is `v1.2` it matches will all versions like v1.2.PATCH
+				// And "Version='%s'" condition will try to match with the exact same match for the version
+				whereClause = fmt.Sprintf("%s ( Version Like '%s.%%' OR Version='%s' ) AND", whereClause, filter.Version, filter.Version)
 			}
 		}
 		if !filter.IncludeHidden {

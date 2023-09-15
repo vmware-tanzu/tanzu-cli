@@ -495,7 +495,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			pluginsToGenerateCRs, ok := pluginGroupToPluginListMap[usePluginsFromK8sPluginGroup]
 			Expect(ok).To(BeTrue(), "plugin group is not exist in the map")
 			Expect(len(pluginsToGenerateCRs) > numberOfPluginsToInstall).To(BeTrue(), "we don't have enough plugins in local test central repo")
-			pluginsInfoForCRsApplied, pluginCRFilePaths, err = f.CreateTemporaryCRsForPluginsInGivenPluginGroup(pluginsToGenerateCRs[:numberOfPluginsToInstall])
+			pluginsInfoForCRsApplied, pluginCRFilePaths, err = f.CreateTemporaryCRsFromPluginInfos(pluginsToGenerateCRs[:numberOfPluginsToInstall])
 			Expect(err).To(BeNil(), "should not get any error while generating CR files")
 			err = f.ApplyConfigOnKindCluster(tf, clusterInfo, pluginCRFilePaths)
 			Expect(err).To(BeNil(), "should not get any error for config apply")
@@ -693,7 +693,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			pluginsToGenerateCRs, ok := pluginGroupToPluginListMap[usePluginsFromK8sPluginGroup]
 			Expect(ok).To(BeTrue(), "plugin group is not exist in the map")
 			Expect(len(pluginsToGenerateCRs) > numberOfPluginsToInstall).To(BeTrue(), "we don't have enough plugins in local test central repo")
-			pluginsInfoForCRsApplied, pluginCRFilePaths, err = f.CreateTemporaryCRsForPluginsInGivenPluginGroup(pluginsToGenerateCRs[:numberOfPluginsToInstall])
+			pluginsInfoForCRsApplied, pluginCRFilePaths, err = f.CreateTemporaryCRsFromPluginInfos(pluginsToGenerateCRs[:numberOfPluginsToInstall])
 			Expect(err).To(BeNil(), "should not get any error while generating CR files")
 			err = f.ApplyConfigOnKindCluster(tf, clusterInfo, pluginCRFilePaths)
 			Expect(err).To(BeNil(), "should not get any error for config apply")

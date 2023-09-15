@@ -438,7 +438,7 @@ func InstallStandalonePlugin(pluginName, version string, target configtypes.Targ
 // InstallPluginFromContext installs a plugin by name, version and target as a context-scope plugin.
 func InstallPluginFromContext(pluginName, version string, target configtypes.Target, contextName string) error {
 	if contextName == "" {
-		log.Warning("Missing context name for a context-scope plugin: %s/%s/%s", pluginName, version, string(target))
+		log.Warningf("Missing context name for a context-scope plugin: %s/%s/%s", pluginName, version, string(target))
 	}
 	return installPlugin(pluginName, version, target, contextName)
 }
@@ -501,21 +501,12 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 	}
 
 	if len(matchedPlugins) == 1 {
-		// If the version requested was the RecommendedVersion, we should set it explicitly
-		if version == cli.VersionLatest {
-			version = matchedPlugins[0].RecommendedVersion
-		}
-
-		return installOrUpgradePlugin(&matchedPlugins[0], version, false)
+		return installOrUpgradePlugin(&matchedPlugins[0], matchedPlugins[0].RecommendedVersion, false)
 	}
 
 	for i := range matchedPlugins {
 		if matchedPlugins[i].Target == target {
-			// If the version requested was the RecommendedVersion, we should set it explicitly
-			if version == cli.VersionLatest {
-				version = matchedPlugins[i].RecommendedVersion
-			}
-			return installOrUpgradePlugin(&matchedPlugins[i], version, false)
+			return installOrUpgradePlugin(&matchedPlugins[i], matchedPlugins[i].RecommendedVersion, false)
 		}
 	}
 	errorList = append(errorList, errors.Errorf(missingTargetStr, pluginName))
@@ -629,6 +620,11 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 }
 
 func installOrUpgradePlugin(p *discovery.Discovered, version string, installTestPlugin bool) error {
+	// If the version requested was the RecommendedVersion, we should set it explicitly
+	if version == "" || version == cli.VersionLatest {
+		version = p.RecommendedVersion
+	}
+
 	if p.Target == configtypes.TargetUnknown {
 		log.Infof("Installing plugin '%v:%v'", p.Name, version)
 	} else {
@@ -997,13 +993,13 @@ func InstallPluginsFromLocalSource(pluginName, version string, target configtype
 	}
 
 	if len(matchedPlugins) == 1 {
-		return installOrUpgradePlugin(&matchedPlugins[0], FindVersion(matchedPlugins[0].RecommendedVersion, version), installTestPlugin)
+		return installOrUpgradePlugin(&matchedPlugins[0], matchedPlugins[0].RecommendedVersion, installTestPlugin)
 	}
 
 	for i := range matchedPlugins {
 		// Install all plugins otherwise include all matching plugins
 		if pluginName == cli.AllPlugins || matchedPlugins[i].Target == target {
-			err = installOrUpgradePlugin(&matchedPlugins[i], FindVersion(matchedPlugins[i].RecommendedVersion, version), installTestPlugin)
+			err = installOrUpgradePlugin(&matchedPlugins[i], matchedPlugins[i].RecommendedVersion, installTestPlugin)
 			if err != nil {
 				errList = append(errList, err)
 			}
@@ -1316,13 +1312,6 @@ func verifyPluginPostDownload(p *discovery.Discovered, srcDigest string, b []byt
 	}
 
 	return nil
-}
-
-func FindVersion(recommendedPluginVersion, requestedVersion string) string {
-	if requestedVersion == "" || requestedVersion == cli.VersionLatest {
-		return recommendedPluginVersion
-	}
-	return requestedVersion
 }
 
 // getPluginDiscoveries returns the plugin discoveries found in the configuration file.

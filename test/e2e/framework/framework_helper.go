@@ -218,8 +218,8 @@ func IsAllPluginGroupsExists(superList, subList []*PluginGroup) bool {
 	return true
 }
 
-// CreateTemporaryCRsForPluginsInGivenPluginGroup takes list of Plugins info and generates temporary CR files(under $FullPathForTempDir), and returns plugins list, CR files and error if any while creating the CR files
-func CreateTemporaryCRsForPluginsInGivenPluginGroup(plugins []*PluginInfo) ([]*PluginInfo, []string, error) {
+// CreateTemporaryCRsFromPluginInfos takes list of Plugins info and generates temporary CR files(under $FullPathForTempDir), and returns plugins list, CR files and error if any while creating the CR files
+func CreateTemporaryCRsFromPluginInfos(plugins []*PluginInfo) ([]*PluginInfo, []string, error) {
 	pluginsList := make([]*PluginInfo, 0)
 	filePaths := make([]string, 0)
 	for _, plugin := range plugins {
