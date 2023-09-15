@@ -51,3 +51,6 @@ jobs:
         run: |
           TEST_RESULTS_MD=$(./hack/scripts/generate-cli-unit-tests-report.sh ./CLI-junit-report.xml ./CLI-ginkgo-tests-summary.txt)
           echo "$TEST_RESULTS_MD" >> $GITHUB_STEP_SUMMARY
+          if [[ $TEST_RESULTS_MD == *":x:"* ]]; then
+            exit 1
+          fi
