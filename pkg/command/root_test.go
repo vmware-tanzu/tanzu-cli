@@ -283,9 +283,10 @@ func TestSubcommands(t *testing.T) {
 				InstallationPath: filepath.Join(dir, spec.plugin),
 				Target:           spec.target,
 			}
-			cc, err := catalog.NewContextCatalog("")
+			cc, err := catalog.NewContextCatalogUpdater("")
 			assert.Nil(err)
 			err = cc.Upsert(pi)
+			cc.Unlock()
 			assert.Nil(err)
 
 			rootCmd, err := NewRootCmd()

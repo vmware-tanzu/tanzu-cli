@@ -27,7 +27,7 @@ func Test_ContextCatalog_With_Empty_Context(t *testing.T) {
 	defer os.RemoveAll(pluginRootDir)
 
 	// Create catalog without context
-	cc, err := NewContextCatalog("")
+	cc, err := NewContextCatalogUpdater("")
 	assert.Nil(err)
 	assert.NotNil(cc)
 
@@ -75,6 +75,7 @@ func Test_ContextCatalog_With_Empty_Context(t *testing.T) {
 
 	pds = cc.List()
 	assert.Equal(len(pds), 1)
+	cc.Unlock()
 
 	// Create another catalog without context
 	// The new catalog should also have the same information
@@ -105,7 +106,7 @@ func Test_ContextCatalog_With_Context(t *testing.T) {
 	common.DefaultPluginRoot = pluginRootDir
 	defer os.RemoveAll(pluginRootDir)
 
-	cc, err := NewContextCatalog("server")
+	cc, err := NewContextCatalogUpdater("server")
 	assert.Nil(err)
 	assert.NotNil(cc)
 
@@ -153,6 +154,25 @@ func Test_ContextCatalog_With_Context(t *testing.T) {
 
 	pds = cc.List()
 	assert.Equal(len(pds), 1)
+	cc.Unlock()
+
+	// Try deleting plugin from catalog cache after invoking cc.Unlock()
+	err = cc.Delete("fakeplugin2")
+	assert.NotNil(err)
+	assert.Contains(err.Error(), "cannot complete the delete plugin operation for plugin \"fakeplugin2\". catalog is not locked")
+
+	// Try updating the plugin in the catalog cache after invoking cc.Unlock()
+	err = cc.Upsert(&pd1)
+	assert.NotNil(err)
+	assert.Contains(err.Error(), "cannot complete the upsert plugin operation for plugin \"fakeplugin1\". catalog is not locked")
+
+	// Try getting the plugin in the catalog cache after invoking cc.Unlock()
+	pd, exists = cc.Get("fakeplugin1")
+	assert.True(exists)
+	assert.Equal(pd.Name, "fakeplugin1")
+
+	// Try invoking cc.Unlock() on unlocked catalog. It should not panic
+	cc.Unlock()
 
 	// Create another catalog with same context
 	// The new catalog should also have the same information

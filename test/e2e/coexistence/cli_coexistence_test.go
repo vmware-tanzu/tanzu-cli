@@ -65,9 +65,6 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			ginkgo.By("Installing few plugins using legacy Tanzu CLI")
 			for _, plugin := range PluginsForLegacyTanzuCLICoexistenceTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install for legacy tanzu cli")
 				str, err := tf.PluginCmd.DescribePluginLegacy(plugin.Name, plugin.Target)
@@ -107,9 +104,6 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			ginkgo.By("Installing few plugins using new Tanzu CLI")
 			for _, plugin := range PluginsForNewTanzuCLICoexistenceTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version, framework.WithTanzuBinary(framework.TzPrefix))
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install for new tanzu cli")
 				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.WithTanzuBinary(framework.TzPrefix), framework.GetJsonOutputFormatAdditionalFlagFunction())
@@ -141,9 +135,6 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			ginkgo.By("Installing few plugins using legacy Tanzu CLI")
 			for _, plugin := range PluginsForLegacyTanzuCLICoexistenceTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using legacy tanzu cli")
 				str, err := tf.PluginCmd.DescribePluginLegacy(plugin.Name, plugin.Target)
@@ -183,9 +174,6 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			ginkgo.By("Installing few plugins using new Tanzu CLI")
 			for _, plugin := range PluginsForNewTanzuCLICoexistenceTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using new tanzu cli")
 				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
@@ -213,9 +201,6 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			ginkgo.By("Install few plugins using legacy Tanzu CLI")
 			for _, plugin := range PluginsForLegacyTanzuCLICoexistenceTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using legacy tanzu cli")
 				str, err := tf.PluginCmd.DescribePluginLegacy(plugin.Name, plugin.Target)
@@ -255,9 +240,6 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			ginkgo.By("Install few plugins using new Tanzu CLI")
 			for _, plugin := range PluginsForNewTanzuCLICoexistenceTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using new tanzu cli")
 				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
@@ -294,9 +276,6 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			ginkgo.By("Install few plugins using legacy Tanzu CLI")
 			for _, plugin := range PluginsForLegacyTanzuCLICoexistenceTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using legacy tanzu cli")
 				str, err := tf.PluginCmd.DescribePluginLegacy(plugin.Name, plugin.Target)
@@ -336,9 +315,6 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			ginkgo.By("Install few plugins using new Tanzu CLI")
 			for _, plugin := range PluginsForNewTanzuCLICoexistenceTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version, framework.WithTanzuBinary(framework.TzPrefix))
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using new tanzu cli")
 				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.WithTanzuBinary(framework.TzPrefix), framework.GetJsonOutputFormatAdditionalFlagFunction())
@@ -375,9 +351,6 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			ginkgo.By("Install few plugins using legacy Tanzu CLI")
 			for _, plugin := range PluginsForLegacyTanzuCLICoexistenceTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using legacy tanzu cli")
 				str, err := tf.PluginCmd.DescribePluginLegacy(plugin.Name, plugin.Target)
@@ -417,9 +390,6 @@ var _ = ginkgo.Describe("CLI Coexistence Tests", func() {
 			ginkgo.By("Install few plugins using new Tanzu CLI")
 			for _, plugin := range PluginsForNewTanzuCLICoexistenceTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				gomega.Expect(err).To(gomega.BeNil(), "should not get any error for plugin install using new tanzu cli")
 				str, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())

@@ -1104,13 +1104,19 @@ func doInstallTestPlugin(p *discovery.Discovered, pluginPath, version string) er
 }
 
 func updatePluginInfoAndInitializePlugin(p *discovery.Discovered, plugin *cli.PluginInfo) error {
-	c, err := catalog.NewContextCatalog(p.ContextName)
+	c, err := catalog.NewContextCatalogUpdater(p.ContextName)
 	if err != nil {
 		return err
 	}
 	if err := c.Upsert(plugin); err != nil {
 		log.Info("Plugin Info could not be updated in cache")
 	}
+
+	// We are not using defer `c.Unlock()` to release the lock here because we want to unlock the lock as soon as possible
+	// Using `defer` here will release the lock after `InitializePlugin`, `ConfigureDefaultFeatureFlagsIfMissing`,
+	// `addPluginToCommandTreeCache` invocations which is not what we want.
+	c.Unlock()
+
 	if err := InitializePlugin(plugin); err != nil {
 		log.Infof("could not initialize plugin after installing: %v", err.Error())
 	}
@@ -1221,12 +1227,13 @@ func doDeletePluginFromCatalog(pluginName string, target configtypes.Target, cat
 		// If we re-use the catalogs created above, when we delete the plugin
 		// in one catalog, the next catalog will put it back since that catalog
 		// was created before the plugin was deleted.
-		c, err := catalog.NewContextCatalog(n)
+		c, err := catalog.NewContextCatalogUpdater(n)
 		if err != nil {
 			continue
 		}
 
 		err = c.Delete(catalog.PluginNameTarget(pluginName, target))
+		c.Unlock()
 		if err != nil {
 			return fmt.Errorf("plugin %q could not be deleted from cache", pluginName)
 		}

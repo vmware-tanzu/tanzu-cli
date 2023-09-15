@@ -99,9 +99,6 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		It("install plugins and describe each installed plugin", func() {
 			for _, plugin := range framework.PluginsForLifeCycleTests {
 				target := plugin.Target
-				if plugin.Target == framework.GlobalTarget { // currently target "global" is not supported as target for install command
-					target = ""
-				}
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				Expect(err).To(BeNil(), "should not get any error for plugin install")
 

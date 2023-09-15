@@ -196,7 +196,7 @@ addGroup() {
     fi
 }
 
-k8sPlugins=(cluster feature management-cluster package secret kubernetes-release)
+k8sPlugins=(cluster feature management-cluster package secret kubernetes-release telemetry)
 tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster events iam
             inspection integration management-cluster policy workspace helm secret
             continuousdelivery tanzupackage)

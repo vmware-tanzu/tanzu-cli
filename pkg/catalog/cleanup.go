@@ -13,40 +13,34 @@ import (
 // where we allow plugins to be installed when target value is different even if target
 // values of “(empty), `global` and `kubernetes` can correspond to same root level command
 func DeleteIncorrectPluginEntriesFromCatalog() {
-	for _, c := range getCatalogs() {
-		plugins := c.List()
-		for i := range plugins {
+	c, lockedFile, err := getCatalogCache(true)
+	if err != nil {
+		return
+	}
+	defer lockedFile.Close()
+
+	pluginAssociations := []PluginAssociation{c.StandAlonePlugins}
+	for _, spa := range c.ServerPlugins {
+		pluginAssociations = append(pluginAssociations, spa)
+	}
+
+	for i := range pluginAssociations {
+		for _, path := range pluginAssociations[i] {
+			pluginInfo, exists := c.IndexByPath[path]
+			if !exists {
+				continue
+			}
+
 			// The "unknown" target was previously used in two scenarios:
 			// 1- to represent the global target (>= v0.28 and < v0.90)
 			// 2- to represent either the global or kubernetes target (< v0.28)
 			// If we have a plugin with the "global" or "k8s" target we should remove any similar plugin using
 			// the "unknown" target.
-			if plugins[i].Target == configtypes.TargetGlobal || plugins[i].Target == configtypes.TargetK8s {
-				c.deleteOldTargetEntries(PluginNameTarget(plugins[i].Name, configtypes.TargetUnknown))
+			if pluginInfo.Target == configtypes.TargetGlobal || pluginInfo.Target == configtypes.TargetK8s {
+				pluginAssociations[i].Remove(PluginNameTarget(pluginInfo.Name, configtypes.TargetUnknown))
 			}
 		}
-		_ = saveCatalogCache(c.sharedCatalog)
 	}
-}
 
-// getCatalogs returns all catalogs as array
-// this includes catalog for standalone plugins
-// as well all catalogs for all contexts
-func getCatalogs() []*ContextCatalog {
-	allCatalogs := []*ContextCatalog{}
-	sc, err := getCatalogCache()
-	if err != nil {
-		return allCatalogs
-	}
-	c, _ := NewContextCatalog("")
-	if c != nil {
-		allCatalogs = append(allCatalogs, c)
-	}
-	for context := range sc.ServerPlugins {
-		c, _ := NewContextCatalog(context)
-		if c != nil {
-			allCatalogs = append(allCatalogs, c)
-		}
-	}
-	return allCatalogs
+	_ = saveCatalogCache(c, lockedFile)
 }
