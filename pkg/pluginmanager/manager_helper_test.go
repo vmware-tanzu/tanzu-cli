@@ -4,9 +4,14 @@
 package pluginmanager
 
 import (
+	"database/sql"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	// Import the sqlite driver
+	_ "modernc.org/sqlite"
 
 	"github.com/otiai10/copy"
 	"github.com/stretchr/testify/assert"
@@ -18,8 +23,96 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
+
+var testPlugins = []plugininventory.PluginIdentifier{
+	{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v1.6.0"},
+	{Name: "cluster", Target: configtypes.TargetK8s, Version: "v1.6.0"},
+	{Name: "myplugin", Target: configtypes.TargetK8s, Version: "v1.6.0"},
+	{Name: "feature", Target: configtypes.TargetK8s, Version: "v0.2.0"},
+
+	{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.2.3"},
+	{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.3.0"},
+	{Name: "login", Target: configtypes.TargetGlobal, Version: "v0.2.0"},
+
+	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.0.1"},
+	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.0.2"},
+	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.0.3"},
+	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.2.0"},
+	{Name: "cluster", Target: configtypes.TargetTMC, Version: "v0.2.0"},
+	{Name: "myplugin", Target: configtypes.TargetTMC, Version: "v0.2.0"},
+}
+
+const createGroupsStmt = `
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'test',
+	'default',
+	'v1.6.0',
+	'Description for vmware-test/default:v1.6.0',
+	'management-cluster',
+	'kubernetes',
+	'v1.6.0',
+	'true',
+	'false');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'test',
+	'default',
+	'v1.6.0',
+	'Description for vmware-test/default:v1.6.0',
+	'feature',
+	'kubernetes',
+	'v0.2.0',
+	'true',
+	'false');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'test',
+	'default',
+	'v1.6.0',
+	'Description for vmware-test/default:v1.6.0',
+	'myplugin',
+	'kubernetes',
+	'v1.6.0',
+	'true',
+	'false');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'test',
+	'default',
+	'v1.6.0',
+	'Description for vmware-test/default:v1.6.0',
+	'isolated-cluster',
+	'global',
+	'v1.2.3',
+	'true',
+	'false');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'test',
+	'default',
+	'v1.6.0',
+	'Description for vmware-test/default:v1.6.0',
+	'cluster',
+	'kubernetes',
+	'v1.6.0',
+	'false',
+	'false');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'test',
+	'default',
+	'v2.1.0',
+	'Description for vmware-test/default:v2.1.0',
+	'isolated-cluster',
+	'global',
+	'v1.3.0',
+	'true',
+	'false');
+`
 
 func findDiscoveredPlugin(discovered []discovery.Discovered, pluginName string, target configtypes.Target) *discovery.Discovered {
 	for i := range discovered {
@@ -37,6 +130,158 @@ func findPluginInfo(pd []cli.PluginInfo, pluginName string, target configtypes.T
 		}
 	}
 	return nil
+}
+
+func findGroupVersion(allGroups []*plugininventory.PluginGroup, id string) bool {
+	groupID := plugininventory.PluginGroupIdentifierFromID(id)
+	for _, g := range allGroups {
+		if g.Publisher == groupID.Publisher &&
+			g.Vendor == groupID.Vendor &&
+			g.Name == groupID.Name {
+			for v := range g.Versions {
+				if v == groupID.Version {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func setupPluginBinaryInCache(name, version string, target configtypes.Target, digest string) {
+	dir := filepath.Join(common.DefaultPluginRoot, name)
+	err := os.MkdirAll(dir, 0755)
+	if err != nil {
+		log.Fatal(err, "unable to create temporary directory for plugin binary")
+	}
+
+	pluginBinary := filepath.Join(dir, fmt.Sprintf("%s_%s_%s", version, digest, target))
+	f, err := os.OpenFile(pluginBinary, os.O_CREATE|os.O_WRONLY, 0755)
+	if err != nil {
+		log.Fatal(err, "unable to create temporary plugin binary")
+	}
+	defer f.Close()
+
+	_, err = fmt.Fprintf(f,
+		`{"name":"%s",
+"description":"Test plugin",
+"target":"%s",
+"version": "%s",
+"buildSHA":"c2dbd15",
+"digest":"%s",
+"group":"Run",
+"docURL":"",
+"completionType":0,
+"aliases":["test"],
+"installationPath":"",
+"discovery":"",
+"scope":"",
+"status":""}`, name, target, version, digest)
+
+	if err != nil {
+		log.Fatal(err, fmt.Sprintf("Error while generating plugin binary %s", pluginBinary))
+	}
+}
+
+func setupPluginEntriesAndBinaries(db *sql.DB) {
+	digest := "0000000000"
+	for _, plugin := range testPlugins {
+		desc := fmt.Sprintf("Plugin %s description", plugin.Name)
+		for _, osArch := range cli.AllOSArch {
+			uri := fmt.Sprintf("vmware/test/%s/%s/%s/%s:%s", osArch.OS(), osArch.Arch(), plugin.Target, plugin.Name, plugin.Version)
+
+			_, err := db.Exec("INSERT INTO PluginBinaries (PluginName,Target,RecommendedVersion,Version,Hidden,Description,Publisher,Vendor,OS,Architecture,Digest,URI) VALUES(?,?,'',?,'false',?,'test','vmware',?,?,?,?);", plugin.Name, plugin.Target, plugin.Version, desc, osArch.OS(), osArch.Arch(), digest, uri)
+
+			if err != nil {
+				log.Fatal(err, fmt.Sprintf("failed to create %s:%s for target %s for testing", plugin.Name, plugin.Version, plugin.Target))
+			}
+		}
+		setupPluginBinaryInCache(plugin.Name, plugin.Version, plugin.Target, digest)
+	}
+}
+
+func setupTestPluginInventory() {
+	// Create a temporary directory for the plugin inventory DB
+	inventoryDir := filepath.Join(
+		common.DefaultCacheDir,
+		common.PluginInventoryDirName,
+		config.DefaultStandaloneDiscoveryName)
+	err := os.MkdirAll(inventoryDir, 0755)
+	if err != nil {
+		log.Fatal(err, "unable to create temporary directory for plugin inventory")
+	}
+
+	// Generate a test plugin inventory DB
+	dbFile, err := os.Create(filepath.Join(inventoryDir, plugininventory.SQliteDBFileName))
+	if err != nil {
+		log.Fatal(err, "unable to create temporary file for plugin inventory")
+	}
+	// Open DB with the sqlite driver
+	db, err := sql.Open("sqlite", dbFile.Name())
+	if err != nil {
+		log.Fatal(err, "unable to open create temporary plugin inventory DB")
+	}
+	defer db.Close()
+
+	// Create the table
+	_, err = db.Exec(plugininventory.CreateTablesSchema)
+	if err != nil {
+		log.Fatal(err, "failed to create DB table for testing")
+	}
+
+	// Add plugin entries to the DB and create the corresponding binaries
+	setupPluginEntriesAndBinaries(db)
+
+	// Add plugin group entries to the DB
+	_, err = db.Exec(createGroupsStmt)
+	if err != nil {
+		log.Fatal(err, "failed to create plugin groups for testing")
+	}
+}
+
+func setupPluginSourceForTesting() func() {
+	tmpDir, err := os.MkdirTemp(os.TempDir(), "")
+	if err != nil {
+		log.Fatal(err, "unable to create temporary directory")
+	}
+
+	common.DefaultPluginRoot = filepath.Join(tmpDir, "plugin-root")
+
+	// Setup the two temporary configuration files
+	configFile := filepath.Join(tmpDir, "tanzu_config.yaml")
+	configNextGenFile := filepath.Join(tmpDir, "tanzu_config_ng.yaml")
+	os.Setenv("TANZU_CONFIG", configFile)
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", configNextGenFile)
+
+	// Setup both test configuration files
+	err = copy.Copy(filepath.Join("test", "config.yaml"), configFile)
+	if err != nil {
+		log.Fatal(err, "Error while coping tanzu config file for testing")
+	}
+
+	err = copy.Copy(filepath.Join("test", "config-ng2.yaml"), configNextGenFile)
+	if err != nil {
+		log.Fatal(err, "Error while coping tanzu config next gen file for testing")
+	}
+
+	// Setup a temporary cache directory
+	common.DefaultCacheDir = filepath.Join(tmpDir, "cache")
+
+	common.DefaultLocalPluginDistroDir = filepath.Join(tmpDir, "distro")
+	err = copy.Copy(filepath.Join("test", "local"), common.DefaultLocalPluginDistroDir)
+	if err != nil {
+		log.Fatal(err, "Error while setting local distro for testing")
+	}
+
+	setupTestPluginInventory()
+	os.Setenv("TEST_TANZU_CLI_USE_DB_CACHE_ONLY", "1")
+
+	return func() {
+		os.RemoveAll(tmpDir)
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.Unsetenv("TEST_TANZU_CLI_USE_DB_CACHE_ONLY")
+	}
 }
 
 func setupLocalDistroForTesting() func() {

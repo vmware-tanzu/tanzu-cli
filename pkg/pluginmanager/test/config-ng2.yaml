@@ -1,11 +1,8 @@
 cli:
   discoverySources:
-    - local:
-        name: default-local
-        path: default
-    - local:
-        name: fake
-        path: standalone
+    - oci:
+        name: default
+        image: example.com/plugin-inventory:latest
   eulaStatus: accepted
   ceipOptIn: "false"
 currentContext:

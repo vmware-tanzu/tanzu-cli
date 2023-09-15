@@ -4,8 +4,10 @@
 package discovery
 
 import (
+	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
@@ -22,6 +24,10 @@ func NewOCIDiscovery(name, image string, options ...DiscoveryOptions) Discovery 
 	discovery := newDBBackedOCIDiscovery(name, image)
 	discovery.pluginCriteria = opts.PluginDiscoveryCriteria
 	discovery.useLocalCacheOnly = opts.UseLocalCacheOnly
+	// NOTE: the use of TEST_TANZU_CLI_USE_DB_CACHE_ONLY is for testing only
+	if useCacheOnlyForTesting, _ := strconv.ParseBool(os.Getenv("TEST_TANZU_CLI_USE_DB_CACHE_ONLY")); useCacheOnlyForTesting {
+		discovery.useLocalCacheOnly = true
+	}
 	return discovery
 }
 
@@ -36,6 +42,10 @@ func NewOCIGroupDiscovery(name, image string, options ...DiscoveryOptions) Group
 	discovery := newDBBackedOCIDiscovery(name, image)
 	discovery.groupCriteria = opts.GroupDiscoveryCriteria
 	discovery.useLocalCacheOnly = opts.UseLocalCacheOnly
+	// NOTE: the use of TEST_TANZU_CLI_USE_DB_CACHE_ONLY is for testing only
+	if useCacheOnlyForTesting, _ := strconv.ParseBool(os.Getenv("TEST_TANZU_CLI_USE_DB_CACHE_ONLY")); useCacheOnlyForTesting {
+		discovery.useLocalCacheOnly = true
+	}
 
 	return discovery
 }
