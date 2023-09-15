@@ -19,7 +19,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/telemetry"
@@ -30,7 +29,7 @@ import (
 )
 
 // NewRootCmd creates a root command.
-func NewRootCmd() (*cobra.Command, error) { //nolint:gocyclo
+func NewRootCmd() (*cobra.Command, error) {
 	var rootCmd = newRootCmd()
 	uFunc := cli.NewMainUsage().UsageFunc()
 	rootCmd.SetUsageFunc(uFunc)
@@ -45,6 +44,9 @@ func NewRootCmd() (*cobra.Command, error) { //nolint:gocyclo
 		initCmd,
 		completionCmd,
 		configCmd,
+		contextCmd,
+		k8sCmd,
+		tmcCmd,
 		genAllDocsCmd,
 		// Note(TODO:prkalle): The below ceip-participation command(experimental) added may be removed in the next release,
 		//       If we decide to fold this functionality into existing 'tanzu telemetry' plugin
@@ -53,20 +55,13 @@ func NewRootCmd() (*cobra.Command, error) { //nolint:gocyclo
 	if _, err := ensureCLIInstanceID(); err != nil {
 		return nil, errors.Wrap(err, "failed to ensure CLI ID")
 	}
-	// If the context and target feature is enabled, add the corresponding commands under root.
-	if config.IsFeatureActivated(constants.FeatureContextCommand) {
-		rootCmd.AddCommand(
-			contextCmd,
-			k8sCmd,
-			tmcCmd,
-		)
-		mapTargetToCmd := map[configtypes.Target]*cobra.Command{
-			configtypes.TargetK8s: k8sCmd,
-			configtypes.TargetTMC: tmcCmd,
-		}
-		if err := addPluginsToTarget(mapTargetToCmd); err != nil {
-			return nil, err
-		}
+
+	mapTargetToCmd := map[configtypes.Target]*cobra.Command{
+		configtypes.TargetK8s: k8sCmd,
+		configtypes.TargetTMC: tmcCmd,
+	}
+	if err := addPluginsToTarget(mapTargetToCmd); err != nil {
+		return nil, err
 	}
 
 	plugins, err := pluginsupplier.GetInstalledPlugins()

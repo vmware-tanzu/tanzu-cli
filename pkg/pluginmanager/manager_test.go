@@ -1353,6 +1353,8 @@ func TestGetAdditionalTestPluginDiscoveries(t *testing.T) {
 	assertions.Equal(expectedDiscoveries[1], discoveries[1].OCI.Image)
 	assertions.Equal(expectedDiscoveries[2], discoveries[2].OCI.Image)
 	assertions.Equal(expectedDiscoveries[3], discoveries[3].OCI.Image)
+
+	os.Unsetenv(constants.ConfigVariableAdditionalDiscoveryForTesting)
 }
 
 func TestGetPluginDiscoveries(t *testing.T) {
@@ -1417,6 +1419,8 @@ func TestGetPluginDiscoveries(t *testing.T) {
 	assertions.Equal(2, len(discoveries))
 	assertions.Equal("default-local", discoveries[0].Local.Name)
 	assertions.Equal("fake", discoveries[1].Local.Name)
+
+	os.Unsetenv(constants.ConfigVariableAdditionalDiscoveryForTesting)
 }
 
 func TestMergeDuplicatePlugins(t *testing.T) {

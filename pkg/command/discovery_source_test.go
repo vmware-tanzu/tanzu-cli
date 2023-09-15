@@ -107,6 +107,7 @@ func Test_createAndListDiscoverySources(t *testing.T) {
 	os.Unsetenv(configlib.EnvConfigNextGenKey)
 	os.Unsetenv(constants.CEIPOptInUserPromptAnswer)
 	os.Unsetenv(constants.EULAPromptAnswer)
+	os.Unsetenv(constants.ConfigVariableAdditionalDiscoveryForTesting)
 }
 
 func Test_initDiscoverySources(t *testing.T) {
