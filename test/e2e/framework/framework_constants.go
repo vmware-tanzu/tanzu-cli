@@ -104,6 +104,7 @@ const (
 	NoActiveContextExistsForTarget = "There is no active context for the given target %v"
 	ContextNotActiveOrNotExists    = "The provided context %v is not active or does not exist"
 	ContextForTargetSetInactive    = "The context %v for the target %v has been set as inactive"
+	DeactivatingPlugin             = "Deactivating plugin '%v:%v' for context '%v'"
 
 	KindClusterCreate = "kind create cluster --name %s"
 	KindClusterStatus = "kubectl cluster-info --context %s"

@@ -16,6 +16,9 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
+var stdOut string
+var stdErr string
+
 // Below are the use cases executed in this suite
 // Use case 1: create context when there are no plugins to sync
 // Use case 2: created a context (make sure sync installs plugins), uninstall plugin, run plugins sync (should install uninstall plugins)
@@ -85,7 +88,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		})
 		// Test case: d. delete current context
 		It("delete current context and stop mock server", func() {
-			err = tf.ContextCmd.DeleteContext(contextName)
+			_, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
 			err = f.StopContainer(tf, f.HttpMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
@@ -171,7 +174,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		})
 		// e. delete current context, make sure all context specific plugins are uninstalled
 		It("delete current context", func() {
-			err = tf.ContextCmd.DeleteContext(contextName)
+			_, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
 
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
@@ -233,7 +236,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// Test case: b. create context and make sure context has created
 		It("create context for TMC target with http mock server URL as endpoint", func() {
 			contextName = f.ContextPrefixTMC + f.RandomString(4)
-			_, stdErr, err := tf.ContextCmd.CreateContextWithEndPointStaging(contextName, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			_, stdErr, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextName, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			Expect(stdErr).NotTo(BeNil(), "there should be stderr")
 			Expect(stdErr).To(ContainSubstring(f.UnableToSync), "there should be sync error as all plugins not available in repo")
@@ -260,10 +263,28 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(len(pluginsList)).Should(Equal(len(pluginsGeneratedMockResponseWithCorrectInfo)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(pluginsList, pluginsGeneratedMockResponseWithCorrectInfo)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 		})
-		// e. delete current context and stop mock server
+		// Test case: e.1 Unset the context and make sure plugin are deactivated, and set the context again
+		It("list plugins and validate plugins being installed after context being created", func() {
+			installedPluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			stdOut, _, err = tf.ContextCmd.UnsetContext(contextName)
+			Expect(err).To(BeNil(), "unset context should unset context without any error")
+			for i := range installedPluginsList {
+				Expect(stdOut).To(ContainSubstring(fmt.Sprintf(f.DeactivatingPlugin, installedPluginsList[i].Name, installedPluginsList[i].Version, contextName)))
+			}
+			err = tf.ContextCmd.UseContext(contextName)
+			Expect(err).To(BeNil(), "use context should set context without any error")
+		})
+		// e.2 delete current context and stop mock server
 		It("delete current context", func() {
-			err = tf.ContextCmd.DeleteContext(contextName)
+			installedPluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			stdOut, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
+			// delete context should deactivate all installed plugins
+			for i := range installedPluginsList {
+				Expect(stdOut).To(ContainSubstring(fmt.Sprintf(f.DeactivatingPlugin, installedPluginsList[i].Name, installedPluginsList[i].Version, contextName)))
+			}
 			err = f.StopContainer(tf, f.HttpMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
@@ -358,9 +379,9 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// d. delete both contexts
 		It("delete current context", func() {
-			err = tf.ContextCmd.DeleteContext(contextNameOne)
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameOne)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
-			err = tf.ContextCmd.DeleteContext(contextNameTwo)
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameTwo)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
 			err = f.StopContainer(tf, f.HttpMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
@@ -452,7 +473,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// d. delete both contexts
 		It("delete current context", func() {
-			err = tf.ContextCmd.DeleteContext(contextNameOne)
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameOne)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
 			err = f.StopContainer(tf, f.HttpMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
@@ -633,12 +654,12 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// Test case: l. delete tmc/k8s contexts and the KIND cluster
 		It("delete tmc/k8s contexts and the KIND cluster", func() {
-			err = tf.ContextCmd.DeleteContext(contextNameTMC)
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameTMC)
 			Expect(err).To(BeNil(), "context should be deleted without error")
 			err = f.StopContainer(tf, f.HttpMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 
-			err = tf.ContextCmd.DeleteContext(contextNameK8s)
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameK8s)
 			Expect(err).To(BeNil(), "context should be deleted without error")
 			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
@@ -813,18 +834,18 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("plugin group search and plugin install by group when active context has issues", func() {
 			pgs, err := pl.SearchAllPluginGroups(tf)
 			Expect(err).To(BeNil())
-			err = tf.PluginCmd.InstallPluginsFromGroup("", pgs[0].Group)
+			err = tf.PluginCmd.InstallPluginsFromGroup("", pgs[0].Name)
 			Expect(err).To(BeNil(), "should be no error for plugin install by group")
 		})
 
 		// Test case: o. delete tmc/k8s contexts
 		It("delete tmc/k8s contexts", func() {
-			err = tf.ContextCmd.DeleteContext(contextNameTMC)
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameTMC)
 			Expect(err).To(BeNil(), "context should be deleted without error")
 			err = f.StopContainer(tf, f.HttpMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 
-			err = tf.ContextCmd.DeleteContext(contextNameK8s)
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameK8s)
 			Expect(err).To(BeNil(), "context should be deleted without error")
 		})
 	})

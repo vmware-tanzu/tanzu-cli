@@ -39,6 +39,7 @@ import (
 	wcpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 )
 
@@ -56,6 +57,7 @@ const (
 	noActiveContextExistsForTarget = "There is no active context for the given target %v"
 	contextNotActiveOrNotExists    = "The provided context %v is not active or does not exist"
 	contextForTargetSetInactive    = "The context %v for the target %v has been set as inactive"
+	deactivatingPlugin             = "Deactivating plugin '%v:%v' for context '%v'"
 
 	invalidTarget = "invalid target specified. Please specify a correct value for the `--target/-t` flag from 'kubernetes[k8s]/mission-control[tmc]"
 )
@@ -829,13 +831,13 @@ func deleteCtx(_ *cobra.Command, args []string) error {
 			return nil
 		}
 	}
-
+	installed, _, _, _ := getInstalledAndMissingContextPlugins() //nolint:dogsled
 	log.Infof("Deleting entry for cluster %s", name)
 	err := config.RemoveContext(name)
 	if err != nil {
 		return err
 	}
-
+	listDeactivatedPlugins(installed, name)
 	return nil
 }
 
@@ -916,8 +918,8 @@ func unsetCtx(_ *cobra.Command, args []string) error {
 }
 
 func unsetGivenContext(name string, target configtypes.Target) error {
-	var err error
 	var unset bool
+	installed, _, _, _ := getInstalledAndMissingContextPlugins() //nolint:dogsled
 	currentCtxMap, err := config.GetAllCurrentContextsMap()
 	if target != "" && name != "" {
 		ctx, ok := currentCtxMap[target]
@@ -953,8 +955,18 @@ func unsetGivenContext(name string, target configtypes.Target) error {
 		return err
 	} else if unset {
 		log.Outputf(contextForTargetSetInactive, name, target)
+		listDeactivatedPlugins(installed, name)
 	}
 	return nil
+}
+
+// listDeactivatedPlugins stdout the plugins that are being deactivated
+func listDeactivatedPlugins(deactivatedPlugins []discovery.Discovered, ctxName string) {
+	for i := range deactivatedPlugins {
+		if (deactivatedPlugins)[i].ContextName == ctxName {
+			log.Outputf(deactivatingPlugin, (deactivatedPlugins)[i].Name, deactivatedPlugins[i].InstalledVersion, ctxName)
+		}
+	}
 }
 
 func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.Writer) {

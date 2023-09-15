@@ -174,7 +174,7 @@ func k8sContextLifeCycleTests() bool {
 		It("delete context command", func() {
 			By("delete all contexts created in previous tests")
 			for _, ctx := range contextNames {
-				err := tf.ContextCmd.DeleteContext(ctx)
+				_, _, err := tf.ContextCmd.DeleteContext(ctx)
 				Expect(framework.IsContextExists(tf, ctx)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, ctx))
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
 			}
@@ -182,7 +182,7 @@ func k8sContextLifeCycleTests() bool {
 		// Test case: (negative test) test 'tanzu context delete' command for context name which is not exists
 		It("delete context command", func() {
 			By("delete context command with random string")
-			err := tf.ContextCmd.DeleteContext(framework.RandomString(4))
+			_, _, err := tf.ContextCmd.DeleteContext(framework.RandomString(4))
 			Expect(err).ToNot(BeNil())
 		})
 	})
@@ -206,7 +206,7 @@ func k8sContextStressTests() bool {
 			list, err := tf.ContextCmd.ListContext()
 			Expect(err).To(BeNil(), "list context should not return any error")
 			for _, ctx := range list {
-				err := tf.ContextCmd.DeleteContext(ctx.Name)
+				_, _, err := tf.ContextCmd.DeleteContext(ctx.Name)
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
 				Expect(framework.IsContextExists(tf, ctx.Name)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, ctx.Name))
 			}
@@ -249,7 +249,7 @@ func k8sContextStressTests() bool {
 		It("delete context command", func() {
 			By("delete all contexts created in previous tests")
 			for _, ctx := range contextNamesStress {
-				err := tf.ContextCmd.DeleteContext(ctx)
+				_, _, err := tf.ContextCmd.DeleteContext(ctx)
 				log.Infof("context: %s deleted", ctx)
 				Expect(framework.IsContextExists(tf, ctx)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, ctx))
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
