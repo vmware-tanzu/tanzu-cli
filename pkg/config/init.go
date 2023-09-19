@@ -33,10 +33,5 @@ func init() {
 	// PopulateDefaultCentralDiscovery() handles the locking of the config file itself by
 	// using the config file higher-level APIs
 	config.ReleaseTanzuConfigLock()
-
-	// Can only check for config.IsFeatureActivated() once the feature flags are setup
-	// by the above calls.
-	if !config.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
-		_ = PopulateDefaultCentralDiscovery(false)
-	}
+	_ = PopulateDefaultCentralDiscovery(false)
 }

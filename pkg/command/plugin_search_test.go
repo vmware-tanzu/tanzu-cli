@@ -18,18 +18,11 @@ import (
 
 func TestPluginSearch(t *testing.T) {
 	tests := []struct {
-		test                string
-		centralRepoDisabled string
-		args                []string
-		expected            string
-		expectedFailure     bool
+		test            string
+		args            []string
+		expected        string
+		expectedFailure bool
 	}{
-		{
-			test:                "no 'plugin search' without central repo",
-			centralRepoDisabled: "true",
-			args:                []string{"plugin", "search"},
-			expected:            "Provides all lifecycle operations for plugins",
-		},
 		{
 			test:            "invalid target",
 			args:            []string{"plugin", "search", "--target", "invalid"},
@@ -83,15 +76,6 @@ func TestPluginSearch(t *testing.T) {
 
 	for _, spec := range tests {
 		t.Run(spec.test, func(t *testing.T) {
-			// Disable the Central Repository feature if needed
-			enabled := "true"
-			if !strings.EqualFold(spec.centralRepoDisabled, "true") {
-				enabled = "false"
-			}
-			featureArray := strings.Split(constants.FeatureDisableCentralRepositoryForTesting, ".")
-			err := config.SetFeature(featureArray[1], featureArray[2], enabled)
-			assert.Nil(err)
-
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
