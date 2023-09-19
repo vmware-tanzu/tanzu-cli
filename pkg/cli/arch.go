@@ -15,6 +15,9 @@ var (
 
 	// AllOSArch defines all OS/ARCH combination for which plugin can be built
 	AllOSArch = []Arch{LinuxAMD64, DarwinAMD64, WinAMD64, DarwinARM64, LinuxARM64}
+
+	GOOS   = runtime.GOOS
+	GOARCH = runtime.GOARCH
 )
 
 // Arch represents a system architecture.
@@ -22,7 +25,12 @@ type Arch string
 
 // BuildArch returns compile time build arch or locates it.
 func BuildArch() Arch {
-	return Arch(fmt.Sprintf("%s_%s", runtime.GOOS, runtime.GOARCH))
+	return Arch(fmt.Sprintf("%s_%s", GOOS, GOARCH))
+}
+
+func SetArch(a Arch) {
+	GOOS = a.OS()
+	GOARCH = a.Arch()
 }
 
 // IsWindows tells if an arch is windows.
