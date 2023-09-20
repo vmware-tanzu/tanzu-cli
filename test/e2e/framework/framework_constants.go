@@ -135,8 +135,8 @@ const (
 	FileContent      = "file: %s , content: %s"
 
 	// Error messages
-	UnableToFindPluginForTarget                   = "unable to find plugin '%s' with version '%s'"
-	UnableToFindPluginWithVersionForTarget        = "unable to find plugin '%s' with version '%s' for target '%s'"
+	UnableToFindPluginForTarget                   = "unable to find plugin '%s' matching version '%s'"
+	UnableToFindPluginWithVersionForTarget        = "unable to find plugin '%s' matching version '%s' for target '%s'"
 	UnableToFindPlugin                            = "unable to find plugin '%s'"
 	InvalidTargetSpecified                        = "invalid target specified. Please specify a correct value for the `--target/-t` flag from '" + TargetList + "'"
 	InvalidTargetGlobal                           = "invalid target for plugin: global"
