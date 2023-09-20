@@ -198,10 +198,33 @@ func DiscoverServerPlugins() ([]discovery.Discovered, error) {
 			case configtypes.TargetK8s:
 				discoveredPlugins[i].Target = configtypes.TargetK8s
 			}
+
+			// It is possible that server recommends shortened plugin version of format vMAJOR or vMAJOR.MINOR
+			// in that case, try to find the latest available version of the plugin that matches with the given recommended version
+			matchedRecommendedVersion := getMatchingRecommendedVersionOfPlugin(discoveredPlugins[i].Name, discoveredPlugins[i].Target, discoveredPlugins[i].RecommendedVersion)
+			if matchedRecommendedVersion != "" {
+				discoveredPlugins[i].RecommendedVersion = matchedRecommendedVersion
+			}
 		}
 		plugins = append(plugins, discoveredPlugins...)
 	}
 	return plugins, kerrors.NewAggregate(errList)
+}
+
+func getMatchingRecommendedVersionOfPlugin(pluginName string, pluginTarget configtypes.Target, version string) string {
+	criteria := &discovery.PluginDiscoveryCriteria{
+		Name:    pluginName,
+		Target:  pluginTarget,
+		Version: version,
+	}
+	matchedPlugins, err := DiscoverStandalonePlugins(discovery.WithPluginDiscoveryCriteria(criteria))
+	if err != nil {
+		return ""
+	}
+	if len(matchedPlugins) != 1 {
+		return ""
+	}
+	return matchedPlugins[0].RecommendedVersion
 }
 
 func mergePluginEntries(plugin1, plugin2 *discovery.Discovered) *discovery.Discovered {
