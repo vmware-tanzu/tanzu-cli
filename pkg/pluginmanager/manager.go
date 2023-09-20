@@ -217,7 +217,11 @@ func getMatchingRecommendedVersionOfPlugin(pluginName string, pluginTarget confi
 		Target:  pluginTarget,
 		Version: version,
 	}
-	matchedPlugins, err := DiscoverStandalonePlugins(discovery.WithPluginDiscoveryCriteria(criteria))
+	// Considering the performance is of importance for this function, We are using `WithUseLocalCacheOnly` option
+	// here as we do not want to fetch the database (or even validate the digest) all the time.
+	// Using local cache should be fine as cache gets updated with any plugin installation or search commands
+	// Also we are planning to implement scheduling of auto sync of database cache in future releases
+	matchedPlugins, err := DiscoverStandalonePlugins(discovery.WithPluginDiscoveryCriteria(criteria), discovery.WithUseLocalCacheOnly())
 	if err != nil {
 		return ""
 	}
