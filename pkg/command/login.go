@@ -366,7 +366,7 @@ func globalLoginUsingServer(s *configtypes.Server) (err error) { // nolint:stati
 	if apiTokenExists {
 		log.Info("API token env var is set")
 	} else {
-		apiTokenValue, err = promptAPIToken()
+		apiTokenValue, err = promptAPIToken("TMC")
 		if err != nil {
 			return err
 		}

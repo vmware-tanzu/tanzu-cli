@@ -36,6 +36,7 @@ const (
 	jsonStr         = "json"
 	testmc          = "test-mc"
 	missionControl  = "mission-control"
+	targetUCP       = "ucp"
 )
 
 var _ = Describe("Test tanzu context command", func() {
@@ -376,6 +377,7 @@ var _ = Describe("create new context", func() {
 		testKubeConfigPath = "/fake/path/kubeconfig"
 		testContextName    = "fake-context-name"
 		fakeTMCEndpoint    = "https://cloud.vmware.com/auth"
+		fakeUCPEndpoint    = "https://fake.api.tanzu.cloud.vmware.com"
 	)
 
 	Describe("create context with kubeconfig", func() {
@@ -491,7 +493,7 @@ var _ = Describe("create new context", func() {
 		})
 	})
 
-	Describe("create context with non-tmc endpoint", func() {
+	Describe("create context with ucp endpoint", func() {
 		var (
 			tlsServer *ghttp.Server
 			err       error
@@ -537,20 +539,18 @@ var _ = Describe("create new context", func() {
 			})
 			Context("with endpoint and context name provided", func() {
 				It("should create context with given endpoint and context name", func() {
-					selfManaged = true
-					endpoint = fakeTMCEndpoint
+					endpoint = fakeUCPEndpoint
 					ctxName = testContextName
 					ctx, err = createNewContext()
 					Expect(err).To(BeNil())
 					Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
-					Expect(string(ctx.Target)).To(ContainSubstring(missionControl))
+					Expect(string(ctx.Target)).To(ContainSubstring(targetUCP))
 					Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
 				})
 			})
 			Context("context name already exists", func() {
 				It("should return error", func() {
-					selfManaged = true
-					endpoint = fakeTMCEndpoint
+					endpoint = fakeUCPEndpoint
 					ctxName = existingContext
 					ctx, err = createNewContext()
 					Expect(err).ToNot(BeNil())
@@ -560,40 +560,6 @@ var _ = Describe("create new context", func() {
 		})
 
 	})
-	Describe("get Issuer URL from self-managed tmc endpoint", func() {
-		Context("endpoint url invalid format", func() {
-			It("should return error", func() {
-
-				emptyEP := ""
-				_, err := getIssuerURLForTMCEndPoint(emptyEP)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("cannot get issuer URL for empty TMC endpoint"))
-
-				invalidFmtEP := "invalidformat"
-				_, err = getIssuerURLForTMCEndPoint(invalidFmtEP)
-				Expect(err).ToNot(BeNil())
-
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("TMC endpoint URL %s should be of the format host:port", invalidFmtEP)))
-
-				onlyPortEP := ":8888"
-				_, err = getIssuerURLForTMCEndPoint(onlyPortEP)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal(fmt.Sprintf("TMC endpoint URL %s should be of the format host:port", onlyPortEP)))
-
-			})
-		})
-		Context("valid endpoint url format", func() {
-			It("should return the issuer URL successfully", func() {
-
-				validEP := "test.endpoint.com:554"
-				wantIssuerURL := "https://pinniped-supervisor.test.endpoint.com/provider/pinniped"
-				issuerURL, err := getIssuerURLForTMCEndPoint(validEP)
-				Expect(err).To(BeNil())
-				Expect(issuerURL).To(Equal(wantIssuerURL))
-
-			})
-		})
-	})
 })
 
 func resetContextCommandFlags() {
@@ -602,7 +568,6 @@ func resetContextCommandFlags() {
 	apiToken = ""
 	kubeConfig = ""
 	kubeContext = ""
-	selfManaged = false
 	skipTLSVerify = false
 	endpointCACertPath = ""
 }

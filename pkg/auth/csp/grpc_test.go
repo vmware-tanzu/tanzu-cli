@@ -27,7 +27,7 @@ const idTokenDummy = "IDToken_dummy"
 
 func Test(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cli/core/pkg/auth/csp Suite")
+	RunSpecs(t, "pkg/auth/csp Suite")
 }
 
 var _ = Describe("Unit tests for grpc", func() {

@@ -7,7 +7,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,27 +24,26 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
+	ucpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/ucp"
 	wcpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 var (
-	stderrOnly, forceCSP, staging, onlyCurrent, selfManaged, skipTLSVerify                 bool
-	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath string
+	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify                                           bool
+	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath, contextType string
 )
 
 const (
-	knownGlobalHost                        = "cloud.vmware.com"
-	apiTokenType                           = "api-token"
-	idTokenType                            = "id-token"
-	controlPlaneEndPointTypeSelfManagedTMC = "self-managed-tmc"
+	knownGlobalHost    = "cloud.vmware.com"
+	apiTokenType       = "api-token"
+	defaultUCPEndpoint = "https://api.tanzu.cloud.vmware.com"
 
 	contextNotExistsForTarget      = "The provided context %v does not exist or is not active for the given target %v"
 	noActiveContextExistsForTarget = "There is no active context for the given target %v"
@@ -53,6 +51,14 @@ const (
 	contextForTargetSetInactive    = "The context %v for the target %v has been set as inactive"
 
 	invalidTarget = "invalid target specified. Please specify a correct value for the `--target/-t` flag from 'kubernetes[k8s]/mission-control[tmc]"
+)
+
+// constants that define context creation types
+const (
+	ContextMissionControl     = "Mission Control"
+	ContextK8SClusterEndpoint = "Kubernetes Cluster Endpoint"
+	ContextLocalKubeconfig    = "Kubernetes Local Kubeconfig"
+	ContextApplicationEngine  = "Application Engine"
 )
 
 var contextCmd = &cobra.Command{
@@ -94,6 +100,9 @@ var createCtxCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	RunE:  createCtx,
 	Example: `
+    # Create a TKG management cluster context using endpoint and type(--type is optional, if not provided CLI would infer the type from the endpoint)
+    tanzu context create mgmt-cluster --endpoint "https://k8s.example.com[:port] --type k8s-cluster-endpoint"
+
     # Create a TKG management cluster context using endpoint
     tanzu context create mgmt-cluster --endpoint "https://k8s.example.com[:port]"
 
@@ -101,13 +110,25 @@ var createCtxCmd = &cobra.Command{
     tanzu context create mgmt-cluster --kubeconfig path/to/kubeconfig --kubecontext kubecontext
 
     # Create a TKG management cluster context by using the provided CA Bundle for TLS verification:
-    tanzu context create --endpoint https://k8s.example.com[:port] --endpoint-ca-certificate /path/to/ca/ca-cert
+    tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port] --endpoint-ca-certificate /path/to/ca/ca-cert
 
     # Create a TKG management cluster context by explicit request to skip TLS verification, which is insecure:
-    tanzu context create --endpoint https://k8s.example.com[:port] --insecure-skip-tls-verify
+    tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port] --insecure-skip-tls-verify
 
     # Create a TKG management cluster context using default kubeconfig path and a kubeconfig context
     tanzu context create mgmt-cluster --kubecontext kubecontext
+
+    # Create a Application Engine(UCP) context with default endpoint (--type option is not necessary for default endpoint)
+    tanzu context create myucp -endpoint https://api.tanzu.cloud.vmware.com 
+
+    # Create a Application Engine(UCP) context (--type option is needed for non-default endpoint)
+    tanzu context create myucp -endpoint https://non-default.ucp.endpoint.com --type application-engine
+
+    # Create a Application Engine(UCP) context by using the provided CA Bundle for TLS verification:
+    tanzu context create myucp --endpoint https://api.tanzu.cloud.vmware.com  --endpoint-ca-certificate /path/to/ca/ca-cert
+
+    # Create a Application Engine(UCP) context by explicit request to skip TLS verification, which is insecure:
+    tanzu context create myucp --endpoint https://api.tanzu.cloud.vmware.com --insecure-skip-tls-verify
 
     [*] : Users have two options to create a kubernetes cluster context. They can choose the control
     plane option by providing 'endpoint', or use the kubeconfig for the cluster by providing
@@ -129,6 +150,7 @@ func initCreateCtxCmd() {
 	createCtxCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
 	createCtxCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
 	createCtxCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
+	createCtxCmd.Flags().StringVar(&contextType, "type", "", "type of context to create (mission-control | application-engine | k8s-cluster-endpoint | k8s-local-kubeconfig)")
 
 	_ = createCtxCmd.Flags().MarkHidden("api-token")
 	_ = createCtxCmd.Flags().MarkHidden("stderr-only")
@@ -148,20 +170,14 @@ func createCtx(_ *cobra.Command, args []string) (err error) {
 		ctxName = args[0]
 	}
 
-	controlPlaneEPType := os.Getenv(constants.ControlPlaneEndpointType)
-	if controlPlaneEPType != "" {
-		if strings.EqualFold(controlPlaneEPType, controlPlaneEndPointTypeSelfManagedTMC) {
-			selfManaged = true
-		}
-	}
 	ctx, err := createNewContext()
 	if err != nil {
 		return err
 	}
 	if ctx.Target == configtypes.TargetK8s {
 		err = k8sLogin(ctx)
-	} else if selfManaged {
-		err = selfManagedTMCLogin(ctx)
+	} else if ctx.Target == configtypes.TargetUCP {
+		err = globalUCPLogin(ctx)
 	} else {
 		err = globalLogin(ctx)
 	}
@@ -194,6 +210,15 @@ func isGlobalContext(endpoint string) bool {
 	return false
 }
 
+func isGlobalUCPEndpoint(endpoint string) bool {
+	for _, hostStr := range []string{"api.tanzu.cloud.vmware.com", "api-dev.tanzu.cloud.vmware.com"} {
+		if strings.Contains(endpoint, hostStr) {
+			return true
+		}
+	}
+	return false
+}
+
 func getPromptOpts() []component.PromptOpt {
 	var promptOpts []component.PromptOpt
 	if stderrOnly {
@@ -207,38 +232,43 @@ func getPromptOpts() []component.PromptOpt {
 }
 
 func createNewContext() (context *configtypes.Context, err error) {
-	// user provided command line options to create a context using kubeconfig[optional] and context
-	if kubeContext != "" {
-		return createContextWithKubeconfig()
+	ctxCreationType := ""
+	contextType = strings.TrimSpace(contextType)
+	// user provided command line option "k8s-local-kubeconfig" or provided command line options to create a context using kubeconfig[optional] and context
+	if contextType == "k8s-local-kubeconfig" || kubeContext != "" {
+		ctxCreationType = ContextLocalKubeconfig
+	} else if contextType == "application-engine" || (endpoint != "" && isGlobalUCPEndpoint(endpoint)) {
+		ctxCreationType = ContextApplicationEngine
+	} else if contextType == "mission-control" || (endpoint != "" && isGlobalContext(endpoint)) {
+		ctxCreationType = ContextMissionControl
+	} else if contextType == "k8s-cluster-endpoint" || endpoint != "" {
+		ctxCreationType = ContextK8SClusterEndpoint
 	}
 	// user provided command line options to create a context using endpoint
-	if endpoint != "" || selfManaged {
-		return createContextWithEndpoint()
-	}
-	promptOpts := getPromptOpts()
-
-	var ctxCreationType string
-
-	err = component.Prompt(
-		&component.PromptConfig{
-			Message: "Select context creation type",
-			Options: []string{"Control plane endpoint", "Local kubeconfig"},
-			Default: "Control plane endpoint",
-		},
-		&ctxCreationType,
-		promptOpts...,
-	)
-	if err != nil {
-		return context, err
+	if ctxCreationType == "" {
+		ctxCreationType, err = promptContextType()
+		if err != nil {
+			return context, err
+		}
 	}
 
-	if ctxCreationType == "Control plane endpoint" {
-		return createContextWithEndpoint()
-	}
-
-	return createContextWithKubeconfig()
+	return createContextUsingContextType(ctxCreationType)
 }
 
+func createContextUsingContextType(ctxCreationType string) (context *configtypes.Context, err error) {
+	var ctxCreateFunc func() (*configtypes.Context, error)
+	switch ctxCreationType {
+	case ContextMissionControl:
+		ctxCreateFunc = createContextWithTMCEndpoint
+	case ContextK8SClusterEndpoint:
+		ctxCreateFunc = createContextWithClusterEndpoint
+	case ContextLocalKubeconfig:
+		ctxCreateFunc = createContextWithKubeconfig
+	case ContextApplicationEngine:
+		ctxCreateFunc = createContextWithUCPEndpoint
+	}
+	return ctxCreateFunc()
+}
 func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 	promptOpts := getPromptOpts()
 	if kubeConfig == "" && kubeContext == "" {
@@ -306,35 +336,19 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 	return context, err
 }
 
-func createContextWithEndpoint() (context *configtypes.Context, err error) {
-	promptOpts := getPromptOpts()
+func createContextWithTMCEndpoint() (context *configtypes.Context, err error) {
 	if endpoint == "" {
-		err = component.Prompt(
-			&component.PromptConfig{
-				Message: "Enter control plane endpoint",
-			},
-			&endpoint,
-			promptOpts...,
-		)
+		endpoint, err = promptEndpoint("")
 		if err != nil {
 			return
 		}
 	}
-	endpoint = strings.TrimSpace(endpoint)
-
 	if ctxName == "" {
-		err = component.Prompt(
-			&component.PromptConfig{
-				Message: "Give the context a name",
-			},
-			&ctxName,
-			promptOpts...,
-		)
+		ctxName, err = promptContextName("")
 		if err != nil {
 			return
 		}
 	}
-	ctxName = strings.TrimSpace(ctxName)
 	exists, err := config.ContextExists(ctxName)
 	if err != nil {
 		return context, err
@@ -344,35 +358,136 @@ func createContextWithEndpoint() (context *configtypes.Context, err error) {
 		return
 	}
 
-	if isGlobalContext(endpoint) || selfManaged {
-		context = &configtypes.Context{
-			Name:       ctxName,
-			Target:     configtypes.TargetTMC,
-			GlobalOpts: &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
-		}
-	} else {
-		// TKGKubeconfigFetcher would detect the endpoint is TKGm/TKGs and then fetch the pinniped kubeconfig to create a context
-		tkf := NewTKGKubeconfigFetcher(endpoint, endpointCACertPath, skipTLSVerify)
-		kubeConfig, kubeContext, err = tkf.GetPinnipedKubeconfig()
+	context = &configtypes.Context{
+		Name:       ctxName,
+		Target:     configtypes.TargetTMC,
+		GlobalOpts: &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
+	}
+
+	return context, err
+}
+
+// createContextWithClusterEndpoint creates context for cluster endpoint with pinniped auth
+func createContextWithClusterEndpoint() (context *configtypes.Context, err error) {
+	if endpoint == "" {
+		endpoint, err = promptEndpoint("")
 		if err != nil {
 			return
 		}
-
-		context = &configtypes.Context{
-			Name:   ctxName,
-			Target: configtypes.TargetK8s,
-			ClusterOpts: &configtypes.ClusterServer{
-				Path:                kubeConfig,
-				Context:             kubeContext,
-				Endpoint:            endpoint,
-				IsManagementCluster: true,
-			},
+	}
+	if ctxName == "" {
+		ctxName, err = promptContextName("")
+		if err != nil {
+			return
 		}
+	}
+	exists, err := config.ContextExists(ctxName)
+	if err != nil {
+		return context, err
+	}
+	if exists {
+		err = fmt.Errorf("context %q already exists", ctxName)
+		return
+	}
+
+	// TKGKubeconfigFetcher would detect the endpoint is TKGm/TKGs and then fetch the pinniped kubeconfig to create a context
+	tkf := NewTKGKubeconfigFetcher(endpoint, endpointCACertPath, skipTLSVerify)
+	kubeConfig, kubeContext, err = tkf.GetPinnipedKubeconfig()
+	if err != nil {
+		return
+	}
+
+	context = &configtypes.Context{
+		Name:   ctxName,
+		Target: configtypes.TargetK8s,
+		ClusterOpts: &configtypes.ClusterServer{
+			Path:                kubeConfig,
+			Context:             kubeContext,
+			Endpoint:            endpoint,
+			IsManagementCluster: true,
+		},
 	}
 	return context, err
 }
 
+func createContextWithUCPEndpoint() (context *configtypes.Context, err error) {
+	if endpoint == "" {
+		endpoint, err = promptEndpoint(defaultUCPEndpoint)
+		if err != nil {
+			return
+		}
+	}
+	if ctxName == "" {
+		ctxName, err = promptContextName("")
+		if err != nil {
+			return
+		}
+	}
+
+	exists, err := config.ContextExists(ctxName)
+	if err != nil {
+		return context, err
+	}
+	if exists {
+		err = fmt.Errorf("context %q already exists", ctxName)
+		return
+	}
+
+	// UCP context would have both CSP(GlobalOpts) auth details and kubeconfig(ClusterOpts),
+	context = &configtypes.Context{
+		Name:        ctxName,
+		Target:      configtypes.TargetUCP,
+		GlobalOpts:  &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
+		ClusterOpts: &configtypes.ClusterServer{},
+	}
+	return context, err
+}
 func globalLogin(c *configtypes.Context) (err error) {
+	_, err = doCSPAuthAndUpdateContext(c, "TMC")
+	if err != nil {
+		return err
+	}
+
+	err = config.AddContext(c, true)
+	if err != nil {
+		return err
+	}
+
+	// format
+	fmt.Println()
+	log.Success("successfully created a TMC context")
+	return nil
+}
+
+func globalUCPLogin(c *configtypes.Context) error {
+	claims, err := doCSPAuthAndUpdateContext(c, "UCP")
+	if err != nil {
+		return err
+	}
+	// TODO(prkalle) to update "ucpOrgID" to use plugin runtime constant
+	c.AdditionalMetadata["ucpOrgID"] = claims.OrgID
+
+	kubeCfg, kubeCtx, serverEndpoint, err := ucpauth.GetUCPKubeconfig(c, endpoint, claims.OrgID, endpointCACertPath, skipTLSVerify)
+	if err != nil {
+		return err
+	}
+
+	c.ClusterOpts.Path = kubeCfg
+	c.ClusterOpts.Context = kubeCtx
+	c.ClusterOpts.Endpoint = serverEndpoint
+
+	err = config.AddContext(c, true)
+	if err != nil {
+		return err
+	}
+
+	// format
+	fmt.Println()
+	log.Success("successfully created a Application Engine(UCP) context")
+	return nil
+}
+
+func doCSPAuthAndUpdateContext(c *configtypes.Context, endpointType string) (claims *csp.Claims, err error) {
 	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
 
 	issuer := csp.ProdIssuer
@@ -382,18 +497,18 @@ func globalLogin(c *configtypes.Context) (err error) {
 	if apiTokenExists {
 		log.Info("API token env var is set")
 	} else {
-		apiTokenValue, err = promptAPIToken()
+		apiTokenValue, err = promptAPIToken("UCP")
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	token, err := csp.GetAccessTokenFromAPIToken(apiTokenValue, issuer)
 	if err != nil {
-		return err
+		return nil, errors.Wrap(err, "failed to get token from CSP for UCP")
 	}
-	claims, err := csp.ParseToken(&oauth2.Token{AccessToken: token.AccessToken})
+	claims, err = csp.ParseToken(&oauth2.Token{AccessToken: token.AccessToken})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	a := configtypes.GlobalServerAuth{}
@@ -407,88 +522,63 @@ func globalLogin(c *configtypes.Context) (err error) {
 	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
 	a.Expiration = expiresAt
 	c.GlobalOpts.Auth = a
+	c.AdditionalMetadata = make(map[string]interface{})
 
-	err = config.AddContext(c, true)
-	if err != nil {
-		return err
-	}
-
-	// format
-	fmt.Println()
-	log.Success("successfully created a TMC context")
-	return nil
+	return claims, nil
 }
 
-func selfManagedTMCLogin(c *configtypes.Context) (err error) {
-	issuer, err := getIssuerURLForTMCEndPoint(c.GlobalOpts.Endpoint)
+func promptContextType() (ctxCreationType string, err error) {
+	promptOpts := getPromptOpts()
+	err = component.Prompt(
+		&component.PromptConfig{
+			Message: "Select context creation type",
+			Options: []string{ContextMissionControl, ContextApplicationEngine, ContextK8SClusterEndpoint, ContextLocalKubeconfig},
+			Default: ContextMissionControl,
+		},
+		&ctxCreationType,
+		promptOpts...,
+	)
 	if err != nil {
-		return err
+		return
 	}
-	refreshToken := ""
-	token, err := csp.GetAccessTokenFromSelfManagedIDP(refreshToken, issuer)
-	if err != nil {
-		return err
-	}
-	if token == nil {
-		return errors.Errorf("token issuer %s returned nil token", issuer)
-	}
-
-	a := configtypes.GlobalServerAuth{}
-	a.Issuer = issuer
-	// TODO: parse claims from ID token to get org-tenant ID info
-	// a.UserName = claims.Username
-	// a.Permissions = claims.Permissions
-	a.AccessToken = token.AccessToken
-	a.IDToken = token.IDToken
-	a.RefreshToken = token.RefreshToken
-	a.Type = idTokenType
-	expiresAt := time.Now().Add(time.Second * time.Duration(token.ExpiresIn))
-	a.Expiration = expiresAt
-	c.GlobalOpts.Auth = a
-
-	err = config.AddContext(c, true)
-	if err != nil {
-		return err
-	}
-
-	// format
-	fmt.Println()
-	log.Success("successfully created a TMC self-managed context")
-	return nil
+	return
 }
 
-// Instead of the end user having to know the OIDC token issuer URL
-// we will derive the token issuer URL based on the TMC endpoint for the customer's organization.
-// The issuer URL and the TMC endpoint are both expected to share the same DNS zone and will only
-// differ in-terms of the domain of the URL and the path.
-func getIssuerURLForTMCEndPoint(tmcEP string) (string, error) {
-	tmcEP = strings.TrimSpace(tmcEP)
-	// the empty string is successfully parsed
-	// so add a special check to ensure the tmc endpoint is not an empty string.
-	if tmcEP == "" {
-		return "", errors.Errorf("cannot get issuer URL for empty TMC endpoint")
-	}
-
-	// assume that the host in the tmc endpoint will always look like
-	// tmc.my-domain.com:443 or <TMC SELF MANAGED DNS ZONE>:443
-	tmcEPHost, _, err := net.SplitHostPort(tmcEP)
+func promptEndpoint(defaultEndpoint string) (ep string, err error) {
+	promptOpts := getPromptOpts()
+	err = component.Prompt(
+		&component.PromptConfig{
+			Message: "Enter control plane endpoint",
+			Default: defaultEndpoint,
+		},
+		&ep,
+		promptOpts...,
+	)
 	if err != nil {
-		return "", errors.Wrapf(err, "TMC endpoint URL %s should be of the format host:port", tmcEP)
+		return
 	}
-	if tmcEPHost == "" {
-		return "", errors.Errorf("TMC endpoint URL %s should be of the format host:port", tmcEP)
+	ep = strings.TrimSpace(ep)
+	return
+}
+func promptContextName(defaultCtxName string) (cname string, err error) {
+	promptOpts := getPromptOpts()
+	err = component.Prompt(
+		&component.PromptConfig{
+			Message: "Give the context a name",
+			Default: defaultCtxName,
+		},
+		&cname,
+		promptOpts...,
+	)
+	if err != nil {
+		return
 	}
-	u := url.URL{
-		Scheme: "https",
-		Host:   fmt.Sprintf("%s.%s", csp.PinnipedSupervisorDomain, tmcEPHost),
-		Path:   csp.FederationDomainPath,
-	}
-
-	return u.String(), nil
+	cname = strings.TrimSpace(cname)
+	return
 }
 
 // Interactive way to create a TMC context. User will be prompted for CSP API token.
-func promptAPIToken() (apiToken string, err error) {
+func promptAPIToken(endpointType string) (apiToken string, err error) {
 	consoleURL := url.URL{
 		Scheme:   "https",
 		Host:     "console.cloud.vmware.com",
@@ -499,8 +589,8 @@ func promptAPIToken() (apiToken string, err error) {
 	// format
 	fmt.Println()
 	log.Infof(
-		"If you don't have an API token, visit the VMware Cloud Services console, select your organization, and create an API token with the TMC service roles:\n  %s\n",
-		consoleURL.String(),
+		"If you don't have an API token, visit the VMware Cloud Services console, select your organization, and create an API token with the %s service roles:\n  %s\n",
+		endpointType, consoleURL.String(),
 	)
 
 	promptOpts := getPromptOpts()

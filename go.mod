@@ -41,7 +41,7 @@ require (
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-cli/test/e2e/framework v0.0.0-00010101000000-000000000000
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686
-	github.com/vmware-tanzu/tanzu-plugin-runtime v1.0.0
+	github.com/vmware-tanzu/tanzu-plugin-runtime v1.1.0-dev.0.20230922224422-39c403b3e27a
 	go.pinniped.dev v0.20.0
 	golang.org/x/mod v0.10.0
 	golang.org/x/oauth2 v0.8.0
@@ -120,7 +120,7 @@ require (
 	github.com/go-openapi/analysis v0.21.4 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
-	github.com/go-openapi/jsonreference v0.20.1 // indirect
+	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/loads v0.21.2 // indirect
 	github.com/go-openapi/runtime v0.26.0 // indirect
 	github.com/go-openapi/spec v0.20.9 // indirect
