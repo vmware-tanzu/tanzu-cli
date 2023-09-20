@@ -15,8 +15,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"go.uber.org/multierr"
-	"golang.org/x/mod/semver"
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -31,7 +29,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/distribution"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugincmdtree"
@@ -63,34 +60,6 @@ type DeletePluginOptions struct {
 	Target      configtypes.Target
 	PluginName  string
 	ForceDelete bool
-}
-
-// ValidatePlugin validates the plugin info.
-func ValidatePlugin(p *cli.PluginInfo) (err error) {
-	// skip builder plugin for bootstrapping
-	if p.Name == "builder" {
-		return nil
-	}
-	if p.Name == "" {
-		err = multierr.Append(err, errors.New("plugin name cannot be empty"))
-	}
-	if p.Version == "" {
-		err = multierr.Append(err, fmt.Errorf("plugin %q version cannot be empty", p.Name))
-	}
-	if !semver.IsValid(p.Version) && p.Version != "dev" {
-		err = multierr.Append(err, fmt.Errorf("version %q %q is not a valid semantic version", p.Name, p.Version))
-	}
-	if p.Description == "" {
-		err = multierr.Append(err, fmt.Errorf("plugin %q description cannot be empty", p.Name))
-	}
-	if p.Group == "" {
-		err = multierr.Append(err, fmt.Errorf("plugin %q group cannot be empty", p.Name))
-	}
-	return
-}
-
-func discoverPlugins(pd []configtypes.PluginDiscovery) ([]discovery.Discovered, error) {
-	return discoverSpecificPlugins(pd, nil)
 }
 
 // discoverSpecificPlugins returns all plugins that match the specified criteria from all PluginDiscovery sources,
@@ -194,15 +163,6 @@ func GetAdditionalTestPluginDiscoveries() []configtypes.PluginDiscovery {
 
 // DiscoverServerPlugins returns the available plugins associated all the active contexts
 func DiscoverServerPlugins() ([]discovery.Discovered, error) {
-	// If the context and target feature is enabled, discover plugins from all currentContexts
-	// Else discover plugin based on current Server
-	if configlib.IsFeatureActivated(constants.FeatureContextCommand) {
-		return discoverServerPluginsBasedOnAllCurrentContexts()
-	}
-	return discoverServerPluginsBasedOnCurrentServer()
-}
-
-func discoverServerPluginsBasedOnAllCurrentContexts() ([]discovery.Discovered, error) {
 	var plugins []discovery.Discovered
 	var errList []error
 
@@ -218,7 +178,7 @@ func discoverServerPluginsBasedOnAllCurrentContexts() ([]discovery.Discovered, e
 		var discoverySources []configtypes.PluginDiscovery
 		discoverySources = append(discoverySources, context.DiscoverySources...)
 		discoverySources = append(discoverySources, defaultDiscoverySourceBasedOnContext(context)...)
-		discoveredPlugins, err := discoverPlugins(discoverySources)
+		discoveredPlugins, err := discoverSpecificPlugins(discoverySources)
 
 		// If there is an error while discovering plugins from all of the given plugin sources,
 		// append the error to the error list and continue processing the discoveredPlugins,
@@ -242,144 +202,6 @@ func discoverServerPluginsBasedOnAllCurrentContexts() ([]discovery.Discovered, e
 		plugins = append(plugins, discoveredPlugins...)
 	}
 	return plugins, kerrors.NewAggregate(errList)
-}
-
-// discoverServerPluginsBasedOnCurrentServer returns the available plugins associated with the given server
-func discoverServerPluginsBasedOnCurrentServer() ([]discovery.Discovered, error) {
-	var plugins []discovery.Discovered
-
-	server, err := configlib.GetCurrentServer() // nolint:staticcheck // Deprecated
-	if err != nil || server == nil {
-		// If servername is not specified than returning empty list
-		// as there are no server plugins that can be discovered
-		return plugins, nil
-	}
-	var discoverySources []configtypes.PluginDiscovery
-	discoverySources = append(discoverySources, server.DiscoverySources...)
-	discoverySources = append(discoverySources, defaultDiscoverySourceBasedOnServer(server)...)
-
-	plugins, err = discoverPlugins(discoverySources)
-	if err != nil {
-		log.Warningf(errorWhileDiscoveringPlugins, err.Error())
-	}
-	for i := range plugins {
-		plugins[i].Scope = common.PluginScopeContext
-		plugins[i].Status = common.PluginStatusNotInstalled
-	}
-	return plugins, nil
-}
-
-// DiscoverPlugins returns all the discovered plugins including standalone and context-scoped plugins
-// Context scoped plugin discovery happens for all active contexts
-func DiscoverPlugins() ([]discovery.Discovered, []discovery.Discovered) {
-	serverPlugins, err := DiscoverServerPlugins()
-	if err != nil {
-		log.Warningf("unable to discover server plugins, %v", err.Error())
-	}
-
-	standalonePlugins, err := DiscoverStandalonePlugins(nil)
-	if err != nil {
-		log.Warningf("unable to discover standalone plugins, %v", err.Error())
-	}
-
-	// TODO(anuj): Remove duplicate plugins with server plugins getting higher priority
-	return serverPlugins, standalonePlugins
-}
-
-// AvailablePlugins returns the list of available plugins including discovered and installed plugins.
-// Plugin discovery happens for all active contexts
-func AvailablePlugins() ([]discovery.Discovered, error) {
-	discoveredServerPlugins, discoveredStandalonePlugins := DiscoverPlugins()
-	return availablePlugins(discoveredServerPlugins, discoveredStandalonePlugins)
-}
-
-// AvailablePluginsFromLocalSource returns the list of available plugins from local source
-func AvailablePluginsFromLocalSource(localPath string) ([]discovery.Discovered, error) {
-	localStandalonePlugins, err := DiscoverPluginsFromLocalSource(localPath)
-	if err != nil {
-		log.Warningf("Unable to discover standalone plugins from local source, %v", err.Error())
-	}
-	return availablePlugins([]discovery.Discovered{}, localStandalonePlugins)
-}
-
-func availablePlugins(discoveredServerPlugins, discoveredStandalonePlugins []discovery.Discovered) ([]discovery.Discovered, error) {
-	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
-	if err != nil {
-		return nil, err
-	}
-
-	availablePlugins := availablePluginsFromStandaloneAndServerPlugins(discoveredServerPlugins, discoveredStandalonePlugins)
-	setAvailablePluginsStatus(availablePlugins, installedPlugins)
-
-	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
-	if err != nil {
-		return nil, err
-	}
-	installedButNotDiscoveredPlugins := getInstalledButNotDiscoveredStandalonePlugins(availablePlugins, installedStandalonePlugins)
-	availablePlugins = append(availablePlugins, installedButNotDiscoveredPlugins...)
-
-	availablePlugins = combineDuplicatePlugins(availablePlugins)
-
-	return availablePlugins, nil
-}
-
-// combineDuplicatePlugins combines same plugins to eliminate duplicates
-// When there is a plugin name conflicts and target of both the plugins are same, remove duplicate one.
-// In addition to above, plugin with same name having `k8s` and `none` target are also considered same for
-// backward compatibility reasons. Considering, we are adding `k8s` targeted plugins as root level commands.
-//
-// E.g. A plugin 'foo' getting discovered/installed with `<none>` target and a plugin `foo` getting discovered
-// with `k8s` discovery (having `k8s` target) should be treated as same plugin.
-// This function takes this case into consideration and removes `<none>` targeted plugin for above the mentioned scenario.
-func combineDuplicatePlugins(availablePlugins []discovery.Discovered) []discovery.Discovered {
-	mapOfSelectedPlugins := make(map[string]discovery.Discovered)
-
-	// TODO: If there are multiple discovered (but not installed) plugins of the same name then we will
-	// always end up keeping one deterministically (due to the sequence of sources/plugins that we process),
-	// but we should merge the result and show the combined result for duplicate plugins
-	combinePluginInstallationStatus := func(plugin1, plugin2 discovery.Discovered) discovery.Discovered {
-		// Combine the installation status and installedVersion result when combining plugins
-		if plugin2.Status == common.PluginStatusInstalled {
-			plugin1.Status = common.PluginStatusInstalled
-		}
-		if plugin2.InstalledVersion != "" {
-			plugin1.InstalledVersion = plugin2.InstalledVersion
-		}
-		return plugin1
-	}
-
-	for i := range availablePlugins {
-		if availablePlugins[i].Target == configtypes.TargetUnknown {
-			// As we are considering None targeted and k8s target plugin to be treated as same plugins
-			// in the case of plugin name conflicts, using `k8s` target to determine the plugin already
-			// exists or not.
-			// If plugin already exists in the map then combining the installation status for both the plugins
-			key := fmt.Sprintf("%s_%s", availablePlugins[i].Name, configtypes.TargetK8s)
-			dp, exists := mapOfSelectedPlugins[key]
-			if !exists {
-				mapOfSelectedPlugins[key] = availablePlugins[i]
-			} else {
-				mapOfSelectedPlugins[key] = combinePluginInstallationStatus(dp, availablePlugins[i])
-			}
-		} else {
-			// If plugin doesn't exist in the map then add the plugin to the map
-			// else combine the installation status for both the plugins
-			key := fmt.Sprintf("%s_%s", availablePlugins[i].Name, availablePlugins[i].Target)
-			dp, exists := mapOfSelectedPlugins[key]
-			if !exists {
-				mapOfSelectedPlugins[key] = availablePlugins[i]
-			} else if availablePlugins[i].Target == configtypes.TargetK8s || availablePlugins[i].Scope == common.PluginScopeContext {
-				mapOfSelectedPlugins[key] = combinePluginInstallationStatus(availablePlugins[i], dp)
-			}
-		}
-	}
-
-	var selectedPlugins []discovery.Discovered
-	for key := range mapOfSelectedPlugins {
-		selectedPlugins = append(selectedPlugins, mapOfSelectedPlugins[key])
-	}
-
-	return selectedPlugins
 }
 
 func mergePluginEntries(plugin1, plugin2 *discovery.Discovered) *discovery.Discovered {
@@ -540,46 +362,6 @@ func mergeDuplicateGroups(groups []*plugininventory.PluginGroup) []*plugininvent
 	return mergedGroups
 }
 
-func getInstalledButNotDiscoveredStandalonePlugins(availablePlugins []discovery.Discovered, installedPlugins []cli.PluginInfo) []discovery.Discovered {
-	var newPlugins []discovery.Discovered
-	for i := range installedPlugins {
-		found := false
-		for j := range availablePlugins {
-			if installedPlugins[i].Name == availablePlugins[j].Name && installedPlugins[i].Target == availablePlugins[j].Target {
-				found = true
-				// If plugin is installed but marked as not installed as part of availablePlugins list
-				// mark the plugin as installed
-				// This is possible if user has used --local mode to install the plugin which is also
-				// getting discovered from the configured discovery sources
-				if availablePlugins[j].Status == common.PluginStatusNotInstalled {
-					availablePlugins[j].Status = common.PluginStatusInstalled
-				}
-			}
-		}
-		if !found {
-			p := DiscoveredFromPlugininfo(&installedPlugins[i])
-			p.Scope = common.PluginScopeStandalone
-			p.Status = common.PluginStatusInstalled
-			p.InstalledVersion = installedPlugins[i].Version
-			newPlugins = append(newPlugins, p)
-		}
-	}
-	return newPlugins
-}
-
-// DiscoveredFromPlugininfo returns discovered plugin object from k8sV1alpha1
-func DiscoveredFromPlugininfo(p *cli.PluginInfo) discovery.Discovered {
-	dp := discovery.Discovered{
-		Name:               p.Name,
-		Description:        p.Description,
-		RecommendedVersion: p.Version,
-		Source:             p.Discovery,
-		SupportedVersions:  []string{p.Version},
-		Target:             p.Target,
-	}
-	return dp
-}
-
 func setAvailablePluginsStatus(availablePlugins []discovery.Discovered, installedPlugins []cli.PluginInfo) {
 	for i := range installedPlugins {
 		for j := range availablePlugins {
@@ -594,41 +376,6 @@ func setAvailablePluginsStatus(availablePlugins []discovery.Discovered, installe
 			}
 		}
 	}
-}
-
-func availablePluginsFromStandaloneAndServerPlugins(discoveredServerPlugins, discoveredStandalonePlugins []discovery.Discovered) []discovery.Discovered {
-	availablePlugins := discoveredServerPlugins
-
-	// Check whether the default standalone discovery type is local or not
-	isLocalStandaloneDiscovery := config.GetDefaultStandaloneDiscoveryType() == common.DiscoveryTypeLocal
-
-	for i := range discoveredStandalonePlugins {
-		matchIndex := pluginIndexForName(availablePlugins, &discoveredStandalonePlugins[i])
-
-		// Add the standalone plugin to available plugins if it doesn't exist in the serverPlugins list
-		// OR
-		// Current standalone discovery or plugin discovered is of type 'local'
-		// We are overriding the discovered plugins that we got from server in case of 'local' discovery type
-		// to allow developers to use the plugins that are built locally and not returned from the server
-		// This local discovery is only used for development purpose and should not be used for production
-		if matchIndex < 0 {
-			availablePlugins = append(availablePlugins, discoveredStandalonePlugins[i])
-			continue
-		}
-		if isLocalStandaloneDiscovery || discoveredStandalonePlugins[i].DiscoveryType == common.DiscoveryTypeLocal { // matchIndex >= 0 is guaranteed here
-			availablePlugins[matchIndex] = discoveredStandalonePlugins[i]
-		}
-	}
-	return availablePlugins
-}
-
-func pluginIndexForName(availablePlugins []discovery.Discovered, p *discovery.Discovered) int {
-	for j := range availablePlugins {
-		if p != nil && p.Name == availablePlugins[j].Name && p.Target == availablePlugins[j].Target {
-			return j
-		}
-	}
-	return -1 // haven't found a match
 }
 
 // DescribePlugin describes a plugin.
@@ -701,12 +448,6 @@ func InstallPluginFromContext(pluginName, version string, target configtypes.Tar
 // we are installing a standalone plugin.
 // nolint: gocyclo
 func installPlugin(pluginName, version string, target configtypes.Target, contextName string) error {
-	if configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
-		// The legacy installation can figure out if the plugin is from a context
-		// because it searches all contexts for plugins.  So, we don't need to pass on that parameter.
-		return legacyPluginInstall(pluginName, version, target)
-	}
-
 	discoveries, err := getPluginDiscoveries()
 	if err != nil {
 		return err
@@ -779,41 +520,6 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 	}
 	errorList = append(errorList, errors.Errorf(missingTargetStr, pluginName))
 	return kerrors.NewAggregate(errorList)
-}
-
-// legacyInstallPlugin installs a plugin by name, version and target.
-// This function is only used without the Central Repository feature.
-func legacyPluginInstall(pluginName, version string, target configtypes.Target) error {
-	availablePlugins, err := AvailablePlugins()
-	if err != nil {
-		return err
-	}
-
-	var matchedPlugins []discovery.Discovered
-	for i := range availablePlugins {
-		if availablePlugins[i].Name == pluginName &&
-			(target == configtypes.TargetUnknown || target == availablePlugins[i].Target) {
-			matchedPlugins = append(matchedPlugins, availablePlugins[i])
-		}
-	}
-	if len(matchedPlugins) == 0 {
-		if target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' with version '%v' for target '%s'", pluginName, version, string(target))
-		}
-		return errors.Errorf("unable to find plugin '%v' with version '%v'", pluginName, version)
-	}
-
-	if len(matchedPlugins) == 1 {
-		return installOrUpgradePlugin(&matchedPlugins[0], version, false)
-	}
-
-	for i := range matchedPlugins {
-		if matchedPlugins[i].Target == target {
-			return installOrUpgradePlugin(&matchedPlugins[i], version, false)
-		}
-	}
-
-	return errors.Errorf(missingTargetStr, pluginName)
 }
 
 // UpgradePlugin upgrades a plugin from the given repository.
@@ -901,58 +607,25 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 	}
 
 	if !pluginExist {
-		return "", fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
+		return groupIDAndVersion, fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
 	}
 
 	if !mandatoryPluginsExist {
 		if pluginName == cli.AllPlugins {
-			return "", fmt.Errorf("plugin group '%s' has no mandatory plugins to install", groupIDAndVersion)
+			return groupIDAndVersion, fmt.Errorf("plugin group '%s' has no mandatory plugins to install", groupIDAndVersion)
 		}
-		return "", fmt.Errorf("plugin '%s' from group '%s' is not mandatory to install", pluginName, groupIDAndVersion)
+		return groupIDAndVersion, fmt.Errorf("plugin '%s' from group '%s' is not mandatory to install", pluginName, groupIDAndVersion)
 	}
 
 	if numErrors > 0 {
-		return "", fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupIDAndVersion)
+		return groupIDAndVersion, fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupIDAndVersion)
 	}
 
 	if numInstalled == 0 {
-		return "", fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
+		return groupIDAndVersion, fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
 	}
 
 	return groupIDAndVersion, nil
-}
-
-// GetRecommendedVersionOfPlugin returns recommended version of the plugin
-func GetRecommendedVersionOfPlugin(pluginName string, target configtypes.Target) (string, error) {
-	availablePlugins, err := AvailablePlugins()
-	if err != nil {
-		return "", err
-	}
-
-	var matchedPlugins []discovery.Discovered
-	for i := range availablePlugins {
-		if availablePlugins[i].Name == pluginName &&
-			(target == configtypes.TargetUnknown || target == availablePlugins[i].Target) {
-			matchedPlugins = append(matchedPlugins, availablePlugins[i])
-		}
-	}
-	if len(matchedPlugins) == 0 {
-		if target != configtypes.TargetUnknown {
-			return "", errors.Errorf("unable to find plugin '%v' for target '%s'", pluginName, string(target))
-		}
-		return "", errors.Errorf("unable to find plugin '%v'", pluginName)
-	}
-
-	if len(matchedPlugins) == 1 {
-		return matchedPlugins[0].RecommendedVersion, nil
-	}
-
-	for i := range matchedPlugins {
-		if matchedPlugins[i].Target == target {
-			return matchedPlugins[i].RecommendedVersion, nil
-		}
-	}
-	return "", errors.Errorf(missingTargetStr, pluginName)
 }
 
 func installOrUpgradePlugin(p *discovery.Discovered, version string, installTestPlugin bool) error {
@@ -1246,31 +919,22 @@ func doDeletePluginFromCatalog(pluginName string, target configtypes.Target, cat
 // If the central-repo is disabled, all discovered plugins will be installed.
 func SyncPlugins() error {
 	log.Info("Checking for required plugins...")
-	var plugins []discovery.Discovered
-	var err error
 	errList := make([]error, 0)
-	if !configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
-		// We no longer sync standalone plugins.
-		// With a centralized approach to discovering plugins, synchronizing
-		// standalone plugins would install ALL plugins available for ALL
-		// products.
-		// Instead, we only synchronize any plugins that are specifically specified
-		// by the contexts.
-		//
-		// Note: to install all plugins for a specific product, plugin groups will
-		// need to be used.
-		plugins, err = DiscoverServerPlugins()
-		if err != nil {
-			errList = append(errList, err)
-		}
-		if installedPlugins, err := pluginsupplier.GetInstalledServerPlugins(); err == nil {
-			setAvailablePluginsStatus(plugins, installedPlugins)
-		}
-	} else {
-		plugins, err = AvailablePlugins()
-		if err != nil {
-			errList = append(errList, err)
-		}
+	// We no longer sync standalone plugins.
+	// With a centralized approach to discovering plugins, synchronizing
+	// standalone plugins would install ALL plugins available for ALL
+	// products.
+	// Instead, we only synchronize any plugins that are specifically specified
+	// by the contexts.
+	//
+	// Note: to install all plugins for a specific product, plugin groups will
+	// need to be used.
+	plugins, err := DiscoverServerPlugins()
+	if err != nil {
+		errList = append(errList, err)
+	}
+	if installedPlugins, err := pluginsupplier.GetInstalledServerPlugins(); err == nil {
+		setAvailablePluginsStatus(plugins, installedPlugins)
 	}
 
 	installed := false
@@ -1402,7 +1066,7 @@ func discoverPluginsFromLocalSource(localPath string) ([]discovery.Discovered, e
 		}
 	}
 
-	plugins, err := discoverPlugins(pds)
+	plugins, err := discoverSpecificPlugins(pds)
 	if err != nil {
 		log.Warningf(errorWhileDiscoveringPlugins, err.Error())
 	}
@@ -1663,11 +1327,8 @@ func FindVersion(recommendedPluginVersion, requestedVersion string) string {
 
 // getPluginDiscoveries returns the plugin discoveries found in the configuration file.
 func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
-	var testDiscoveries []configtypes.PluginDiscovery
-	if !configlib.IsFeatureActivated(constants.FeatureDisableCentralRepositoryForTesting) {
-		// Look for testing discoveries.  Those should be stored and searched AFTER the central repo.
-		testDiscoveries = GetAdditionalTestPluginDiscoveries()
-	}
+	// Look for testing discoveries.  Those should be stored and searched AFTER the central repo.
+	testDiscoveries := GetAdditionalTestPluginDiscoveries()
 
 	// The configured discoveries should be searched BEFORE the test discoveries.
 	// For example, if the staging central repo is added as a test discovery, it

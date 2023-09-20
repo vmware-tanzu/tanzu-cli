@@ -7,8 +7,6 @@ package constants
 const (
 	// FeatureContextCommand determines whether to surface the context command. This is disabled by default.
 	FeatureContextCommand = "features.global.context-target-v2"
-	// FeatureDisableCentralRepositoryForTesting determines if the CLI uses the Central Repository of plugins.
-	FeatureDisableCentralRepositoryForTesting = "features.global.no-central-repo-test-only"
 )
 
 // DefaultCliFeatureFlags is used to populate an initially empty config file with default values for feature flags.
