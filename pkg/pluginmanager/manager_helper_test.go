@@ -36,6 +36,8 @@ var testPlugins = []plugininventory.PluginIdentifier{
 	{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.2.3"},
 	{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.3.0"},
 	{Name: "login", Target: configtypes.TargetGlobal, Version: "v0.2.0"},
+	{Name: "login", Target: configtypes.TargetGlobal, Version: "v0.2.0-beta.1"},
+	{Name: "login", Target: configtypes.TargetGlobal, Version: "v0.20.0"},
 
 	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.0.1"},
 	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.0.2"},
