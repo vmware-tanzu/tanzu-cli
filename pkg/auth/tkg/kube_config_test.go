@@ -30,7 +30,7 @@ var testingDir string
 
 func TestTkgAuth(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cli/core/pkg/auth/tkg Suite")
+	RunSpecs(t, "pkg/auth/tkg Suite")
 }
 
 const (

@@ -12,7 +12,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-func getDefaultKubeConfigFile() string {
+func GetDefaultKubeConfigFile() string {
 	rules := clientcmd.NewDefaultClientConfigLoadingRules()
 	return rules.GetDefaultFilename()
 }
@@ -20,7 +20,7 @@ func getDefaultKubeConfigFile() string {
 // MergeKubeConfigWithoutSwitchContext merges kubeconfig without updating kubecontext
 func MergeKubeConfigWithoutSwitchContext(kubeConfig []byte, mergeFile string) error {
 	if mergeFile == "" {
-		mergeFile = getDefaultKubeConfigFile()
+		mergeFile = GetDefaultKubeConfigFile()
 	}
 	newConfig, err := clientcmd.Load(kubeConfig)
 	if err != nil {
@@ -37,7 +37,8 @@ func MergeKubeConfigWithoutSwitchContext(kubeConfig []byte, mergeFile string) er
 	}
 
 	context := dest.CurrentContext
-	err = mergo.MergeWithOverwrite(dest, newConfig)
+	err = mergo.Merge(dest, newConfig, mergo.WithOverwriteWithEmptyValue)
+
 	if err != nil {
 		return errors.Wrap(err, "failed to merge config")
 	}

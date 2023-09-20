@@ -12,9 +12,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestTkgAuth(t *testing.T) {
+func TestAuthUtils(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "cli/core/pkg/auth/tkg/util/kubeconfig Suite")
+	RunSpecs(t, "pkg/auth/tkg/util/kubeconfig Suite")
 }
 
 var (
@@ -46,7 +46,7 @@ var _ = Describe("Unit tests for kubeconfig use cases", func() {
 			Expect(err).To(BeNil())
 		})
 		It("should return value for default kubeconfig file", func() {
-			defKubeConf := getDefaultKubeConfigFile()
+			defKubeConf := GetDefaultKubeConfigFile()
 			Expect(defKubeConf).ToNot(BeNil())
 		})
 	})

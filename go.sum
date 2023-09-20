@@ -248,8 +248,8 @@ github.com/go-openapi/jsonpointer v0.19.6 h1:eCs3fxoIi3Wh6vtgmLTOjdhSpiqphQ+DaPn
 github.com/go-openapi/jsonpointer v0.19.6/go.mod h1:osyAmYz/mB/C3I+WsTTSgw1ONzaLJoLCyoi6/zppojs=
 github.com/go-openapi/jsonreference v0.19.6/go.mod h1:diGHMEHg2IqXZGKxqyvWdfWU/aim5Dprw5bqpKkTvns=
 github.com/go-openapi/jsonreference v0.20.0/go.mod h1:Ag74Ico3lPc+zR+qjn4XBUmXymS4zJbYVCZmcgkasdo=
-github.com/go-openapi/jsonreference v0.20.1 h1:FBLnyygC4/IZZr893oiomc9XaghoveYTrLC1F86HID8=
-github.com/go-openapi/jsonreference v0.20.1/go.mod h1:Bl1zwGIM8/wsvqjsOQLJ/SH+En5Ap4rVB5KVcIDZG2k=
+github.com/go-openapi/jsonreference v0.20.2 h1:3sVjiK66+uXK/6oQ8xgcRKcFgQ5KXa2KvnJRumpMGbE=
+github.com/go-openapi/jsonreference v0.20.2/go.mod h1:Bl1zwGIM8/wsvqjsOQLJ/SH+En5Ap4rVB5KVcIDZG2k=
 github.com/go-openapi/loads v0.21.1/go.mod h1:/DtAMXXneXFjbQMGEtbamCZb+4x7eGwkvZCvBmwUG+g=
 github.com/go-openapi/loads v0.21.2 h1:r2a/xFIYeZ4Qd2TnGpWDIQNcP80dIaZgf704za8enro=
 github.com/go-openapi/loads v0.21.2/go.mod h1:Jq58Os6SSGz0rzh62ptiu8Z31I+OTHqmULx5e/gJbNw=
@@ -691,8 +691,8 @@ github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20230419030809-7081502eb
 github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20230419030809-7081502ebf68/go.mod h1:e1Uef+Ux5BIHpYwqbeP2ZZmOzehBcez2vUEWXHe+xHE=
 github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686 h1:VcuXqUXFxm5WDqWkzAlU/6cJXua0ozELnqD59fy7J6E=
 github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686/go.mod h1:AFGOXZD4tH+KhpmtV0VjWjllXhr8y57MvOsIxTtywc4=
-github.com/vmware-tanzu/tanzu-plugin-runtime v1.0.0 h1:8u4BYfAFSsNYRHcSZrhDEDeGMNGStRDs7Ywe2BOBpmg=
-github.com/vmware-tanzu/tanzu-plugin-runtime v1.0.0/go.mod h1:wMK/qpJjU7hytDAGt3FX5/iGdlUK8TsJLu36pCr+Zvk=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.1.0-dev.0.20230922224422-39c403b3e27a h1:UPD02Ahtr41sVORU9JZ3/l0JWpZgEvyUO5y6avce0EM=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.1.0-dev.0.20230922224422-39c403b3e27a/go.mod h1:wMK/qpJjU7hytDAGt3FX5/iGdlUK8TsJLu36pCr+Zvk=
 github.com/xanzy/go-gitlab v0.83.0 h1:37p0MpTPNbsTMKX/JnmJtY8Ch1sFiJzVF342+RvZEGw=
 github.com/xanzy/go-gitlab v0.83.0/go.mod h1:5ryv+MnpZStBH8I/77HuQBsMbBGANtVpLWC15qOjWAw=
 github.com/xdg-go/pbkdf2 v1.0.0/go.mod h1:jrpuAogTd400dnrH08LKmI/xc1MbPOebTwRqcT5RDeI=
