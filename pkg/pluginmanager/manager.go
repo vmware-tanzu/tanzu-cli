@@ -1016,13 +1016,13 @@ func InstallPluginsFromLocalSource(pluginName, version string, target configtype
 	}
 
 	if len(matchedPlugins) == 1 {
-		return installOrUpgradePlugin(&matchedPlugins[0], matchedPlugins[0].RecommendedVersion, installTestPlugin)
+		return installOrUpgradePlugin(&matchedPlugins[0], version, installTestPlugin)
 	}
 
 	for i := range matchedPlugins {
 		// Install all plugins otherwise include all matching plugins
 		if pluginName == cli.AllPlugins || matchedPlugins[i].Target == target {
-			err = installOrUpgradePlugin(&matchedPlugins[i], matchedPlugins[i].RecommendedVersion, installTestPlugin)
+			err = installOrUpgradePlugin(&matchedPlugins[i], version, installTestPlugin)
 			if err != nil {
 				errList = append(errList, err)
 			}

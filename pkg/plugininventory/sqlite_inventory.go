@@ -226,7 +226,7 @@ func createPluginWhereClause(filter *PluginInventoryFilter) (string, error) {
 				// e.g. If specified version is `v1` it matches with all versions like v1.MINOR.PATCH
 				//      If specified version is `v1.2` it matches will all versions like v1.2.PATCH
 				// And "Version='%s'" condition will try to match with the exact same match for the version
-				whereClause = fmt.Sprintf("%s ( Version Like '%s.%%' OR Version='%s' ) AND", whereClause, filter.Version, filter.Version)
+				whereClause = fmt.Sprintf("%[1]s ( Version Like '%[2]s.%%' OR Version='%[2]s' ) AND", whereClause, filter.Version)
 			}
 		}
 		if !filter.IncludeHidden {
