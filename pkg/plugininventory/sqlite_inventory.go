@@ -383,7 +383,7 @@ func createGroupWhereClause(filter PluginGroupFilter) (string, error) {
 		whereClause = fmt.Sprintf("%s GroupName='%s' AND", whereClause, filter.Name)
 	}
 	if filter.Version != "" {
-		whereClause = fmt.Sprintf("%s GroupVersion='%s' AND", whereClause, filter.Version)
+		whereClause = fmt.Sprintf("%[1]s ( GroupVersion Like '%[2]s.%%' OR GroupVersion='%[2]s' ) AND", whereClause, filter.Version)
 	}
 	if !filter.IncludeHidden {
 		// Unless we want to also get the hidden plugins, we only request the ones that are not hidden
