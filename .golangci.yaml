@@ -1,4 +1,63 @@
 linters-settings:
+  depguard:
+    rules:
+      main:
+        files:
+          - $all
+          - "!$test"
+        allow:
+          - $gostd
+          - github.com/AlecAivazis/survey/v2
+          - github.com/Masterminds/semver
+          - github.com/adrg/xdg
+          - github.com/cppforlife/go-cli-ui
+          - github.com/fatih/color
+          - github.com/gobwas/glob
+          - github.com/golang-jwt/jwt
+          - github.com/google/gnostic
+          - github.com/google/go-containerregistry
+          - github.com/google/uuid
+          - github.com/gorilla/mux
+          - github.com/imdario/mergo
+          - github.com/juju/fslock
+          - github.com/k14s/kbld
+          - github.com/lithammer/dedent
+          - github.com/logrusorgru/aurora
+          - github.com/novln/docker-parser
+          - github.com/onsi/ginkgo/v2
+          - github.com/onsi/gomega
+          - github.com/otiai10/copy
+          - github.com/pkg/errors
+          - github.com/sigstore/cosign/v2
+          - github.com/sigstore/sigstore
+          - github.com/spf13/afero
+          - github.com/spf13/cobra
+          - github.com/spf13/pflag
+          - github.com/stretchr/testify
+          - github.com/tj/assert
+          - github.com/verybluebot/tarinator-go
+          - github.com/vmware-tanzu/carvel-imgpkg
+          - github.com/vmware-tanzu/carvel-ytt
+          - github.com/vmware-tanzu/tanzu-cli
+          - github.com/vmware-tanzu/tanzu-cli/test/e2e/framework
+          - github.com/vmware-tanzu/tanzu-framework/capabilities/client
+          - github.com/vmware-tanzu/tanzu-plugin-runtime
+          - go.pinniped.dev
+          - go.uber.org/multierr
+          - google.golang.org/grpc
+          - golang.org/x/oauth2
+          - golang.org/x/sync/errgroup
+          - golang.org/x/mod/semver
+          - gopkg.in/yaml.v2
+          - gopkg.in/yaml.v3
+          - k8s.io/api
+          - k8s.io/apimachinery
+          - k8s.io/client-go
+          - modernc.org/sqlite
+          - sigs.k8s.io/controller-runtime
+        deny:
+          - pkg: github.com/sirupsen/logrus
+            desc: not allowed
   dupl:
     threshold: 100
   funlen:
@@ -7,7 +66,7 @@ linters-settings:
   goheader:
     values:
       const:
-        COMPANY: VMware, Inc.
+        COMPANY: 'VMware, Inc.'
         LICENSE: Apache-2.0
       regexp:
         YEAR: 20\d*-*\d*
@@ -36,7 +95,6 @@ linters-settings:
     local-prefixes: github.com/vmware-tanzu
   govet:
     check-shadowing: true
-
   misspell:
     locale: US
   nolintlint:
@@ -46,11 +104,9 @@ linters-settings:
     require-specific: false # don't require nolint directives to be specific about which linter is being skipped
   whitespace:
     multi-func: true
-
 linters:
   disable-all: true
   enable:
-    - deadcode
     - depguard
     - dogsled
     - dupl
@@ -75,14 +131,10 @@ linters:
     - typecheck
     - unconvert
     - unused
-    - varcheck
     - whitespace
     - bodyclose
     - noctx
     - rowserrcheck
-    - structcheck
-    - unparam
-
   # don't enable:
   # - asciicheck
   # - exhaustive
@@ -102,49 +154,43 @@ linters:
 
 issues:
   exclude:
-    - 'declaration of "(err|ctx)" shadows declaration at'
-    - "unnamedResult: consider giving a name to these results"
-    - "(Expect directory permissions to be 0750 or less|Expect (WriteFile|file) permissions to be 0600 or less)"
-
+    - declaration of "(err|ctx)" shadows declaration at
+    - 'unnamedResult: consider giving a name to these results'
+    - >-
+      (Expect directory permissions to be 0750 or less|Expect (WriteFile|file)
+      permissions to be 0600 or less)
   exclude-rules:
+    - linters:
+        - gosec
+      text: 'G602:'
     - path: _test\.go
       linters:
         - dupl
         - gocritic
         - funlen
-
     # https://github.com/go-critic/go-critic/issues/926
     - linters:
         - gocritic
-      text: "unnecessaryDefer:"
-
+      text: 'unnecessaryDefer:'
     - linters:
         - revive
-      text: "that stutters"
-
+      text: that stutters
     - path: zz_.*\.go
       linters:
         - revive
-      text: "it will be inferred from"
-
-    # Ignore the deprecated function use (staticcheck, SA1019) for the test files
+      text: it will be inferred from
     - path: (.+)_test.go
       linters:
         - staticcheck
-      text: "SA1019:"
-
+      text: 'SA1019:'
   include:
-    - EXC0011 # disable excluding of issues about missing package comments from stylecheck
-
-  # Show all errors for all linters. Setting these to 0 disables limiting error reporting.
+    - EXC0011
   max-same-issues: 0
   max-issues-per-linter: 0
-
 run:
   skip-dirs:
     - fakes/
   timeout: 15m
-
 # golangci.com configuration
 # https://github.com/golangci/golangci/wiki/Configuration
 service:

@@ -42,13 +42,13 @@ type NoopUI struct{}
 var _ yttui.UI = NoopUI{}
 
 // Printf noop print
-func (ui NoopUI) Printf(str string, args ...interface{}) {}
+func (ui NoopUI) Printf(_ string, _ ...interface{}) {}
 
 // Debugf noop debug
-func (ui NoopUI) Debugf(str string, args ...interface{}) {}
+func (ui NoopUI) Debugf(_ string, _ ...interface{}) {}
 
 // Warnf noop warn
-func (ui NoopUI) Warnf(str string, args ...interface{}) {}
+func (ui NoopUI) Warnf(_ string, _ ...interface{}) {}
 
 // DebugWriter noop debug writer
 func (ui NoopUI) DebugWriter() io.Writer {
@@ -57,7 +57,7 @@ func (ui NoopUI) DebugWriter() io.Writer {
 
 type noopWriter struct{}
 
-func (n noopWriter) Write(p []byte) (int, error) {
+func (n noopWriter) Write(_ []byte) (int, error) {
 	return 0, nil
 }
 

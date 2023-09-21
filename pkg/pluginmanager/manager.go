@@ -446,7 +446,8 @@ func InstallPluginFromContext(pluginName, version string, target configtypes.Tar
 // installs a plugin by name, version and target.
 // If the contextName is not empty, it implies the plugin is a context-scope plugin, otherwise
 // we are installing a standalone plugin.
-// nolint: gocyclo
+//
+//nolint:gocyclo
 func installPlugin(pluginName, version string, target configtypes.Target, contextName string) error {
 	discoveries, err := getPluginDiscoveries()
 	if err != nil {
@@ -962,7 +963,8 @@ func SyncPlugins() error {
 }
 
 // InstallPluginsFromLocalSource installs plugin from local source directory
-// nolint: gocyclo
+//
+//nolint:gocyclo
 func InstallPluginsFromLocalSource(pluginName, version string, target configtypes.Target, localPath string, installTestPlugin bool) error {
 	// Set default local plugin distro to local-path as while installing the plugin
 	// from local source we should take t

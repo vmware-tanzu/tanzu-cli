@@ -10,7 +10,9 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/rogpeppe/go-internal/lockedfile"
+
+	"github.com/rogpeppe/go-internal/lockedfile" //nolint:depguard
+
 	"gopkg.in/yaml.v3"
 
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
