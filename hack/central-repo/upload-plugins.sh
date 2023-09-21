@@ -237,7 +237,17 @@ for name in ${pluginUsingSha[*]}; do
 done
 
 for name in ${multiversionPlugins[*]}; do
-    addPlugin $name kubernetes true "v1.9.1 v1.9.2-beta.1 v1.10.1 v1.10.2 v1.11.2 v1.11.3 v2.3.0 v2.3.4 v2.3.5"
+    addPlugin $name kubernetes true "v1.9.1 v1.9.2-beta.1 v1.10.1 v1.10.2 v1.11.2 v1.11.3 v2.3.0 v2.3.4 v2.3.5"    
+done
+
+additionalPluginGroupInfo=("shortversion;v1.1.0;v1.9" "shortversion;v1.1.0-beta.1;v1.9.2-beta.1" "shortversion;v1.1.1;v1" "shortversion;v1.2.0;v2.3")
+for pluginGroupInfo in ${additionalPluginGroupInfo[*]}; do
+    groupName=$(echo $pluginGroupInfo | cut -d ";" -f 1)
+    groupVersion=$(echo $pluginGroupInfo | cut -d ";" -f 2)
+    pluginVersion=$(echo $pluginGroupInfo | cut -d ";" -f 3)
+    for name in ${multiversionPlugins[*]}; do
+        addGroup vmware tkg $groupName $groupVersion $name kubernetes $pluginVersion
+    done
 done
 
 # Push small inventory file
