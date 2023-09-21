@@ -99,7 +99,9 @@ func LegacyPluginListToMap(pluginsList []*PluginInfo) map[string]*PluginInfo {
 func PluginGroupToMap(pluginGroups []*PluginGroup) map[string]*PluginGroup {
 	m := make(map[string]*PluginGroup)
 	for i := range pluginGroups {
-		m[pluginGroups[i].Group+":"+pluginGroups[i].Latest] = pluginGroups[i]
+		for j := range pluginGroups[i].Versions {
+			m[pluginGroups[i].Group+":"+pluginGroups[i].Versions[j]] = pluginGroups[i]
+		}
 	}
 	return m
 }

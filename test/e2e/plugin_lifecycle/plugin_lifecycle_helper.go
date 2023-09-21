@@ -32,7 +32,7 @@ func SearchAllPlugins(tf *framework.Framework, opts ...framework.E2EOption) ([]*
 
 // SearchAllPluginGroups runs the plugin group search command and returns all the plugin groups
 func SearchAllPluginGroups(tf *framework.Framework, opts ...framework.E2EOption) ([]*framework.PluginGroup, error) {
-	pluginGroups, err := tf.PluginCmd.SearchPluginGroups("", opts...)
+	pluginGroups, err := tf.PluginCmd.SearchPluginGroups("--show-details", opts...)
 	return pluginGroups, err
 }
 

@@ -111,7 +111,29 @@ INSERT INTO PluginGroups VALUES(
 	'Description for vmware-test/default:v2.1.0',
 	'isolated-cluster',
 	'global',
+	'v1.3',
+	'true',
+	'false');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'test',
+	'default',
+	'v2.1.0-beta',
+	'Description for vmware-test/default:v2.1.0-beta',
+	'isolated-cluster',
+	'global',
 	'v1.3.0',
+	'true',
+	'false');
+INSERT INTO PluginGroups VALUES(
+	'vmware',
+	'test',
+	'default',
+	'v2.2.0',
+	'Description for vmware-test/default:v2.2.0',
+	'isolated-cluster',
+	'global',
+	'v1',
 	'true',
 	'false');
 `

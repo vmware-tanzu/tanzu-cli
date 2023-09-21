@@ -127,6 +127,8 @@ func init() {
 		{Group: "vmware-tkg/default", Latest: "v9.9.9", Description: "Desc for vmware-tkg/default:v9.9.9"},
 		{Group: "vmware-tmc/tmc-user", Latest: "v9.9.9", Description: "Desc for vmware-tmc/tmc-user:v9.9.9"},
 		{Group: "vmware-tanzucli/essentials", Latest: "v9.9.9", Description: "Desc for vmware-tanzucli/essentials:v9.9.9"},
+		{Group: "vmware-tkg/shortversion", Latest: "v1", Description: "Desc for vmware-tkg/default:v1"},
+		{Group: "vmware-tkg/shortversion", Latest: "v1.1", Description: "Desc for vmware-tkg/default:v1"},
 	}
 	EssentialPluginGroups = []*PluginGroup{{Group: "vmware-tanzucli/essentials", Latest: "v9.9.9", Description: "Desc for vmware-tanzucli/essentials:v9.9.9"}}
 }
