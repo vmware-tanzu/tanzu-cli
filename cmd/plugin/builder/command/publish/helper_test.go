@@ -66,6 +66,7 @@ func convertVersionToStringArray(arrOsArchInfo []osArch) []string {
 	return oa
 }
 
+//nolint:unparam
 func createDummyArtifactDir(directoryBasePath, pluginName, recommendedVersion, description string, versions []string) {
 	var err error
 

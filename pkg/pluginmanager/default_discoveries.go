@@ -16,12 +16,12 @@ const True = "true"
 const HTTPS = "https"
 const HTTP = "http"
 
-func defaultDiscoverySourceBasedOnServer(server *configtypes.Server) []configtypes.PluginDiscovery { // nolint:staticcheck // Deprecated
+func defaultDiscoverySourceBasedOnServer(server *configtypes.Server) []configtypes.PluginDiscovery { //nolint:staticcheck // Deprecated
 	var defaultDiscoveries []configtypes.PluginDiscovery
 	// If current server type is management-cluster, then add
 	// the default kubernetes discovery endpoint pointing to the
 	// management-cluster kubeconfig
-	if server != nil && server.Type == configtypes.ManagementClusterServerType && server.ManagementClusterOpts != nil { // nolint:staticcheck // Deprecated
+	if server != nil && server.Type == configtypes.ManagementClusterServerType && server.ManagementClusterOpts != nil { //nolint:staticcheck // Deprecated
 		defaultDiscoveries = append(defaultDiscoveries, defaultDiscoverySourceForK8sTargetedContext(server.Name, server.ManagementClusterOpts.Path, server.ManagementClusterOpts.Context))
 	}
 	return defaultDiscoveries

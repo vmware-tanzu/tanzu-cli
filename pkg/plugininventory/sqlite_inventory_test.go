@@ -504,7 +504,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(len(plugins)).To(Equal(2))
 
 					for _, p := range plugins {
-						if p.Name == "management-cluster" { // nolint: goconst
+						if p.Name == "management-cluster" { //nolint: goconst
 							Expect(p.RecommendedVersion).To(Equal("v0.28.0"))
 							Expect(string(p.Target)).To(Equal("kubernetes"))
 							Expect(p.Description).To(Equal("Kubernetes management cluster operations"))
@@ -515,7 +515,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 							artifactList := p.Artifacts["v0.28.0"]
 							Expect(len(artifactList)).To(Equal(2))
 							for _, a := range artifactList {
-								if a.OS == "linux" { // nolint: goconst
+								if a.OS == "linux" { //nolint: goconst
 									Expect(a.Arch).To(Equal("amd64"))
 									Expect(a.Digest).To(Equal("0000000000"))
 									Expect(a.Image).To(Equal(tmpDir + "/vmware/tkg/linux/amd64/k8s/management-cluster:v0.28.0"))

@@ -65,30 +65,30 @@ func KubeconfigWithPinnipedAuthLoginPlugin(endpoint string, options *KubeConfigO
 	clusterInfo, err := GetClusterInfoFromCluster(endpoint, discoveryStrategy.ClusterInfoConfigMap, endpointCACertPath, skipTLSVerify)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get cluster-info")
-		return
+		return "", "", err
 	}
 
 	pinnipedInfo, err := GetPinnipedInfoFromCluster(clusterInfo, discoveryStrategy.DiscoveryPort)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get pinniped-info")
-		return
+		return "", "", err
 	}
 
 	if pinnipedInfo == nil {
 		err = errors.New("failed to get pinniped-info from cluster")
-		return
+		return "", "", err
 	}
 
 	config, err := GetPinnipedKubeconfig(clusterInfo, pinnipedInfo, pinnipedInfo.Data.ClusterName, pinnipedInfo.Data.Issuer)
 	if err != nil {
 		err = errors.Wrap(err, "unable to get the kubeconfig")
-		return
+		return "", "", err
 	}
 
 	kubeconfigBytes, err := json.Marshal(config)
 	if err != nil {
 		err = errors.Wrap(err, "unable to marshall the kubeconfig")
-		return
+		return "", "", err
 	}
 
 	return MergeAndSaveKubeconfigBytes(kubeconfigBytes, options)
@@ -208,7 +208,6 @@ func TanzuLocalKubeConfigPath() (path string, err error) {
 }
 
 func MergeAndSaveKubeconfigBytes(kubeconfigBytes []byte, options *KubeConfigOptions) (mergeFilePath, currentContext string, err error) {
-	mergeFilePath = ""
 	if options != nil && options.MergeFilePath != "" {
 		mergeFilePath = options.MergeFilePath
 	} else {
