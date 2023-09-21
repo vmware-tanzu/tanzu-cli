@@ -97,8 +97,8 @@ var expectedDiscoveredStandalonePlugins = []discovery.Discovered{
 	{
 		Name:               "login",
 		Description:        "Plugin login description",
-		RecommendedVersion: "v0.2.0",
-		SupportedVersions:  []string{"v0.2.0"},
+		RecommendedVersion: "v0.20.0",
+		SupportedVersions:  []string{"v0.2.0-beta.1", "v0.2.0", "v0.20.0"},
 		Scope:              common.PluginScopeStandalone,
 		ContextName:        "",
 		Target:             configtypes.TargetGlobal,
@@ -204,7 +204,9 @@ func Test_InstallStandalonePlugin(t *testing.T) {
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'not-exists'")
 
-	// Install login (standalone) plugin
+	// Install login (standalone) plugin with just vMajor.Minor.Patch as version
+	// Make sure it does not install other available plugins like (v0.20.0 or v0.2.0-beta.1)
+	// and installs specified v0.2.0
 	err = InstallStandalonePlugin("login", "v0.2.0", configtypes.TargetUnknown)
 	assertions.Nil(err)
 	// Verify installed plugin
@@ -212,6 +214,30 @@ func Test_InstallStandalonePlugin(t *testing.T) {
 	assertions.Nil(err)
 	assertions.Equal(1, len(installedPlugins))
 	assertions.Equal("login", installedPlugins[0].Name)
+
+	// Install login (standalone) plugin with just vMajor(v0) as version
+	// Make sure it installs latest version available plugins v0.20.0
+	// among available versions (v0.2.0, v0.2.0-beta.1, v0.20.0)
+	err = InstallStandalonePlugin("login", "v0", configtypes.TargetUnknown)
+	assertions.Nil(err)
+	// Verify installed plugin
+	installedPlugins, err = pluginsupplier.GetInstalledPlugins()
+	assertions.Nil(err)
+	assertions.Equal(1, len(installedPlugins))
+	assertions.Equal("login", installedPlugins[0].Name)
+	assertions.Equal("v0.20.0", installedPlugins[0].Version)
+
+	// Install login (standalone) plugin with just vMajor.Minor (v0.2) as version
+	// Make sure it does not install other available plugins like (v0.20.0 or v0.2.0-beta.1)
+	// and installs v0.2.0
+	err = InstallStandalonePlugin("login", "v0.2", configtypes.TargetUnknown)
+	assertions.Nil(err)
+	// Verify installed plugin
+	installedPlugins, err = pluginsupplier.GetInstalledPlugins()
+	assertions.Nil(err)
+	assertions.Equal(1, len(installedPlugins))
+	assertions.Equal("login", installedPlugins[0].Name)
+	assertions.Equal("v0.2.0", installedPlugins[0].Version)
 
 	// Try installing myplugin plugin with no context-type and no specific version
 	err = InstallStandalonePlugin("myplugin", cli.VersionLatest, configtypes.TargetUnknown)
@@ -225,7 +251,7 @@ func Test_InstallStandalonePlugin(t *testing.T) {
 	// Try installing myplugin plugin through context-type=k8s with incorrect version
 	err = InstallStandalonePlugin("myplugin", "v1.0.0", configtypes.TargetK8s)
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to find plugin 'myplugin' with version 'v1.0.0'")
+	assertions.Contains(err.Error(), "unable to find plugin 'myplugin' matching version 'v1.0.0'")
 
 	// Try installing myplugin plugin through context-type=k8s with the correct version
 	err = InstallStandalonePlugin("myplugin", "v1.6.0", configtypes.TargetK8s)
@@ -238,7 +264,7 @@ func Test_InstallStandalonePlugin(t *testing.T) {
 	// Try installing the feature plugin which is targeted for k8s but requesting the TMC target
 	err = InstallStandalonePlugin("feature", "v0.2.0", configtypes.TargetTMC)
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to find plugin 'feature' with version 'v0.2.0' for target 'mission-control'")
+	assertions.Contains(err.Error(), "unable to find plugin 'feature' matching version 'v0.2.0' for target 'mission-control'")
 
 	// Verify installed plugins
 	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
@@ -407,7 +433,7 @@ func Test_InstallPlugin_InstalledPlugins_From_LocalSource(t *testing.T) {
 	// Try installing the feature plugin which is targeted for k8s but requesting the TMC target
 	err = InstallPluginsFromLocalSource("feature", "v0.2.0", configtypes.TargetTMC, localPluginSourceDir, false)
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to find plugin 'feature' with version 'v0.2.0' for target 'mission-control'")
+	assertions.Contains(err.Error(), "unable to find plugin 'feature' matching version 'v0.2.0' for target 'mission-control'")
 
 	// Install login from local source directory
 	err = InstallPluginsFromLocalSource("login", "v0.2.0", configtypes.TargetUnknown, localPluginSourceDir, false)

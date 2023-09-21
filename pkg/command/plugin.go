@@ -186,7 +186,7 @@ func newDescribePluginCmd() *cobra.Command {
 	return describeCmd
 }
 
-func newInstallPluginCmd() *cobra.Command {
+func newInstallPluginCmd() *cobra.Command { //nolint:funlen
 	var installCmd = &cobra.Command{
 		Use:   "install [" + pluginNameCaps + "]",
 		Short: "Install a plugin",
@@ -206,7 +206,13 @@ func newInstallPluginCmd() *cobra.Command {
     tanzu plugin install myPlugin --target k8s
 
     # Install version v1.0.0 of plugin "myPlugin"
-    tanzu plugin install myPlugin --version v1.0.0`,
+    tanzu plugin install myPlugin --version v1.0.0
+
+    # Install latest patch version of v1.0 of plugin "myPlugin"
+    tanzu plugin install myPlugin --version v1.0
+
+    # Install latest minor and patch version of v1 of plugin "myPlugin"
+    tanzu plugin install myPlugin --version v1`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error

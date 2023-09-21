@@ -116,6 +116,11 @@ spec:
   description: Feature plugin operations
 ```
 
+Note: Starting with `v1.1.0` version of Tanzu CLI, it supports providing shortened
+version (`vMAJOR` or `vMAJOR.MINOR`) as part of the recommendedVersion.
+Using shortened version as above, will install the latest available minor.patch of
+`vMAJOR` and latest patch version of `vMAJOR.MINOR` respectively.
+
 For Tanzu CLI to read these `CLIPlugin` resources available on the kubernetes
 cluster `get` and `list` RBAC permission needs to be given to all the users.
 To do that please configure below RBAC rules on your kubernetes cluster.

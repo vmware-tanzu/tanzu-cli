@@ -245,4 +245,43 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(out).To(ContainSubstring("tanzu plugin delete PLUGIN_NAME [flags]"))
 		})
 	})
+
+	// use case: tanzu plugin install (with different shorthand version like vMAJOR, vMAJOR.MINOR), verify with describe command
+	// a. clean plugins if any installed already
+	// b. install plugins with different shorthand version like vMAJOR, vMAJOR.MINOR and validate with describe command
+	// c. run clean plugin command and validate with list plugin command
+	Context("plugin use cases: tanzu plugin clean, install (with different shorthand version like vMAJOR, vMAJOR.MINOR), verify, clean", func() {
+		// Test case: clean plugins if any installed already
+		It("clean plugins", func() {
+			err := tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin clean")
+			pluginsList, err := framework.GetPluginsList(tf, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+		})
+		// Test case: install plugins with different shorthand version like vMAJOR, vMAJOR.MINOR
+		It("install plugins and describe installed plugins", func() {
+			for _, testcase := range PluginsMultiVersionInstallTests {
+				err := tf.PluginCmd.InstallPlugin(testcase.plugInfo.Name, testcase.plugInfo.Target, testcase.plugInfo.Version)
+				if testcase.err != "" {
+					Expect(err.Error()).To(ContainSubstring(testcase.err))
+				} else {
+					Expect(err).To(BeNil(), "should not get any error for plugin install")
+					pd, err := tf.PluginCmd.DescribePlugin(testcase.plugInfo.Name, testcase.plugInfo.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
+					Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
+					Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
+					Expect(pd[0].Name).To(Equal(testcase.plugInfo.Name), framework.PluginNameShouldMatch)
+					Expect(pd[0].Version).To(Equal(testcase.expectedInstalledVersion), framework.PluginNameShouldMatch)
+				}
+			}
+		})
+		// Test case: run clean plugin command and validate with list plugin command
+		It("clean plugins and verify with plugin list", func() {
+			err := tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin clean")
+			pluginsList, err := framework.GetPluginsList(tf, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
+		})
+	})
 })

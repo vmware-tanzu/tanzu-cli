@@ -139,7 +139,7 @@ addPlugin() {
                 # For efficiency, only push the plugin binaries that have requested it, and for
                 # those, still only push versions v0.0.1 (to match real TMC plugins) and v9.9.9
                 if [ $pushBinary = "true" ]; then
-                    if [ $version = "v0.0.1" ] || [ $version = "v9.9.9" ] || [ $version = "v11.11.11" ] || [ $version = "v22.22.22" ]; then
+                    if [ $version = "v0.0.1" ] || [ $version = "v9.9.9" ] || [ $version = "v11.11.11" ] || [ $version = "v22.22.22" ] || [[ $version = v1.9* ]] || [[ $version = v1.10* ]] || [[ $version = v1.11* ]] || [[ $version = v2.3* ]]; then
                         echo "Pushing binary for $name version $version for target $target, $os-$arch"
                         if [ "$dry_run" = "echo" ]; then
                             sha="12345"
@@ -203,6 +203,7 @@ tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster 
 globalPlugins=(isolated-cluster pinniped-auth)
 essentialPlugins=(telemetry)
 pluginUsingSha=(plugin-with-sha)
+multiversionPlugins=(cluster package secret)
 
 echo "======================================"
 echo "Creating small test Central Repository: $repoBasePath/$smallImage"
@@ -233,6 +234,10 @@ done
 for name in ${pluginUsingSha[*]}; do
     addPlugin $name global true v0.0.1 useSha
     addPlugin $name global true v9.9.9 useSha
+done
+
+for name in ${multiversionPlugins[*]}; do
+    addPlugin $name kubernetes true "v1.9.1 v1.9.2-beta.1 v1.10.1 v1.10.2 v1.11.2 v1.11.3 v2.3.0 v2.3.4 v2.3.5"
 done
 
 # Push small inventory file
