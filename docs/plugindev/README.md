@@ -267,6 +267,8 @@ make inventory-plugin-add
 
 A Plugin groups define a list of plugin/version combinations that are applicable together. They facilitate an efficient installation of these plugins. Below are instructions on how to create and publish a plugin group.
 
+#### Creating plugin group when all plugins are build together from same repository
+
 Create a `plugin-scope-association.yaml` file under `cmd/plugin/plugin-scope-association.yaml` of your plugin repository.
 
 Sample file content
@@ -292,6 +294,44 @@ Whenever you change the `plugin-scope-association.yaml`, the plugins must be reb
 ``` sh
 make plugin-build
 ```
+
+#### Creating plugin group manually when plugins are published separately and group is created with combination of different plugins
+
+Sample `plugin-group-manifest.yaml` file content
+
+```yaml
+plugins:
+- name: builder
+  target: global
+  isContextScoped: false
+  version: v1.0.0
+- name: test
+  target: global
+  isContextScoped: false
+  version: v1.2.0
+```
+
+Note: Starting with `v1.1.0` version of Tanzu CLI, it supports providing shortened
+version (`vMAJOR` or `vMAJOR.MINOR`) as part of the plugin version.
+Using shortened version as above, will install the latest available minor.patch of
+`vMAJOR` and latest patch version of `vMAJOR.MINOR` respectively.
+
+Example: If the plugin group is defined like below installing the plugin group will
+install latest minor.patch of `v1` for `builder` plugin and latest patch
+of `v1.2` for the `test` plugin.
+
+```yaml
+- name: builder
+  target: global
+  isContextScoped: false
+  version: v1
+- name: test
+  target: global
+  isContextScoped: false
+  version: v1.2
+```
+
+#### Adding plugin group to the inventory database
 
 Run the below command to add a plugin group with the respective plugins:
 
