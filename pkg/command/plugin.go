@@ -198,10 +198,10 @@ func newInstallPluginCmd() *cobra.Command { //nolint:funlen
     # Install all plugins of the latest version of the vmware-tkg/default plugin group
     tanzu plugin install --group vmware-tkg/default
 
-	# Install all plugins from latest minor and patch under v1 version of the vmware-tkg/default plugin group
+    # Install all plugins from the latest minor and patch of the v1 version of the vmware-tkg/default plugin group
     tanzu plugin install --group vmware-tkg/default:v1
 
-	# Install all plugins from latest patch under v1.2 version of the vmware-tkg/default plugin group
+    # Install all plugins from the latest patch of the v1.2 version of the vmware-tkg/default plugin group
     tanzu plugin install --group vmware-tkg/default:v1.2
 
     # Install the latest version of plugin "myPlugin"
