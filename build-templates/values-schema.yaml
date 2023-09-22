@@ -1,0 +1,5 @@
+#@data/values-schema
+---
+build:
+  registry_host: harbor-repo.vmware.com
+  registry_project: lever/dev

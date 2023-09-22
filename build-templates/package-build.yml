@@ -1,0 +1,28 @@
+#@ load("@ytt:data", "data")
+---
+apiVersion: kctrl.carvel.dev/v1alpha1
+kind: PackageBuild
+metadata:
+  creationTimestamp: null
+  name: cliplugin.cli.tanzu.vmware.com
+spec:
+  template:
+    spec:
+      app:
+        spec:
+          deploy:
+          - kapp: {}
+          template:
+          - ytt:
+              paths:
+              - carvel/
+          - kbld:
+              paths:
+                - kbld-config.yaml
+                - carvel/
+      export:
+      - includePaths:
+        - carvel/
+        imgpkgBundle:
+          image: #@ data.values.build.registry_host + "/" + data.values.build.registry_project + "/cliplugins-imgpkg"
+          useKbldImagesLock: true
