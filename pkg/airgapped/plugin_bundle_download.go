@@ -212,6 +212,18 @@ func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPlug
 				if err != nil {
 					return nil, nil, errors.Wrapf(err, "unable to get plugins in plugin group %v", plugininventory.PluginGroupToID(pg))
 				}
+				// Once we get the plugin entries, deleting Artifacts specific to any extra plugin versions
+				// that we got (possible when a shortened version is specified for the plugin in plugin group)
+				// and only keeping the Artifacts information for the RecommendedVersion
+				// We are doing this because we only want to copy the latest available version (RecommendedVersion)
+				// of the each plugin to the airgapped repository instead of copy all the matched versions of the plugin
+				for i := range pluginEntries {
+					for version := range pluginEntries[i].Artifacts {
+						if version != pluginEntries[i].RecommendedVersion {
+							delete(pluginEntries[i].Artifacts, version)
+						}
+					}
+				}
 				allPluginEntries = append(allPluginEntries, pluginEntries...)
 				groupPluginsCount += len(pluginEntries)
 			}
