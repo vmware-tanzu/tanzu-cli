@@ -383,7 +383,13 @@ func createGroupWhereClause(filter PluginGroupFilter) (string, error) {
 		whereClause = fmt.Sprintf("%s GroupName='%s' AND", whereClause, filter.Name)
 	}
 	if filter.Version != "" {
-		whereClause = fmt.Sprintf("%s GroupVersion='%s' AND", whereClause, filter.Version)
+		// We want a specific version or the version that matches vMAJOR or vMAJOR.MINOR pattern
+		// In following condition, "GroupVersion Like '%s.%%'" condition should handle the cases
+		// where only major or major.minor version is specified
+		// e.g. If specified version is `v1` it matches with all versions like v1.MINOR.PATCH
+		//      If specified version is `v1.2` it matches will all versions like v1.2.PATCH
+		// And "GroupVersion='%s'" condition will try to match with the exact same match for the version
+		whereClause = fmt.Sprintf("%[1]s ( GroupVersion Like '%[2]s.%%' OR GroupVersion='%[2]s' ) AND", whereClause, filter.Version)
 	}
 	if !filter.IncludeHidden {
 		// Unless we want to also get the hidden plugins, we only request the ones that are not hidden

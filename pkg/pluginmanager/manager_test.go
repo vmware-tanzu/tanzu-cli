@@ -329,10 +329,13 @@ func Test_InstallPluginsFromGroup(t *testing.T) {
 	assertions.Equal("v1.6.0", pd.Version)
 
 	// Install the isolated-cluster from the latest group
+	// The latest plugin group is `vmware-test/default:v2.2.0` which contains
+	// `isolated-cluster` plugin version as `v1`. So it should install the
+	// latest minor/patch of v1 for isolated-cluster which is `v1.3.0`
 	groupID = testGroupName
 	fullGroupID, err = InstallPluginsFromGroup("isolated-cluster", groupID)
 	assertions.Nil(err)
-	assertions.Equal(groupID+":v2.1.0", fullGroupID)
+	assertions.Equal(groupID+":v2.2.0", fullGroupID)
 
 	installedStandalonePlugins, err = pluginsupplier.GetInstalledStandalonePlugins()
 	assertions.Nil(err)
@@ -360,6 +363,30 @@ func Test_InstallPluginsFromGroup(t *testing.T) {
 	pd = findPluginInfo(installedStandalonePlugins, "isolated-cluster", configtypes.TargetGlobal)
 	assertions.NotNil(pd)
 	assertions.Equal("v1.2.3", pd.Version)
+	pd = findPluginInfo(installedStandalonePlugins, "myplugin", configtypes.TargetK8s)
+	assertions.NotNil(pd)
+	assertions.Equal("v1.6.0", pd.Version)
+	pd = findPluginInfo(installedStandalonePlugins, "feature", configtypes.TargetK8s)
+	assertions.NotNil(pd)
+	assertions.Equal("v0.2.0", pd.Version)
+
+	// Install all plugins from the plugin group `vmware-test/default:v2.1`
+	// This should install latest patch of `v1.3` for isolated cluster plugin
+	// based on the plugin-group `vmware-test/default:v2.1.0`
+	groupID = testGroupName
+	fullGroupID, err = InstallPluginsFromGroup("isolated-cluster", groupID+":v2.1")
+	assertions.Nil(err)
+	assertions.Equal(groupID+":v2.1.0", fullGroupID)
+
+	installedStandalonePlugins, err = pluginsupplier.GetInstalledStandalonePlugins()
+	assertions.Nil(err)
+	assertions.Equal(4, len(installedStandalonePlugins))
+	pd = findPluginInfo(installedStandalonePlugins, "management-cluster", configtypes.TargetK8s)
+	assertions.NotNil(pd)
+	assertions.Equal("v1.6.0", pd.Version)
+	pd = findPluginInfo(installedStandalonePlugins, "isolated-cluster", configtypes.TargetGlobal)
+	assertions.NotNil(pd)
+	assertions.Equal("v1.3.0", pd.Version)
 	pd = findPluginInfo(installedStandalonePlugins, "myplugin", configtypes.TargetK8s)
 	assertions.NotNil(pd)
 	assertions.Equal("v1.6.0", pd.Version)
@@ -404,7 +431,7 @@ func Test_InstallPluginsFromGroupErrors(t *testing.T) {
 	groupID = testGroupName
 	fullGroupID, err := InstallPluginsFromGroup("cluster", groupID)
 	assertions.NotNil(err)
-	assertions.Equal(groupID+":v2.1.0", fullGroupID)
+	assertions.Equal(groupID+":v2.2.0", fullGroupID)
 	assertions.Contains(err.Error(), fmt.Sprintf("plugin 'cluster' is not part of the group '%s'", fullGroupID))
 
 	groupID = testGroupName + ":" + testGroupVersion

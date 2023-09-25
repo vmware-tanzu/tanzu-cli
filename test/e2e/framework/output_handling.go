@@ -22,9 +22,10 @@ type PluginSearch struct {
 }
 
 type PluginGroup struct {
-	Group       string `json:"group"`
-	Description string `json:"description"`
-	Latest      string `json:"latest"`
+	Group       string   `json:"group"`
+	Description string   `json:"description"`
+	Latest      string   `json:"latest"`
+	Versions    []string `json:"versions"`
 }
 
 type PluginGroupGet struct {

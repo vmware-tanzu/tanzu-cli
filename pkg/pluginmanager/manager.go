@@ -590,7 +590,7 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 	}
 
 	if len(groups) == 0 {
-		return "", errors.Errorf("unable to find plugin group %v", groupIDAndVersion)
+		return "", errors.Errorf("unable to find plugin group with name '%s-%s/%s' matching version '%s'", groupIdentifier.Vendor, groupIdentifier.Publisher, groupIdentifier.Name, groupIdentifier.Version)
 	}
 
 	if len(groups) > 1 {
@@ -598,11 +598,13 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 	}
 
 	pg := groups[0]
-	if groupIdentifier.Version == cli.VersionLatest {
-		// If we are installing the latest version, we should set the version we found
-		groupIdentifier.Version = pg.RecommendedVersion
-		groupIDAndVersion = fmt.Sprintf("%s:%s", groupIDAndVersion, pg.RecommendedVersion)
-	}
+
+	// It is possible that user has provided plugin group version in form of vMAJOR or vMAJOR.MINOR
+	// So always update the groupIdentifier and groupIDAndVersion to the recommendedVersion we got
+	// from the database
+	groupIdentifier.Version = pg.RecommendedVersion
+	groupIDAndVersion = fmt.Sprintf("%s-%s/%s:%s", groupIdentifier.Vendor, groupIdentifier.Publisher, groupIdentifier.Name, groupIdentifier.Version)
+	log.Infof("Installing plugins from plugin group '%s'", groupIDAndVersion)
 
 	numErrors := 0
 	numInstalled := 0
