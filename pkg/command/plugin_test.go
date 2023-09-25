@@ -123,7 +123,7 @@ func TestPluginList(t *testing.T) {
 			for i, pluginName := range spec.plugins {
 				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
 				assert.Nil(err)
-				pluginInstallationPath = filepath.Join(common.DefaultPluginRoot, pluginName)
+				pluginInstallationPath = filepath.Join(dir, pluginName)
 				pi := &cli.PluginInfo{
 					Name:             pluginName,
 					Description:      fmt.Sprintf("some %s description", pluginName),
@@ -211,25 +211,28 @@ func TestDeletePlugin(t *testing.T) {
 		var completionType uint8
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
-			cc, err := catalog.NewContextCatalogUpdater("")
+			cupdater, err := catalog.NewContextCatalogUpdater("")
 			assert.Nil(err)
 
+			var pluginInstallationPath string
 			for i, pluginName := range spec.plugins {
 				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
 				assert.Nil(err)
+
+				pluginInstallationPath = filepath.Join(dir, pluginName)
 				pi := &cli.PluginInfo{
 					Name:             pluginName,
 					Description:      fmt.Sprintf("some %s description", pluginName),
 					Group:            plugin.SystemCmdGroup,
 					Aliases:          []string{pluginName[:2]},
 					Version:          spec.versions[i],
-					InstallationPath: filepath.Join(common.DefaultPluginRoot, pluginName),
+					InstallationPath: pluginInstallationPath,
 				}
 				assert.Nil(err)
-				err = cc.Upsert(pi)
+				err = cupdater.Upsert(pi)
 				assert.Nil(err)
 			}
-			cc.Unlock()
+			cupdater.Unlock()
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
@@ -239,11 +242,19 @@ func TestDeletePlugin(t *testing.T) {
 			if spec.expectedErrorMsg != "" {
 				assert.Contains(err.Error(), spec.expectedErrorMsg)
 			}
+
+			// Need to get a new catalog because the rootCmd.Execute()
+			// updated the catalog file
+			creader, err := catalog.NewContextCatalog("")
+			assert.Nil(err)
+
 			if !spec.expectedFailure {
-				pi, exists := cc.Get(spec.args[2])
-				assert.Equal(exists, true)
-				_, err := os.Stat(pi.InstallationPath)
-				assert.Equal(os.IsNotExist(err), true)
+				_, exists := creader.Get(spec.args[2])
+				assert.Equal(exists, false)
+
+				// tanzu plugin delete does not remove the binary
+				_, err := os.Stat(pluginInstallationPath)
+				assert.Nil(err)
 			}
 		})
 		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
