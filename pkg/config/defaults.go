@@ -41,13 +41,13 @@ const CoreRepositoryName = "core"
 var CoreBucketName = "tanzu-cli-framework"
 
 // DefaultVersionSelector is to only use stable versions of plugins
-const DefaultVersionSelector = configtypes.NoUnstableVersions // nolint:staticcheck // Deprecated
+const DefaultVersionSelector = configtypes.NoUnstableVersions //nolint:staticcheck // Deprecated
 
 // DefaultEdition is the edition assumed when there is no value in the local config file
 const DefaultEdition = "tkg"
 
 // CoreGCPBucketRepository is the default GCP bucket repository.
-var CoreGCPBucketRepository = configtypes.GCPPluginRepository{ // nolint:staticcheck // Deprecated
+var CoreGCPBucketRepository = configtypes.GCPPluginRepository{ //nolint:staticcheck // Deprecated
 	BucketName: CoreBucketName,
 	Name:       CoreRepositoryName,
 }
@@ -56,7 +56,7 @@ var CoreGCPBucketRepository = configtypes.GCPPluginRepository{ // nolint:staticc
 const AdvancedRepositoryName = "advanced"
 
 // AdvancedGCPBucketRepository is the GCP bucket repository for advanced plugins.
-var AdvancedGCPBucketRepository = configtypes.GCPPluginRepository{ // nolint:staticcheck // Deprecated
+var AdvancedGCPBucketRepository = configtypes.GCPPluginRepository{ //nolint:staticcheck // Deprecated
 	BucketName: "tanzu-cli-advanced-plugins",
 	Name:       AdvancedRepositoryName,
 }
@@ -65,7 +65,7 @@ var AdvancedGCPBucketRepository = configtypes.GCPPluginRepository{ // nolint:sta
 const DefaultTMCPluginsArtifactRepository = "https://tmc-cli.s3-us-west-2.amazonaws.com/plugins/artifacts"
 
 // DefaultRepositories are the default repositories for the CLI.
-var DefaultRepositories = []configtypes.PluginRepository{ // nolint:staticcheck // Deprecated
+var DefaultRepositories = []configtypes.PluginRepository{ //nolint:staticcheck // Deprecated
 	{
 		GCPPluginRepository: &CoreGCPBucketRepository,
 	},
@@ -179,7 +179,7 @@ func GetAdditionalTestDiscoveryImages() []string {
 	return additionalImages
 }
 
-func getHTTPURIForGCPPluginRepository(repo configtypes.GCPPluginRepository) string { // nolint:staticcheck // Deprecated
+func getHTTPURIForGCPPluginRepository(repo configtypes.GCPPluginRepository) string { //nolint:staticcheck // Deprecated
 	return fmt.Sprintf("https://storage.googleapis.com/%s/", repo.BucketName)
 }
 

@@ -208,7 +208,6 @@ func TanzuLocalKubeConfigPath() (path string, err error) {
 }
 
 func MergeAndSaveKubeconfigBytes(kubeconfigBytes []byte, options *KubeConfigOptions) (mergeFilePath, currentContext string, err error) {
-	mergeFilePath = ""
 	if options != nil && options.MergeFilePath != "" {
 		mergeFilePath = options.MergeFilePath
 	} else {

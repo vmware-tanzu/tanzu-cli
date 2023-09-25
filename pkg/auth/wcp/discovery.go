@@ -22,7 +22,7 @@ const (
 func IsVSphereSupervisor(endpoint string, httpClient *http.Client) (bool, error) {
 	loginBannerURL := fmt.Sprintf("%s/wcp/loginbanner", endpoint)
 
-	req, _ := http.NewRequest("GET", loginBannerURL, http.NoBody)
+	req, _ := http.NewRequest("GET", loginBannerURL, http.NoBody) //nolint:noctx //should rewrite http.NewRequestWithContext or add (*Request).WithContext (noctx)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
