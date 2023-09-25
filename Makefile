@@ -311,14 +311,14 @@ verify: gomod fmt generate ## Run all verification scripts
 ## Generators
 ## --------------------------------------
 
-CONTROLLER_GEN_SRC ?= "./..."
+CONTROLLER_GEN_SRC ?= "./apis/..."
 
 generate-controller-code: $(CONTROLLER_GEN)  ## Generate code via controller-gen
 	$(CONTROLLER_GEN) $(GENERATOR) object:headerFile="$(ROOT_DIR)/hack/boilerplate.go.txt",year=$(shell date +%Y) paths="$(CONTROLLER_GEN_SRC)" $(OPTIONS)
 	$(MAKE) fmt
 
 generate-manifests:  ## Generate API manifests e.g. CRD
-	$(MAKE) generate-controller-code GENERATOR=crd OPTIONS="output:crd:artifacts:config=$(ROOT_DIR)/apis/config/crd/bases" CONTROLLER_GEN_SRC=$(CONTROLLER_GEN_SRC)
+	$(MAKE) generate-controller-code GENERATOR=crd OPTIONS="output:crd:artifacts:config=$(ROOT_DIR)/carvel/crd" CONTROLLER_GEN_SRC=$(CONTROLLER_GEN_SRC)
 
 generate: generate-controller-code generate-manifests 	## Generate controller code and manifests e.g. CRD etc.
 

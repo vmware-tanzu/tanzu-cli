@@ -17,6 +17,7 @@
 *.key
 *.dylib
 *.bak
+_.yaml
 bin
 artifacts
 artifacts-admin
