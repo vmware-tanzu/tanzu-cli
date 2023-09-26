@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 
 	// Import the sqlite3 driver
@@ -15,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 )
 
@@ -110,8 +110,8 @@ func (b *sqliteMetricsDB) SaveOperationMetric(entry *OperationMetricsPayload) er
 
 	row := cliOperationsRow{
 		cliVersion:         entry.CliVersion,
-		osName:             runtime.GOOS,
-		osArch:             runtime.GOARCH,
+		osName:             cli.GOOS,
+		osArch:             cli.GOARCH,
 		pluginName:         entry.PluginName,
 		pluginVersion:      entry.PluginVersion,
 		command:            entry.CommandName,

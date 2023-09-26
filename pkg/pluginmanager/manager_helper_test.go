@@ -32,6 +32,7 @@ var testPlugins = []plugininventory.PluginIdentifier{
 	{Name: "cluster", Target: configtypes.TargetK8s, Version: "v1.6.0"},
 	{Name: "myplugin", Target: configtypes.TargetK8s, Version: "v1.6.0"},
 	{Name: "feature", Target: configtypes.TargetK8s, Version: "v0.2.0"},
+	{Name: "pluginwitharm", Target: configtypes.TargetK8s, Version: "v2.0.0"},
 
 	{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.2.3"},
 	{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.3.0"},
@@ -45,6 +46,10 @@ var testPlugins = []plugininventory.PluginIdentifier{
 	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.2.0"},
 	{Name: "cluster", Target: configtypes.TargetTMC, Version: "v0.2.0"},
 	{Name: "myplugin", Target: configtypes.TargetTMC, Version: "v0.2.0"},
+}
+
+var testPluginsNoARM64 = []plugininventory.PluginIdentifier{
+	{Name: "pluginnoarm", Target: configtypes.TargetK8s, Version: "v1.0.0"},
 }
 
 const createGroupsStmt = `
@@ -137,6 +142,10 @@ INSERT INTO PluginGroups VALUES(
 	'true',
 	'false');
 `
+const (
+	digestForAMD64 = "0000000000"
+	digestForARM64 = "1111111111"
+)
 
 func findDiscoveredPlugin(discovered []discovery.Discovered, pluginName string, target configtypes.Target) *discovery.Discovered {
 	for i := range discovered {
@@ -207,20 +216,39 @@ func setupPluginBinaryInCache(name, version string, target configtypes.Target, d
 	}
 }
 
+func createPluginEntry(db *sql.DB, plugin plugininventory.PluginIdentifier, arch cli.Arch, digest string) {
+	uri := fmt.Sprintf("vmware/test/%s/%s/%s/%s:%s", arch.OS(), arch.Arch(), plugin.Target, plugin.Name, plugin.Version)
+	desc := fmt.Sprintf("Plugin %s description", plugin.Name)
+
+	_, err := db.Exec("INSERT INTO PluginBinaries (PluginName,Target,RecommendedVersion,Version,Hidden,Description,Publisher,Vendor,OS,Architecture,Digest,URI) VALUES(?,?,'',?,'false',?,'test','vmware',?,?,?,?);", plugin.Name, plugin.Target, plugin.Version, desc, arch.OS(), arch.Arch(), digest, uri)
+
+	if err != nil {
+		log.Fatal(err, fmt.Sprintf("failed to create %s:%s for target %s for testing", plugin.Name, plugin.Version, plugin.Target))
+	}
+}
+
 func setupPluginEntriesAndBinaries(db *sql.DB) {
-	digest := "0000000000"
+	// Setup DB entries and plugin binaries for all os/architecture combinations
 	for _, plugin := range testPlugins {
-		desc := fmt.Sprintf("Plugin %s description", plugin.Name)
 		for _, osArch := range cli.AllOSArch {
-			uri := fmt.Sprintf("vmware/test/%s/%s/%s/%s:%s", osArch.OS(), osArch.Arch(), plugin.Target, plugin.Name, plugin.Version)
+			digest := digestForAMD64
+			if osArch.Arch() == cli.DarwinARM64.Arch() {
+				digest = digestForARM64
+			}
+			createPluginEntry(db, plugin, osArch, digest)
+			setupPluginBinaryInCache(plugin.Name, plugin.Version, plugin.Target, digest)
+		}
+	}
 
-			_, err := db.Exec("INSERT INTO PluginBinaries (PluginName,Target,RecommendedVersion,Version,Hidden,Description,Publisher,Vendor,OS,Architecture,Digest,URI) VALUES(?,?,'',?,'false',?,'test','vmware',?,?,?,?);", plugin.Name, plugin.Target, plugin.Version, desc, osArch.OS(), osArch.Arch(), digest, uri)
-
-			if err != nil {
-				log.Fatal(err, fmt.Sprintf("failed to create %s:%s for target %s for testing", plugin.Name, plugin.Version, plugin.Target))
+	// Setup DB entries and plugin binaries but skip ARM64
+	digest := digestForAMD64
+	for _, plugin := range testPluginsNoARM64 {
+		for _, osArch := range cli.AllOSArch {
+			if osArch.Arch() != cli.DarwinARM64.Arch() {
+				createPluginEntry(db, plugin, osArch, digest)
+				setupPluginBinaryInCache(plugin.Name, plugin.Version, plugin.Target, digest)
 			}
 		}
-		setupPluginBinaryInCache(plugin.Name, plugin.Version, plugin.Target, digest)
 	}
 }
 

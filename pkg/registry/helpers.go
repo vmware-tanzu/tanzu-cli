@@ -11,7 +11,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"runtime"
 	"strconv"
 	"time"
 
@@ -19,6 +18,7 @@ import (
 	gocontainerregistry "github.com/google/go-containerregistry/pkg/registry"
 	"github.com/pkg/errors"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/configpaths"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -38,7 +38,7 @@ func GetRegistryCertOptions(registryHost string) (*CertOptions, error) {
 		Insecure:       false,
 	}
 
-	if runtime.GOOS == "windows" {
+	if cli.GOOS == "windows" {
 		err := AddRegistryTrustedRootCertsFileForWindows(registryCertOpts)
 		if err != nil {
 			return nil, err

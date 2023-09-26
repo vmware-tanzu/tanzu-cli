@@ -130,6 +130,24 @@ var expectedDiscoveredStandalonePlugins = []discovery.Discovered{
 		ContextName:        "",
 		Target:             configtypes.TargetTMC,
 	},
+	{
+		Name:               "pluginnoarm",
+		Description:        "Plugin pluginnoarm description",
+		RecommendedVersion: "v1.0.0",
+		SupportedVersions:  []string{"v1.0.0"},
+		Scope:              common.PluginScopeStandalone,
+		ContextName:        "",
+		Target:             configtypes.TargetK8s,
+	},
+	{
+		Name:               "pluginwitharm",
+		Description:        "Plugin pluginwitharm description",
+		RecommendedVersion: "v2.0.0",
+		SupportedVersions:  []string{"v2.0.0"},
+		Scope:              common.PluginScopeStandalone,
+		ContextName:        "",
+		Target:             configtypes.TargetK8s,
+	},
 }
 
 var expectedDiscoveredGroups = []string{"vmware-test/default:v1.6.0", "vmware-test/default:v2.1.0"}
@@ -266,10 +284,37 @@ func Test_InstallStandalonePlugin(t *testing.T) {
 	assertions.NotNil(err)
 	assertions.Contains(err.Error(), "unable to find plugin 'feature' matching version 'v0.2.0' for target 'mission-control'")
 
+	// When on Darwin ARM64, try installing a plugin that is only available for Darwin AMD64
+	// and see that it still gets installed (it will use AMD64)
+	//
+	// First make the CLI believe we are running on Darwin ARM64.  We need this for when
+	// the unit tests are run on Linux for example.
+	realArch := cli.BuildArch()
+	cli.SetArch(cli.DarwinARM64)
+	err = InstallStandalonePlugin("pluginnoarm", "v1.0.0", configtypes.TargetUnknown)
+	assertions.Nil(err)
+	// Make sure that after the plugin is installed (using AMD64), the arch is back to ARM64
+	assertions.Equal(cli.DarwinARM64, cli.BuildArch())
+	// Now reset to the real machine architecture
+	cli.SetArch(realArch)
+
+	// When on Darwin ARM64, try installing a plugin that IS available for Darwin ARM64
+	// and make sure it is the ARM64 one that gets installed (not AMD64)
+	//
+	// First make the CLI believe we are running on Darwin ARM64.  We need this for when
+	// the unit tests are run on Linux for example.
+	cli.SetArch(cli.DarwinARM64)
+	err = InstallStandalonePlugin("pluginwitharm", "v2.0.0", configtypes.TargetUnknown)
+	assertions.Nil(err)
+	// Make sure that after the plugin is installed (using AMD64), the arch is back to ARM64
+	assertions.Equal(cli.DarwinARM64, cli.BuildArch())
+	// Now reset to the real machine architecture
+	cli.SetArch(realArch)
+
 	// Verify installed plugins
 	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
 	assertions.Nil(err)
-	assertions.Equal(4, len(installedStandalonePlugins))
+	assertions.Equal(6, len(installedStandalonePlugins))
 	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
 	assertions.Nil(err)
 	assertions.Equal(0, len(installedServerPlugins))
@@ -299,12 +344,34 @@ func Test_InstallStandalonePlugin(t *testing.T) {
 			Scope:   common.PluginScopeStandalone,
 			Target:  configtypes.TargetTMC,
 		},
+		{
+			Name:    "pluginnoarm",
+			Version: "v1.0.0",
+			Scope:   common.PluginScopeStandalone,
+			Target:  configtypes.TargetK8s,
+		},
+		{
+			Name:    "pluginwitharm",
+			Version: "v2.0.0",
+			Scope:   common.PluginScopeStandalone,
+			Target:  configtypes.TargetK8s,
+		},
 	}
 
 	for i := 0; i < len(expectedInstalledStandalonePlugins); i++ {
 		pd := findPluginInfo(installedStandalonePlugins, expectedInstalledStandalonePlugins[i].Name, expectedInstalledStandalonePlugins[i].Target)
 		assertions.NotNil(pd)
 		assertions.Equal(expectedInstalledStandalonePlugins[i].Version, pd.Version)
+
+		if pd.Name == "pluginnoarm" {
+			// Make sure this plugin is always installed as AMD64
+			assertions.Equal(digestForAMD64, pd.Digest)
+		}
+
+		if pd.Name == "pluginwitharm" {
+			// Make sure this plugin is always installed as ARM64
+			assertions.Equal(digestForARM64, pd.Digest)
+		}
 	}
 }
 

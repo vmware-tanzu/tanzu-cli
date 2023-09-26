@@ -7,13 +7,14 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/pkg/errors"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
 var _ = Describe("Inserting CLI metrics to database and verifying it by fetching the metrics from database", func() {
@@ -65,8 +66,8 @@ var _ = Describe("Inserting CLI metrics to database and verifying it by fetching
 			Expect(len(metricsRows)).To(Equal(1))
 			Expect(metricsRows[0].cliID).To(Equal("fake-cli-cliID"))
 			Expect(metricsRows[0].cliVersion).To(Equal("v1.0.0"))
-			Expect(metricsRows[0].osName).To(Equal(runtime.GOOS))
-			Expect(metricsRows[0].osArch).To(Equal(runtime.GOARCH))
+			Expect(metricsRows[0].osName).To(Equal(cli.GOOS))
+			Expect(metricsRows[0].osArch).To(Equal(cli.GOARCH))
 			Expect(metricsRows[0].nameArg).To(Equal("fake-name-arg"))
 			Expect(metricsRows[0].command).To(Equal("fake-cmd-name"))
 			Expect(metricsRows[0].commandStartTSMsec).ToNot(BeEmpty())

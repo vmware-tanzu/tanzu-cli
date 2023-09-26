@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -486,13 +485,28 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 		Name:    pluginName,
 		Target:  target,
 		Version: version,
-		OS:      runtime.GOOS,
-		Arch:    runtime.GOARCH,
+		OS:      cli.GOOS,
+		Arch:    cli.GOARCH,
 	}
 	errorList := make([]error, 0)
 	availablePlugins, err := discoverSpecificPlugins(discoveries, discovery.WithPluginDiscoveryCriteria(criteria))
 	if err != nil {
 		errorList = append(errorList, err)
+	}
+
+	// If we cannot find the plugin for DarwinARM64, let's fallback to DarwinAMD64.
+	// This leverages Apples Rosetta emulator and helps until plugins are all available
+	// for ARM64.  Note that this cannot be used on Linux since there is no such emulator.
+	if len(availablePlugins) == 0 && cli.BuildArch() == cli.DarwinARM64 {
+		// Pretend we are on a AMD64 machine
+		cli.SetArch(cli.DarwinAMD64)
+		defer cli.SetArch(cli.DarwinARM64) // Go back to ARM64 once the plugin is installed
+
+		criteria.Arch = cli.DarwinAMD64.Arch()
+		availablePlugins, err = discoverSpecificPlugins(discoveries, discovery.WithPluginDiscoveryCriteria(criteria))
+		if err != nil {
+			errorList = append(errorList, err)
+		}
 	}
 
 	if len(availablePlugins) == 0 {
@@ -691,7 +705,7 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 }
 
 func getPluginFromCache(p *discovery.Discovered, version string) *cli.PluginInfo {
-	pluginArtifact, err := p.Distribution.DescribeArtifact(version, runtime.GOOS, runtime.GOARCH)
+	pluginArtifact, err := p.Distribution.DescribeArtifact(version, cli.GOOS, cli.GOARCH)
 	if err != nil {
 		return nil
 	}
@@ -723,13 +737,13 @@ func fetchAndVerifyPlugin(p *discovery.Discovered, version string) ([]byte, erro
 		return nil, errors.Wrapf(err, "%q plugin pre-download verification failed", p.Name)
 	}
 
-	b, err := p.Distribution.Fetch(version, runtime.GOOS, runtime.GOARCH)
+	b, err := p.Distribution.Fetch(version, cli.GOOS, cli.GOARCH)
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to fetch the plugin metadata for plugin %q", p.Name)
 	}
 
 	// verify plugin after download but before installation
-	d, err := p.Distribution.GetDigest(version, runtime.GOOS, runtime.GOARCH)
+	d, err := p.Distribution.GetDigest(version, cli.GOOS, cli.GOARCH)
 	if err != nil {
 		return nil, err
 	}
@@ -784,7 +798,7 @@ func describePlugin(p *discovery.Discovered, pluginPath string) (*cli.PluginInfo
 
 func doInstallTestPlugin(p *discovery.Discovered, pluginPath, version string) error {
 	log.Infof("Installing test plugin for '%v:%v'", p.Name, version)
-	binary, err := p.Distribution.FetchTest(version, runtime.GOOS, runtime.GOARCH)
+	binary, err := p.Distribution.FetchTest(version, cli.GOOS, cli.GOARCH)
 	if err != nil {
 		if os.Getenv("TZ_ENFORCE_TEST_PLUGIN") == "1" {
 			return errors.Wrapf(err, "unable to install test plugin for '%v:%v'", p.Name, version)
@@ -1151,8 +1165,8 @@ func getCLIPluginResourceWithLocalDistroFromPluginInfo(plugin *cli.PluginInfo, p
 					{
 						URI:  pluginBinaryPath,
 						Type: common.DistributionTypeLocal,
-						OS:   runtime.GOOS,
-						Arch: runtime.GOARCH,
+						OS:   cli.GOOS,
+						Arch: cli.GOARCH,
 					},
 				},
 			},
@@ -1215,7 +1229,7 @@ func discoverPluginsFromLocalSourceBasedOnManifestFile(localPath string) ([]disc
 		// Sample path: cli/[target]/<plugin-name>/<plugin-version>/tanzu-<plugin-name>-<os>_<arch>
 		// 				cli/[target]/v0.14.0/tanzu-login-darwin_amd64
 		// As mentioned above, we expect the binary for user's OS-ARCH is present and hence creating path accordingly
-		pluginBinaryPath := filepath.Join(absLocalPath, string(pluginInfo.Target), p.Name, pluginInfo.Version, fmt.Sprintf("tanzu-%s-%s_%s", p.Name, runtime.GOOS, runtime.GOARCH))
+		pluginBinaryPath := filepath.Join(absLocalPath, string(pluginInfo.Target), p.Name, pluginInfo.Version, fmt.Sprintf("tanzu-%s-%s_%s", p.Name, cli.GOOS, cli.GOARCH))
 		if cli.BuildArch().IsWindows() {
 			pluginBinaryPath += exe
 		}
@@ -1274,7 +1288,7 @@ func getPluginInfoResource(pluginFilePath string) (*cli.PluginInfo, error) {
 // verifyPluginPreDownload verifies that the plugin distribution repo is trusted
 // and returns error if the verification fails.
 func verifyPluginPreDownload(p *discovery.Discovered, version string) error {
-	artifactInfo, err := p.Distribution.DescribeArtifact(version, runtime.GOOS, runtime.GOARCH)
+	artifactInfo, err := p.Distribution.DescribeArtifact(version, cli.GOOS, cli.GOARCH)
 	if err != nil {
 		return err
 	}
@@ -1284,7 +1298,7 @@ func verifyPluginPreDownload(p *discovery.Discovered, version string) error {
 	if artifactInfo.URI != "" {
 		return verifyArtifactLocation(artifactInfo.URI)
 	}
-	return errors.Errorf("no download information available for artifact \"%s:%s:%s:%s\"", p.Name, p.RecommendedVersion, runtime.GOOS, runtime.GOARCH)
+	return errors.Errorf("no download information available for artifact \"%s:%s:%s:%s\"", p.Name, p.RecommendedVersion, cli.GOOS, cli.GOARCH)
 }
 
 // verifyRegistry verifies the authenticity of the registry from where cli is
