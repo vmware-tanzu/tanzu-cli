@@ -25,14 +25,17 @@ func TestAirgapped(t *testing.T) {
 }
 
 var (
-	tf                           *framework.Framework
-	e2eTestLocalCentralRepoImage string
-	e2eAirgappedCentralRepo      string
-	e2eAirgappedCentralRepoImage string
-	pluginsSearchList            []*framework.PluginInfo
-	pluginGroups                 []*framework.PluginGroup
-	tempDir                      string
-	err                          error
+	tf                                      *framework.Framework
+	e2eTestLocalCentralRepoImage            string
+	e2eAirgappedCentralRepo                 string
+	e2eAirgappedCentralRepoImage            string
+	e2eAirgappedCentralRepoWithAuth         string
+	e2eAirgappedCentralRepoWithAuthUsername string
+	e2eAirgappedCentralRepoWithAuthPassword string
+	pluginsSearchList                       []*framework.PluginInfo
+	pluginGroups                            []*framework.PluginGroup
+	tempDir                                 string
+	err                                     error
 )
 
 // BeforeSuite initializes and set up the environment to execute the airgapped tests
@@ -45,8 +48,15 @@ var _ = BeforeSuite(func() {
 	// check E2E airgapped central repo (TANZU_CLI_E2E_AIRGAPPED_REPO)
 	e2eAirgappedCentralRepo = os.Getenv(framework.TanzuCliE2ETestAirgappedRepo)
 	Expect(e2eAirgappedCentralRepo).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with airgapped central repository URL", framework.TanzuCliE2ETestAirgappedRepo))
-
 	e2eAirgappedCentralRepoImage = fmt.Sprintf("%s%s", e2eAirgappedCentralRepo, filepath.Base(e2eTestLocalCentralRepoImage))
+
+	// check E2E configuration for airgapped central repository with authentication
+	e2eAirgappedCentralRepoWithAuth = os.Getenv(framework.TanzuCliE2ETestAirgappedRepoWithAuth)
+	Expect(e2eAirgappedCentralRepoWithAuth).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with airgapped central repository URL", framework.TanzuCliE2ETestAirgappedRepoWithAuth))
+	e2eAirgappedCentralRepoWithAuthUsername = os.Getenv(framework.TanzuCliE2ETestAirgappedRepoWithAuthUsername)
+	Expect(e2eAirgappedCentralRepoWithAuthUsername).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with airgapped central repository URL", framework.TanzuCliE2ETestAirgappedRepoWithAuthUsername))
+	e2eAirgappedCentralRepoWithAuthPassword = os.Getenv(framework.TanzuCliE2ETestAirgappedRepoWithAuthPassword)
+	Expect(e2eAirgappedCentralRepoWithAuthPassword).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with airgapped central repository URL", framework.TanzuCliE2ETestAirgappedRepoWithAuthPassword))
 
 	os.Setenv(framework.TanzuCliPluginDiscoverySignatureVerificationSkipList, fmt.Sprintf("%v,%v", e2eAirgappedCentralRepoImage, e2eTestLocalCentralRepoImage))
 
@@ -56,7 +66,7 @@ var _ = BeforeSuite(func() {
 	e2eTestLocalCentralRepoCACertPath := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryCACertPath)
 	Expect(e2eTestLocalCentralRepoCACertPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository CA cert path", framework.TanzuCliE2ETestLocalCentralRepositoryCACertPath))
 
-	// set up the CA cert fort local central repository
+	// set up the CA cert for local central repository
 	_ = tf.Config.ConfigCertDelete(e2eTestLocalCentralRepoPluginHost)
 	_, err = tf.Config.ConfigCertAdd(&framework.CertAddOptions{Host: e2eTestLocalCentralRepoPluginHost, CACertificatePath: e2eTestLocalCentralRepoCACertPath, SkipCertVerify: "false", Insecure: "false"})
 	Expect(err).To(BeNil())
@@ -67,7 +77,7 @@ var _ = BeforeSuite(func() {
 	os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
 
 	// setup the test central repo
-	err := framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoImage)
+	err = framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoImage)
 	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
 	// search plugin groups and make sure there plugin groups available

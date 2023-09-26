@@ -19,6 +19,9 @@ var (
 	// FullPathForTempDir is the absolute path for the temp directory under $TestDir
 	FullPathForTempDir string
 
+	// OriginalHomeDir is the actual HOME directory of the machine before E2E test overwrites it
+	OriginalHomeDir string
+
 	// ConfigFilePath represents config.yaml file path which under $HOME/.tanzu-cli-e2e/.config/tanzu
 	ConfigFilePath string
 	// ConfigFilePath represents config-ng.yaml file path which under $HOME/.tanzu-cli-e2e/.config/tanzu
@@ -92,8 +95,8 @@ func NewFramework() *Framework {
 }
 
 func init() {
-	homeDir := GetHomeDir()
-	TestDirPath = filepath.Join(homeDir, TestDir)
+	OriginalHomeDir = GetHomeDir()
+	TestDirPath = filepath.Join(OriginalHomeDir)
 	FullPathForTempDir = filepath.Join(TestDirPath, TempDirInTestDirPath)
 	// Update $HOME as $HOME/.tanzu-cli-e2e
 	os.Setenv("HOME", TestDirPath)

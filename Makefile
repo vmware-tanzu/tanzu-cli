@@ -254,12 +254,25 @@ stop-test-central-repo: ## Stops and removes the local test central repository
 
 .PHONY: start-airgapped-local-registry
 start-airgapped-local-registry: stop-airgapped-local-registry
-	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry $(REGISTRY_IMAGE) > /dev/null && \
+	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry \
+		$(REGISTRY_IMAGE) > /dev/null && \
 		echo "Started docker test airgapped repo at 'localhost:6001'."
+
+	@mkdir -p $(ROOT_DIR)/hack/central-repo/auth && docker run --entrypoint htpasswd httpd:2 -Bbn ${TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_USERNAME} ${TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_PASSWORD} > $(ROOT_DIR)/hack/central-repo/auth/htpasswd
+	@docker run --rm -d -p 6002:5000 --name temp-airgapped-local-registry-with-auth \
+		-v $(ROOT_DIR)/hack/central-repo/auth:/auth \
+		-e "REGISTRY_AUTH=htpasswd" \
+		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
+		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+		$(REGISTRY_IMAGE) > /dev/null && \
+		echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
+
+	@docker logout localhost:6002 || true
 
 .PHONY: stop-airgapped-local-registry
 stop-airgapped-local-registry:
-	@docker stop temp-airgapped-local-registry > /dev/null 2>&1 && echo "Stopping docker test airgapped repo if running..." || true
+	@docker stop temp-airgapped-local-registry temp-airgapped-local-registry-with-auth > /dev/null 2>&1 && \
+	  echo "Stopping docker test airgapped repo if running..." || true
 
 .PHONY: fmt
 fmt: $(GOIMPORTS) ## Run goimports
