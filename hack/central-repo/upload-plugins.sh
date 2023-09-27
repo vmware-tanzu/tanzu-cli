@@ -42,9 +42,7 @@ echoImages() {
     echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
     echo "    - SHAs are used to reference the v9.9.9 plugin binaries and tags for v0.0.1"
     echo "=> localhost:9876/tanzu-cli/plugins/extra:small"
-    echo "    - a small amount of plugins matching product plugin names"
-    echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
-    echo "    - both tables contain an extra column"
+    echo "    - same DB as central:small but with an extra column both for plugins and groups"
 }
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     usage
@@ -102,7 +100,6 @@ addPlugin() {
     local pushBinary=$3
     local versions=$4
     local useSHAs=$5
-    local extra=$6
 
     local tmpPluginPhase1="/tmp/fakeplugin1.sh"
     local tmpPluginPhase2="/tmp/fakeplugin2.sh"
@@ -176,7 +173,6 @@ addGroup() {
     local plugin=$5
     local target=$6
     local pluginVersion=$7
-    local extra=$8
     local mandatory='true'
     local hidden='false'
 
@@ -205,54 +201,87 @@ essentialPlugins=(telemetry)
 pluginUsingSha=(plugin-with-sha)
 multiversionPlugins=(cluster package secret)
 
-echo "======================================"
-echo "Creating small test Central Repository: $repoBasePath/$smallImage"
-echo "======================================"
+defaultDB=$database
+# Build two DBs with the same set of plugins and groups, except one DB will have
+# an extra column in both tables.  We do this in a loop to make sure both DB have
+# the exact same set of plugins, so we can run the same tests on both.
+for db in small extra; do
+    if [ $db = extra ]; then
+        # Use a special DB for the extra-column tests
+        mkdir -p /tmp/extra
+        database=/tmp/extra/plugin_inventory.db
+        # Reset the special DB
+        rm -f $database
+        touch $database
+        # Create the DB tables with the extra column
+        cat $ROOT_DIR/create_tables_extra.sql | sqlite3 -batch $database
 
-for name in ${globalPlugins[*]}; do
-    addPlugin $name global true
-done
+        image=$repoBasePath/$extraColumn
+        extra="extra value"
+        
+        echo "======================================"
+        echo "Creating a test Central Repository as an extracolumn build: $image"
+        echo "======================================"
+    else
+        database=$defaultDB
+        image=$repoBasePath/$smallImage
+        extra=""
 
-for name in ${essentialPlugins[*]}; do
-    addPlugin $name global true
-    addGroup vmware tanzucli essentials v0.0.1 $name global v0.0.1
-    addGroup vmware tanzucli essentials v9.9.9 $name global v9.9.9
-done
+        echo "======================================"
+        echo "Creating small test Central Repository: $image"
+        echo "======================================"
+    fi
 
-for name in ${k8sPlugins[*]}; do
-    addPlugin $name kubernetes true
-    addGroup vmware tkg default v0.0.1 $name kubernetes v0.0.1
-    addGroup vmware tkg default v9.9.9 $name kubernetes v9.9.9
-done
 
-for name in ${tmcPlugins[*]}; do
-    addPlugin $name mission-control true
-    addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1
-    addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
-done
-
-for name in ${pluginUsingSha[*]}; do
-    addPlugin $name global true v0.0.1 useSha
-    addPlugin $name global true v9.9.9 useSha
-done
-
-for name in ${multiversionPlugins[*]}; do
-    addPlugin $name kubernetes true "v1.9.1 v1.9.2-beta.1 v1.10.1 v1.10.2 v1.11.2 v1.11.3 v2.3.0 v2.3.4 v2.3.5"    
-done
-
-additionalPluginGroupInfo=("shortversion;v0.0.1;v1.9.1" "shortversion;v1.1.0;v1.9" "shortversion;v1.1.0-beta.1;v1.9.2-beta.1" "shortversion;v1.1.1;v1" "shortversion;v1.2.0;v2.3" "shortversion;v9.9.9;v2.3.5")
-for pluginGroupInfo in ${additionalPluginGroupInfo[*]}; do
-    groupName=$(echo $pluginGroupInfo | cut -d ";" -f 1)
-    groupVersion=$(echo $pluginGroupInfo | cut -d ";" -f 2)
-    pluginVersion=$(echo $pluginGroupInfo | cut -d ";" -f 3)
-    for name in ${multiversionPlugins[*]}; do
-        addGroup vmware tkg $groupName $groupVersion $name kubernetes $pluginVersion
+    for name in ${globalPlugins[*]}; do
+        addPlugin $name global true
     done
+
+    for name in ${essentialPlugins[*]}; do
+        addPlugin $name global true
+        addGroup vmware tanzucli essentials v0.0.1 $name global v0.0.1
+        addGroup vmware tanzucli essentials v9.9.9 $name global v9.9.9
+    done
+
+    for name in ${k8sPlugins[*]}; do
+        addPlugin $name kubernetes true
+        addGroup vmware tkg default v0.0.1 $name kubernetes v0.0.1
+        addGroup vmware tkg default v9.9.9 $name kubernetes v9.9.9
+    done
+
+    for name in ${tmcPlugins[*]}; do
+        addPlugin $name mission-control true
+        addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1
+        addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
+    done
+
+    for name in ${pluginUsingSha[*]}; do
+        addPlugin $name global true v0.0.1 useSha
+        addPlugin $name global true v9.9.9 useSha
+    done
+
+    for name in ${multiversionPlugins[*]}; do
+        addPlugin $name kubernetes true "v1.9.1 v1.9.2-beta.1 v1.10.1 v1.10.2 v1.11.2 v1.11.3 v2.3.0 v2.3.4 v2.3.5"
+    done
+
+    additionalPluginGroupInfo=("shortversion;v0.0.1;v1.9.1" "shortversion;v1.1.0;v1.9" "shortversion;v1.1.0-beta.1;v1.9.2-beta.1" "shortversion;v1.1.1;v1" "shortversion;v1.2.0;v2.3" "shortversion;v9.9.9;v2.3.5")
+    for pluginGroupInfo in ${additionalPluginGroupInfo[*]}; do
+        groupName=$(echo $pluginGroupInfo | cut -d ";" -f 1)
+        groupVersion=$(echo $pluginGroupInfo | cut -d ";" -f 2)
+        pluginVersion=$(echo $pluginGroupInfo | cut -d ";" -f 3)
+        for name in ${multiversionPlugins[*]}; do
+            addGroup vmware tkg $groupName $groupVersion $name kubernetes $pluginVersion
+        done
+    done
+
+    # Push small inventory file
+    ${dry_run} imgpkg push -i $image -f $database --registry-verify-certs=false
+    ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $image
 done
 
-# Push small inventory file
-${dry_run} imgpkg push -i $repoBasePath/$smallImage -f $database --registry-verify-certs=false
-${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$smallImage
+# Use the default DB to continue the setup
+database=$defaultDB
+extra=""
 
 echo "======================================"
 echo "Creating large test Central Repository: $repoBasePath/$largeImage"
@@ -451,46 +480,5 @@ done
 # Push airgapped inventory file
 ${dry_run} imgpkg push -i $repoBasePath/$smallImageUsingSHAs -f $database --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$smallImageUsingSHAs
-
-# Create an additional image that has an extra column in each table
-echo "======================================"
-echo "Creating a test Central Repository as an extracolumn build: $repoBasePath/$extraColumn"
-echo "======================================"
-# Reset the DB
-rm -f $database
-touch $database
-# Create the DB tables with the extra column
-cat $ROOT_DIR/create_tables_extra.sql | sqlite3 -batch $database
-
-for name in ${globalPlugins[*]}; do
-    addPlugin $name global true '' '' extra_global
-done
-
-for name in ${essentialPlugins[*]}; do
-    addPlugin $name global true '' '' extra_essential
-    addGroup vmware tanzucli essentials v0.0.1 $name global v0.0.1 extra_essential_1
-    addGroup vmware tanzucli essentials v9.9.9 $name global v9.9.9 extra_essential_9
-done
-
-for name in ${k8sPlugins[*]}; do
-    addPlugin $name kubernetes true '' '' extra_k8s
-    addGroup vmware tkg default v0.0.1 $name kubernetes v0.0.1 extra_k8s_1
-    addGroup vmware tkg default v9.9.9 $name kubernetes v9.9.9 extra_k8s_9
-done
-
-for name in ${tmcPlugins[*]}; do
-    addPlugin $name mission-control true '' '' extra_tmc
-    addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1 extra_tmc_1
-    addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9 extra_tmc_9
-done
-
-for name in ${pluginUsingSha[*]}; do
-    addPlugin $name global true v0.0.1 useSha extra_sha_1
-    addPlugin $name global true v9.9.9 useSha extra_sha_9
-done
-
-# Push extra column inventory file
-${dry_run} imgpkg push -i $repoBasePath/$extraColumn -f $database --registry-verify-certs=false
-${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$extraColumn
 
 rm -f $database
