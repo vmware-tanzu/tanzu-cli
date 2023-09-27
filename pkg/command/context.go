@@ -5,8 +5,10 @@ package command
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"io"
+
 	"net/http"
 	"net/url"
 	"os"
@@ -20,6 +22,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientauthv1 "k8s.io/client-go/pkg/apis/clientauthentication/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
@@ -82,6 +86,7 @@ func init() {
 		deleteCtxCmd,
 		useCtxCmd,
 		unsetCtxCmd,
+		getCtxTokenCmd,
 	)
 
 	initCreateCtxCmd()
@@ -1025,4 +1030,51 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", configtypes.TargetTMC))
 		outputWriterTMCTarget.Render()
 	}
+}
+
+var getCtxTokenCmd = &cobra.Command{
+	Use:    "get-token CONTEXT_NAME",
+	Short:  "Get the valid CSP token for the given UCP context.",
+	Args:   cobra.ExactArgs(1),
+	Hidden: true,
+	RunE:   getToken,
+}
+
+func getToken(cmd *cobra.Command, args []string) error {
+	name := args[0]
+	ctx, err := config.GetContext(name)
+	if err != nil {
+		return err
+	}
+	if ctx.Target != configtypes.TargetUCP {
+		return errors.Errorf("context %q is not of type UCP", name)
+	}
+	if csp.IsExpired(ctx.GlobalOpts.Auth.Expiration) {
+		_, err := csp.GetToken(&ctx.GlobalOpts.Auth)
+		if err != nil {
+			return errors.Wrap(err, "failed to refresh the token")
+		}
+		if err = config.SetContext(ctx, false); err != nil {
+			return errors.Wrap(err, "failed updating the context after token refresh")
+		}
+	}
+	token := ctx.GlobalOpts.Auth.AccessToken
+	expTime := ctx.GlobalOpts.Auth.Expiration
+
+	return printTokenToStdout(cmd, token, expTime)
+}
+
+func printTokenToStdout(cmd *cobra.Command, token string, expTime time.Time) error {
+	et := metav1.NewTime(expTime).Rfc3339Copy()
+	cred := clientauthv1.ExecCredential{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ExecCredential",
+			APIVersion: "client.authentication.k8s.io/v1",
+		},
+		Status: &clientauthv1.ExecCredentialStatus{
+			Token:               token,
+			ExpirationTimestamp: &et,
+		},
+	}
+	return json.NewEncoder(cmd.OutOrStdout()).Encode(cred)
 }

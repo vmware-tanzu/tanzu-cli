@@ -92,7 +92,7 @@ var _ = Describe("Unit tests for ucp auth", func() {
 				Expect(config.Contexts[kubeContext].AuthInfo).To(Equal(kubeconfigUserName(ucpContext.Name)))
 				Expect(gotClusterName).To(Equal(kubeconfigClusterName(ucpContext.Name)))
 				Expect(len(cluster.CertificateAuthorityData)).ToNot(Equal(0))
-				Expect(user.Token).To(Equal(ucpContext.GlobalOpts.Auth.AccessToken))
+				Expect(user.Exec).To(Equal(getExecConfig(ucpContext)))
 			})
 		})
 		Context("When endpointCACertPath is not provided and skipTLSVerify is set to true", func() {
@@ -115,7 +115,7 @@ var _ = Describe("Unit tests for ucp auth", func() {
 				Expect(gotClusterName).To(Equal("tanzu-cli-" + ucpContext.Name + "/current"))
 				Expect(len(cluster.CertificateAuthorityData)).To(Equal(0))
 				Expect(cluster.InsecureSkipTLSVerify).To(Equal(true))
-				Expect(user.Token).To(Equal(ucpContext.GlobalOpts.Auth.AccessToken))
+				Expect(user.Exec).To(Equal(getExecConfig(ucpContext)))
 			})
 		})
 

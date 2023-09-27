@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	clientauthenticationv1 "k8s.io/client-go/pkg/apis/clientauthentication/v1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	kubeutils "github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig"
@@ -37,7 +38,7 @@ func GetUCPKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertPat
 	contextName := kubeconfigContextName(c.Name)
 	clusterName := kubeconfigClusterName(c.Name)
 	username := kubeconfigUserName(c.Name)
-
+	execConfig := getExecConfig(c)
 	config := &clientcmdapi.Config{
 		Kind:       "Config",
 		APIVersion: clientcmdapi.SchemeGroupVersion.Version,
@@ -46,7 +47,7 @@ func GetUCPKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertPat
 			InsecureSkipTLSVerify:    skipTLSVerify,
 			Server:                   clusterAPIServerURL,
 		}},
-		AuthInfos:      map[string]*clientcmdapi.AuthInfo{username: {Token: c.GlobalOpts.Auth.AccessToken}},
+		AuthInfos:      map[string]*clientcmdapi.AuthInfo{username: {Exec: execConfig}},
 		Contexts:       map[string]*clientcmdapi.Context{contextName: {Cluster: clusterName, AuthInfo: username}},
 		CurrentContext: contextName,
 	}
@@ -74,4 +75,17 @@ func kubeconfigClusterName(ucpContextName string) string {
 
 func kubeconfigUserName(ucpContextName string) string {
 	return "tanzu-cli-" + ucpContextName + "-user"
+}
+
+func getExecConfig(c *configtypes.Context) *clientcmdapi.ExecConfig {
+	execConfig := &clientcmdapi.ExecConfig{
+		APIVersion:      clientauthenticationv1.SchemeGroupVersion.String(),
+		Args:            []string{},
+		Env:             []clientcmdapi.ExecEnvVar{},
+		InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
+	}
+
+	execConfig.Command = "tanzu"
+	execConfig.Args = append([]string{"context", "get-token"}, c.Name)
+	return execConfig
 }
