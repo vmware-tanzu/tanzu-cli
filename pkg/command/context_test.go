@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -16,6 +17,8 @@ import (
 	"github.com/onsi/gomega/ghttp"
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientauthv1 "k8s.io/client-go/pkg/apis/clientauthentication/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
@@ -255,6 +258,79 @@ clusterOpts:
 			os.Unsetenv(constants.SkipUpdateKubeconfigOnContextUse)
 		})
 	})
+	Describe("tanzu context get-token", func() {
+		const (
+			fakeContextName = "fake-context"
+			fakeAccessToken = "fake-access-token"
+			fakeEndpoint    = "fake.ucp.cloud.vmware.com"
+			fakeIssuer      = "https://fake.issuer.come/auth"
+		)
+		var err error
+		cmd := &cobra.Command{}
+		ucpContext := &configtypes.Context{}
+
+		BeforeEach(func() {
+			cmd.SetOut(&buf)
+
+			ucpContext = &configtypes.Context{
+				Name:   fakeContextName,
+				Target: configtypes.TargetUCP,
+				GlobalOpts: &configtypes.GlobalServer{
+					Endpoint: fakeEndpoint,
+					Auth: configtypes.GlobalServerAuth{
+						AccessToken: fakeAccessToken,
+						Issuer:      fakeIssuer,
+					},
+				},
+			}
+		})
+		AfterEach(func() {
+			resetContextCommandFlags()
+			buf.Reset()
+		})
+		It("should return error if the context to be used doesn't exist", func() {
+			err = getToken(cmd, []string{"non-existing-context"})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("context non-existing-context not found"))
+
+		})
+		It("should return error if the context type is not UCP", func() {
+			ucpContext.Target = configtypes.TargetK8s
+			err = config.SetContext(ucpContext, false)
+			Expect(err).To(BeNil())
+
+			err = getToken(cmd, []string{fakeContextName})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring(`context "fake-context" is not of type UCP`))
+
+		})
+		It("should return error if the access token refresh fails", func() {
+			ucpContext.GlobalOpts.Auth.Expiration = time.Now().Add(-time.Hour)
+
+			err = config.SetContext(ucpContext, false)
+			Expect(err).To(BeNil())
+			err = getToken(cmd, []string{fakeContextName})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("failed to refresh the token"))
+		})
+		It("should print the exec credentials if the access token is valid(not expired)", func() {
+			ucpContext.GlobalOpts.Auth.Expiration = time.Now().Add(time.Hour)
+
+			err = config.SetContext(ucpContext, false)
+			Expect(err).To(BeNil())
+			err = getToken(cmd, []string{fakeContextName})
+			Expect(err).To(BeNil())
+
+			execCredential := &clientauthv1.ExecCredential{}
+			err = json.NewDecoder(&buf).Decode(execCredential)
+			Expect(err).To(BeNil())
+			Expect(execCredential.Kind).To(Equal("ExecCredential"))
+			Expect(execCredential.APIVersion).To(Equal("client.authentication.k8s.io/v1"))
+			Expect(execCredential.Status.Token).To(Equal(fakeAccessToken))
+			expectedTime := metav1.NewTime(ucpContext.GlobalOpts.Auth.Expiration).Rfc3339Copy()
+			Expect(execCredential.Status.ExpirationTimestamp.Equal(&expectedTime)).To(BeTrue())
+		})
+	})
 
 	Describe("tanzu context unset", func() {
 		cmd := &cobra.Command{}
@@ -483,7 +559,7 @@ var _ = Describe("create new context", func() {
 			tlsServer.Close()
 		})
 
-		Describe("create context with self-managed tmc endpoint", func() {
+		Describe("create context with ucp endpoint", func() {
 			var (
 				tkgConfigFile   *os.File
 				tkgConfigFileNG *os.File

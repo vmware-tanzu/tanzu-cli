@@ -194,7 +194,7 @@ func GetToken(g *configapi.GlobalServerAuth) (*oauth2.Token, error) {
 	}
 
 	// TODO (pbarker): support more issuers.
-	token, err := GetAccessTokenFromAPIToken(g.RefreshToken, ProdIssuer)
+	token, err := GetAccessTokenFromAPIToken(g.RefreshToken, g.Issuer)
 	if err != nil {
 		return nil, err
 	}
