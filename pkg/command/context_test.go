@@ -46,29 +46,32 @@ var _ = Describe("Test tanzu context command", func() {
 		err             error
 		buf             bytes.Buffer
 	)
+	BeforeEach(func() {
+		tkgConfigFile, err = os.CreateTemp("", "config")
+		Expect(err).To(BeNil())
+		err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
+		Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
+		os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+
+		tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
+		Expect(err).To(BeNil())
+		os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+		err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
+		Expect(err).To(BeNil(), "Error while copying tanzu-ng config file for testing")
+	})
+	AfterEach(func() {
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.RemoveAll(tkgConfigFile.Name())
+		os.RemoveAll(tkgConfigFileNG.Name())
+	})
 
 	Describe("tanzu context list", func() {
 		cmd := &cobra.Command{}
 		BeforeEach(func() {
-			tkgConfigFile, err = os.CreateTemp("", "config")
-			Expect(err).To(BeNil())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
-			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
-
-			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
-			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
-
 			cmd.SetOut(&buf)
 		})
 		AfterEach(func() {
-			os.Unsetenv("TANZU_CONFIG")
-			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-			os.RemoveAll(tkgConfigFile.Name())
-			os.RemoveAll(tkgConfigFileNG.Name())
 			resetContextCommandFlags()
 			buf.Reset()
 		})
@@ -116,25 +119,9 @@ var _ = Describe("Test tanzu context command", func() {
 	Describe("tanzu context get", func() {
 		cmd := &cobra.Command{}
 		BeforeEach(func() {
-			tkgConfigFile, err = os.CreateTemp("", "config")
-			Expect(err).To(BeNil())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
-			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
-
-			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
-			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
-
 			cmd.SetOut(&buf)
 		})
 		AfterEach(func() {
-			os.Unsetenv("TANZU_CONFIG")
-			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-			os.RemoveAll(tkgConfigFile.Name())
-			os.RemoveAll(tkgConfigFileNG.Name())
 			resetContextCommandFlags()
 			buf.Reset()
 		})
@@ -163,25 +150,9 @@ clusterOpts:
 	Describe("tanzu context delete", func() {
 		cmd := &cobra.Command{}
 		BeforeEach(func() {
-			tkgConfigFile, err = os.CreateTemp("", "config")
-			Expect(err).To(BeNil())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
-			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
-
-			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
-			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu-ng config file for testing")
-
 			cmd.SetOut(&buf)
 		})
 		AfterEach(func() {
-			os.Unsetenv("TANZU_CONFIG")
-			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-			os.RemoveAll(tkgConfigFile.Name())
-			os.RemoveAll(tkgConfigFileNG.Name())
 			resetContextCommandFlags()
 			buf.Reset()
 		})
@@ -206,25 +177,9 @@ clusterOpts:
 	Describe("tanzu context use", func() {
 		cmd := &cobra.Command{}
 		BeforeEach(func() {
-			tkgConfigFile, err = os.CreateTemp("", "config")
-			Expect(err).To(BeNil())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
-			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
-
-			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
-			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
-
 			cmd.SetOut(&buf)
 		})
 		AfterEach(func() {
-			os.Unsetenv("TANZU_CONFIG")
-			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-			os.RemoveAll(tkgConfigFile.Name())
-			os.RemoveAll(tkgConfigFileNG.Name())
 			resetContextCommandFlags()
 			buf.Reset()
 		})
@@ -249,25 +204,10 @@ clusterOpts:
 	Describe("tanzu context unset", func() {
 		cmd := &cobra.Command{}
 		BeforeEach(func() {
-			tkgConfigFile, err = os.CreateTemp("", "config")
-			Expect(err).To(BeNil())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
-			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
-
-			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
-			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
 			targetStr = ""
 			cmd.SetOut(&buf)
 		})
 		AfterEach(func() {
-			os.Unsetenv("TANZU_CONFIG")
-			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-			os.RemoveAll(tkgConfigFile.Name())
-			os.RemoveAll(tkgConfigFileNG.Name())
 			resetContextCommandFlags()
 			buf.Reset()
 		})
@@ -379,32 +319,35 @@ var _ = Describe("create new context", func() {
 		fakeTMCEndpoint    = "https://cloud.vmware.com/auth"
 		fakeUCPEndpoint    = "https://fake.api.tanzu.cloud.vmware.com"
 	)
+	var (
+		tkgConfigFile   *os.File
+		tkgConfigFileNG *os.File
+		err             error
+		ctx             *configtypes.Context
+	)
+
+	BeforeEach(func() {
+		tkgConfigFile, err = os.CreateTemp("", "config")
+		Expect(err).To(BeNil())
+		err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
+		Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
+		os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+
+		tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
+		Expect(err).To(BeNil())
+		os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+		err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
+		Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
+	})
+	AfterEach(func() {
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.RemoveAll(tkgConfigFile.Name())
+		os.RemoveAll(tkgConfigFileNG.Name())
+	})
 
 	Describe("create context with kubeconfig", func() {
-		var (
-			tkgConfigFile   *os.File
-			tkgConfigFileNG *os.File
-			err             error
-			ctx             *configtypes.Context
-		)
-		BeforeEach(func() {
-			tkgConfigFile, err = os.CreateTemp("", "config")
-			Expect(err).To(BeNil())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
-			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
-
-			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
-			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
-		})
 		AfterEach(func() {
-			os.Unsetenv("TANZU_CONFIG")
-			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-			os.RemoveAll(tkgConfigFile.Name())
-			os.RemoveAll(tkgConfigFileNG.Name())
 			resetContextCommandFlags()
 		})
 		Context("with only kubecontext provided", func() {
@@ -444,31 +387,7 @@ var _ = Describe("create new context", func() {
 		})
 	})
 	Describe("create context with tmc endpoint", func() {
-		var (
-			tkgConfigFile   *os.File
-			tkgConfigFileNG *os.File
-			err             error
-			ctx             *configtypes.Context
-		)
-
-		BeforeEach(func() {
-			tkgConfigFile, err = os.CreateTemp("", "config")
-			Expect(err).To(BeNil())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), tkgConfigFile.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
-			os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
-
-			tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
-			Expect(err).To(BeNil())
-			os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
-			Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
-		})
 		AfterEach(func() {
-			os.Unsetenv("TANZU_CONFIG")
-			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-			os.RemoveAll(tkgConfigFile.Name())
-			os.RemoveAll(tkgConfigFileNG.Name())
 			resetContextCommandFlags()
 		})
 		Context("with only endpoint and context name provided", func() {
