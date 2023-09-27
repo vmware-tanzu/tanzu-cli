@@ -24,7 +24,7 @@ var (
 	dynamicClientFactoryFake   *fakes.DynamicClientFactory
 	options                    cluster.Options
 	optionsTest                cluster.Options
-	kubeconfiFile              string
+	kubeconfigFile             string
 	clusterClient              cluster.Client
 )
 
@@ -39,7 +39,7 @@ var _ = Describe("New Cluster Client Tests", func() {
 		discoveryClientFactoryFake = &fakes.DiscoveryClientFactory{}
 		dynamicClientFactoryFake = &fakes.DynamicClientFactory{}
 		options = cluster.NewOptions(crtClientFake, discoveryClientFactoryFake, dynamicClientFactoryFake)
-		kubeconfiFile = "../fakes/config/kubeconfig1.yaml"
+		kubeconfigFile = "../fakes/config/kubeconfig1.yaml"
 	})
 	When("kubeconfig and context is valid ", func() {
 		BeforeEach(func() {
@@ -47,7 +47,7 @@ var _ = Describe("New Cluster Client Tests", func() {
 			discoveryClientFactoryFake.ServerVersionReturns(nil, nil)
 		})
 		It("return cluster client", func() {
-			client, err := cluster.NewClient(kubeconfiFile, "federal-context", options)
+			client, err := cluster.NewClient(kubeconfigFile, "foo-context", options)
 			Expect(client).NotTo(BeNil())
 			Expect(err).To(BeNil())
 		})
@@ -61,7 +61,7 @@ var _ = Describe("New Cluster Client Tests", func() {
 			BeforeEach(func() {
 				discoveryClientFactoryFake.NewDiscoveryClientForConfigReturns(&discovery.DiscoveryClient{}, nil)
 				discoveryClientFactoryFake.ServerVersionReturns(nil, nil)
-				clusterClient, _ = cluster.NewClient(kubeconfiFile, "federal-context", options)
+				clusterClient, _ = cluster.NewClient(kubeconfigFile, "foo-context", options)
 				crtClientFake.ListObjectsReturns(nil)
 			})
 			It("return empty plugins and no error", func() {
@@ -74,7 +74,7 @@ var _ = Describe("New Cluster Client Tests", func() {
 			BeforeEach(func() {
 				discoveryClientFactoryFake.NewDiscoveryClientForConfigReturns(&discovery.DiscoveryClient{}, nil)
 				discoveryClientFactoryFake.ServerVersionReturns(nil, nil)
-				clusterClient, _ = cluster.NewClient(kubeconfiFile, "federal-context", options)
+				clusterClient, _ = cluster.NewClient(kubeconfigFile, "foo-context", options)
 				crtClientFake.ListObjectsReturns(nil)
 			})
 			It("return clusterQuery object and no errors", func() {
@@ -87,7 +87,7 @@ var _ = Describe("New Cluster Client Tests", func() {
 			BeforeEach(func() {
 				discoveryClientFactoryFake.NewDiscoveryClientForConfigReturns(&discovery.DiscoveryClient{}, nil)
 				discoveryClientFactoryFake.ServerVersionReturns(nil, nil)
-				clusterClient, _ = cluster.NewClient(kubeconfiFile, "federal-context", options)
+				clusterClient, _ = cluster.NewClient(kubeconfigFile, "foo-context", options)
 				crtClientFake.ListObjectsReturns(nil)
 			})
 			It("return empty map and no error", func() {
@@ -102,10 +102,10 @@ var _ = Describe("New Cluster Client Tests", func() {
 		BeforeEach(func() {
 			discoveryClientFactoryFake.NewDiscoveryClientForConfigReturns(&discovery.DiscoveryClient{}, nil)
 			discoveryClientFactoryFake.ServerVersionReturns(nil, nil)
-			kubeconfiFile = "invalidkubeconfigfile.yaml"
+			kubeconfigFile = "invalidkubeconfigfile.yaml"
 		})
 		It("should return error for NewClient()", func() {
-			client, err := cluster.NewClient(kubeconfiFile, "federal-context", options)
+			client, err := cluster.NewClient(kubeconfigFile, "foo-context", options)
 			Expect(client).To(BeNil())
 			Expect(err.Error()).To(ContainSubstring("Failed to load Kubeconfig file from \"invalidkubeconfigfile.yaml\""))
 		})
