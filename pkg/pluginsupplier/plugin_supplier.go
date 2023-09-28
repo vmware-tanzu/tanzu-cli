@@ -12,6 +12,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // GetInstalledPlugins return the installed plugins( both standalone and server plugins )
@@ -45,6 +46,22 @@ func GetInstalledServerPlugins() ([]cli.PluginInfo, error) {
 		return nil, err
 	}
 	return serverPlugins, nil
+}
+
+// IsStandalonePluginInstalled returns true if standalone plugin is already installed
+func IsStandalonePluginInstalled(name string, target configtypes.Target, version string) bool {
+	// Check if the standalone plugin is already installed, if installed skip the installation of the plugin
+	installedStandalonePlugins, err := GetInstalledStandalonePlugins()
+	if err == nil {
+		for i := range installedStandalonePlugins {
+			if installedStandalonePlugins[i].Name == name &&
+				installedStandalonePlugins[i].Target == target &&
+				installedStandalonePlugins[i].Version == version {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func getInstalledStandaloneAndServerPlugins() (standalonePlugins, serverPlugins []cli.PluginInfo, err error) {

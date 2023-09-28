@@ -662,25 +662,44 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 	return groupIDAndVersion, nil
 }
 
+func logPluginInstallationMessage(p *discovery.Discovered, version string, isPluginInCache, isPluginAlreadyInstalled bool) {
+	withTarget := ""
+	if p.Target != configtypes.TargetUnknown {
+		withTarget = fmt.Sprintf("with target '%v'", p.Target)
+	}
+
+	if isPluginInCache {
+		if !isPluginAlreadyInstalled {
+			log.Infof("Installing plugin '%v:%v' %v (from cache)", p.Name, version, withTarget)
+		} else {
+			log.Infof("Plugin '%v:%v' %v is already installed. Reinitializing...", p.Name, version, withTarget)
+		}
+	} else {
+		log.Infof("Installing plugin '%v:%v' %v", p.Name, version, withTarget)
+	}
+}
+
 func installOrUpgradePlugin(p *discovery.Discovered, version string, installTestPlugin bool) error {
 	// If the version requested was the RecommendedVersion, we should set it explicitly
 	if version == "" || version == cli.VersionLatest {
 		version = p.RecommendedVersion
 	}
 
-	if p.Target == configtypes.TargetUnknown {
-		log.Infof("Installing plugin '%v:%v'", p.Name, version)
-	} else {
-		log.Infof("Installing plugin '%v:%v' with target '%v'", p.Name, version, p.Target)
-	}
-
+	var isPluginAlreadyInstalled bool
 	var plugin *cli.PluginInfo
 	if !installTestPlugin {
 		// If we need to install the test plugin we know we are doing a local
 		// installation.  In that case, we don't use the cache as the binary is
 		// already local to the machine.
 		plugin = getPluginFromCache(p, version)
+		if p.ContextName == "" {
+			isPluginAlreadyInstalled = pluginsupplier.IsStandalonePluginInstalled(p.Name, p.Target, version)
+		}
 	}
+
+	// Log message based on different installation conditions
+	logPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
+
 	if plugin == nil {
 		binary, err := fetchAndVerifyPlugin(p, version)
 		if err != nil {
@@ -691,10 +710,7 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		if err != nil {
 			return err
 		}
-	} else {
-		log.Infof("Plugin binary for '%v:%v' found in cache", p.Name, version)
 	}
-
 	if installTestPlugin {
 		if err := doInstallTestPlugin(p, plugin.InstallationPath, version); err != nil {
 			return err

@@ -226,6 +226,13 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 			Expect(len(installedPlugins)).To(Equal(1))
 			Expect(installedPlugins).Should(ContainElement(*pd1))
 		})
+
+		It("should return correct result for IsStandalonePluginInstalled", func() {
+			isInstalled := IsStandalonePluginInstalled("fake-server-plugin1", types.TargetK8s, "v1.0.0")
+			Expect(isInstalled).To(BeTrue())
+			isInstalled = IsStandalonePluginInstalled("random-plugin", types.TargetK8s, "v1.0.0")
+			Expect(isInstalled).To(BeFalse())
+		})
 	})
 	Context("when a standalone and server plugin for k8s target installed", func() {
 		BeforeEach(func() {
