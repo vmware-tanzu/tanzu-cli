@@ -46,3 +46,25 @@ func MergeKubeConfigWithoutSwitchContext(kubeConfig []byte, mergeFile string) er
 
 	return clientcmd.WriteToFile(*dest, mergeFile)
 }
+
+// SetCurrentContext updates the current context of a kubeconfig file to one of
+// the contexts in said file.
+func SetCurrentContext(kubeConfigPath, contextName string) error {
+	config, err := clientcmd.LoadFromFile(kubeConfigPath)
+	if err != nil {
+		return errors.Wrap(err, "unable to load kubeconfig")
+	}
+
+	if contextName == "" {
+		return errors.New("context is not provided")
+	}
+
+	for name := range config.Contexts {
+		if name == contextName {
+			config.CurrentContext = contextName
+			return clientcmd.WriteToFile(*config, kubeConfigPath)
+		}
+	}
+
+	return errors.Errorf("context %q does not exist", contextName)
+}

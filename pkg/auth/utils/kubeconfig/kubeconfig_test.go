@@ -33,11 +33,12 @@ var _ = Describe("Unit tests for kubeconfig use cases", func() {
 			kubeconfigFilePath = "../../../fakes/config/kubeconfig1.yaml"
 			kubeconfigFilePath2 = "../../../fakes/config/kubeconfig2.yaml"
 			kubeconfigFilePath3 = "../../../fakes/config/kubeconfig3_temp_rnhwe.yaml"
+			validateKubeconfig(kubeconfigFilePath, 2, "foo-context")
+			validateKubeconfig(kubeconfigFilePath2, 1, "baz-context")
 			deleteTempFile(kubeconfigFilePath3)
 		})
 		It("should merge with existing kubeconf file without switching context", func() {
 			copyFile(kubeconfigFilePath2, kubeconfigFilePath3)
-			validateKubeconfig(kubeconfigFilePath, 2, "foo-context")
 			validateKubeconfig(kubeconfigFilePath3, 1, "baz-context")
 			kubeconfFileContent, _ := os.ReadFile(kubeconfigFilePath)
 			err := MergeKubeConfigWithoutSwitchContext(kubeconfFileContent, kubeconfigFilePath3)
@@ -54,7 +55,51 @@ var _ = Describe("Unit tests for kubeconfig use cases", func() {
 			defKubeConf := GetDefaultKubeConfigFile()
 			Expect(defKubeConf).ToNot(BeNil())
 		})
+
+		Context("Setting current context", func() {
+			Context("when context is not present in kubeconfig file", func() {
+				It("should fail", func() {
+					copyFile(kubeconfigFilePath, kubeconfigFilePath3)
+					validateKubeconfig(kubeconfigFilePath3, 2, "foo-context")
+					err := SetCurrentContext(kubeconfigFilePath3, "MISSING-context")
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(ContainSubstring("context \"MISSING-context\" does not exist"))
+					validateKubeconfig(kubeconfigFilePath3, 2, "foo-context")
+				})
+			})
+
+			Context("when context is not provided", func() {
+				It("should fail", func() {
+					copyFile(kubeconfigFilePath, kubeconfigFilePath3)
+					validateKubeconfig(kubeconfigFilePath3, 2, "foo-context")
+					err := SetCurrentContext(kubeconfigFilePath3, "")
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(ContainSubstring("context is not provided"))
+					validateKubeconfig(kubeconfigFilePath3, 2, "foo-context")
+				})
+			})
+
+			Context("when kubeconfig is not loadable", func() {
+				It("should fail", func() {
+					err := SetCurrentContext("MISSING-file", "bar-context")
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(ContainSubstring("unable to load kubeconfig:"))
+				})
+			})
+
+			Context("when context is present in kubeconfig file", func() {
+				It("should update current context to it", func() {
+					copyFile(kubeconfigFilePath, kubeconfigFilePath3)
+					validateKubeconfig(kubeconfigFilePath3, 2, "foo-context")
+					err := SetCurrentContext(kubeconfigFilePath3, "bar-context")
+					Expect(err).To(BeNil())
+					validateKubeconfig(kubeconfigFilePath3, 2, "bar-context")
+				})
+			})
+
+		})
 	})
+
 })
 
 func validateKubeconfig(kubeconfigFile string, numContexts int, currentContext string) {

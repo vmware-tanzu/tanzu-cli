@@ -1,0 +1,79 @@
+apiVersion: config.tanzu.vmware.com/v1alpha1
+clientOptions:
+  cli:
+    bomRepo: projects.registry.vmware.com/tkg
+    compatibilityFilePath: tkg-compatibility
+    discoverySources:
+      - local:
+          name: default-local
+          path: standalone
+      - local:
+          name: admin-local
+          path: admin
+    edition: tkg
+  features:
+    cluster:
+      custom-nameservers: 'false'
+      dual-stack-ipv4-primary: 'false'
+      dual-stack-ipv6-primary: 'false'
+    global:
+      context-target-v2: 'true'
+      tkr-version-v1alpha3-beta: 'false'
+    management-cluster:
+      aws-instance-types-exclude-arm: 'true'
+      custom-nameservers: 'false'
+      dual-stack-ipv4-primary: 'false'
+      dual-stack-ipv6-primary: 'false'
+      export-from-confirm: 'true'
+      import: 'false'
+      standalone-cluster-mode: 'false'
+    package:
+      kctrl-package-command-tree: 'true'
+kind: ClientConfig
+metadata:
+  creationTimestamp: null
+servers:
+  - name: test-mc
+    type: managementcluster
+    managementClusterOpts:
+      endpoint: test-endpoint
+      path: test-path
+      context: test-mc-context
+    discoverySources:
+      - gcp:
+          name: test
+          bucket: test-bucket
+          manifestPath: test-manifest-path
+  - name: test-tmc-context
+    type: global
+    globalOpts:
+      endpoint: test-endpoint2
+      auth:
+        IDToken: test-id-token
+        accessToken: test-access-token
+        type: api-token
+        userName: test-user-name
+        refresh_token: test-refresh-token
+  - name: test-use-context
+    type: global
+    globalOpts:
+      endpoint: test-endpoint3
+      auth:
+        IDToken: test-id-token2
+        accessToken: test-access-token2
+        type: api-token2
+        userName: test-user-name2
+        refresh_token: test-refresh-token2
+  - name: test-use-context-with-invalid-kubecontext
+    type: managementcluster
+    managementClusterOpts:
+      endpoint: test-endpoint
+      path: %s
+      context: MISSING-context-name
+  - name: test-use-context-with-valid-kubecontext
+    type: managementcluster
+    managementClusterOpts:
+      endpoint: test-endpoint
+      path: %s
+      context: %s
+current: test-mc
