@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,8 +31,10 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
 	ucpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/ucp"
+	kubecfg "github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig"
 	wcpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 )
 
@@ -839,6 +842,9 @@ var useCtxCmd = &cobra.Command{
 
 func useCtx(_ *cobra.Command, args []string) error {
 	var name string
+	var ctx *configtypes.Context
+	var err error
+
 	if len(args) == 0 {
 		ctx, err := promptCtx()
 		if err != nil {
@@ -849,7 +855,21 @@ func useCtx(_ *cobra.Command, args []string) error {
 		name = args[0]
 	}
 
-	err := config.SetCurrentContext(name)
+	ctx, err = config.GetContext(name)
+	if err != nil {
+		return err
+	}
+
+	if ctx.ClusterOpts != nil {
+		if skipSync, _ := strconv.ParseBool(os.Getenv(constants.SkipUpdateKubeconfigOnContextUse)); !skipSync {
+			err = syncCurrentKubeContext(ctx)
+			if err != nil {
+				return errors.Wrap(err, "unable to update current kube context")
+			}
+		}
+	}
+
+	err = config.SetCurrentContext(name)
 	if err != nil {
 		return err
 	}
@@ -858,6 +878,10 @@ func useCtx(_ *cobra.Command, args []string) error {
 	_ = syncContextPlugins()
 
 	return nil
+}
+
+func syncCurrentKubeContext(ctx *configtypes.Context) error {
+	return kubecfg.SetCurrentContext(ctx.ClusterOpts.Path, ctx.ClusterOpts.Context)
 }
 
 var unsetCtxCmd = &cobra.Command{
