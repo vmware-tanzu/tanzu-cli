@@ -258,6 +258,90 @@ above by running the following before any other CLI commands:
 - `tanzu config eula accept` to accept the EULA.
 - To set the CEIP participation status for automation, the environment variable `TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER` can be set to `No` or `Yes`.
 
+### Essentials plugin group
+
+Introducing a plugin group named `vmware-tanzucli/essentials`, which includes all the necessary prerequisite plugins for the tanzu cli experience.
+The initial offering of `vmware-tanzucli/essentials` will include the “telemetry” plugin but the list could grow in the future.
+
+Essential plugins will be installed on the system to enhance the overall tanzu CLI experience.
+For instance, the Telemetry plugin should be consistently installed to enable the collection and transmission of telemetry data.
+
+Essentials plugins installed when user accepts EULA
+
+```shell
+> tanzu plugin list
+
+? You must agree to the VMware General Terms in order to download, install, or
+use software from this registry via Tanzu CLI. Acceptance of the VMware General
+Terms covers all software installed via the Tanzu CLI during any Session.
+“Session” means the period from acceptance until any of the following occurs:
+(1) a change to VMware General Terms, (2) a new major release of the Tanzu CLI
+is installed, (3) software is accessed in a separate software distribution
+registry, or (4) re-acceptance of the General Terms is prompted by VMware.
+
+To view the VMware General Terms, please see https://www.vmware.com/vmware-general-terms.html
+
+If you agree, the essentials plugins will be installed that is necessary for tanzu cli experience
+
+Do you agree to the VMware General Terms?
+ > Yes
+
+[i] The tanzu cli essential plugins have not been installed and are being installed now. The install may take a few seconds.
+
+Standalone Plugins
+  NAME       DESCRIPTION              TARGET  VERSION  STATUS
+  telemetry  telemetry functionality  global  v1.1.0   installed
+```
+
+With each update of this essential plugin (or any future one added to the group), a new version of this plugin group will be released.
+
+By default, the CLI will try to install the most recent version of the essential plugin group.
+
+Essentials plugins being updated when a new version of plugin is available
+
+```shell
+
+> tanzu plugin list
+[i] The tanzu cli essential plugins are outdated and are being updated now. The update may take a few seconds.
+
+Standalone Plugins
+  NAME       DESCRIPTION              TARGET  VERSION  STATUS
+  telemetry  telemetry functionality  global  v1.1.0   installed
+```
+
+However, it also allows for the installation of specific versions of the essential plugin group through the environment variable
+
+``` shell
+export TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_VERSION=v0.0.2
+```
+
+Essential plugin group name can be customized using an env variable
+
+``` shell
+export TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_NAME=vmware-tanzucli/essentials
+```
+
+When the Tanzu CLI binary is executed it will automatically install or update the essential plugin group, if required.
+If a specific version is specified using env `TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_VERSION` only specified version will be installed without upgrading to the latest version.
+
+```shell
+export TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_VERSION=v0.0.1
+```
+
+To manually install the essentials plugin group.
+
+To install latest version
+
+```shell
+tanzu plugin install all -–group vmware-tanzucli/essentials
+```
+
+To install specific version
+
+```shell
+tanzu plugin install all -–group vmware-tanzucli/essentials:v1.0.0
+```
+
 ## Installing and using the Tanzu CLI in internet-restricted environments
 
 ### Installing the Tanzu CLI
