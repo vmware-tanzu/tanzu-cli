@@ -148,7 +148,8 @@ func (b *sqliteMetricsDB) GetRowCount() (int, error) {
 	defer db.Close()
 
 	dbQuery := cliOperationMetricRowClause
-	rows, err := db.Query(dbQuery)
+	rows, err := db.Query(dbQuery) //nolint:rowserrcheck // rows.Err must be checked (rowserrcheck)
+
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to execute the DB query : %v", dbQuery)
 	}
@@ -161,7 +162,7 @@ func (b *sqliteMetricsDB) GetRowCount() (int, error) {
 }
 func isDBRowCountThresholdReached(db *sql.DB) (bool, error) {
 	dbQuery := cliOperationMetricRowClause
-	rows, err := db.Query(dbQuery)
+	rows, err := db.Query(dbQuery) //nolint:rowserrcheck // rows.Err must be checked (rowserrcheck)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to execute the DB query : %v", dbQuery)
 	}

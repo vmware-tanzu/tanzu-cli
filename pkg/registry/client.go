@@ -104,7 +104,7 @@ func getFilesFromLayer(imgLayer regv1.Layer) (map[string][]byte, error) {
 			}
 			return files, err
 		}
-		if hdr.Typeflag == tar.TypeReg || hdr.Typeflag == tar.TypeRegA {
+		if hdr.Typeflag == tar.TypeReg || hdr.Typeflag == tar.TypeRegA { //nolint:staticcheck //SA1019: tar.TypeRegA has been deprecated since Go 1.11 and an alternative has been available since Go 1.1: Use TypeReg instead. (staticcheck)
 			buf, err := io.ReadAll(tarReader)
 			if err != nil {
 				return files, err

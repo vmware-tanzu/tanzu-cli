@@ -96,6 +96,7 @@ func runLocalListener() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/callback", callbackHandler)
 	tokenExchange, tokenExchangeComplete = context.WithCancel(context.TODO())
+	//nolint:gosec //G112: Potential Slowloris Attack because ReadHeaderTimeout is not configured in the http.Server (gosec)
 	l := http.Server{
 		Addr:    "",
 		Handler: mux,

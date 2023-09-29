@@ -60,7 +60,7 @@ func GetClusterInfoFromCluster(clusterAPIServerURL, configmapName, endpointCACer
 
 	clusterAPIServerURL = strings.TrimRight(clusterAPIServerURL, " /")
 	clusterInfoURL := clusterAPIServerURL + fmt.Sprintf("/api/v1/namespaces/%s/configmaps/%s", KubePublicNamespace, configmapName)
-	req, _ := http.NewRequest("GET", clusterInfoURL, http.NoBody)
+	req, _ := http.NewRequest("GET", clusterInfoURL, http.NoBody) //nolint:noctx //should rewrite http.NewRequestWithContext or add (*Request).WithContext (noctx)
 
 	tlsConfig, err := GetTLSConfig(endpointCACertPath, skipTLSVerify)
 	if err != nil {
@@ -126,7 +126,7 @@ func GetPinnipedInfoFromCluster(clusterInfo *clientcmdapi.Cluster, discoveryPort
 		}
 	}
 	pinnipedInfoURL := endpoint + fmt.Sprintf("/api/v1/namespaces/%s/configmaps/pinniped-info", KubePublicNamespace)
-	req, _ := http.NewRequest("GET", pinnipedInfoURL, http.NoBody)
+	req, _ := http.NewRequest("GET", pinnipedInfoURL, http.NoBody) //nolint:noctx //should rewrite http.NewRequestWithContext or add (*Request).WithContext (noctx)
 	pool := x509.NewCertPool()
 	pool.AppendCertsFromPEM(clusterInfo.CertificateAuthorityData)
 	clusterClient := &http.Client{
@@ -187,7 +187,7 @@ func GetTLSConfig(caCertPath string, skipTLSVerify bool) (*tls.Config, error) {
 	return &tls.Config{
 		RootCAs:    pool,
 		MinVersion: tls.VersionTLS12,
-		// nolint:gosec
+		//nolint:gosec
 		// skipTLSVerify: true is only possible if the user has explicitly enabled insecure-skip-tls-verify.
 		InsecureSkipVerify: skipTLSVerify,
 	}, nil
