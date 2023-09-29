@@ -96,7 +96,7 @@ func NewFramework() *Framework {
 
 func init() {
 	OriginalHomeDir = GetHomeDir()
-	TestDirPath = filepath.Join(OriginalHomeDir)
+	TestDirPath = filepath.Join(OriginalHomeDir, TestDir)
 	FullPathForTempDir = filepath.Join(TestDirPath, TempDirInTestDirPath)
 	// Update $HOME as $HOME/.tanzu-cli-e2e
 	os.Setenv("HOME", TestDirPath)

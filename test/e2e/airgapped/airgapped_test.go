@@ -33,6 +33,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			defer func() {
 				os.Setenv("HOME", curHomeDir)
 			}()
+			// We are resetting the HOME environment variable for this specific tests as when we do docker login we need to have actually HOME variable set correctly
+			// otherwise the docker login fails with different errors on different systems (on macos we see keychain specific error)
+			// We are also using above defer function to revert the HOME environment variable after this test is ran
 			os.Setenv("HOME", framework.OriginalHomeDir)
 
 			// Try uploading plugin bundle without docker login, it should fail
