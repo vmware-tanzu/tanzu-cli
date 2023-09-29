@@ -31,6 +31,24 @@ contexts:
         type: api-token2
         userName: test-user-name2
         refresh_token: test-refresh-token2
+  - name: test-ucp-context
+    target: ucp
+    globalOpts:
+      endpoint: ucp-endpoint
+      auth:
+        IDToken: test-id-token
+        accessToken: test-access-token
+        type: api-token
+        userName: test-user-name
+        refresh_token: test-refresh-token
+    clusterOpts:
+      isManagementCluster: false
+      endpoint: kube-endpoint
+      path: dummy/path
+      context: dummy-context
+    additionalMetadata:
+      ucpProjectName: dummyP
+      ucpOrgID: dummyO
 currentContext:
   kubernetes: test-mc
   mission-control: test-tmc-context

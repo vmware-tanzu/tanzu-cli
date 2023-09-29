@@ -61,7 +61,7 @@ const (
 	contextForTargetSetInactive    = "The context %v for the target %v has been set as inactive"
 	deactivatingPlugin             = "Deactivating plugin '%v:%v' for context '%v'"
 
-	invalidTarget = "invalid target specified. Please specify a correct value for the `--target/-t` flag from 'kubernetes[k8s]/mission-control[tmc]"
+	invalidTarget = "invalid target specified. Please specify a correct value for the `--target/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[ucp]"
 )
 
 // constants that define context creation types
@@ -96,7 +96,7 @@ func init() {
 
 	initCreateCtxCmd()
 
-	listCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc])")
+	listCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc]/application-engine[ucp])")
 	listCtxCmd.Flags().BoolVar(&onlyCurrent, "current", false, "list only current active contexts")
 	listCtxCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "output format: table|yaml|json")
 
@@ -104,7 +104,7 @@ func init() {
 
 	deleteCtxCmd.Flags().BoolVarP(&unattended, "yes", "y", false, "delete the context entry without confirmation")
 
-	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc])")
+	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc]|application-engine[ucp])")
 }
 
 var createCtxCmd = &cobra.Command{
@@ -978,7 +978,7 @@ func listDeactivatedPlugins(deactivatedPlugins []discovery.Discovered, ctxName s
 func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.Writer) {
 	target := getTarget()
 
-	op := component.NewOutputWriter(writer, outputFormat, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext")
+	op := component.NewOutputWriter(writer, outputFormat, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext", "AdditionalMetadata")
 	for _, ctx := range cfg.KnownContexts {
 		if target != configtypes.TargetUnknown && ctx.Target != target {
 			continue
@@ -1000,16 +1000,18 @@ func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.W
 				context = ctx.ClusterOpts.Context
 			}
 		}
-		op.AddRow(ctx.Name, ctx.Target, isMgmtCluster, isCurrent, ep, path, context)
+
+		op.AddRow(ctx.Name, ctx.Target, strconv.FormatBool(isMgmtCluster), strconv.FormatBool(isCurrent), ep, path, context, ctx.AdditionalMetadata)
 	}
 	op.Render()
 }
 
-func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writer io.Writer) {
-	target := getTarget()
+// getContextsToDisplay returns a filtered list of contexts, and a boolean on
+// whether the contexts include some with UCP fields to display
+func getContextsToDisplay(cfg *configtypes.ClientConfig, target configtypes.Target, onlyCurrent bool) ([]*configtypes.Context, bool) {
+	var contextOutputList []*configtypes.Context
+	var hasUCPFields bool
 
-	outputWriterK8sTarget := component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Endpoint", "KubeConfigPath", "KubeContext")
-	outputWriterTMCTarget := component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Endpoint")
 	for _, ctx := range cfg.KnownContexts {
 		if target != configtypes.TargetUnknown && ctx.Target != target {
 			continue
@@ -1018,8 +1020,33 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 		if onlyCurrent && !isCurrent {
 			continue
 		}
+		// could be fine-tuned to check for non-empty values as well
+		if ctx.Target == configtypes.TargetUCP {
+			hasUCPFields = true
+		}
+		contextOutputList = append(contextOutputList, ctx)
+	}
+	return contextOutputList, hasUCPFields
+}
 
+func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writer io.Writer) {
+	var k8sContextTable component.OutputWriter
+	target := getTarget()
+
+	ctxs, showUCPColumns := getContextsToDisplay(cfg, target, onlyCurrent)
+
+	if showUCPColumns {
+		k8sContextTable = component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Type", "Endpoint", "KubeConfigPath", "KubeContext", "Project", "Space")
+	} else {
+		k8sContextTable = component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Type", "Endpoint", "KubeConfigPath", "KubeContext")
+	}
+	outputWriterTMCTarget := component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Endpoint")
+	for _, ctx := range ctxs {
 		var ep, path, context string
+		var project, space string
+
+		isCurrent := ctx.Name == cfg.CurrentContext[ctx.Target]
+
 		switch ctx.Target {
 		case configtypes.TargetTMC:
 			if ctx.GlobalOpts != nil {
@@ -1033,16 +1060,30 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 				path = ctx.ClusterOpts.Path
 				context = ctx.ClusterOpts.Context
 			}
+			contextType := "cluster"
+			if ctx.Target == configtypes.TargetUCP {
+				contextType = "TAE"
+			}
 
-			outputWriterK8sTarget.AddRow(ctx.Name, isCurrent, ep, path, context)
+			if showUCPColumns {
+				if ctx.AdditionalMetadata["ucpProjectName"] != nil {
+					project = ctx.AdditionalMetadata["ucpProjectName"].(string)
+				}
+				if ctx.AdditionalMetadata["ucpSpaceName"] != nil {
+					space = ctx.AdditionalMetadata["ucpSpaceName"].(string)
+				}
+				k8sContextTable.AddRow(ctx.Name, isCurrent, contextType, ep, path, context, project, space)
+			} else {
+				k8sContextTable.AddRow(ctx.Name, isCurrent, contextType, ep, path, context)
+			}
 		}
 	}
 
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
-	if target == configtypes.TargetUnknown || target == configtypes.TargetK8s {
+	if target == configtypes.TargetUnknown || target == configtypes.TargetK8s || target == configtypes.TargetUCP {
 		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", configtypes.TargetK8s))
-		outputWriterK8sTarget.Render()
+		k8sContextTable.Render()
 	}
 	if target == configtypes.TargetUnknown || target == configtypes.TargetTMC {
 		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", configtypes.TargetTMC))
