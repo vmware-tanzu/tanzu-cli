@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -38,6 +39,7 @@ const (
 	testUseContextWithValidKubeContext   = "test-use-context-with-valid-kubecontext"
 	testUseContextWithInvalidKubeContext = "test-use-context-with-invalid-kubecontext"
 	jsonStr                              = "json"
+	yamlStr                              = "yaml"
 	testmc                               = "test-mc"
 	targetK8s                            = "k8s"
 	targetMissionControl                 = "mission-control"
@@ -89,7 +91,7 @@ var _ = Describe("Test tanzu context command", func() {
 			os.RemoveAll(tkgConfigFileNG.Name())
 			err = listCtx(cmd, nil)
 			Expect(err).To(BeNil())
-			Expect(buf.String()).To(Equal("  NAME  ISACTIVE  ENDPOINT  KUBECONFIGPATH  KUBECONTEXT  \n"))
+			Expect(buf.String()).To(Equal("  NAME  ISACTIVE  TYPE  ENDPOINT  KUBECONFIGPATH  KUBECONTEXT  \n"))
 
 			buf.Reset()
 			targetStr = "tmc"
@@ -102,24 +104,108 @@ var _ = Describe("Test tanzu context command", func() {
 			targetStr = targetK8s
 			err = listCtx(cmd, nil)
 			Expect(err).To(BeNil())
-			Expect(buf.String()).To(ContainSubstring("test-mc  true      test-endpoint  test-path       test-mc-context"))
+			Expect(buf.String()).To(ContainSubstring("test-mc  true      cluster  test-endpoint  test-path       test-mc-context"))
 			Expect(buf.String()).ToNot(ContainSubstring("test-tmc-context"))
 			Expect(buf.String()).ToNot(ContainSubstring(testUseContext))
 
 		})
 		It("should return contexts in yaml format if tanzu config file has contexts available", func() {
 			targetStr = targetK8s
-			outputFormat = "yaml"
+			outputFormat = yamlStr
 			err = listCtx(cmd, nil)
 			Expect(err).To(BeNil())
-			expectedYaml := `- endpoint: test-endpoint
+			expectedYaml := `
+- additionalmetadata: {}
+  endpoint: test-endpoint
   iscurrent: "true"
   ismanagementcluster: "true"
   kubeconfigpath: test-path
   kubecontext: test-mc-context
   name: test-mc
   type: kubernetes`
-			Expect(buf.String()).To(ContainSubstring(expectedYaml))
+			Expect(buf.String()).To(ContainSubstring(expectedYaml[1:]))
+			Expect(buf.String()).ToNot(ContainSubstring("test-tmc-context"))
+			Expect(buf.String()).ToNot(ContainSubstring(testUseContext))
+		})
+
+		It("should return with UCP related columns", func() {
+			buf.Reset()
+			targetStr = targetUCP
+			err = listCtx(cmd, nil)
+			lines := strings.Split(buf.String(), "\n")
+			columnsString := strings.Join(strings.Fields(lines[0]), " ")
+
+			Expect(err).To(BeNil())
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE"))
+		})
+
+		It("should return with UCP related columns when listing all contexts", func() {
+			buf.Reset()
+			targetStr = ""
+			err = listCtx(cmd, nil)
+			lines := strings.Split(buf.String(), "\n")
+			columnsString := strings.Join(strings.Fields(lines[0]), " ")
+
+			Expect(err).To(BeNil())
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE"))
+		})
+
+		It("should not return UCP related columns when not listing UCP contexts", func() {
+			buf.Reset()
+			targetStr = targetK8s
+			err = listCtx(cmd, nil)
+			lines := strings.Split(buf.String(), "\n")
+			columnsString := strings.Join(strings.Fields(lines[0]), " ")
+
+			Expect(err).To(BeNil())
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT"))
+		})
+
+		It("should return UCP contexts in yaml format if tanzu config file has UCP contexts", func() {
+			targetStr = targetUCP
+			outputFormat = yamlStr
+			err = listCtx(cmd, nil)
+			Expect(err).To(BeNil())
+			// leading space, added for readability, to be trimmed on compare
+			expectedYaml := `
+- additionalmetadata:
+    ucpOrgID: dummyO
+    ucpProjectName: dummyP
+  endpoint: kube-endpoint
+  iscurrent: "false"
+  ismanagementcluster: "false"
+  kubeconfigpath: dummy/path
+  kubecontext: dummy-context
+  name: test-ucp-context
+  type: ucp`
+			Expect(buf.String()).To(ContainSubstring(expectedYaml[1:]))
+			Expect(buf.String()).ToNot(ContainSubstring("test-tmc-context"))
+			Expect(buf.String()).ToNot(ContainSubstring(testUseContext))
+		})
+
+		It("should return UCP contexts in JSON format if tanzu config file has UCP contexts", func() {
+			targetStr = targetUCP
+			outputFormat = jsonStr
+			err = listCtx(cmd, nil)
+			Expect(err).To(BeNil())
+			// leading space, added for readability, to be trimmed on compare
+			expectedYaml := `
+[
+  {
+    "additionalmetadata": {
+      "ucpOrgID": "dummyO",
+      "ucpProjectName": "dummyP"
+    },
+    "endpoint": "kube-endpoint",
+    "iscurrent": "false",
+    "ismanagementcluster": "false",
+    "kubeconfigpath": "dummy/path",
+    "kubecontext": "dummy-context",
+    "name": "test-ucp-context",
+    "type": "ucp"
+  }
+]`
+			Expect(buf.String()).To(ContainSubstring(expectedYaml[1:]))
 			Expect(buf.String()).ToNot(ContainSubstring("test-tmc-context"))
 			Expect(buf.String()).ToNot(ContainSubstring(testUseContext))
 		})
@@ -144,14 +230,16 @@ var _ = Describe("Test tanzu context command", func() {
 		It("should return contexts if tanzu config file has contexts available", func() {
 			err = getCtx(cmd, []string{existingContext})
 			Expect(err).To(BeNil())
-			expectedYaml := `name: test-mc
+			// leading space, added for readability, to be trimmed on compare
+			expectedYaml := `
+name: test-mc
 target: kubernetes
 clusterOpts:
     endpoint: test-endpoint
     path: test-path
     context: test-mc-context
     isManagementCluster: true`
-			Expect(buf.String()).To(ContainSubstring(expectedYaml))
+			Expect(buf.String()).To(ContainSubstring(expectedYaml[1:]))
 		})
 
 	})
@@ -263,6 +351,7 @@ clusterOpts:
 			os.Unsetenv(constants.SkipUpdateKubeconfigOnContextUse)
 		})
 	})
+
 	Describe("tanzu context get-token", func() {
 		const (
 			fakeContextName = "fake-context"
@@ -363,7 +452,7 @@ clusterOpts:
 					Context:  "tanzu-cli-myucp",
 				},
 				AdditionalMetadata: map[string]interface{}{
-					ucprt.OrgID: "test-org-id",
+					ucprt.OrgIDKey: "test-org-id",
 				},
 			}
 		})
@@ -414,8 +503,8 @@ clusterOpts:
 
 			ctx, err := config.GetContext(testContextName)
 			Expect(err).To(BeNil())
-			Expect(ctx.AdditionalMetadata[UCPProjectName]).To(Equal(testProject))
-			Expect(ctx.AdditionalMetadata[UCPSpaceName]).To(BeEmpty())
+			Expect(ctx.AdditionalMetadata[ucprt.ProjectNameKey]).To(Equal(testProject))
+			Expect(ctx.AdditionalMetadata[ucprt.SpaceNameKey]).To(BeEmpty())
 			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
 			Expect(err).To(BeNil())
 			Expect(kubeconfig.Clusters["tanzu-cli-myucp/current"].Server).To(Equal(ucpContext.ClusterOpts.Endpoint + "/project/" + testProject))
@@ -431,8 +520,8 @@ clusterOpts:
 
 			ctx, err := config.GetContext(testContextName)
 			Expect(err).To(BeNil())
-			Expect(ctx.AdditionalMetadata[UCPProjectName]).To(Equal(testProject))
-			Expect(ctx.AdditionalMetadata[UCPSpaceName]).To(Equal(testSpace))
+			Expect(ctx.AdditionalMetadata[ucprt.ProjectNameKey]).To(Equal(testProject))
+			Expect(ctx.AdditionalMetadata[ucprt.SpaceNameKey]).To(Equal(testSpace))
 			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
 			Expect(err).To(BeNil())
 			Expect(kubeconfig.Clusters["tanzu-cli-myucp/current"].Server).To(Equal(ucpContext.ClusterOpts.Endpoint + "/project/" + testProject + "/space/" + testSpace))
@@ -509,7 +598,7 @@ clusterOpts:
 		// correct context name and target, for k8s target, make sure context set inactive
 		It("should not return error and context should set inactive", func() {
 			name = "test-mc"
-			targetStr = "k8s"
+			targetStr = targetK8s
 			err = unsetCtx(cmd, []string{name})
 			Expect(err).To(BeNil())
 			outputFormat = jsonStr
@@ -666,7 +755,7 @@ var _ = Describe("create new context", func() {
 			tlsServer.Close()
 		})
 
-		Describe("create context with ucp endpoint", func() {
+		Describe("create ucp context", func() {
 			var (
 				tkgConfigFile   *os.File
 				tkgConfigFileNG *os.File
@@ -729,4 +818,6 @@ func resetContextCommandFlags() {
 	endpointCACertPath = ""
 	projectStr = ""
 	spaceStr = ""
+	targetStr = ""
+	outputFormat = ""
 }
