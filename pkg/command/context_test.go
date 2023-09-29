@@ -24,6 +24,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	ucprt "github.com/vmware-tanzu/tanzu-plugin-runtime/ucp"
 )
 
 func TestCliCmdSuite(t *testing.T) {
@@ -41,6 +42,10 @@ const (
 	targetK8s                            = "k8s"
 	targetMissionControl                 = "mission-control"
 	targetUCP                            = "ucp"
+	testContextName                      = "test-context"
+	testEndpoint                         = "test.ucp.cloud.vmware.com"
+	testProject                          = "test-project"
+	testSpace                            = "test-space"
 )
 
 var _ = Describe("Test tanzu context command", func() {
@@ -329,6 +334,108 @@ clusterOpts:
 			Expect(execCredential.Status.Token).To(Equal(fakeAccessToken))
 			expectedTime := metav1.NewTime(ucpContext.GlobalOpts.Auth.Expiration).Rfc3339Copy()
 			Expect(execCredential.Status.ExpirationTimestamp.Equal(&expectedTime)).To(BeTrue())
+		})
+	})
+	Describe("tanzu context update ucp-active-resource", func() {
+		var (
+			kubeconfigFilePath *os.File
+			err                error
+		)
+		ucpContext := &configtypes.Context{}
+		cmd := &cobra.Command{}
+
+		BeforeEach(func() {
+			testKubeconfigFilePath := "../fakes/config/kubeconfig1.yaml"
+			kubeconfigFilePath, err = os.CreateTemp("", "config")
+			Expect(err).To(BeNil())
+			err = copy.Copy(testKubeconfigFilePath, kubeconfigFilePath.Name())
+			Expect(err).To(BeNil())
+
+			ucpContext = &configtypes.Context{
+				Name:   testContextName,
+				Target: configtypes.TargetUCP,
+				GlobalOpts: &configtypes.GlobalServer{
+					Endpoint: testEndpoint,
+				},
+				ClusterOpts: &configtypes.ClusterServer{
+					Endpoint: "https://api.tanzu.cloud.vmware.com:443/org/test-org-id",
+					Path:     kubeconfigFilePath.Name(),
+					Context:  "tanzu-cli-myucp",
+				},
+				AdditionalMetadata: map[string]interface{}{
+					ucprt.OrgID: "test-org-id",
+				},
+			}
+		})
+		AfterEach(func() {
+			resetContextCommandFlags()
+			os.Unsetenv("KUBECONFIG")
+			os.RemoveAll(kubeconfigFilePath.Name())
+		})
+		It("should return error if the context to be updated doesn't exist", func() {
+			// set the context in the config
+			err = config.SetContext(ucpContext, false)
+			Expect(err).To(BeNil())
+
+			err = setUCPCtxActiveResource(cmd, []string{"non-existing-context"})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("context non-existing-context not found"))
+
+		})
+		It("should return error if the context type is not UCP", func() {
+			ucpContext.Target = configtypes.TargetK8s
+			err = config.SetContext(ucpContext, false)
+			Expect(err).To(BeNil())
+
+			err = setUCPCtxActiveResource(cmd, []string{testContextName})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring(`context "test-context" is not of type UCP`))
+
+		})
+		It("should return error if user tries to set space as active resource without providing project name", func() {
+			err = config.SetContext(ucpContext, false)
+			Expect(err).To(BeNil())
+
+			projectStr = ""
+			spaceStr = testSpace
+			err = setUCPCtxActiveResource(cmd, []string{testContextName})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("space cannot be set without project name. Please provide project name also using --project option"))
+		})
+		It("should update the UCP context active resource to project given project name and also update the kubeconfig cluster URL accordingly", func() {
+			ucpContext.GlobalOpts.Auth.Expiration = time.Now().Add(-time.Hour)
+
+			err = config.SetContext(ucpContext, false)
+			Expect(err).To(BeNil())
+
+			projectStr = testProject
+			err = setUCPCtxActiveResource(cmd, []string{testContextName})
+			Expect(err).To(BeNil())
+
+			ctx, err := config.GetContext(testContextName)
+			Expect(err).To(BeNil())
+			Expect(ctx.AdditionalMetadata[UCPProjectName]).To(Equal(testProject))
+			Expect(ctx.AdditionalMetadata[UCPSpaceName]).To(BeEmpty())
+			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
+			Expect(err).To(BeNil())
+			Expect(kubeconfig.Clusters["tanzu-cli-myucp/current"].Server).To(Equal(ucpContext.ClusterOpts.Endpoint + "/project/" + testProject))
+		})
+		It("should update the UCP context active resource to space given project and space names and also update the kubeconfig cluster URL accordingly", func() {
+			err = config.SetContext(ucpContext, false)
+			Expect(err).To(BeNil())
+
+			projectStr = testProject
+			spaceStr = testSpace
+			err = setUCPCtxActiveResource(cmd, []string{testContextName})
+			Expect(err).To(BeNil())
+
+			ctx, err := config.GetContext(testContextName)
+			Expect(err).To(BeNil())
+			Expect(ctx.AdditionalMetadata[UCPProjectName]).To(Equal(testProject))
+			Expect(ctx.AdditionalMetadata[UCPSpaceName]).To(Equal(testSpace))
+			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
+			Expect(err).To(BeNil())
+			Expect(kubeconfig.Clusters["tanzu-cli-myucp/current"].Server).To(Equal(ucpContext.ClusterOpts.Endpoint + "/project/" + testProject + "/space/" + testSpace))
 		})
 	})
 
@@ -620,4 +727,6 @@ func resetContextCommandFlags() {
 	kubeContext = ""
 	skipTLSVerify = false
 	endpointCACertPath = ""
+	projectStr = ""
+	spaceStr = ""
 }
