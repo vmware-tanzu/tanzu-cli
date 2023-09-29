@@ -80,7 +80,7 @@ func tmcStressTestCases() bool {
 		It("delete context command", func() {
 			By("delete all contexts created in previous tests")
 			for _, ctx := range contextNamesStress {
-				err := tf.ContextCmd.DeleteContext(ctx)
+				_, _, err := tf.ContextCmd.DeleteContext(ctx)
 				log.Infof("context: %s deleted", ctx)
 				Expect(framework.IsContextExists(tf, ctx)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, ctx))
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
@@ -139,10 +139,10 @@ func tmcAndK8sContextTests() bool {
 
 			// Test case: d. delete both k8s and tmc contexts
 			It("delete context command", func() {
-				err := tf.ContextCmd.DeleteContext(k8sCtx)
+				_, _, err := tf.ContextCmd.DeleteContext(k8sCtx)
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
 				Expect(framework.IsContextExists(tf, k8sCtx)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists+" as been deleted", k8sCtx))
-				err = tf.ContextCmd.DeleteContext(tmcCtx)
+				_, _, err = tf.ContextCmd.DeleteContext(tmcCtx)
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
 				Expect(framework.IsContextExists(tf, tmcCtx)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists+" as been deleted", tmcCtx))
 			})
@@ -220,11 +220,11 @@ func tmcAndK8sContextTests() bool {
 			// Test case: e. delete all contexts
 			It("delete all contexts", func() {
 				for _, ctx := range k8sCtxs {
-					err := tf.ContextCmd.DeleteContext(ctx)
+					_, _, err := tf.ContextCmd.DeleteContext(ctx)
 					Expect(err).To(BeNil(), "delete context should delete context without any error")
 				}
 				for _, ctx := range tmcCtxs {
-					err := tf.ContextCmd.DeleteContext(ctx)
+					_, _, err := tf.ContextCmd.DeleteContext(ctx)
 					Expect(err).To(BeNil(), "delete context should delete context without any error")
 				}
 			})
@@ -387,7 +387,7 @@ func tmcLifeCycleTests() bool {
 		// Test case: n. test 'tanzu context delete' command, make sure to delete all context's created in previous test cases
 		It("delete context command", func() {
 			for _, ctx := range contextNames {
-				err := tf.ContextCmd.DeleteContext(ctx)
+				_, _, err := tf.ContextCmd.DeleteContext(ctx)
 				Expect(framework.IsContextExists(tf, ctx)).To(BeFalse(), fmt.Sprintf(ContextShouldNotExists+" as been deleted", ctx))
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
 			}

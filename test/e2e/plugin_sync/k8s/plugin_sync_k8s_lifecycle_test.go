@@ -14,6 +14,8 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
+var stdOut string
+
 // Below Use cases executed in this test suite
 // cleanup and initialize the config files
 // Use case 1: create a KIND cluster, don't apply CRD and CRs, create context, make sure no plugins are installed
@@ -76,7 +78,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		})
 		// Test case: d. delete current context and KIND cluster
 		It("delete current context and the KIND cluster", func() {
-			err = tf.ContextCmd.DeleteContext(contextName)
+			_, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), "context should be deleted without error")
 			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
@@ -171,7 +173,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		//				run plugin sync, make sure the uninstalled plugin has installed again.
 		It("Uninstall one of the installed plugin", func() {
 			pluginToUninstall := pluginsInfoForCRsApplied[0]
-			err := tf.PluginCmd.UninstallPlugin(pluginToUninstall.Name, pluginToUninstall.Target)
+			err = tf.PluginCmd.UninstallPlugin(pluginToUninstall.Name, pluginToUninstall.Target)
 			Expect(err).To(BeNil(), "should not get any error for plugin uninstall")
 
 			latestPluginsInstalledList := pluginsInfoForCRsApplied[1:]
@@ -190,10 +192,28 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			Expect(len(installedPluginsList)).Should(Equal(len(pluginsInfoForCRsApplied)), "number of plugins should be same as number of plugins CRs applied")
 			Expect(f.CheckAllPluginsExists(installedPluginsList, pluginsInfoForCRsApplied)).Should(BeTrue(), "plugins being installed and plugins info for which CRs applied should be same")
 		})
-		// Test case: h. delete current context and the KIND cluster
+		// Test case: h.1 Unset the context and make sure plugin are deactivated, and set the context again
+		It("list plugins and validate plugins being installed after context being created", func() {
+			installedPluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			stdOut, _, err = tf.ContextCmd.UnsetContext(contextName)
+			Expect(err).To(BeNil(), "unset context should unset context without any error")
+			for i := range installedPluginsList {
+				Expect(stdOut).To(ContainSubstring(fmt.Sprintf(f.DeactivatingPlugin, installedPluginsList[i].Name, installedPluginsList[i].Version, contextName)))
+			}
+			err = tf.ContextCmd.UseContext(contextName)
+			Expect(err).To(BeNil(), "use context should set context without any error")
+		})
+		// Test case: h.2 delete current context and the KIND cluster
 		It("delete current context and the KIND cluster", func() {
-			err = tf.ContextCmd.DeleteContext(contextName)
+			installedPluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			stdOut, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), "context should be deleted without error")
+			// delete context should deactivate all installed plugins
+			for i := range installedPluginsList {
+				Expect(stdOut).To(ContainSubstring(fmt.Sprintf(f.DeactivatingPlugin, installedPluginsList[i].Name, installedPluginsList[i].Version, contextName)))
+			}
 			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
 		})
@@ -272,7 +292,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 
 		// Test case: f. delete the KIND cluster
 		It("delete the KIND cluster", func() {
-			err = tf.ContextCmd.DeleteContext(contextName)
+			_, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), "context should be deleted without error")
 			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
@@ -325,7 +345,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		})
 		// Test case: d. delete the context, make sure all context specific plugins are uninstalled
 		It("delete context, validate installed plugins list, should uninstalled all context plugins", func() {
-			err = tf.ContextCmd.DeleteContext(contextName)
+			_, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), "there should be no error for delete context")
 
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
@@ -429,9 +449,9 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 
 		// Test case: f. delete the KIND clusters
 		It("delete the KIND cluster", func() {
-			err = tf.ContextCmd.DeleteContext(contextNameClusterOne)
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameClusterOne)
 			Expect(err).To(BeNil(), "context should be deleted without error")
-			err = tf.ContextCmd.DeleteContext(contextNameClusterTwo)
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameClusterTwo)
 			Expect(err).To(BeNil(), "context should be deleted without error")
 			_, err = tf.KindCluster.DeleteCluster(clusterOne.Name)
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
@@ -504,7 +524,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 
 		// Test case: e. delete the KIND cluster
 		It("delete the KIND cluster", func() {
-			err = tf.ContextCmd.DeleteContext(contextName)
+			_, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), "context should be deleted without error")
 			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
