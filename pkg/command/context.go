@@ -31,6 +31,7 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
+	ucprt "github.com/vmware-tanzu/tanzu-plugin-runtime/ucp"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
@@ -46,6 +47,7 @@ import (
 var (
 	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify                                           bool
 	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath, contextType string
+	projectStr, spaceStr                                                                                string
 )
 
 const (
@@ -89,6 +91,7 @@ func init() {
 		useCtxCmd,
 		unsetCtxCmd,
 		getCtxTokenCmd,
+		newUpdateCtxCmd(),
 	)
 
 	initCreateCtxCmd()
@@ -474,8 +477,7 @@ func globalUCPLogin(c *configtypes.Context) error {
 	if err != nil {
 		return err
 	}
-	// TODO(prkalle) to update "ucpOrgID" to use plugin runtime constant
-	c.AdditionalMetadata["ucpOrgID"] = claims.OrgID
+	c.AdditionalMetadata[ucprt.OrgIDKey] = claims.OrgID
 
 	kubeCfg, kubeCtx, serverEndpoint, err := ucpauth.GetUCPKubeconfig(c, endpoint, claims.OrgID, endpointCACertPath, skipTLSVerify)
 	if err != nil {
@@ -589,9 +591,13 @@ func promptContextName(defaultCtxName string) (cname string, err error) {
 
 // Interactive way to create a TMC context. User will be prompted for CSP API token.
 func promptAPIToken(endpointType string) (apiToken string, err error) {
+	hostVal := "console.cloud.vmware.com"
+	if staging {
+		hostVal = "console-stg.cloud.vmware.com"
+	}
 	consoleURL := url.URL{
 		Scheme:   "https",
-		Host:     "console.cloud.vmware.com",
+		Host:     hostVal,
 		Path:     "/csp/gateway/portal/",
 		Fragment: "/user/tokens",
 	}
@@ -616,7 +622,7 @@ func promptAPIToken(endpointType string) (apiToken string, err error) {
 		promptOpts...,
 	)
 	apiToken = strings.TrimSpace(apiToken)
-	return
+	return apiToken, err
 }
 
 func k8sLogin(c *configtypes.Context) error {
@@ -1089,4 +1095,94 @@ func printTokenToStdout(cmd *cobra.Command, token string, expTime time.Time) err
 		},
 	}
 	return json.NewEncoder(cmd.OutOrStdout()).Encode(cred)
+}
+
+// newUpdateCtxCmd to update an aspect of a context
+//
+// NOTE!!: This command is EXPERIMENTAL and subject to change in future
+func newUpdateCtxCmd() *cobra.Command {
+	var updateCtxCmd = &cobra.Command{
+		Use:    "update",
+		Short:  "Update an aspect of a context (subject to change)",
+		Hidden: true,
+	}
+	ucpActiveResourceCmd.Flags().StringVarP(&projectStr, "project", "", "", "project name to be set as active")
+	ucpActiveResourceCmd.Flags().StringVarP(&spaceStr, "space", "", "", "space name to be set as active")
+
+	updateCtxCmd.AddCommand(
+		ucpActiveResourceCmd,
+	)
+	return updateCtxCmd
+}
+
+// ucpActiveResourceCmd updates the ucp active resource referenced by ucp context
+//
+// NOTE!!: This command is EXPERIMENTAL and subject to change in future
+var ucpActiveResourceCmd = &cobra.Command{
+	Use:    "ucp-active-resource CONTEXT_NAME",
+	Short:  "updates the UCP active resource for the given UCP context (subject to change).",
+	Hidden: true,
+	Args:   cobra.ExactArgs(1),
+	RunE:   setUCPCtxActiveResource,
+}
+
+func setUCPCtxActiveResource(_ *cobra.Command, args []string) error {
+	name := args[0]
+	if projectStr == "" && spaceStr != "" {
+		return errors.Errorf("space cannot be set without project name. Please provide project name also using --project option")
+	}
+	ctx, err := config.GetContext(name)
+	if err != nil {
+		return err
+	}
+	if ctx.Target != configtypes.TargetUCP {
+		return errors.Errorf("context %q is not of type UCP", name)
+	}
+	if ctx.AdditionalMetadata == nil {
+		ctx.AdditionalMetadata = make(map[string]interface{})
+	}
+	ctx.AdditionalMetadata[ucprt.ProjectNameKey] = projectStr
+	ctx.AdditionalMetadata[ucprt.SpaceNameKey] = spaceStr
+	err = config.SetContext(ctx, false)
+	if err != nil {
+		return errors.Wrap(err, "failed updating the context %q with the active UCP resource")
+	}
+	err = updateUCPContextKubeconfig(ctx, projectStr, spaceStr)
+	if err != nil {
+		return errors.Wrap(err, "failed to update the UCP context kubeconfig")
+	}
+
+	return nil
+}
+
+func updateUCPContextKubeconfig(cliContext *configtypes.Context, projectName, spaceName string) error {
+	kcfg, err := clientcmd.LoadFromFile(cliContext.ClusterOpts.Path)
+	if err != nil {
+		return errors.Wrap(err, "unable to load kubeconfig")
+	}
+
+	kubeContext := kcfg.Contexts[cliContext.ClusterOpts.Context]
+	if kubeContext == nil {
+		return errors.Errorf("kubecontext %q doesn't exist", cliContext.ClusterOpts.Context)
+	}
+	cluster := kcfg.Clusters[kubeContext.Cluster]
+	cluster.Server = prepareClusterServerURL(cliContext, projectName, spaceName)
+	err = clientcmd.WriteToFile(*kcfg, cliContext.ClusterOpts.Path)
+	if err != nil {
+		return errors.Wrap(err, "failed to update the context kubeconfig file")
+	}
+	return nil
+}
+
+func prepareClusterServerURL(context *configtypes.Context, projectName, spaceName string) string {
+	serverURL := context.ClusterOpts.Endpoint
+	if projectName == "" {
+		return serverURL
+	}
+	serverURL = serverURL + "/project/" + projectName
+
+	if spaceName == "" {
+		return serverURL
+	}
+	return serverURL + "/space/" + spaceName
 }
