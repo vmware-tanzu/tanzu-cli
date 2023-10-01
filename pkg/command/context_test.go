@@ -363,7 +363,7 @@ clusterOpts:
 					Context:  "tanzu-cli-myucp",
 				},
 				AdditionalMetadata: map[string]interface{}{
-					ucprt.OrgID: "test-org-id",
+					ucprt.OrgIDKey: "test-org-id",
 				},
 			}
 		})
@@ -414,8 +414,8 @@ clusterOpts:
 
 			ctx, err := config.GetContext(testContextName)
 			Expect(err).To(BeNil())
-			Expect(ctx.AdditionalMetadata[UCPProjectName]).To(Equal(testProject))
-			Expect(ctx.AdditionalMetadata[UCPSpaceName]).To(BeEmpty())
+			Expect(ctx.AdditionalMetadata[ucprt.ProjectNameKey]).To(Equal(testProject))
+			Expect(ctx.AdditionalMetadata[ucprt.SpaceNameKey]).To(BeEmpty())
 			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
 			Expect(err).To(BeNil())
 			Expect(kubeconfig.Clusters["tanzu-cli-myucp/current"].Server).To(Equal(ucpContext.ClusterOpts.Endpoint + "/project/" + testProject))
@@ -431,8 +431,8 @@ clusterOpts:
 
 			ctx, err := config.GetContext(testContextName)
 			Expect(err).To(BeNil())
-			Expect(ctx.AdditionalMetadata[UCPProjectName]).To(Equal(testProject))
-			Expect(ctx.AdditionalMetadata[UCPSpaceName]).To(Equal(testSpace))
+			Expect(ctx.AdditionalMetadata[ucprt.ProjectNameKey]).To(Equal(testProject))
+			Expect(ctx.AdditionalMetadata[ucprt.SpaceNameKey]).To(Equal(testSpace))
 			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
 			Expect(err).To(BeNil())
 			Expect(kubeconfig.Clusters["tanzu-cli-myucp/current"].Server).To(Equal(ucpContext.ClusterOpts.Endpoint + "/project/" + testProject + "/space/" + testSpace))
