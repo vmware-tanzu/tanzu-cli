@@ -113,11 +113,11 @@ var createCtxCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	RunE:  createCtx,
 	Example: `
-    # Create a TKG management cluster context using endpoint and type(--type is optional, if not provided CLI would infer the type from the endpoint)
-    tanzu context create mgmt-cluster --endpoint "https://k8s.example.com[:port] --type k8s-cluster-endpoint"
+    # Create a TKG management cluster context using endpoint and type (--type is optional, if not provided the CLI will infer the type from the endpoint)
+    tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port] --type k8s-cluster-endpoint
 
     # Create a TKG management cluster context using endpoint
-    tanzu context create mgmt-cluster --endpoint "https://k8s.example.com[:port]"
+    tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port]
 
     # Create a TKG management cluster context using kubeconfig path and context
     tanzu context create mgmt-cluster --kubeconfig path/to/kubeconfig --kubecontext kubecontext
@@ -131,16 +131,16 @@ var createCtxCmd = &cobra.Command{
     # Create a TKG management cluster context using default kubeconfig path and a kubeconfig context
     tanzu context create mgmt-cluster --kubecontext kubecontext
 
-    # Create a Application Engine(TAE) context with default endpoint (--type option is not necessary for default endpoint)
-    tanzu context create mytae -endpoint https://api.tanzu.cloud.vmware.com 
+    # Create an Application Engine (TAE) context with the default endpoint (--type is not necessary for the default endpoint)
+    tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com 
 
-    # Create a Application Engine(TAE) context (--type option is needed for non-default endpoint)
-    tanzu context create mytae -endpoint https://non-default.tae.endpoint.com --type application-engine
+    # Create an Application Engine (TAE) context (--type is needed for a non-default endpoint)
+    tanzu context create mytae --endpoint https://non-default.tae.endpoint.com --type application-engine
 
-    # Create a Application Engine(TAE) context by using the provided CA Bundle for TLS verification:
+    # Create an Application Engine (TAE) context by using the provided CA Bundle for TLS verification:
     tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com  --endpoint-ca-certificate /path/to/ca/ca-cert
 
-    # Create a Application Engine(TAE) context by explicit request to skip TLS verification, which is insecure:
+    # Create an Application Engine (TAE) context but skipping TLS verification (this is insecure):
     tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com --insecure-skip-tls-verify
 
     [*] : Users have two options to create a kubernetes cluster context. They can choose the control
