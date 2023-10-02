@@ -30,15 +30,6 @@ var (
 	TanzuBinary      string // Tanzu binary name if available in PATH variable or full path to binary with tanzu name
 )
 
-// PluginsForLifeCycleTests is list of plugins (which are published in local central repo) used in plugin life cycle test cases
-var PluginsForLifeCycleTests []*PluginInfo
-
-// PluginGroupsForLifeCycleTests is list of plugin groups (which are published in local central repo) used in plugin group life cycle test cases
-var PluginGroupsForLifeCycleTests []*PluginGroup
-
-// EssentialPluginGroups is list of essential plugin groups
-var EssentialPluginGroups []*PluginGroup
-
 // CLICoreDescribe annotates the test with the CLICore label.
 func CLICoreDescribe(text string, body func()) bool {
 	return ginkgo.Describe(CliCore+text, body)
@@ -114,24 +105,4 @@ func init() {
 	_ = CreateDir(TestStandalonePluginsPath)
 	// Create a directory (if not exists) $HOME/.tanzu-cli-e2e/temp
 	_ = CreateDir(FullPathForTempDir)
-
-	// TODO:cpamuluri: need to move plugins info to configuration file with positive and negative use cases - github issue: https://github.com/vmware-tanzu/tanzu-cli/issues/122
-	PluginsForLifeCycleTests = []*PluginInfo{
-		{Name: "cluster", Target: "kubernetes", Version: "v9.9.9", Description: "cluster functionality"},
-		{Name: "cluster", Target: "mission-control", Version: "v9.9.9", Description: "cluster functionality"},
-		{Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "pinniped-auth functionality"},
-		{Name: "telemetry", Target: "global", Version: "v9.9.9", Description: "telemetry functionality"},
-		{Name: "telemetry", Target: "kubernetes", Version: "v9.9.9", Description: "telemetry functionality"},
-		{Name: "plugin-with-sha", Target: "global", Version: "v9.9.9", Description: "plugin-with-sha functionality"},
-	}
-
-	// TODO:cpamuluri: need to move Plugin Groups to configuration file with positive and negative use cases - github issue: https://github.com/vmware-tanzu/tanzu-cli/issues/122
-	PluginGroupsForLifeCycleTests = []*PluginGroup{
-		{Group: "vmware-tkg/default", Latest: "v9.9.9", Description: "Desc for vmware-tkg/default:v9.9.9"},
-		{Group: "vmware-tmc/tmc-user", Latest: "v9.9.9", Description: "Desc for vmware-tmc/tmc-user:v9.9.9"},
-		{Group: "vmware-tanzucli/essentials", Latest: "v9.9.9", Description: "Desc for vmware-tanzucli/essentials:v9.9.9"},
-		{Group: "vmware-tkg/shortversion", Latest: "v1", Description: "Desc for vmware-tkg/default:v1"},
-		{Group: "vmware-tkg/shortversion", Latest: "v1.1", Description: "Desc for vmware-tkg/default:v1"},
-	}
-	EssentialPluginGroups = []*PluginGroup{{Group: "vmware-tanzucli/essentials", Latest: "v9.9.9", Description: "Desc for vmware-tanzucli/essentials:v9.9.9"}}
 }

@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
+	"github.com/vmware-tanzu/tanzu-cli/test/e2e/util"
 )
 
 // This test suite covers plugin group life cycle use cases for central repository
@@ -44,7 +45,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 
 			// check all required plugin groups (framework.PluginGroupsForLifeCycleTests) need for life cycle test are available in plugin group search output
-			Expect(framework.IsAllPluginGroupsExists(pluginGroups, framework.EssentialPluginGroups)).Should(BeTrue(), "all essential plugin groups should exists in plugin group search output")
+			Expect(framework.IsAllPluginGroupsExists(pluginGroups, util.EssentialPluginGroups)).Should(BeTrue(), "all essential plugin groups should exists in plugin group search output")
 		})
 	})
 	// Use cases:
