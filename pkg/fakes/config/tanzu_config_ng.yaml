@@ -31,10 +31,10 @@ contexts:
         type: api-token2
         userName: test-user-name2
         refresh_token: test-refresh-token2
-  - name: test-ucp-context
-    target: ucp
+  - name: test-tae-context
+    target: application-engine
     globalOpts:
-      endpoint: ucp-endpoint
+      endpoint: tae-endpoint
       auth:
         IDToken: test-id-token
         accessToken: test-access-token
@@ -47,8 +47,8 @@ contexts:
       path: dummy/path
       context: dummy-context
     additionalMetadata:
-      ucpProjectName: dummyP
-      ucpOrgID: dummyO
+      taeProjectName: dummyP
+      taeOrgID: dummyO
 currentContext:
   kubernetes: test-mc
   mission-control: test-tmc-context

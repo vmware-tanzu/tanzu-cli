@@ -2061,6 +2061,8 @@ github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df/go.mod h1:JP3t17
 github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
 github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
 github.com/vmware-tanzu/tanzu-cli/test/e2e v1.0.0-dev/go.mod h1:OletAz4jASbW1fS0a69GvuLT3pnkXAntvQiQRZx0UfE=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.1.0-dev.0.20230929235645-fe52a9bdd71b h1:Iu4UkyvtF7R6Cive21CnbcaDx69jThXYHyUJ6MLmz74=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.1.0-dev.0.20230929235645-fe52a9bdd71b/go.mod h1:wMK/qpJjU7hytDAGt3FX5/iGdlUK8TsJLu36pCr+Zvk=
 github.com/weppos/publicsuffix-go v0.20.1-0.20221031080346-e4081aa8a6de h1:eR9jm8DVMdrDUuVji4eOxPK4r/dANDlDBdISSUUV96s=
 github.com/weppos/publicsuffix-go v0.20.1-0.20221031080346-e4081aa8a6de/go.mod h1:g9GsAxnaxsUuTLZcQdYbi43vT2k9ubZGHsdCy819VLk=
 github.com/withfig/autocomplete-tools/integrations/cobra v1.2.1 h1:+dBg5k7nuTE38VVdoroRsT0Z88fmvdYrI2EjzJst35I=
