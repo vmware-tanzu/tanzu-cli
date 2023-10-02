@@ -2,3 +2,4 @@ registry-content
 create_tables.sql
 local-central-repo-testcontent.bz2
 certs
+auth

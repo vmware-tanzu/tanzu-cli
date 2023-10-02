@@ -5,6 +5,7 @@ package airgapped
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -24,6 +25,31 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		It("download plugin bundle with specific plugin-group vmware-tkg/default:v0.0.1", func() {
 			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tkg/default:v0.0.1"}, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-default-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
+		})
+
+		// Test case: upload plugin bundle downloaded using vmware-tkg/default:v0.0.1 plugin-group to the airgapped repository with authentication
+		It("upload plugin bundle that was downloaded using vmware-tkg/default:v0.0.1 plugin-group to the airgapped repository with authentication", func() {
+			curHomeDir := framework.GetHomeDir()
+			defer func() {
+				os.Setenv("HOME", curHomeDir)
+			}()
+			// We are resetting the HOME environment variable for this specific tests as when we do docker login we need to have actually HOME variable set correctly
+			// otherwise the docker login fails with different errors on different systems (on macos we see keychain specific error)
+			// We are also using above defer function to revert the HOME environment variable after this test is ran
+			os.Setenv("HOME", framework.OriginalHomeDir)
+
+			// Try uploading plugin bundle without docker login, it should fail
+			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepoWithAuth, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-default-v0.0.1.tar.gz"))
+			Expect(err).NotTo(BeNil(), "should get unauthorized error when trying without login")
+
+			// Login to airgapped repository
+			dockerloginCmd := fmt.Sprintf("docker login %s --username %s --password %s", e2eAirgappedCentralRepoWithAuth, e2eAirgappedCentralRepoWithAuthUsername, e2eAirgappedCentralRepoWithAuthPassword)
+			_, _, err = tf.Exec.Exec(dockerloginCmd)
+			Expect(err).To(BeNil())
+
+			// Try uploading plugin bundle after docker login, it should succeed
+			err = tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepoWithAuth, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-default-v0.0.1.tar.gz"))
+			Expect(err).To(BeNil(), "should not get any error while uploading plugin bundle")
 		})
 
 		// Test case: upload plugin bundle downloaded using vmware-tkg/default:v0.0.1 plugin-group to the airgapped repository
