@@ -665,14 +665,14 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 func logPluginInstallationMessage(p *discovery.Discovered, version string, isPluginInCache, isPluginAlreadyInstalled bool) {
 	withTarget := ""
 	if p.Target != configtypes.TargetUnknown {
-		withTarget = fmt.Sprintf("with target '%v'", p.Target)
+		withTarget = fmt.Sprintf("with target '%v' ", p.Target)
 	}
 
 	if isPluginInCache {
 		if !isPluginAlreadyInstalled {
-			log.Infof("Installing plugin '%v:%v' %v (from cache)", p.Name, version, withTarget)
+			log.Infof("Installing plugin '%v:%v' %v(from cache)", p.Name, version, withTarget)
 		} else {
-			log.Infof("Plugin '%v:%v' %v is already installed. Reinitializing...", p.Name, version, withTarget)
+			log.Infof("Plugin '%v:%v' %vis already installed. Reinitializing...", p.Name, version, withTarget)
 		}
 	} else {
 		log.Infof("Installing plugin '%v:%v' %v", p.Name, version, withTarget)
