@@ -21,10 +21,8 @@ const (
 	CEIPOptInUserPromptAnswer                         = "TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER"
 	EULAPromptAnswer                                  = "TANZU_CLI_EULA_PROMPT_ANSWER"
 	E2ETestEnvironment                                = "TANZU_CLI_E2E_TEST_ENVIRONMENT"
-	// ControlPlaneEndpointType is the control-plane endpoint type to be used for "self-managed-tmc"(this list may grow in future)
-	ControlPlaneEndpointType          = "TANZU_CLI_CONTROL_PLANE_ENDPOINT_TYPE"
-	ShowTelemetryConsoleLogs          = "TANZU_CLI_SHOW_TELEMETRY_CONSOLE_LOGS"
-	TelemetrySuperColliderEnvironment = "TANZU_CLI_SUPERCOLLIDER_ENVIRONMENT"
+	ShowTelemetryConsoleLogs                          = "TANZU_CLI_SHOW_TELEMETRY_CONSOLE_LOGS"
+	TelemetrySuperColliderEnvironment                 = "TANZU_CLI_SUPERCOLLIDER_ENVIRONMENT"
 
 	// TanzuCLIEssentialsPluginGroupName is used to override and customize the default essentials plugin group name
 	TanzuCLIEssentialsPluginGroupName = "TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_NAME"
