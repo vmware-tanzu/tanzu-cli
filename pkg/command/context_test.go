@@ -271,87 +271,6 @@ clusterOpts:
 		})
 	})
 
-	Describe("tanzu context use", func() {
-		var kubeconfigFile *os.File
-
-		cmd := &cobra.Command{}
-
-		BeforeEach(func() {
-			cmd.SetOut(&buf)
-
-			kubeconfigFile, err = os.CreateTemp("", "kubeconfig")
-			kubeconfigPath := kubeconfigFile.Name()
-			Expect(err).To(BeNil())
-			err = copy.Copy(filepath.Join("..", "fakes", "config", "kubeconfig1.yaml"), kubeconfigPath)
-			Expect(err).To(BeNil())
-
-			// repopulate the temp "config/config-ng" with some contexts referencing actual
-			// kubeconfig path/contexts
-			fmtBytes, err := os.ReadFile(filepath.Join("..", "fakes", "config", "tanzu_config_ng_yaml.tmpl"))
-			Expect(err).To(BeNil())
-			fileContent := fmt.Sprintf(string(fmtBytes), kubeconfigPath, kubeconfigPath, "foo-context")
-			bytesWritten, err := tkgConfigFileNG.WriteAt([]byte(fileContent), 0)
-			Expect(err).To(BeNil())
-			Expect(bytesWritten).To(Equal(len(fileContent)))
-
-			fmtBytes, err = os.ReadFile(filepath.Join("..", "fakes", "config", "tanzu_config_yaml.tmpl"))
-			Expect(err).To(BeNil())
-			fileContent = fmt.Sprintf(string(fmtBytes), kubeconfigPath, kubeconfigPath, "foo-context")
-			bytesWritten, err = tkgConfigFile.WriteAt([]byte(fileContent), 0)
-			Expect(err).To(BeNil())
-			Expect(bytesWritten).To(Equal(len(fileContent)))
-		})
-
-		AfterEach(func() {
-			os.RemoveAll(kubeconfigFile.Name())
-			resetContextCommandFlags()
-			buf.Reset()
-		})
-		It("should return error if the context to be used doesn't exist", func() {
-			unattended = true
-			err = useCtx(cmd, []string{"fake-mc"})
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("context fake-mc not found"))
-
-		})
-		It("should set the context as the current-context if the config file has context available", func() {
-			targetStr = targetMissionControl
-			err = useCtx(cmd, []string{testUseContext})
-			Expect(err).To(BeNil())
-
-			cctx, err := config.GetCurrentContext(configtypes.Target(targetStr))
-			Expect(err).To(BeNil())
-			Expect(cctx.Name).To(ContainSubstring(testUseContext))
-		})
-		It("should return error without setting context if it has invalid kubeconfig/kubecontext reference", func() {
-			err = useCtx(cmd, []string{testUseContextWithInvalidKubeContext})
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("unable to update current kube context:"))
-
-			cctx, err := config.GetCurrentContext(configtypes.TargetK8s)
-			Expect(err).To(BeNil())
-			Expect(cctx.Name).To(ContainSubstring(existingContext))
-		})
-		It("should set the kubernetes type context if its kubeconfig/kubecontext reference is valid", func() {
-			err = useCtx(cmd, []string{testUseContextWithValidKubeContext})
-			Expect(err).To(BeNil())
-
-			cctx, err := config.GetCurrentContext(configtypes.TargetK8s)
-			Expect(err).To(BeNil())
-			Expect(cctx.Name).To(ContainSubstring(testUseContextWithValidKubeContext))
-		})
-		It("should set the kubernetes type context even if it has invalid kubeconfig/kubecontext reference if skip flag is set ", func() {
-			os.Setenv(constants.SkipUpdateKubeconfigOnContextUse, "true")
-			err = useCtx(cmd, []string{testUseContextWithInvalidKubeContext})
-			Expect(err).To(BeNil())
-
-			cctx, err := config.GetCurrentContext(configtypes.TargetK8s)
-			Expect(err).To(BeNil())
-			Expect(cctx.Name).To(ContainSubstring(testUseContextWithInvalidKubeContext))
-			os.Unsetenv(constants.SkipUpdateKubeconfigOnContextUse)
-		})
-	})
-
 	Describe("tanzu context get-token", func() {
 		const (
 			fakeContextName = "fake-context"
@@ -805,6 +724,109 @@ var _ = Describe("create new context", func() {
 			})
 		})
 
+	})
+})
+
+var _ = Describe("testing context use", func() {
+	const (
+		existingContext    = "test-mc"
+		testKubeContext    = "test-k8s-context"
+		testKubeConfigPath = "/fake/path/kubeconfig"
+		testContextName    = "fake-context-name"
+		fakeTMCEndpoint    = "https://cloud.vmware.com/auth"
+		fakeUCPEndpoint    = "https://fake.api.tanzu.cloud.vmware.com"
+	)
+	var (
+		tkgConfigFile   *os.File
+		tkgConfigFileNG *os.File
+		kubeconfigFile  *os.File
+		err             error
+	)
+
+	BeforeEach(func() {
+		tkgConfigFile, err = os.CreateTemp("", "config")
+		Expect(err).To(BeNil())
+		os.Setenv("TANZU_CONFIG", tkgConfigFile.Name())
+
+		tkgConfigFileNG, err = os.CreateTemp("", "config_ng")
+		Expect(err).To(BeNil())
+		os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
+
+		kubeconfigFile, err = os.CreateTemp("", "kubeconfig")
+		kubeconfigPath := kubeconfigFile.Name()
+		Expect(err).To(BeNil())
+		err = copy.Copy(filepath.Join("..", "fakes", "config", "kubeconfig1.yaml"), kubeconfigPath)
+		Expect(err).To(BeNil())
+
+		fmtBytes, err := os.ReadFile(filepath.Join("..", "fakes", "config", "tanzu_config_ng_yaml.tmpl"))
+		Expect(err).To(BeNil())
+		fileContent := fmt.Sprintf(string(fmtBytes), kubeconfigPath, kubeconfigPath, "foo-context")
+		bytesWritten, err := tkgConfigFileNG.WriteAt([]byte(fileContent), 0)
+		Expect(err).To(BeNil())
+		Expect(bytesWritten).To(Equal(len(fileContent)))
+
+		fmtBytes, err = os.ReadFile(filepath.Join("..", "fakes", "config", "tanzu_config_yaml.tmpl"))
+		Expect(err).To(BeNil())
+		fileContent = fmt.Sprintf(string(fmtBytes), kubeconfigPath, kubeconfigPath, "foo-context")
+		bytesWritten, err = tkgConfigFile.WriteAt([]byte(fileContent), 0)
+		Expect(err).To(BeNil())
+		Expect(bytesWritten).To(Equal(len(fileContent)))
+	})
+	AfterEach(func() {
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.RemoveAll(tkgConfigFile.Name())
+		os.RemoveAll(tkgConfigFileNG.Name())
+		os.RemoveAll(kubeconfigFile.Name())
+		resetContextCommandFlags()
+	})
+
+	Describe("tanzu context use", func() {
+		cmd := &cobra.Command{}
+
+		It("should return error if the context to be used doesn't exist", func() {
+			unattended = true
+			err = useCtx(cmd, []string{"fake-mc"})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("context fake-mc not found"))
+
+		})
+		It("should set the context as the current-context if the config file has context available", func() {
+			targetStr = targetMissionControl
+			err = useCtx(cmd, []string{testUseContext})
+			Expect(err).To(BeNil())
+
+			cctx, err := config.GetCurrentContext(configtypes.Target(targetStr))
+			Expect(err).To(BeNil())
+			Expect(cctx.Name).To(ContainSubstring(testUseContext))
+		})
+		It("should return error without setting context if it has invalid kubeconfig/kubecontext reference", func() {
+			err = useCtx(cmd, []string{testUseContextWithInvalidKubeContext})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("unable to update current kube context:"))
+
+			cctx, err := config.GetCurrentContext(configtypes.TargetK8s)
+			Expect(err).To(BeNil())
+			Expect(cctx.Name).To(ContainSubstring(existingContext))
+		})
+		It("should set the kubernetes type context if its kubeconfig/kubecontext reference is valid", func() {
+			err = useCtx(cmd, []string{testUseContextWithValidKubeContext})
+			Expect(err).To(BeNil())
+
+			cctx, err := config.GetCurrentContext(configtypes.TargetK8s)
+			Expect(err).To(BeNil())
+			Expect(cctx.Name).To(ContainSubstring(testUseContextWithValidKubeContext))
+		})
+		It("should set the kubernetes type context even if it has invalid kubeconfig/kubecontext reference if skip flag is set ", func() {
+			os.Setenv(constants.SkipUpdateKubeconfigOnContextUse, "true")
+			err = useCtx(cmd, []string{testUseContextWithInvalidKubeContext})
+			Expect(err).To(BeNil())
+
+			cctx, err := config.GetCurrentContext(configtypes.TargetK8s)
+			Expect(err).To(BeNil())
+			Expect(cctx.Name).To(ContainSubstring(testUseContextWithInvalidKubeContext))
+			os.Unsetenv(constants.SkipUpdateKubeconfigOnContextUse)
+		})
 	})
 })
 
