@@ -492,6 +492,11 @@ func globalTAELogin(c *configtypes.Context) error {
 	if err != nil {
 		return err
 	}
+	// update the current context in the kubeconfig file after creating the context
+	err = syncCurrentKubeContext(c)
+	if err != nil {
+		return errors.Wrap(err, "unable to update current kube context")
+	}
 
 	// format
 	fmt.Println()
@@ -636,6 +641,12 @@ func k8sLogin(c *configtypes.Context) error {
 		err = config.AddContext(c, true)
 		if err != nil {
 			return err
+		}
+
+		// update the current context in the kubeconfig file after creating the context
+		err = syncCurrentKubeContext(c)
+		if err != nil {
+			return errors.Wrap(err, "unable to update current kube context")
 		}
 
 		log.Successf("successfully created a kubernetes context using the kubeconfig %s", c.ClusterOpts.Path)
@@ -875,11 +886,9 @@ func useCtx(_ *cobra.Command, args []string) error {
 	}
 
 	if ctx.ClusterOpts != nil {
-		if skipSync, _ := strconv.ParseBool(os.Getenv(constants.SkipUpdateKubeconfigOnContextUse)); !skipSync {
-			err = syncCurrentKubeContext(ctx)
-			if err != nil {
-				return errors.Wrap(err, "unable to update current kube context")
-			}
+		err = syncCurrentKubeContext(ctx)
+		if err != nil {
+			return errors.Wrap(err, "unable to update current kube context")
 		}
 	}
 
@@ -895,6 +904,9 @@ func useCtx(_ *cobra.Command, args []string) error {
 }
 
 func syncCurrentKubeContext(ctx *configtypes.Context) error {
+	if skipSync, _ := strconv.ParseBool(os.Getenv(constants.SkipUpdateKubeconfigOnContextUse)); skipSync {
+		return nil
+	}
 	return kubecfg.SetCurrentContext(ctx.ClusterOpts.Path, ctx.ClusterOpts.Context)
 }
 
