@@ -25,7 +25,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-	ucprt "github.com/vmware-tanzu/tanzu-plugin-runtime/ucp"
+	taert "github.com/vmware-tanzu/tanzu-plugin-runtime/tae"
 )
 
 func TestCliCmdSuite(t *testing.T) {
@@ -43,9 +43,9 @@ const (
 	testmc                               = "test-mc"
 	targetK8s                            = "k8s"
 	targetMissionControl                 = "mission-control"
-	targetUCP                            = "ucp"
+	targetTAE                            = "application-engine"
 	testContextName                      = "test-context"
-	testEndpoint                         = "test.ucp.cloud.vmware.com"
+	testEndpoint                         = "test.tae.cloud.vmware.com"
 	testProject                          = "test-project"
 	testSpace                            = "test-space"
 )
@@ -128,9 +128,9 @@ var _ = Describe("Test tanzu context command", func() {
 			Expect(buf.String()).ToNot(ContainSubstring(testUseContext))
 		})
 
-		It("should return with UCP related columns", func() {
+		It("should return with TAE related columns", func() {
 			buf.Reset()
-			targetStr = targetUCP
+			targetStr = targetTAE
 			err = listCtx(cmd, nil)
 			lines := strings.Split(buf.String(), "\n")
 			columnsString := strings.Join(strings.Fields(lines[0]), " ")
@@ -139,7 +139,7 @@ var _ = Describe("Test tanzu context command", func() {
 			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE"))
 		})
 
-		It("should return with UCP related columns when listing all contexts", func() {
+		It("should return with TAE related columns when listing all contexts", func() {
 			buf.Reset()
 			targetStr = ""
 			err = listCtx(cmd, nil)
@@ -150,7 +150,7 @@ var _ = Describe("Test tanzu context command", func() {
 			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE"))
 		})
 
-		It("should not return UCP related columns when not listing UCP contexts", func() {
+		It("should not return TAE related columns when not listing TAE contexts", func() {
 			buf.Reset()
 			targetStr = targetK8s
 			err = listCtx(cmd, nil)
@@ -161,30 +161,30 @@ var _ = Describe("Test tanzu context command", func() {
 			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT"))
 		})
 
-		It("should return UCP contexts in yaml format if tanzu config file has UCP contexts", func() {
-			targetStr = targetUCP
+		It("should return TAE contexts in yaml format if tanzu config file has TAE contexts", func() {
+			targetStr = targetTAE
 			outputFormat = yamlStr
 			err = listCtx(cmd, nil)
 			Expect(err).To(BeNil())
 			// leading space, added for readability, to be trimmed on compare
 			expectedYaml := `
 - additionalmetadata:
-    ucpOrgID: dummyO
-    ucpProjectName: dummyP
+    taeOrgID: dummyO
+    taeProjectName: dummyP
   endpoint: kube-endpoint
   iscurrent: "false"
   ismanagementcluster: "false"
   kubeconfigpath: dummy/path
   kubecontext: dummy-context
-  name: test-ucp-context
-  type: ucp`
+  name: test-tae-context
+  type: application-engine`
 			Expect(buf.String()).To(ContainSubstring(expectedYaml[1:]))
 			Expect(buf.String()).ToNot(ContainSubstring("test-tmc-context"))
 			Expect(buf.String()).ToNot(ContainSubstring(testUseContext))
 		})
 
-		It("should return UCP contexts in JSON format if tanzu config file has UCP contexts", func() {
-			targetStr = targetUCP
+		It("should return TAE contexts in JSON format if tanzu config file has TAE contexts", func() {
+			targetStr = targetTAE
 			outputFormat = jsonStr
 			err = listCtx(cmd, nil)
 			Expect(err).To(BeNil())
@@ -193,16 +193,16 @@ var _ = Describe("Test tanzu context command", func() {
 [
   {
     "additionalmetadata": {
-      "ucpOrgID": "dummyO",
-      "ucpProjectName": "dummyP"
+      "taeOrgID": "dummyO",
+      "taeProjectName": "dummyP"
     },
     "endpoint": "kube-endpoint",
     "iscurrent": "false",
     "ismanagementcluster": "false",
     "kubeconfigpath": "dummy/path",
     "kubecontext": "dummy-context",
-    "name": "test-ucp-context",
-    "type": "ucp"
+    "name": "test-tae-context",
+    "type": "application-engine"
   }
 ]`
 			Expect(buf.String()).To(ContainSubstring(expectedYaml[1:]))
@@ -275,19 +275,19 @@ clusterOpts:
 		const (
 			fakeContextName = "fake-context"
 			fakeAccessToken = "fake-access-token"
-			fakeEndpoint    = "fake.ucp.cloud.vmware.com"
+			fakeEndpoint    = "fake.tae.cloud.vmware.com"
 			fakeIssuer      = "https://fake.issuer.come/auth"
 		)
 		var err error
 		cmd := &cobra.Command{}
-		ucpContext := &configtypes.Context{}
+		taeContext := &configtypes.Context{}
 
 		BeforeEach(func() {
 			cmd.SetOut(&buf)
 
-			ucpContext = &configtypes.Context{
+			taeContext = &configtypes.Context{
 				Name:   fakeContextName,
-				Target: configtypes.TargetUCP,
+				Target: configtypes.TargetTAE,
 				GlobalOpts: &configtypes.GlobalServer{
 					Endpoint: fakeEndpoint,
 					Auth: configtypes.GlobalServerAuth{
@@ -307,29 +307,29 @@ clusterOpts:
 			Expect(err.Error()).To(ContainSubstring("context non-existing-context not found"))
 
 		})
-		It("should return error if the context type is not UCP", func() {
-			ucpContext.Target = configtypes.TargetK8s
-			err = config.SetContext(ucpContext, false)
+		It("should return error if the context type is not TAE", func() {
+			taeContext.Target = configtypes.TargetK8s
+			err = config.SetContext(taeContext, false)
 			Expect(err).To(BeNil())
 
 			err = getToken(cmd, []string{fakeContextName})
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring(`context "fake-context" is not of type UCP`))
+			Expect(err.Error()).To(ContainSubstring(`context "fake-context" is not of type TAE`))
 
 		})
 		It("should return error if the access token refresh fails", func() {
-			ucpContext.GlobalOpts.Auth.Expiration = time.Now().Add(-time.Hour)
+			taeContext.GlobalOpts.Auth.Expiration = time.Now().Add(-time.Hour)
 
-			err = config.SetContext(ucpContext, false)
+			err = config.SetContext(taeContext, false)
 			Expect(err).To(BeNil())
 			err = getToken(cmd, []string{fakeContextName})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("failed to refresh the token"))
 		})
 		It("should print the exec credentials if the access token is valid(not expired)", func() {
-			ucpContext.GlobalOpts.Auth.Expiration = time.Now().Add(time.Hour)
+			taeContext.GlobalOpts.Auth.Expiration = time.Now().Add(time.Hour)
 
-			err = config.SetContext(ucpContext, false)
+			err = config.SetContext(taeContext, false)
 			Expect(err).To(BeNil())
 			err = getToken(cmd, []string{fakeContextName})
 			Expect(err).To(BeNil())
@@ -340,16 +340,16 @@ clusterOpts:
 			Expect(execCredential.Kind).To(Equal("ExecCredential"))
 			Expect(execCredential.APIVersion).To(Equal("client.authentication.k8s.io/v1"))
 			Expect(execCredential.Status.Token).To(Equal(fakeAccessToken))
-			expectedTime := metav1.NewTime(ucpContext.GlobalOpts.Auth.Expiration).Rfc3339Copy()
+			expectedTime := metav1.NewTime(taeContext.GlobalOpts.Auth.Expiration).Rfc3339Copy()
 			Expect(execCredential.Status.ExpirationTimestamp.Equal(&expectedTime)).To(BeTrue())
 		})
 	})
-	Describe("tanzu context update ucp-active-resource", func() {
+	Describe("tanzu context update tae-active-resource", func() {
 		var (
 			kubeconfigFilePath *os.File
 			err                error
 		)
-		ucpContext := &configtypes.Context{}
+		taeContext := &configtypes.Context{}
 		cmd := &cobra.Command{}
 
 		BeforeEach(func() {
@@ -359,19 +359,19 @@ clusterOpts:
 			err = copy.Copy(testKubeconfigFilePath, kubeconfigFilePath.Name())
 			Expect(err).To(BeNil())
 
-			ucpContext = &configtypes.Context{
+			taeContext = &configtypes.Context{
 				Name:   testContextName,
-				Target: configtypes.TargetUCP,
+				Target: configtypes.TargetTAE,
 				GlobalOpts: &configtypes.GlobalServer{
 					Endpoint: testEndpoint,
 				},
 				ClusterOpts: &configtypes.ClusterServer{
 					Endpoint: "https://api.tanzu.cloud.vmware.com:443/org/test-org-id",
 					Path:     kubeconfigFilePath.Name(),
-					Context:  "tanzu-cli-myucp",
+					Context:  "tanzu-cli-mytae",
 				},
 				AdditionalMetadata: map[string]interface{}{
-					ucprt.OrgIDKey: "test-org-id",
+					taert.OrgIDKey: "test-org-id",
 				},
 			}
 		})
@@ -382,68 +382,68 @@ clusterOpts:
 		})
 		It("should return error if the context to be updated doesn't exist", func() {
 			// set the context in the config
-			err = config.SetContext(ucpContext, false)
+			err = config.SetContext(taeContext, false)
 			Expect(err).To(BeNil())
 
-			err = setUCPCtxActiveResource(cmd, []string{"non-existing-context"})
+			err = setTAECtxActiveResource(cmd, []string{"non-existing-context"})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("context non-existing-context not found"))
 
 		})
-		It("should return error if the context type is not UCP", func() {
-			ucpContext.Target = configtypes.TargetK8s
-			err = config.SetContext(ucpContext, false)
+		It("should return error if the context type is not TAE", func() {
+			taeContext.Target = configtypes.TargetK8s
+			err = config.SetContext(taeContext, false)
 			Expect(err).To(BeNil())
 
-			err = setUCPCtxActiveResource(cmd, []string{testContextName})
+			err = setTAECtxActiveResource(cmd, []string{testContextName})
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring(`context "test-context" is not of type UCP`))
+			Expect(err.Error()).To(ContainSubstring(`context "test-context" is not of type TAE`))
 
 		})
 		It("should return error if user tries to set space as active resource without providing project name", func() {
-			err = config.SetContext(ucpContext, false)
+			err = config.SetContext(taeContext, false)
 			Expect(err).To(BeNil())
 
 			projectStr = ""
 			spaceStr = testSpace
-			err = setUCPCtxActiveResource(cmd, []string{testContextName})
+			err = setTAECtxActiveResource(cmd, []string{testContextName})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("space cannot be set without project name. Please provide project name also using --project option"))
 		})
-		It("should update the UCP context active resource to project given project name and also update the kubeconfig cluster URL accordingly", func() {
-			ucpContext.GlobalOpts.Auth.Expiration = time.Now().Add(-time.Hour)
+		It("should update the TAE context active resource to project given project name and also update the kubeconfig cluster URL accordingly", func() {
+			taeContext.GlobalOpts.Auth.Expiration = time.Now().Add(-time.Hour)
 
-			err = config.SetContext(ucpContext, false)
+			err = config.SetContext(taeContext, false)
 			Expect(err).To(BeNil())
 
 			projectStr = testProject
-			err = setUCPCtxActiveResource(cmd, []string{testContextName})
+			err = setTAECtxActiveResource(cmd, []string{testContextName})
 			Expect(err).To(BeNil())
 
 			ctx, err := config.GetContext(testContextName)
 			Expect(err).To(BeNil())
-			Expect(ctx.AdditionalMetadata[ucprt.ProjectNameKey]).To(Equal(testProject))
-			Expect(ctx.AdditionalMetadata[ucprt.SpaceNameKey]).To(BeEmpty())
+			Expect(ctx.AdditionalMetadata[taert.ProjectNameKey]).To(Equal(testProject))
+			Expect(ctx.AdditionalMetadata[taert.SpaceNameKey]).To(BeEmpty())
 			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
 			Expect(err).To(BeNil())
-			Expect(kubeconfig.Clusters["tanzu-cli-myucp/current"].Server).To(Equal(ucpContext.ClusterOpts.Endpoint + "/project/" + testProject))
+			Expect(kubeconfig.Clusters["tanzu-cli-mytae/current"].Server).To(Equal(taeContext.ClusterOpts.Endpoint + "/project/" + testProject))
 		})
-		It("should update the UCP context active resource to space given project and space names and also update the kubeconfig cluster URL accordingly", func() {
-			err = config.SetContext(ucpContext, false)
+		It("should update the TAE context active resource to space given project and space names and also update the kubeconfig cluster URL accordingly", func() {
+			err = config.SetContext(taeContext, false)
 			Expect(err).To(BeNil())
 
 			projectStr = testProject
 			spaceStr = testSpace
-			err = setUCPCtxActiveResource(cmd, []string{testContextName})
+			err = setTAECtxActiveResource(cmd, []string{testContextName})
 			Expect(err).To(BeNil())
 
 			ctx, err := config.GetContext(testContextName)
 			Expect(err).To(BeNil())
-			Expect(ctx.AdditionalMetadata[ucprt.ProjectNameKey]).To(Equal(testProject))
-			Expect(ctx.AdditionalMetadata[ucprt.SpaceNameKey]).To(Equal(testSpace))
+			Expect(ctx.AdditionalMetadata[taert.ProjectNameKey]).To(Equal(testProject))
+			Expect(ctx.AdditionalMetadata[taert.SpaceNameKey]).To(Equal(testSpace))
 			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
 			Expect(err).To(BeNil())
-			Expect(kubeconfig.Clusters["tanzu-cli-myucp/current"].Server).To(Equal(ucpContext.ClusterOpts.Endpoint + "/project/" + testProject + "/space/" + testSpace))
+			Expect(kubeconfig.Clusters["tanzu-cli-mytae/current"].Server).To(Equal(taeContext.ClusterOpts.Endpoint + "/project/" + testProject + "/space/" + testSpace))
 		})
 	})
 
@@ -563,7 +563,7 @@ var _ = Describe("create new context", func() {
 		testKubeConfigPath = "/fake/path/kubeconfig"
 		testContextName    = "fake-context-name"
 		fakeTMCEndpoint    = "https://cloud.vmware.com/auth"
-		fakeUCPEndpoint    = "https://fake.api.tanzu.cloud.vmware.com"
+		fakeTAEEndpoint    = "https://fake.api.tanzu.cloud.vmware.com"
 	)
 	var (
 		tkgConfigFile   *os.File
@@ -658,7 +658,7 @@ var _ = Describe("create new context", func() {
 		})
 	})
 
-	Describe("create context with ucp endpoint", func() {
+	Describe("create context with tae endpoint", func() {
 		var (
 			tlsServer *ghttp.Server
 			err       error
@@ -674,7 +674,7 @@ var _ = Describe("create new context", func() {
 			tlsServer.Close()
 		})
 
-		Describe("create ucp context", func() {
+		Describe("create tae context", func() {
 			var (
 				tkgConfigFile   *os.File
 				tkgConfigFileNG *os.File
@@ -704,18 +704,18 @@ var _ = Describe("create new context", func() {
 			})
 			Context("with endpoint and context name provided", func() {
 				It("should create context with given endpoint and context name", func() {
-					endpoint = fakeUCPEndpoint
+					endpoint = fakeTAEEndpoint
 					ctxName = testContextName
 					ctx, err = createNewContext()
 					Expect(err).To(BeNil())
 					Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
-					Expect(string(ctx.Target)).To(ContainSubstring(targetUCP))
+					Expect(string(ctx.Target)).To(ContainSubstring(targetTAE))
 					Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
 				})
 			})
 			Context("context name already exists", func() {
 				It("should return error", func() {
-					endpoint = fakeUCPEndpoint
+					endpoint = fakeTAEEndpoint
 					ctxName = existingContext
 					ctx, err = createNewContext()
 					Expect(err).ToNot(BeNil())
@@ -734,7 +734,7 @@ var _ = Describe("testing context use", func() {
 		testKubeConfigPath = "/fake/path/kubeconfig"
 		testContextName    = "fake-context-name"
 		fakeTMCEndpoint    = "https://cloud.vmware.com/auth"
-		fakeUCPEndpoint    = "https://fake.api.tanzu.cloud.vmware.com"
+		fakeTAEEndpoint    = "https://fake.api.tanzu.cloud.vmware.com"
 	)
 	var (
 		tkgConfigFile   *os.File

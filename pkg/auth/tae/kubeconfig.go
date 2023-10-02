@@ -1,8 +1,8 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-// Package ucp provides UCP authentication functions.
-package ucp
+// Package tae provides TAE authentication functions.
+package tae
 
 import (
 	"encoding/base64"
@@ -18,8 +18,8 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
-// GetUCPKubeconfig constructs and returns the kubeconfig that points to UCP Org and
-func GetUCPKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertPath string, skipTLSVerify bool) (string, string, string, error) {
+// GetTAEKubeconfig constructs and returns the kubeconfig that points to TAE Org and
+func GetTAEKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertPath string, skipTLSVerify bool) (string, string, string, error) {
 	clusterAPIServerURL := strings.TrimSpace(endpoint)
 	if !strings.HasPrefix(clusterAPIServerURL, "https://") && !strings.HasPrefix(clusterAPIServerURL, "http://") {
 		clusterAPIServerURL = "https://" + clusterAPIServerURL
@@ -54,27 +54,27 @@ func GetUCPKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertPat
 
 	kubeconfigByes, err := json.Marshal(config)
 	if err != nil {
-		return "", "", "", errors.Wrap(err, "failed to marshal the UCP kubeconfig")
+		return "", "", "", errors.Wrap(err, "failed to marshal the TAE kubeconfig")
 	}
 	kubeconfigPath := kubeutils.GetDefaultKubeConfigFile()
 	err = kubeutils.MergeKubeConfigWithoutSwitchContext(kubeconfigByes, kubeconfigPath)
 	if err != nil {
-		return "", "", "", errors.Wrap(err, "failed to merge the UCP kubeconfig")
+		return "", "", "", errors.Wrap(err, "failed to merge the TAE kubeconfig")
 	}
 
 	return kubeconfigPath, contextName, clusterAPIServerURL, nil
 }
 
-func kubeconfigContextName(ucpContextName string) string {
-	return "tanzu-cli-" + ucpContextName
+func kubeconfigContextName(taeContextName string) string {
+	return "tanzu-cli-" + taeContextName
 }
 
-func kubeconfigClusterName(ucpContextName string) string {
-	return "tanzu-cli-" + ucpContextName + "/current"
+func kubeconfigClusterName(taeContextName string) string {
+	return "tanzu-cli-" + taeContextName + "/current"
 }
 
-func kubeconfigUserName(ucpContextName string) string {
-	return "tanzu-cli-" + ucpContextName + "-user"
+func kubeconfigUserName(taeContextName string) string {
+	return "tanzu-cli-" + taeContextName + "-user"
 }
 
 func getExecConfig(c *configtypes.Context) *clientcmdapi.ExecConfig {

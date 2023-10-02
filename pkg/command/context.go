@@ -31,11 +31,11 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
-	ucprt "github.com/vmware-tanzu/tanzu-plugin-runtime/ucp"
+	taert "github.com/vmware-tanzu/tanzu-plugin-runtime/tae"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
+	taeauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tae"
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
-	ucpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/ucp"
 	kubecfg "github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig"
 	wcpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
@@ -53,7 +53,7 @@ var (
 const (
 	knownGlobalHost    = "cloud.vmware.com"
 	apiTokenType       = "api-token"
-	defaultUCPEndpoint = "https://api.tanzu.cloud.vmware.com"
+	defaultTAEEndpoint = "https://api.tanzu.cloud.vmware.com"
 
 	contextNotExistsForTarget      = "The provided context %v does not exist or is not active for the given target %v"
 	noActiveContextExistsForTarget = "There is no active context for the given target %v"
@@ -61,7 +61,7 @@ const (
 	contextForTargetSetInactive    = "The context %v for the target %v has been set as inactive"
 	deactivatingPlugin             = "Deactivating plugin '%v:%v' for context '%v'"
 
-	invalidTarget = "invalid target specified. Please specify a correct value for the `--target/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[ucp]"
+	invalidTarget = "invalid target specified. Please specify a correct value for the `--target/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]"
 )
 
 // constants that define context creation types
@@ -96,7 +96,7 @@ func init() {
 
 	initCreateCtxCmd()
 
-	listCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc]/application-engine[ucp])")
+	listCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc]/application-engine[tae])")
 	listCtxCmd.Flags().BoolVar(&onlyCurrent, "current", false, "list only current active contexts")
 	listCtxCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "output format: table|yaml|json")
 
@@ -104,7 +104,7 @@ func init() {
 
 	deleteCtxCmd.Flags().BoolVarP(&unattended, "yes", "y", false, "delete the context entry without confirmation")
 
-	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc]|application-engine[ucp])")
+	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc]|application-engine[tae])")
 }
 
 var createCtxCmd = &cobra.Command{
@@ -131,17 +131,17 @@ var createCtxCmd = &cobra.Command{
     # Create a TKG management cluster context using default kubeconfig path and a kubeconfig context
     tanzu context create mgmt-cluster --kubecontext kubecontext
 
-    # Create a Application Engine(UCP) context with default endpoint (--type option is not necessary for default endpoint)
-    tanzu context create myucp -endpoint https://api.tanzu.cloud.vmware.com 
+    # Create a Application Engine(TAE) context with default endpoint (--type option is not necessary for default endpoint)
+    tanzu context create mytae -endpoint https://api.tanzu.cloud.vmware.com 
 
-    # Create a Application Engine(UCP) context (--type option is needed for non-default endpoint)
-    tanzu context create myucp -endpoint https://non-default.ucp.endpoint.com --type application-engine
+    # Create a Application Engine(TAE) context (--type option is needed for non-default endpoint)
+    tanzu context create mytae -endpoint https://non-default.tae.endpoint.com --type application-engine
 
-    # Create a Application Engine(UCP) context by using the provided CA Bundle for TLS verification:
-    tanzu context create myucp --endpoint https://api.tanzu.cloud.vmware.com  --endpoint-ca-certificate /path/to/ca/ca-cert
+    # Create a Application Engine(TAE) context by using the provided CA Bundle for TLS verification:
+    tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com  --endpoint-ca-certificate /path/to/ca/ca-cert
 
-    # Create a Application Engine(UCP) context by explicit request to skip TLS verification, which is insecure:
-    tanzu context create myucp --endpoint https://api.tanzu.cloud.vmware.com --insecure-skip-tls-verify
+    # Create a Application Engine(TAE) context by explicit request to skip TLS verification, which is insecure:
+    tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com --insecure-skip-tls-verify
 
     [*] : Users have two options to create a kubernetes cluster context. They can choose the control
     plane option by providing 'endpoint', or use the kubeconfig for the cluster by providing
@@ -189,8 +189,8 @@ func createCtx(_ *cobra.Command, args []string) (err error) {
 	}
 	if ctx.Target == configtypes.TargetK8s {
 		err = k8sLogin(ctx)
-	} else if ctx.Target == configtypes.TargetUCP {
-		err = globalUCPLogin(ctx)
+	} else if ctx.Target == configtypes.TargetTAE {
+		err = globalTAELogin(ctx)
 	} else {
 		err = globalLogin(ctx)
 	}
@@ -223,7 +223,7 @@ func isGlobalContext(endpoint string) bool {
 	return false
 }
 
-func isGlobalUCPEndpoint(endpoint string) bool {
+func isGlobalTAEEndpoint(endpoint string) bool {
 	for _, hostStr := range []string{"api.tanzu.cloud.vmware.com", "api-dev.tanzu.cloud.vmware.com"} {
 		if strings.Contains(endpoint, hostStr) {
 			return true
@@ -250,7 +250,7 @@ func createNewContext() (context *configtypes.Context, err error) {
 	// user provided command line option "k8s-local-kubeconfig" or provided command line options to create a context using kubeconfig[optional] and context
 	if contextType == "k8s-local-kubeconfig" || kubeContext != "" {
 		ctxCreationType = ContextLocalKubeconfig
-	} else if contextType == "application-engine" || (endpoint != "" && isGlobalUCPEndpoint(endpoint)) {
+	} else if contextType == "application-engine" || (endpoint != "" && isGlobalTAEEndpoint(endpoint)) {
 		ctxCreationType = ContextApplicationEngine
 	} else if contextType == "mission-control" || (endpoint != "" && isGlobalContext(endpoint)) {
 		ctxCreationType = ContextMissionControl
@@ -278,7 +278,7 @@ func createContextUsingContextType(ctxCreationType string) (context *configtypes
 	case ContextLocalKubeconfig:
 		ctxCreateFunc = createContextWithKubeconfig
 	case ContextApplicationEngine:
-		ctxCreateFunc = createContextWithUCPEndpoint
+		ctxCreateFunc = createContextWithTAEEndpoint
 	}
 	return ctxCreateFunc()
 }
@@ -423,9 +423,9 @@ func createContextWithClusterEndpoint() (context *configtypes.Context, err error
 	return context, err
 }
 
-func createContextWithUCPEndpoint() (context *configtypes.Context, err error) {
+func createContextWithTAEEndpoint() (context *configtypes.Context, err error) {
 	if endpoint == "" {
-		endpoint, err = promptEndpoint(defaultUCPEndpoint)
+		endpoint, err = promptEndpoint(defaultTAEEndpoint)
 		if err != nil {
 			return
 		}
@@ -446,10 +446,10 @@ func createContextWithUCPEndpoint() (context *configtypes.Context, err error) {
 		return
 	}
 
-	// UCP context would have both CSP(GlobalOpts) auth details and kubeconfig(ClusterOpts),
+	// TAE context would have both CSP(GlobalOpts) auth details and kubeconfig(ClusterOpts),
 	context = &configtypes.Context{
 		Name:        ctxName,
-		Target:      configtypes.TargetUCP,
+		Target:      configtypes.TargetTAE,
 		GlobalOpts:  &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 		ClusterOpts: &configtypes.ClusterServer{},
 	}
@@ -472,14 +472,14 @@ func globalLogin(c *configtypes.Context) (err error) {
 	return nil
 }
 
-func globalUCPLogin(c *configtypes.Context) error {
-	claims, err := doCSPAuthAndUpdateContext(c, "UCP")
+func globalTAELogin(c *configtypes.Context) error {
+	claims, err := doCSPAuthAndUpdateContext(c, "TAE")
 	if err != nil {
 		return err
 	}
-	c.AdditionalMetadata[ucprt.OrgIDKey] = claims.OrgID
+	c.AdditionalMetadata[taert.OrgIDKey] = claims.OrgID
 
-	kubeCfg, kubeCtx, serverEndpoint, err := ucpauth.GetUCPKubeconfig(c, endpoint, claims.OrgID, endpointCACertPath, skipTLSVerify)
+	kubeCfg, kubeCtx, serverEndpoint, err := taeauth.GetTAEKubeconfig(c, endpoint, claims.OrgID, endpointCACertPath, skipTLSVerify)
 	if err != nil {
 		return err
 	}
@@ -495,7 +495,7 @@ func globalUCPLogin(c *configtypes.Context) error {
 
 	// format
 	fmt.Println()
-	log.Success("successfully created a Application Engine(UCP) context")
+	log.Success("successfully created a Application Engine(TAE) context")
 	return nil
 }
 
@@ -509,14 +509,14 @@ func doCSPAuthAndUpdateContext(c *configtypes.Context, endpointType string) (cla
 	if apiTokenExists {
 		log.Info("API token env var is set")
 	} else {
-		apiTokenValue, err = promptAPIToken("UCP")
+		apiTokenValue, err = promptAPIToken("TAE")
 		if err != nil {
 			return nil, err
 		}
 	}
 	token, err := csp.GetAccessTokenFromAPIToken(apiTokenValue, issuer)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get token from CSP for UCP")
+		return nil, errors.Wrap(err, "failed to get token from CSP for TAE")
 	}
 	claims, err = csp.ParseToken(&oauth2.Token{AccessToken: token.AccessToken})
 	if err != nil {
@@ -637,6 +637,7 @@ func k8sLogin(c *configtypes.Context) error {
 		if err != nil {
 			return err
 		}
+
 		log.Successf("successfully created a kubernetes context using the kubeconfig %s", c.ClusterOpts.Path)
 		return nil
 	}
@@ -977,7 +978,6 @@ func listDeactivatedPlugins(deactivatedPlugins []discovery.Discovered, ctxName s
 
 func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.Writer) {
 	target := getTarget()
-
 	op := component.NewOutputWriter(writer, outputFormat, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext", "AdditionalMetadata")
 	for _, ctx := range cfg.KnownContexts {
 		if target != configtypes.TargetUnknown && ctx.Target != target {
@@ -1007,10 +1007,10 @@ func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.W
 }
 
 // getContextsToDisplay returns a filtered list of contexts, and a boolean on
-// whether the contexts include some with UCP fields to display
+// whether the contexts include some with TAE fields to display
 func getContextsToDisplay(cfg *configtypes.ClientConfig, target configtypes.Target, onlyCurrent bool) ([]*configtypes.Context, bool) {
 	var contextOutputList []*configtypes.Context
-	var hasUCPFields bool
+	var hasTAEFields bool
 
 	for _, ctx := range cfg.KnownContexts {
 		if target != configtypes.TargetUnknown && ctx.Target != target {
@@ -1021,21 +1021,21 @@ func getContextsToDisplay(cfg *configtypes.ClientConfig, target configtypes.Targ
 			continue
 		}
 		// could be fine-tuned to check for non-empty values as well
-		if ctx.Target == configtypes.TargetUCP {
-			hasUCPFields = true
+		if ctx.Target == configtypes.TargetTAE {
+			hasTAEFields = true
 		}
 		contextOutputList = append(contextOutputList, ctx)
 	}
-	return contextOutputList, hasUCPFields
+	return contextOutputList, hasTAEFields
 }
 
 func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writer io.Writer) {
 	var k8sContextTable component.OutputWriter
 	target := getTarget()
 
-	ctxs, showUCPColumns := getContextsToDisplay(cfg, target, onlyCurrent)
+	ctxs, showTAEColumns := getContextsToDisplay(cfg, target, onlyCurrent)
 
-	if showUCPColumns {
+	if showTAEColumns {
 		k8sContextTable = component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Type", "Endpoint", "KubeConfigPath", "KubeContext", "Project", "Space")
 	} else {
 		k8sContextTable = component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Type", "Endpoint", "KubeConfigPath", "KubeContext")
@@ -1061,16 +1061,16 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 				context = ctx.ClusterOpts.Context
 			}
 			contextType := "cluster"
-			if ctx.Target == configtypes.TargetUCP {
+			if ctx.Target == configtypes.TargetTAE {
 				contextType = "TAE"
 			}
 
-			if showUCPColumns {
-				if ctx.AdditionalMetadata["ucpProjectName"] != nil {
-					project = ctx.AdditionalMetadata["ucpProjectName"].(string)
+			if showTAEColumns {
+				if ctx.AdditionalMetadata["taeProjectName"] != nil {
+					project = ctx.AdditionalMetadata["taeProjectName"].(string)
 				}
-				if ctx.AdditionalMetadata["ucpSpaceName"] != nil {
-					space = ctx.AdditionalMetadata["ucpSpaceName"].(string)
+				if ctx.AdditionalMetadata["taeSpaceName"] != nil {
+					space = ctx.AdditionalMetadata["taeSpaceName"].(string)
 				}
 				k8sContextTable.AddRow(ctx.Name, isCurrent, contextType, ep, path, context, project, space)
 			} else {
@@ -1081,7 +1081,7 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
-	if target == configtypes.TargetUnknown || target == configtypes.TargetK8s || target == configtypes.TargetUCP {
+	if target == configtypes.TargetUnknown || target == configtypes.TargetK8s || target == configtypes.TargetTAE {
 		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", configtypes.TargetK8s))
 		k8sContextTable.Render()
 	}
@@ -1093,7 +1093,7 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 
 var getCtxTokenCmd = &cobra.Command{
 	Use:    "get-token CONTEXT_NAME",
-	Short:  "Get the valid CSP token for the given UCP context.",
+	Short:  "Get the valid CSP token for the given TAE context.",
 	Args:   cobra.ExactArgs(1),
 	Hidden: true,
 	RunE:   getToken,
@@ -1105,8 +1105,8 @@ func getToken(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if ctx.Target != configtypes.TargetUCP {
-		return errors.Errorf("context %q is not of type UCP", name)
+	if ctx.Target != configtypes.TargetTAE {
+		return errors.Errorf("context %q is not of type TAE", name)
 	}
 	if csp.IsExpired(ctx.GlobalOpts.Auth.Expiration) {
 		_, err := csp.GetToken(&ctx.GlobalOpts.Auth)
@@ -1147,27 +1147,27 @@ func newUpdateCtxCmd() *cobra.Command {
 		Short:  "Update an aspect of a context (subject to change)",
 		Hidden: true,
 	}
-	ucpActiveResourceCmd.Flags().StringVarP(&projectStr, "project", "", "", "project name to be set as active")
-	ucpActiveResourceCmd.Flags().StringVarP(&spaceStr, "space", "", "", "space name to be set as active")
+	taeActiveResourceCmd.Flags().StringVarP(&projectStr, "project", "", "", "project name to be set as active")
+	taeActiveResourceCmd.Flags().StringVarP(&spaceStr, "space", "", "", "space name to be set as active")
 
 	updateCtxCmd.AddCommand(
-		ucpActiveResourceCmd,
+		taeActiveResourceCmd,
 	)
 	return updateCtxCmd
 }
 
-// ucpActiveResourceCmd updates the ucp active resource referenced by ucp context
+// taeActiveResourceCmd updates the TAE(Tanzu Application Engine) active resource referenced by tae context
 //
 // NOTE!!: This command is EXPERIMENTAL and subject to change in future
-var ucpActiveResourceCmd = &cobra.Command{
-	Use:    "ucp-active-resource CONTEXT_NAME",
-	Short:  "updates the UCP active resource for the given UCP context (subject to change).",
+var taeActiveResourceCmd = &cobra.Command{
+	Use:    "tae-active-resource CONTEXT_NAME",
+	Short:  "updates the Tanzu Application Engine(TAE) active resource for the given TAE context (subject to change).",
 	Hidden: true,
 	Args:   cobra.ExactArgs(1),
-	RunE:   setUCPCtxActiveResource,
+	RunE:   setTAECtxActiveResource,
 }
 
-func setUCPCtxActiveResource(_ *cobra.Command, args []string) error {
+func setTAECtxActiveResource(_ *cobra.Command, args []string) error {
 	name := args[0]
 	if projectStr == "" && spaceStr != "" {
 		return errors.Errorf("space cannot be set without project name. Please provide project name also using --project option")
@@ -1176,27 +1176,27 @@ func setUCPCtxActiveResource(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if ctx.Target != configtypes.TargetUCP {
-		return errors.Errorf("context %q is not of type UCP", name)
+	if ctx.Target != configtypes.TargetTAE {
+		return errors.Errorf("context %q is not of type TAE", name)
 	}
 	if ctx.AdditionalMetadata == nil {
 		ctx.AdditionalMetadata = make(map[string]interface{})
 	}
-	ctx.AdditionalMetadata[ucprt.ProjectNameKey] = projectStr
-	ctx.AdditionalMetadata[ucprt.SpaceNameKey] = spaceStr
+	ctx.AdditionalMetadata[taert.ProjectNameKey] = projectStr
+	ctx.AdditionalMetadata[taert.SpaceNameKey] = spaceStr
 	err = config.SetContext(ctx, false)
 	if err != nil {
-		return errors.Wrap(err, "failed updating the context %q with the active UCP resource")
+		return errors.Wrap(err, "failed updating the context %q with the active TAE resource")
 	}
-	err = updateUCPContextKubeconfig(ctx, projectStr, spaceStr)
+	err = updateTAEContextKubeconfig(ctx, projectStr, spaceStr)
 	if err != nil {
-		return errors.Wrap(err, "failed to update the UCP context kubeconfig")
+		return errors.Wrap(err, "failed to update the TAE context kubeconfig")
 	}
 
 	return nil
 }
 
-func updateUCPContextKubeconfig(cliContext *configtypes.Context, projectName, spaceName string) error {
+func updateTAEContextKubeconfig(cliContext *configtypes.Context, projectName, spaceName string) error {
 	kcfg, err := clientcmd.LoadFromFile(cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "unable to load kubeconfig")
