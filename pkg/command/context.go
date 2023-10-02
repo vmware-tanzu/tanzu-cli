@@ -42,6 +42,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 var (
@@ -97,21 +98,31 @@ func init() {
 	initCreateCtxCmd()
 
 	listCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc]/application-engine[tae])")
+	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{compK8sTarget, compTAETarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+	}))
+
 	listCtxCmd.Flags().BoolVar(&onlyCurrent, "current", false, "list only current active contexts")
 	listCtxCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "output format: table|yaml|json")
+	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
 
 	getCtxCmd.Flags().StringVarP(&getOutputFmt, "output", "o", "yaml", "output format: yaml|json")
+	utils.PanicOnErr(getCtxCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
 
 	deleteCtxCmd.Flags().BoolVarP(&unattended, "yes", "y", false, "delete the context entry without confirmation")
 
 	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc]|application-engine[tae])")
+	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{compK8sTarget, compTAETarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+	}))
 }
 
 var createCtxCmd = &cobra.Command{
-	Use:   "create CONTEXT_NAME",
-	Short: "Create a Tanzu CLI context",
-	Args:  cobra.MaximumNArgs(1),
-	RunE:  createCtx,
+	Use:               "create CONTEXT_NAME",
+	Short:             "Create a Tanzu CLI context",
+	Args:              cobra.MaximumNArgs(1),
+	ValidArgsFunction: completeCreateCtx,
+	RunE:              createCtx,
 	Example: `
     # Create a TKG management cluster context using endpoint and type (--type is optional, if not provided the CLI will infer the type from the endpoint)
     tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port] --type k8s-cluster-endpoint
@@ -155,15 +166,32 @@ func initCreateCtxCmd() {
 	_ = createCtxCmd.Flags().MarkDeprecated("name", "it has been replaced by using an argument to the command")
 
 	createCtxCmd.Flags().StringVar(&endpoint, "endpoint", "", "endpoint to create a context for")
+	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("endpoint", cobra.NoFileCompletions))
+
 	createCtxCmd.Flags().StringVar(&apiToken, "api-token", "", "API token for the SaaS context")
+	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("api-token", cobra.NoFileCompletions))
+
+	// Shell completion for this flag is the default behavior of doing file completion
 	createCtxCmd.Flags().StringVar(&kubeConfig, "kubeconfig", "", "path to the kubeconfig file; valid only if user doesn't choose 'endpoint' option.(See [*])")
+
 	createCtxCmd.Flags().StringVar(&kubeContext, "kubecontext", "", "the context in the kubeconfig to use; valid only if user doesn't choose 'endpoint' option.(See [*]) ")
+	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("kubecontext", completeKubeContext))
+
 	createCtxCmd.Flags().BoolVar(&stderrOnly, "stderr-only", false, "send all output to stderr rather than stdout")
 	createCtxCmd.Flags().BoolVar(&forceCSP, "force-csp", false, "force the context to use CSP auth")
 	createCtxCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
+	// Shell completion for this flag is the default behavior of doing file completion
 	createCtxCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
 	createCtxCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
 	createCtxCmd.Flags().StringVar(&contextType, "type", "", "type of context to create (mission-control | application-engine | k8s-cluster-endpoint | k8s-local-kubeconfig)")
+	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{
+				"mission-control\tContext for a Tanzu Mission Control endpoint",
+				"application-engine\tContext for a Tanzu Application Engine endpoint",
+				"k8s-cluster-endpoint\tContext for a Kubernetes Cluster endpoint",
+				"k8s-local-kubeconfig\tContext using a Kubernetes local kubeconfig file"},
+			cobra.ShellCompDirectiveNoFileComp
+	}))
 
 	_ = createCtxCmd.Flags().MarkHidden("api-token")
 	_ = createCtxCmd.Flags().MarkHidden("stderr-only")
@@ -694,9 +722,10 @@ func vSphereSupervisorLogin(endpoint string) (mergeFilePath, currentContext stri
 }
 
 var listCtxCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List contexts",
-	RunE:  listCtx,
+	Use:               "list",
+	Short:             "List contexts",
+	ValidArgsFunction: cobra.NoFileCompletions,
+	RunE:              listCtx,
 }
 
 func listCtx(cmd *cobra.Command, _ []string) error {
@@ -719,9 +748,10 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 }
 
 var getCtxCmd = &cobra.Command{
-	Use:   "get CONTEXT_NAME",
-	Short: "Display a context from the config",
-	RunE:  getCtx,
+	Use:               "get CONTEXT_NAME",
+	Short:             "Display a context from the config",
+	ValidArgsFunction: completeAllContexts,
+	RunE:              getCtx,
 }
 
 func getCtx(cmd *cobra.Command, args []string) error {
@@ -825,9 +855,10 @@ func getValues(m map[configtypes.Target]*configtypes.Context) []*configtypes.Con
 }
 
 var deleteCtxCmd = &cobra.Command{
-	Use:   "delete CONTEXT_NAME",
-	Short: "Delete a context from the config",
-	RunE:  deleteCtx,
+	Use:               "delete CONTEXT_NAME",
+	Short:             "Delete a context from the config",
+	ValidArgsFunction: completeAllContexts,
+	RunE:              deleteCtx,
 }
 
 func deleteCtx(_ *cobra.Command, args []string) error {
@@ -860,9 +891,10 @@ func deleteCtx(_ *cobra.Command, args []string) error {
 }
 
 var useCtxCmd = &cobra.Command{
-	Use:   "use CONTEXT_NAME",
-	Short: "Set the context to be used by default",
-	RunE:  useCtx,
+	Use:               "use CONTEXT_NAME",
+	Short:             "Set the context to be used by default",
+	ValidArgsFunction: completeAllContexts,
+	RunE:              useCtx,
 }
 
 func useCtx(_ *cobra.Command, args []string) error {
@@ -911,10 +943,11 @@ func syncCurrentKubeContext(ctx *configtypes.Context) error {
 }
 
 var unsetCtxCmd = &cobra.Command{
-	Use:   "unset CONTEXT_NAME",
-	Short: "Unset the active context so that it is not used by default.",
-	Args:  cobra.MaximumNArgs(1),
-	RunE:  unsetCtx,
+	Use:               "unset CONTEXT_NAME",
+	Short:             "Unset the active context so that it is not used by default.",
+	Args:              cobra.MaximumNArgs(1),
+	ValidArgsFunction: completeActiveContexts,
+	RunE:              unsetCtx,
 }
 
 func unsetCtx(_ *cobra.Command, args []string) error {
@@ -1104,11 +1137,12 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 }
 
 var getCtxTokenCmd = &cobra.Command{
-	Use:    "get-token CONTEXT_NAME",
-	Short:  "Get the valid CSP token for the given TAE context.",
-	Args:   cobra.ExactArgs(1),
-	Hidden: true,
-	RunE:   getToken,
+	Use:               "get-token CONTEXT_NAME",
+	Short:             "Get the valid CSP token for the given TAE context.",
+	Args:              cobra.ExactArgs(1),
+	Hidden:            true,
+	ValidArgsFunction: completeTAEContexts,
+	RunE:              getToken,
 }
 
 func getToken(cmd *cobra.Command, args []string) error {
@@ -1172,11 +1206,12 @@ func newUpdateCtxCmd() *cobra.Command {
 //
 // NOTE!!: This command is EXPERIMENTAL and subject to change in future
 var taeActiveResourceCmd = &cobra.Command{
-	Use:    "tae-active-resource CONTEXT_NAME",
-	Short:  "updates the Tanzu Application Engine(TAE) active resource for the given TAE context (subject to change).",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
-	RunE:   setTAECtxActiveResource,
+	Use:               "tae-active-resource CONTEXT_NAME",
+	Short:             "updates the Tanzu Application Engine(TAE) active resource for the given TAE context (subject to change).",
+	Hidden:            true,
+	Args:              cobra.ExactArgs(1),
+	ValidArgsFunction: completeTAEContexts,
+	RunE:              setTAECtxActiveResource,
 }
 
 func setTAECtxActiveResource(_ *cobra.Command, args []string) error {
@@ -1238,4 +1273,127 @@ func prepareClusterServerURL(context *configtypes.Context, projectName, spaceNam
 		return serverURL
 	}
 	return serverURL + "/space/" + spaceName
+}
+
+// ====================================
+// Shell completion functions
+// ====================================
+func completeAllContexts(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	cfg, err := config.GetClientConfig()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	target := getTarget()
+
+	var allCtxs []*configtypes.Context
+	for _, ctx := range cfg.KnownContexts {
+		if target == configtypes.TargetUnknown || target == ctx.Target {
+			allCtxs = append(allCtxs, ctx)
+		}
+	}
+	return completionFormatCtxs(allCtxs), cobra.ShellCompDirectiveNoFileComp
+}
+
+func completeTAEContexts(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	cfg, err := config.GetClientConfig()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var taeCtxs []*configtypes.Context
+	for _, ctx := range cfg.KnownContexts {
+		if ctx.Target == configtypes.TargetTAE {
+			taeCtxs = append(taeCtxs, ctx)
+		}
+	}
+	return completionFormatCtxs(taeCtxs), cobra.ShellCompDirectiveNoFileComp
+}
+
+func completeActiveContexts(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	currentCtxMap, err := config.GetAllCurrentContextsMap()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	target := getTarget()
+
+	var allCtxs []*configtypes.Context
+	for _, ctx := range currentCtxMap {
+		if target == configtypes.TargetUnknown || target == ctx.Target {
+			allCtxs = append(allCtxs, ctx)
+		}
+	}
+	return completionFormatCtxs(allCtxs), cobra.ShellCompDirectiveNoFileComp
+}
+
+// Setup shell completion for the kube-context flag
+func completeKubeContext(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if kubeConfig == "" {
+		kubeConfig = getDefaultKubeconfigPath()
+	}
+
+	cobra.CompDebugln("About to get the different kube-contexts", false)
+
+	kubeclient, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfig},
+		&clientcmd.ConfigOverrides{}).RawConfig()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var comps []string
+	for name, context := range kubeclient.Contexts {
+		comps = append(comps, fmt.Sprintf("%s\t%s@%s", name, context.AuthInfo, context.Cluster))
+	}
+	// Sort the completion to make testing easier
+	sort.Strings(comps)
+	return comps, cobra.ShellCompDirectiveNoFileComp
+}
+
+func completeCreateCtx(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) == 0 {
+		comps := cobra.AppendActiveHelp(nil, "Please specify a name for the context")
+		return comps, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	if endpoint == "" && kubeContext == "" {
+		// The user must provide more info by using flags.
+		// Note that those flags are not marked as mandatory
+		// because the prompt mechanism can be used instead.
+		comps := []string{"--"}
+		return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+	}
+
+	// The user has provided enough information
+	return nil, cobra.ShellCompDirectiveNoFileComp
+}
+
+func completionFormatCtxs(ctxs []*configtypes.Context) []string {
+	var comps []string
+	for _, ctx := range ctxs {
+		info, _ := config.EndpointFromContext(ctx)
+
+		if info == "" && ctx.Target == configtypes.TargetK8s && ctx.ClusterOpts != nil {
+			info = fmt.Sprintf("%s:%s", ctx.ClusterOpts.Path, ctx.ClusterOpts.Context)
+		}
+
+		comps = append(comps, fmt.Sprintf("%s\t%s", ctx.Name, info))
+	}
+
+	// Sort the completion to make testing easier
+	sort.Strings(comps)
+	return comps
 }

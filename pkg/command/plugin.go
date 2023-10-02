@@ -24,6 +24,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -72,20 +73,13 @@ func newPluginCmd() *cobra.Command {
 	// --local is renamed to --local-source
 	installPluginCmd.Flags().StringVarP(&local, "local", "", "", "path to local plugin source")
 	msg := "this was done in the v1.0.0 release, it will be removed following the deprecation policy (6 months). Use the --local-source flag instead.\n"
-	if err := installPluginCmd.Flags().MarkDeprecated("local", msg); err != nil {
-		// Will only fail if the flag does not exist, which would indicate a coding error,
-		// so let's panic so we notice immediately.
-		panic(err)
-	}
+	utils.PanicOnErr(installPluginCmd.Flags().MarkDeprecated("local", msg))
 
 	// The --local-source flag for installing plugins is only used in development testing
 	// and should not be used in production.  We mark it as hidden to help convey this reality.
 	installPluginCmd.Flags().StringVarP(&local, "local-source", "l", "", "path to local plugin source")
-	if err := installPluginCmd.Flags().MarkHidden("local-source"); err != nil {
-		// Will only fail if the flag does not exist, which would indicate a coding error,
-		// so let's panic so we notice immediately.
-		panic(err)
-	}
+	utils.PanicOnErr(installPluginCmd.Flags().MarkHidden("local-source"))
+
 	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
 	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "delete the plugin without asking for confirmation")
 

@@ -16,6 +16,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
@@ -84,19 +85,13 @@ func newSearchPluginCmd() *cobra.Command {
 
 	f.StringVarP(&local, "local", "", "", "path to local plugin source")
 	msg := fmt.Sprintf("this was done in the %q release, it will be removed following the deprecation policy (6 months). Use the %q flag instead.\n", "v1.0.0", "--local-source")
-	if err := f.MarkDeprecated("local", msg); err != nil {
-		// Will only fail if the flag does not exist, which would indicate a coding error,
-		// so let's panic so we notice immediately.
-		panic(err)
-	}
+	utils.PanicOnErr(f.MarkDeprecated("local", msg))
+
 	f.StringVarP(&local, "local-source", "l", "", "path to local plugin source")
 	// We hide the "local-source" flag because installing from a local-source is not supported in production.
 	// See the "local-source" flag of the "plugin install" command.
-	if err := f.MarkHidden("local-source"); err != nil {
-		// Will only fail if the flag does not exist, which would indicate a coding error,
-		// so let's panic so we notice immediately.
-		panic(err)
-	}
+	utils.PanicOnErr(f.MarkHidden("local-source"))
+
 	f.StringVarP(&targetStr, "target", "t", "", fmt.Sprintf("limit the search to plugins of the specified target (%s)", common.TargetList))
 
 	searchCmd.MarkFlagsMutuallyExclusive("local", "name")
