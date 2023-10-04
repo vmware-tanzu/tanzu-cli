@@ -98,6 +98,8 @@ func newGetCmd() *cobra.Command {
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: completeGroupGet,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			var specifiedVersion string
+
 			gID := args[0]
 
 			groupIdentifier := plugininventory.PluginGroupIdentifierFromID(gID)
@@ -107,6 +109,8 @@ func newGetCmd() *cobra.Command {
 
 			if groupIdentifier.Version == "" {
 				groupIdentifier.Version = cli.VersionLatest
+			} else {
+				specifiedVersion = ":" + groupIdentifier.Version
 			}
 
 			criteria := &discovery.GroupDiscoveryCriteria{
@@ -128,7 +132,7 @@ func newGetCmd() *cobra.Command {
 			}
 
 			if outputFormat == "" || outputFormat == string(component.TableOutputType) {
-				displayGroupContentAsTable(groups[0], cmd.OutOrStdout())
+				displayGroupContentAsTable(groups[0], specifiedVersion, cmd.OutOrStdout())
 			} else {
 				displayGroupContentAsList(groups[0], cmd.OutOrStdout())
 			}
@@ -210,29 +214,52 @@ func displayGroupDetails(groups []*plugininventory.PluginGroup, writer io.Writer
 	component.NewObjectWriter(writer, outputFormat, details).Render()
 }
 
-func displayGroupContentAsTable(group *plugininventory.PluginGroup, writer io.Writer) {
+func displayGroupContentAsTable(group *plugininventory.PluginGroup, specifiedVersion string, writer io.Writer) {
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
-	output := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
+	outputStandalone := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
 
 	gID := plugininventory.PluginGroupToID(group)
 	_, _ = cyanBold.Println("Plugins in Group: ", cyanBoldItalic.Sprintf("%s:%s", gID, group.RecommendedVersion))
 
+	if showNonMandatory {
+		fmt.Println("")
+		_, _ = cyanBold.Println("Standalone Plugins")
+	}
+
 	for _, plugin := range group.Versions[group.RecommendedVersion] {
-		if showNonMandatory || plugin.Mandatory {
-			output.AddRow(plugin.Name, plugin.Target, plugin.Version)
+		if plugin.Mandatory {
+			outputStandalone.AddRow(plugin.Name, plugin.Target, plugin.Version)
 		}
 	}
-	output.Render()
+	outputStandalone.Render()
+
+	if showNonMandatory {
+		fmt.Println("")
+		log.Infof("The standalone plugins in this plugin group are installed when the 'tanzu plugin install --group %s%s' command is invoked.", gID, specifiedVersion)
+
+		fmt.Println("")
+		outputContext := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
+		_, _ = cyanBold.Println("Contextual Plugins")
+		for _, plugin := range group.Versions[group.RecommendedVersion] {
+			if !plugin.Mandatory {
+				outputContext.AddRow(plugin.Name, plugin.Target, plugin.Version)
+			}
+		}
+		outputContext.Render()
+
+		fmt.Println("")
+		log.Info("The contextual plugins in this plugin group are automatically installed, and only available for use, when a Tanzu context which supports them is created or activated/used.")
+	}
 }
 
 func displayGroupContentAsList(group *plugininventory.PluginGroup, writer io.Writer) {
-	output := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Group", "PluginName", "PluginTarget", "PluginVersion")
+	output := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Group", "PluginName", "PluginTarget", "PluginVersion", "Context-Scoped")
 
 	gID := fmt.Sprintf("%s:%s", plugininventory.PluginGroupToID(group), group.RecommendedVersion)
 	for _, plugin := range group.Versions[group.RecommendedVersion] {
 		if showNonMandatory || plugin.Mandatory {
-			output.AddRow(gID, plugin.Name, plugin.Target, plugin.Version)
+			output.AddRow(gID, plugin.Name, plugin.Target, plugin.Version, !plugin.Mandatory)
 		}
 	}
 	output.Render()
