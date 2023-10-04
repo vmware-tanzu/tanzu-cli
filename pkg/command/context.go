@@ -132,7 +132,7 @@ var createCtxCmd = &cobra.Command{
     tanzu context create mgmt-cluster --kubecontext kubecontext
 
     # Create an Application Engine (TAE) context with the default endpoint (--type is not necessary for the default endpoint)
-    tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com 
+    tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com
 
     # Create an Application Engine (TAE) context (--type is needed for a non-default endpoint)
     tanzu context create mytae --endpoint https://non-default.tae.endpoint.com --type application-engine
