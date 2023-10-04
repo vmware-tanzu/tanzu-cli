@@ -57,7 +57,6 @@ TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_PASSWORD = testpassword
 endif
 
 
-
 # Set the plugin group name for the plugins used to execute E2E test cases.
 E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_TMC ?= vmware-tmc/tmc-user:v9.9.9
 E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_K8S ?= vmware-tkg/default:v9.9.9

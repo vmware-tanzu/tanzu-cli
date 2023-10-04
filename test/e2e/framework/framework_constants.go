@@ -193,14 +193,14 @@ const (
 	Config                      = "config"
 	TanzuCLIE2ETestBinaryPath   = "TANZU_CLI_E2E_TEST_BINARY_PATH"
 	WiredMockHTTPServerStartCmd = "docker run --rm -d -p 8080:8080 -p 8443:8443 --name %s -v %s:/home/wiremock rodolpheche/wiremock:2.25.1"
-	HttpMockServerStopCmd       = "docker container stop %s"
-	HttpMockServerName          = "wiremock"
+	HTTPMockServerStopCmd       = "docker container stop %s"
+	HTTPMockServerName          = "wiremock"
 	defaultTimeout              = 5 * time.Second
 
 	TMCEndpointForPlugins        = "/v1alpha1/system/binaries/plugins"
 	TMCMockServerEndpoint        = "http://localhost:8080"
 	TMCPluginsMockServerEndpoint = "http://localhost:8080/v1alpha1/system/binaries/plugins"
-	HttpContentType              = "application/json; charset=utf-8"
+	HTTPContentType              = "application/json; charset=utf-8"
 
 	// k8s CRD file
 	K8SCRDFilePath = "../../framework/config/cli.tanzu.vmware.com_cliplugins.yaml"

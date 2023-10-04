@@ -246,13 +246,13 @@ func createCtx(_ *cobra.Command, args []string) (err error) {
 	}
 
 	// Sync all required plugins
-	_ = syncContextPlugins()
+	_ = syncContextPlugins(ctx.ContextType)
 
 	return nil
 }
 
-func syncContextPlugins() error {
-	err := pluginmanager.SyncPlugins()
+func syncContextPlugins(contextType configtypes.ContextType) error {
+	err := pluginmanager.SyncPluginsForContextType(contextType)
 	if err != nil {
 		log.Warningf("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
 	}
@@ -1006,7 +1006,7 @@ func useCtx(_ *cobra.Command, args []string) error {
 	}
 
 	// Sync all required plugins
-	_ = syncContextPlugins()
+	_ = syncContextPlugins(ctx.ContextType)
 
 	return nil
 }

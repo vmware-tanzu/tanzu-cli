@@ -51,6 +51,8 @@ const (
 	missingTargetStr             = "unable to uniquely identify plugin '%v'. Please specify the target (" + common.TargetList + ") of the plugin using the `--target` flag"
 	errorWhileDiscoveringPlugins = "there was an error while discovering plugins, error information: '%v'"
 	errorNoDiscoverySourcesFound = "there are no plugin discovery sources available. Please run 'tanzu plugin source init'"
+
+	errorNoActiveContexForGivenContextType = "there is no active context for the given context type `%v`"
 )
 
 var execCommand = exec.Command
@@ -160,20 +162,27 @@ func GetAdditionalTestPluginDiscoveries() []configtypes.PluginDiscovery {
 	return testDiscoveries
 }
 
-// DiscoverServerPlugins returns the available plugins associated all the active contexts
+// DiscoverServerPlugins returns the available discovered plugins associated with all active contexts
 func DiscoverServerPlugins() ([]discovery.Discovered, error) {
-	var plugins []discovery.Discovered
-	var errList []error
-
 	currentContextMap, err := configlib.GetAllActiveContextsMap()
 	if err != nil {
 		return nil, err
 	}
-	if len(currentContextMap) == 0 {
+	contexts := make([]*configtypes.Context, 0)
+	for _, context := range currentContextMap {
+		contexts = append(contexts, context)
+	}
+	return DiscoverServerPluginsForGivenContexts(contexts)
+}
+
+// DiscoverServerPluginsForGivenContexts returns the available discovered plugins associated with specific contexts
+func DiscoverServerPluginsForGivenContexts(contexts []*configtypes.Context) ([]discovery.Discovered, error) {
+	var plugins []discovery.Discovered
+	var errList []error
+	if len(contexts) == 0 {
 		return plugins, nil
 	}
-
-	for _, context := range currentContextMap {
+	for _, context := range contexts {
 		var discoverySources []configtypes.PluginDiscovery
 		discoverySources = append(discoverySources, context.DiscoverySources...)
 		discoverySources = append(discoverySources, defaultDiscoverySourceBasedOnContext(context)...)
@@ -990,7 +999,41 @@ func SyncPlugins() error {
 	if err != nil {
 		errList = append(errList, err)
 	}
-	if installedPlugins, err := pluginsupplier.GetInstalledServerPlugins(); err == nil {
+	err = installDiscoveredContextPlugins(plugins)
+	if err != nil {
+		errList = append(errList, err)
+	}
+	return kerrors.NewAggregate(errList)
+}
+
+// SyncPluginsForContextType installs the plugins for given ContextType
+func SyncPluginsForContextType(contextType configtypes.ContextType) error {
+	ctx, err := configlib.GetActiveContext(contextType)
+	if err != nil {
+		return err
+	}
+	if ctx == nil {
+		return fmt.Errorf(errorNoActiveContexForGivenContextType, contextType)
+	}
+	log.Infof("Checking for required plugins for context %s...", ctx.Name)
+	errList := make([]error, 0)
+	plugins, err := DiscoverServerPluginsForGivenContexts([]*configtypes.Context{ctx})
+	if err != nil {
+		errList = append(errList, err)
+	}
+	err = installDiscoveredContextPlugins(plugins)
+	if err != nil {
+		errList = append(errList, err)
+	}
+	return kerrors.NewAggregate(errList)
+}
+
+// installDiscoveredContextPlugins installs the given context scope plugins
+func installDiscoveredContextPlugins(plugins []discovery.Discovered) error {
+	var errList []error
+	var err error
+	var installedPlugins []cli.PluginInfo
+	if installedPlugins, err = pluginsupplier.GetInstalledServerPlugins(); err == nil {
 		setAvailablePluginsStatus(plugins, installedPlugins)
 	}
 

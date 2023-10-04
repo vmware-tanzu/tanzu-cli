@@ -410,7 +410,7 @@ func StartMockServer(tf *Framework, mappingDir, containerName string) error {
 
 // StopContainer stops the given docker container
 func StopContainer(tf *Framework, containerName string) error {
-	cmd := fmt.Sprintf(HttpMockServerStopCmd, containerName)
+	cmd := fmt.Sprintf(HTTPMockServerStopCmd, containerName)
 	_, _, err := tf.Exec.Exec(cmd)
 	return err
 }
@@ -420,7 +420,7 @@ func ConvertPluginsInfoToTMCEndpointMockResponse(plugins []*PluginInfo) (*TMCPlu
 	tmcPlugins := &TMCPluginsResponse{}
 	tmcPlugins.PluginsInfo = TMCPluginsInfo{}
 	tmcPlugins.PluginsInfo.Plugins = make([]TMCPlugin, 0)
-	for i, _ := range plugins {
+	for i := range plugins {
 		tmcPlugin := TMCPlugin{}
 		tmcPlugin.Name = plugins[i].Name
 		tmcPlugin.Description = plugins[i].Description
@@ -431,8 +431,8 @@ func ConvertPluginsInfoToTMCEndpointMockResponse(plugins []*PluginInfo) (*TMCPlu
 	m.Request.Method = "GET"
 	m.Request.URL = TMCEndpointForPlugins
 	m.Response.Status = 200
-	m.Response.Headers.ContentType = HttpContentType
-	m.Response.Headers.Accept = HttpContentType
+	m.Response.Headers.ContentType = HTTPContentType
+	m.Response.Headers.Accept = HTTPContentType
 	content, err := json.Marshal(tmcPlugins.PluginsInfo)
 	if err != nil {
 		log.Error(err, "error while processing input type to json")
@@ -521,8 +521,8 @@ func GetHTTPCall(url string, v interface{}) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Content-Type", HttpContentType)
-	req.Header.Set("Accept", HttpContentType)
+	req.Header.Set("Content-Type", HTTPContentType)
+	req.Header.Set("Accept", HTTPContentType)
 	client := &http.Client{}
 	response, err := client.Do(req)
 	if err != nil {

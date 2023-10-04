@@ -19,6 +19,8 @@ import (
 var stdOut string
 var stdErr string
 
+const thereShouldNotBeError = "there should be an error"
+
 // Below are the use cases executed in this suite
 // Use case 1: create context when there are no plugins to sync
 // Use case 2: created a context (make sure sync installs plugins), uninstall plugin, run plugins sync (should install uninstall plugins)
@@ -63,7 +65,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 			var mockResPluginsInfo f.TMCPluginsInfo
 			// check the tmc mocked endpoint is working as expected
@@ -76,7 +78,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			contextName = f.ContextPrefixTMC + f.RandomString(4)
 			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextName, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextName), activeContextShouldBeRecentlyAddedOne)
 		})
@@ -90,7 +92,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("delete current context and stop mock server", func() {
 			_, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
@@ -123,7 +125,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 			var mockResPluginsInfo f.TMCPluginsInfo
 			// check the tmc mocked endpoint is working as expected
@@ -136,7 +138,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			contextName = f.ContextPrefixTMC + f.RandomString(4)
 			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextName, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextName), activeContextShouldBeRecentlyAddedOne)
 		})
@@ -180,7 +182,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(pluginsList)).Should(Equal(0), "all context plugins should be uninstalled as context delete")
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
@@ -224,7 +226,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			// skip last plugin in the slice as it has incorrect version info, which is not available in the mock response
 			pluginsGeneratedMockResponseWithCorrectInfo = pluginsToGenerateMockResponse[:numberOfPluginsToInstall-1]
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 			var mockResPluginsInfo f.TMCPluginsInfo
 			// check the tmc mocked endpoint is working as expected
@@ -240,7 +242,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			Expect(stdErr).NotTo(BeNil(), "there should be stderr")
 			Expect(stdErr).To(ContainSubstring(f.UnableToSync), "there should be sync error as all plugins not available in repo")
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextName), activeContextShouldBeRecentlyAddedOne)
 		})
@@ -285,7 +287,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			for i := range installedPluginsList {
 				Expect(stdOut).To(ContainSubstring(fmt.Sprintf(f.DeactivatingPlugin, installedPluginsList[i].Name, installedPluginsList[i].Version, contextName)))
 			}
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
@@ -324,7 +326,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 
 			var mockResPluginsInfo f.TMCPluginsInfo
@@ -336,7 +338,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			contextNameOne = f.ContextPrefixTMC + f.RandomString(4)
 			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameOne, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameOne), activeContextShouldBeRecentlyAddedOne)
 
@@ -355,7 +357,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 
 			// check the tmc mocked endpoint is working as expected
@@ -367,7 +369,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			contextNameTwo = f.ContextPrefixTMC + f.RandomString(4)
 			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTwo, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameTwo), activeContextShouldBeRecentlyAddedOne)
 
@@ -383,7 +385,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), deleteContextWithoutError)
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameTwo)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
@@ -422,7 +424,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 
 			var mockResPluginsInfo f.TMCPluginsInfo
@@ -434,7 +436,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			contextNameOne = f.ContextPrefixTMC + f.RandomString(4)
 			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameOne, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameOne), activeContextShouldBeRecentlyAddedOne)
 
@@ -453,7 +455,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 
 			// check the tmc mocked endpoint is working as expected
@@ -475,7 +477,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("delete current context", func() {
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameOne)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
@@ -529,7 +531,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			contextNameK8s = f.ContextPrefixK8s + f.RandomString(4)
 			err := tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNameK8s), "the active context should be recently added context")
 			contexts = append(contexts, contextNameK8s)
@@ -559,7 +561,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 			var mockResPluginsInfo f.TMCPluginsInfo
 			// check the tmc mocked endpoint is working as expected
@@ -573,7 +575,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			contextNameTMC = f.ContextPrefixTMC + f.RandomString(4)
 			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTMC, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameTMC), activeContextShouldBeRecentlyAddedOne)
 			contexts = append(contexts, contextNameTMC)
@@ -603,7 +605,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("use first context, check plugin list", func() {
 			err = tf.ContextCmd.UseContext(contextNameK8s)
 			Expect(err).To(BeNil(), "use context should not return any error")
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeK8s))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameK8s), active, "the active context should be the recently switched one")
 
@@ -641,7 +643,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 			err = tf.ContextCmd.UseContext(contextNameTMC)
 			Expect(err).To(BeNil(), "use context should not return any error")
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameTMC), activeContextShouldBeRecentlyAddedOne)
 
@@ -656,7 +658,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("delete tmc/k8s contexts and the KIND cluster", func() {
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameTMC)
 			Expect(err).To(BeNil(), "context should be deleted without error")
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameK8s)
@@ -666,7 +668,284 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		})
 	})
 
-	// Use Case 7: Plugin List, sync, search and install functionalities with Context Issues
+	// Use case 7: Sync for single ContextType specific plugins, and validate the plugin list
+	// run context create (make sure another ContextType context is active, but yet to install plugins), it should not perform the sync for all active contexts
+	// run ContextType specific plugin sync (for k8s ContextType), make sync should not happen for tmc context even though its active
+	// run ContextType specific plugin sync (for tmc ContextType), make sync should not happen for k8s context even though its active
+	Context("Use case: create k8s and tmc specific contexts, validate plugins list and perform pluin sync, and perform context switch", func() {
+		var clusterInfo *f.ClusterInfo
+		var pluginCRFilePaths []string
+		var pluginsInfoForCRsApplied, installedPluginsListK8s []*f.PluginInfo
+		var contextNameK8s string
+		contexts := make([]string, 0)
+		totalInstalledPlugins := 1 // telemetry plugin that is part of essentials plugin group will always be installed
+		var err error
+		// Test case: a. k8s: create KIND cluster, apply CRD
+		It("create KIND cluster", func() {
+			// Create KIND cluster, which is used in test cases to create context's
+			clusterInfo, err = f.CreateKindCluster(tf, f.ContextPrefixK8s+f.RandomNumber(4))
+			Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
+		})
+		// Test case: b. k8s: apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins
+		It("apply CRD and CRs to KIND cluster", func() {
+			err = f.ApplyConfigOnKindCluster(tf, clusterInfo, append(make([]string, 0), f.K8SCRDFilePath))
+			Expect(err).To(BeNil(), "should not get any error for config apply")
+
+			pluginsToGenerateCRs, ok := pluginGroupToPluginListMap[usePluginsFromK8sPluginGroup]
+			Expect(ok).To(BeTrue(), "plugin group is not exist in the map")
+			Expect(len(pluginsToGenerateCRs) > numberOfPluginsToInstall).To(BeTrue(), "we don't have enough plugins in local test central repo")
+			pluginsInfoForCRsApplied, pluginCRFilePaths, err = f.CreateTemporaryCRsFromPluginInfos(pluginsToGenerateCRs[:numberOfPluginsToInstall])
+			Expect(err).To(BeNil(), "should not get any error while generating CR files")
+			err = f.ApplyConfigOnKindCluster(tf, clusterInfo, pluginCRFilePaths)
+			Expect(err).To(BeNil(), "should not get any error for config apply")
+			totalInstalledPlugins += numberOfPluginsToInstall
+		})
+
+		// Test case: c. k8s: create context and make sure context has created
+		It("create context with kubeconfig and context", func() {
+			By("create context with kubeconfig and context")
+			contextNameK8s = f.ContextPrefixK8s + f.RandomString(4)
+			err := tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			Expect(err).To(BeNil(), "context should create without any error")
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeK8s))
+			Expect(err).To(BeNil(), thereShouldNotBeError+" while getting active context")
+			Expect(active).To(Equal(contextNameK8s), "the active context should be recently added context")
+			contexts = append(contexts, contextNameK8s)
+		})
+		// Test case: d. k8s: list plugins and validate plugins info, make sure all plugins are installed for which CRs were present on the cluster
+		It("Test case: d; list plugins and validate plugins being installed after context being created", func() {
+			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
+		})
+
+		var pluginsToGenerateMockResponseTMC, installedPluginsListTMC []*f.PluginInfo
+		var contextNameTMC string
+		var ok bool
+
+		// Test case: e. TMC: mock tmc endpoint with plugins info, start the mock server
+		It("mock tmc endpoint with expected plugins response and restart REST API mock server", func() {
+			// get plugins from a group
+			pluginsToGenerateMockResponseTMC, ok = pluginGroupToPluginListMap[usePluginsFromTmcPluginGroup]
+			Expect(ok).To(BeTrue(), pluginGroupShouldExists)
+			Expect(len(pluginsToGenerateMockResponseTMC) > numberOfPluginsToInstall).To(BeTrue(), testRepoDoesNotHaveEnoughPlugins)
+			// mock tmc endpoint with only specific number of plugins info
+			pluginsToGenerateMockResponseTMC = pluginsToGenerateMockResponseTMC[:numberOfPluginsToInstall]
+			mockReqResMapping, err := f.ConvertPluginsInfoToTMCEndpointMockResponse(pluginsToGenerateMockResponseTMC[:numberOfPluginsToInstall])
+			Expect(err).To(BeNil(), noErrorForMockResponsePreparation)
+			err = f.WriteToFileInJSONFormat(mockReqResMapping, tmcPluginsMockFilePath)
+			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
+
+			// start http mock server
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
+			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
+			var mockResPluginsInfo f.TMCPluginsInfo
+			// check the tmc mocked endpoint is working as expected
+			err = f.GetHTTPCall(f.TMCPluginsMockServerEndpoint, &mockResPluginsInfo)
+			Expect(err).To(BeNil(), "there should not be any error for GET http call on mockapi endpoint:"+f.TMCPluginsMockServerEndpoint)
+			Expect(len(mockResPluginsInfo.Plugins)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), "the number of plugins in endpoint response and initially mocked should be same")
+			totalInstalledPlugins += numberOfPluginsToInstall
+		})
+		// Test case: f. TMC: create context and make sure context has created
+		It("create context for TMC target with http mock server URL as endpoint", func() {
+			// Clean K8s context specific plugins
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), thereShouldNotBeError+" while cleaning plugins")
+
+			contextNameTMC = f.ContextPrefixTMC + f.RandomString(4)
+			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTMC, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
+			Expect(err).To(BeNil(), activeContextShouldExists)
+			Expect(active).To(Equal(contextNameTMC), activeContextShouldBeRecentlyAddedOne)
+			contexts = append(contexts, contextNameTMC)
+		})
+
+		// Test case: g. TMC: list plugins and validate plugins info, make sure all plugins are installed as per mock response
+		// there should not be any k8s specific plugins should be installed/sync as part of tmc context creation
+		It("Test case: g: list plugins and validate plugins being installed after context being created", func() {
+			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			Expect(err).To(BeNil(), noErrorForPluginList)
+			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+
+			// Sync should not happen for the k8s context specific plugins
+			installedPluginsListK8S, err := tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			Expect(len(installedPluginsListK8S)).Should(Equal(0))
+			Expect(err).To(BeNil(), noErrorForPluginList)
+		})
+
+		// Test case: context use (K8S) - should sync only specific context not all active context's
+		// set both k8s and tmc context as active
+		// clean plugins
+		// unset k8s context
+		// perform 'tanzu context use' for k8s context
+		// sync should happen only for the specific context (k8s context), not for all active context's
+		// perform 'tanzu plugin clean' and 'tanzu context use' for k8s context again, and check plugins list, it should be same as previous
+		It("test context use for specific context-k8s", func() {
+			err = tf.ContextCmd.UseContext(contextNameK8s)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			err = tf.ContextCmd.UseContext(contextNameTMC)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "plugin clean should not return any error")
+
+			_, _, err = tf.ContextCmd.UnsetContext(contextNameK8s)
+			Expect(err).To(BeNil(), "unset context should unset context without any error")
+
+			err = tf.ContextCmd.UseContext(contextNameK8s)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			// k8s contextType specific plugins only should be installed
+			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
+
+			// Sync should not happen for the tmc context specific plugins, as its contextType specific sync
+			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			Expect(len(installedPluginsListTMC)).Should(Equal(0))
+			Expect(err).To(BeNil(), noErrorForPluginList)
+
+			// perform 'tanzu plugin clean' and 'tanzu context use' for k8s context again, and check plugins list, it should be same as previous
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "plugin clean should not return any error")
+
+			err = tf.ContextCmd.UseContext(contextNameK8s)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			// k8s contextType specific plugins only should be installed
+			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
+
+			// Sync should not happen for the tmc context specific plugins, as its contextType specific sync
+			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			Expect(len(installedPluginsListTMC)).Should(Equal(0))
+			Expect(err).To(BeNil(), noErrorForPluginList)
+		})
+
+		// Test case: context use (TMC) - should sync only specific context not all active context's
+		// set both tmc and tmc context as active
+		// clean plugins
+		// unset tmc context
+		// perform 'tanzu context use' for tmc context
+		// sync should happen only for the specific context (tmc context), not for all active context's
+		// perform 'tanzu plugin clean' and 'tanzu context use' for tmc context again, and check plugins list, it should be same as previous
+		It("test context use for specific context-TMC", func() {
+			err = tf.ContextCmd.UseContext(contextNameK8s)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			err = tf.ContextCmd.UseContext(contextNameTMC)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "plugin clean should not return any error")
+
+			_, _, err = tf.ContextCmd.UnsetContext(contextNameTMC)
+			Expect(err).To(BeNil(), "unset context should unset context without any error")
+
+			err = tf.ContextCmd.UseContext(contextNameTMC)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			// tmc contextType specific plugins only should be installed
+			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			Expect(err).To(BeNil(), noErrorForPluginList)
+			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+
+			// Sync should not happen for the k8s context specific plugins, as its contextType specific sync
+			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			Expect(len(installedPluginsListK8s)).Should(Equal(0))
+			Expect(err).To(BeNil(), noErrorForPluginList)
+
+			// perform 'tanzu plugin clean' and 'tanzu context use' for tmc context again, and check plugins list, it should be same as previous
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "plugin clean should not return any error")
+
+			err = tf.ContextCmd.UseContext(contextNameTMC)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			// tmc contextType specific plugins only should be installed
+			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			Expect(err).To(BeNil(), noErrorForPluginList)
+			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+
+			// Sync should not happen for the k8s context specific plugins, as its contextType specific sync
+			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			Expect(len(installedPluginsListK8s)).Should(Equal(0))
+			Expect(err).To(BeNil(), noErrorForPluginList)
+
+		})
+
+		// Test case: context use for TMC context and K8s context
+		// plugin should get sync for both tmc and k8s context
+		It("context use for both TMC and k8s contexts", func() {
+			err = tf.ContextCmd.UseContext(contextNameK8s)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			err = tf.ContextCmd.UseContext(contextNameTMC)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			// tmc contextType specific plugins should be installed
+			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			Expect(err).To(BeNil(), noErrorForPluginList)
+			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+
+			// k8s contextType specific plugins should be installed
+			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			Expect(err).To(BeNil(), noErrorForPluginList)
+			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), "plugins being installed and plugins info for which CRs applied should be same")
+		})
+
+		// Test case: plugin sync use case, make sure plugins for both contexts are synced
+		// plugin should get sync for both tmc and k8s context
+		It("test plugin sync", func() {
+
+			err = tf.ContextCmd.UseContext(contextNameK8s)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			err = tf.ContextCmd.UseContext(contextNameTMC)
+			Expect(err).To(BeNil(), "use context should not return any error")
+
+			// perform plugin clean, then perform plugin sync
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "plugin clean should not return any error")
+
+			_, _, err = tf.PluginCmd.Sync()
+			Expect(err).To(BeNil(), "plugin sync should not return any error")
+
+			// make sure plugins are synced for both contexts
+			// tmc contextType specific plugins should be installed
+			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			Expect(err).To(BeNil(), noErrorForPluginList)
+			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+
+			// k8s contextType specific plugins should be installed
+			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			Expect(err).To(BeNil(), noErrorForPluginList)
+			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), "plugins being installed and plugins info for which CRs applied should be same")
+		})
+
+		// Test case: l. delete tmc/k8s contexts and the KIND cluster
+		It("delete tmc/k8s contexts and the KIND cluster", func() {
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameTMC)
+			Expect(err).To(BeNil(), "context should be deleted without error")
+			err = f.StopContainer(tf, f.HTTPMockServerName)
+			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
+
+			_, _, err = tf.ContextCmd.DeleteContext(contextNameK8s)
+			Expect(err).To(BeNil(), "context should be deleted without error")
+			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
+			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
+		})
+	})
+
+	// Use Case 8: Plugin List, sync, search and install functionalities with Context Issues
 	// Use case details: In this use case, we will create one Tanzu Mission Control (TMC) context and one Kubernetes contexts.
 	// The active K8s context will be associated with a kind cluster that has been deleted. As a result, there will be an issue
 	// when attempting to discover plugins for this context. However, despite the issue, the plugin list and plugin sync commands
@@ -727,7 +1006,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			contextNameK8s = f.ContextPrefixK8s + f.RandomString(4)
 			err := tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNameK8s), "the active context should be recently added context")
 			contexts = append(contexts, contextNameK8s)
@@ -764,7 +1043,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 			var mockResPluginsInfo f.TMCPluginsInfo
 			// check the tmc mocked endpoint is working as expected
@@ -778,7 +1057,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			contextNameTMC = f.ContextPrefixTMC + f.RandomString(4)
 			_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTMC, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
-			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
+			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameTMC), activeContextShouldBeRecentlyAddedOne)
 			contexts = append(contexts, contextNameTMC)
@@ -842,7 +1121,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("delete tmc/k8s contexts", func() {
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameTMC)
 			Expect(err).To(BeNil(), "context should be deleted without error")
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameK8s)
