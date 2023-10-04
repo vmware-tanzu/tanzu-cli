@@ -311,7 +311,6 @@ func setupPluginSourceForTesting(t *testing.T) func() {
 	assert.Nil(t, err)
 
 	setupTestPluginInventory(t)
-	// os.Setenv("TEST_TANZU_CLI_USE_DB_CACHE_ONLY", "1")
 
 	setupTestPluginCatalog(t)
 

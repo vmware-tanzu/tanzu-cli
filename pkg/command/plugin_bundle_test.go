@@ -5,25 +5,36 @@ package command
 
 import (
 	"bytes"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 func TestCompletionPluginBundle(t *testing.T) {
+	var downloadImageCalled bool
+
 	tests := []struct {
-		test     string
-		args     []string
-		expected string
+		test                  string
+		args                  []string
+		expected              string
+		imageMustBeDownloaded bool
 	}{
 		// ============================
 		// tanzu plugin download-bundle
 		// ============================
 		{
-			test: "no completion after the download-bundle command",
+			test: "completion of flags after the download-bundle command",
 			args: []string{"__complete", "plugin", "download-bundle", ""},
 			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
-			expected: "--\n:6\n",
+			expected: "--\n" +
+				":6\n",
 		},
 		{
 			test: "no completion after the download-bundle command with --to-tar",
@@ -38,10 +49,11 @@ func TestCompletionPluginBundle(t *testing.T) {
 			expected: ":4\n",
 		},
 		{
-			test: "no completion after the download-bundle command with --image",
+			test: "completion of flags after the download-bundle command with --image",
 			args: []string{"__complete", "plugin", "download-bundle", "--image", "example.com/image:latest", ""},
 			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
-			expected: "--\n:6\n",
+			expected: "--\n" +
+				":6\n",
 		},
 		{
 			test: "no completion for the --image flag value of the download-bundle command",
@@ -56,37 +68,43 @@ func TestCompletionPluginBundle(t *testing.T) {
 			expected: ":0\n",
 		},
 		{
-			test: "completion for the --group flag value for the group name part of the download-bundle command",
-			args: []string{"__complete", "plugin", "download-bundle", "--group", ""},
+			test:                  "completion for the --group flag value for the group name part of the download-bundle command",
+			args:                  []string{"__complete", "plugin", "download-bundle", "--group", ""},
+			imageMustBeDownloaded: true,
 			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
 			expected: "vmware-tap/default\tPlugins for TAP\n" +
 				"vmware-tkg/default\tPlugins for TKG\n" +
 				":6\n",
 		},
 		{
-			test: "completion for the --group flag value for the version part of the download-bundle command",
-			args: []string{"__complete", "plugin", "download-bundle", "--group", "vmware-tkg/default:"},
+			test:                  "completion for the --group flag value for the version part of the download-bundle command",
+			args:                  []string{"__complete", "plugin", "download-bundle", "--group", "vmware-tkg/default:"},
+			imageMustBeDownloaded: true,
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: "vmware-tkg/default:v1.1.1\n" +
 				"vmware-tkg/default:v2.2.2\n" +
 				"vmware-tkg/default:v2.2.2-beta\n" +
 				":4\n",
 		},
-		// TODO(khouzam): Fix this
-		// {
-		// 	test: "completion for the --group flag value for the group name part of the download-bundle command with --image",
-		// 	args: []string{"__complete", "plugin", "download-bundle", "--group", ""},
-		// 	// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
-		// 	expected: "image groups\n" +
-		// 		":6\n",
-		// },
-		// {
-		// 	test: "completion for the --group flag value for the version part of the download-bundle command with --image",
-		// 	args: []string{"__complete", "plugin", "download-bundle", "--group", "vmware-tkg/default:"},
-		// 	// ":4" is the value of the ShellCompDirectiveNoFileComp
-		// 	expected: "image groups\n" +
-		// 		":4\n",
-		// },
+		{
+			test:                  "completion for the --group flag value for the group name part of the download-bundle command with --image",
+			args:                  []string{"__complete", "plugin", "download-bundle", "--image", "example.com/image:latest", "--group", ""},
+			imageMustBeDownloaded: true,
+			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
+			expected: "vmware-tap/default\tPlugins for TAP\n" +
+				"vmware-tkg/default\tPlugins for TKG\n" +
+				":6\n",
+		},
+		{
+			test:                  "completion for the --group flag value for the version part of the download-bundle command with --image",
+			args:                  []string{"__complete", "plugin", "download-bundle", "--image", "example.com/image:latest", "--group", "vmware-tkg/default:"},
+			imageMustBeDownloaded: true,
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "vmware-tkg/default:v1.1.1\n" +
+				"vmware-tkg/default:v2.2.2\n" +
+				"vmware-tkg/default:v2.2.2-beta\n" +
+				":4\n",
+		},
 		// ============================
 		// tanzu plugin upload-bundle
 		// ============================
@@ -128,9 +146,34 @@ func TestCompletionPluginBundle(t *testing.T) {
 	// Setup a plugin source and a set of installed plugins
 	defer setupPluginSourceForTesting(t)()
 
+	// Provide a test image processor to avoid actually downloading DB images
+	fakeImageOperations := &fakes.ImageOperationsImpl{}
+
+	// Copy the test inventory DB file to the location the plugin download-bundle command expects
+	fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(func(image, path string) error {
+		downloadImageCalled = true
+		// Verify that the --image flag is respected by checking that the proper
+		// inventory image is being "downloaded"
+		assert.Equal(t, dpbo.pluginDiscoveryOCIImage, image)
+
+		testDBFile := filepath.Join(
+			common.DefaultCacheDir,
+			common.PluginInventoryDirName,
+			config.DefaultStandaloneDiscoveryName,
+			plugininventory.SQliteDBFileName,
+		)
+		err := utils.CopyFile(testDBFile, filepath.Join(path, plugininventory.SQliteDBFileName))
+		assert.Nil(t, err)
+
+		return nil
+	})
+	imageProcessorForDownloadBundleComp = fakeImageOperations
+
 	for _, spec := range tests {
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
+
+			downloadImageCalled = false
 
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
@@ -143,6 +186,8 @@ func TestCompletionPluginBundle(t *testing.T) {
 			assert.Nil(err)
 
 			assert.Equal(spec.expected, out.String())
+
+			assert.Equal(spec.imageMustBeDownloaded, downloadImageCalled)
 
 			resetPluginCommandFlags()
 		})
