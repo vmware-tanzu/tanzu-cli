@@ -86,7 +86,7 @@ func newCEIPParticipationGetCmd() *cobra.Command {
 			} else {
 				ceipStatus = CeipOptOutStatus
 			}
-			t := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "CEIP-Status")
+			t := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "CEIP-Status")
 			t.AddRow(ceipStatus)
 			t.Render()
 			return nil

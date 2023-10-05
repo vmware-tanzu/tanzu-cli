@@ -157,7 +157,7 @@ func newDescribePluginCmd() *cobra.Command {
 		Short: "Describe a plugin",
 		Long:  "Displays detailed information for a plugin",
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "name", "version", "status", "target", "description", "installationPath")
+			output := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "name", "version", "status", "target", "description", "installationPath")
 			if len(args) != 1 {
 				return fmt.Errorf("must provide plugin name as positional argument")
 			}
@@ -438,7 +438,7 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	_, _ = cyanBold.Println("Standalone Plugins")
 
-	outputStandalone := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status")
+	outputStandalone := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Description", "Target", "Version", "Status")
 	for index := range installedStandalonePlugins {
 		outputStandalone.AddRow(
 			installedStandalonePlugins[index].Name,
@@ -471,7 +471,7 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 	}
 	sort.Strings(contexts)
 	for _, context := range contexts {
-		outputWriter := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status")
+		outputWriter := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Description", "Target", "Version", "Status")
 
 		fmt.Println("")
 		_, _ = cyanBold.Println("Plugins from Context: ", cyanBoldItalic.Sprintf(context))
@@ -499,7 +499,7 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 }
 
 func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginInfo, installedContextPlugins, missingContextPlugins []discovery.Discovered, writer io.Writer) {
-	outputWriter := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Version", "Status", "Context")
+	outputWriter := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Description", "Target", "Version", "Status", "Context")
 	for index := range installedStandalonePlugins {
 		outputWriter.AddRow(
 			installedStandalonePlugins[index].Name,

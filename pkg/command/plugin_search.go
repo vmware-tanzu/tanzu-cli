@@ -105,7 +105,7 @@ func newSearchPluginCmd() *cobra.Command {
 }
 
 func displayPluginsFound(plugins []discovery.Discovered, writer io.Writer) {
-	outputWriter := component.NewOutputWriter(writer, outputFormat, "Name", "Description", "Target", "Latest")
+	outputWriter := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Description", "Target", "Latest")
 
 	for i := range plugins {
 		outputWriter.AddRow(
