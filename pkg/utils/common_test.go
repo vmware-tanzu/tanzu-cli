@@ -4,7 +4,15 @@
 package utils
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/otiai10/copy"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // TestContainsString tests the ContainsString function.
@@ -86,4 +94,84 @@ func TestGenerateKey(t *testing.T) {
 			}
 		})
 	}
+}
+
+func setupMultiConcurrentContexts(t *testing.T) func() {
+	configFile, err := os.CreateTemp("", "config")
+	assert.NoError(t, err)
+	err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), configFile.Name())
+	assert.NoError(t, err, "Error while copying tanzu config file for testing")
+	os.Setenv("TANZU_CONFIG", configFile.Name())
+
+	configFileNG, err := os.CreateTemp("", "config_ng")
+	assert.NoError(t, err)
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+	err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng_2.yaml"), configFileNG.Name())
+	assert.NoError(t, err, "Error while copying tanzu-ng config file for testing")
+
+	cleanup := func() {
+		err = os.Remove(configFile.Name())
+		assert.NoError(t, err)
+		err = os.Unsetenv("TANZU_CONFIG")
+		assert.NoError(t, err)
+
+		err = os.Remove(configFileNG.Name())
+		assert.NoError(t, err)
+		err = os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		assert.NoError(t, err)
+	}
+	return cleanup
+}
+
+// TestEnsureMutualExclusiveCurrentContexts tests the EnsureMutualExclusiveCurrentContexts function.
+func TestEnsureMutualExclusiveCurrentContexts(t *testing.T) {
+	cleanup := setupMultiConcurrentContexts(t)
+
+	defer cleanup()
+
+	// it should remove the tae current context and keep k8s and tmc current context
+	err := EnsureMutualExclusiveCurrentContexts()
+	assert.NoError(t, err)
+
+	ccmap, err := config.GetAllCurrentContextsMap()
+	assert.NoError(t, err)
+	assert.Equal(t, ccmap[configtypes.TargetK8s].Name, "test-mc-context")
+	assert.Equal(t, ccmap[configtypes.TargetTMC].Name, "test-tmc-context")
+	assert.Nil(t, ccmap[configtypes.TargetTAE])
+
+	// if there is only k8s current context, calling again should not affect the current contexts
+	err = EnsureMutualExclusiveCurrentContexts()
+	assert.NoError(t, err)
+
+	ccmap, err = config.GetAllCurrentContextsMap()
+	assert.NoError(t, err)
+	assert.Equal(t, ccmap[configtypes.TargetK8s].Name, "test-mc-context")
+	assert.Equal(t, ccmap[configtypes.TargetTMC].Name, "test-tmc-context")
+	assert.Nil(t, ccmap[configtypes.TargetTAE])
+
+	// if there is only tae current context, calling again should not affect the current contexts
+	err = config.SetCurrentContext("test-tae-context")
+	assert.NoError(t, err)
+
+	err = EnsureMutualExclusiveCurrentContexts()
+	assert.NoError(t, err)
+
+	ccmap, err = config.GetAllCurrentContextsMap()
+	assert.NoError(t, err)
+	assert.Nil(t, ccmap[configtypes.TargetK8s])
+	assert.Equal(t, ccmap[configtypes.TargetTMC].Name, "test-tmc-context")
+	assert.Equal(t, ccmap[configtypes.TargetTAE].Name, "test-tae-context")
+
+	// if there are no current context, calling again should not affect the current contexts
+	err = config.RemoveCurrentContext(configtypes.TargetTAE)
+	assert.NoError(t, err)
+	err = config.RemoveCurrentContext(configtypes.TargetTMC)
+	assert.NoError(t, err)
+
+	err = EnsureMutualExclusiveCurrentContexts()
+	assert.NoError(t, err)
+
+	ccmap, err = config.GetAllCurrentContextsMap()
+	assert.NoError(t, err)
+	assert.Equal(t, len(ccmap), 0)
 }
