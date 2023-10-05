@@ -70,6 +70,7 @@ func newSearchCmd() *cobra.Command {
 				return err
 			}
 
+			sort.Sort(plugininventory.PluginGroupSorter(groups))
 			if !showDetails {
 				displayGroupsFound(groups, cmd.OutOrStdout())
 			} else {
@@ -174,7 +175,7 @@ func displayGroupDetails(groups []*plugininventory.PluginGroup, writer io.Writer
 		first := true
 		for _, pg := range groups {
 			if !first {
-				fmt.Println()
+				fmt.Fprintln(writer)
 			}
 			first = false
 			var supportedVersions []string
@@ -220,11 +221,10 @@ func displayGroupContentAsTable(group *plugininventory.PluginGroup, specifiedVer
 	outputStandalone := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
 
 	gID := plugininventory.PluginGroupToID(group)
-	_, _ = cyanBold.Println("Plugins in Group: ", cyanBoldItalic.Sprintf("%s:%s", gID, group.RecommendedVersion))
+	_, _ = cyanBold.Fprintln(writer, "Plugins in Group: ", cyanBoldItalic.Sprintf("%s:%s", gID, group.RecommendedVersion))
 
 	if showNonMandatory {
-		fmt.Println("")
-		_, _ = cyanBold.Println("Standalone Plugins")
+		_, _ = cyanBold.Fprintln(writer, "\nStandalone Plugins")
 	}
 
 	for _, plugin := range group.Versions[group.RecommendedVersion] {
@@ -235,12 +235,15 @@ func displayGroupContentAsTable(group *plugininventory.PluginGroup, specifiedVer
 	outputStandalone.Render()
 
 	if showNonMandatory {
-		fmt.Println("")
-		log.Infof("The standalone plugins in this plugin group are installed when the 'tanzu plugin install --group %s%s' command is invoked.", gID, specifiedVersion)
+		log.SetStdout(writer)
+		log.SetStderr(writer)
 
-		fmt.Println("")
+		fmt.Fprintln(writer)
+		log.Infof("The standalone plugins in this plugin group are installed when the 'tanzu plugin install --group %s%s' command is invoked.\n", gID, specifiedVersion)
+
+		fmt.Fprintln(writer)
 		outputContext := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
-		_, _ = cyanBold.Println("Contextual Plugins")
+		_, _ = cyanBold.Fprintln(writer, "Contextual Plugins")
 		for _, plugin := range group.Versions[group.RecommendedVersion] {
 			if !plugin.Mandatory {
 				outputContext.AddRow(plugin.Name, plugin.Target, plugin.Version)
@@ -248,8 +251,8 @@ func displayGroupContentAsTable(group *plugininventory.PluginGroup, specifiedVer
 		}
 		outputContext.Render()
 
-		fmt.Println("")
-		log.Info("The contextual plugins in this plugin group are automatically installed, and only available for use, when a Tanzu context which supports them is created or activated/used.")
+		fmt.Fprintln(writer)
+		log.Info("The contextual plugins in this plugin group are automatically installed, and only available for use, when a Tanzu context which supports them is created or activated/used.\n")
 	}
 }
 
