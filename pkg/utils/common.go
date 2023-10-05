@@ -6,6 +6,9 @@ package utils
 
 import (
 	"strings"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // ContainsString checks the string contains in string array
@@ -29,4 +32,19 @@ func ContainsString(arr []string, str string) bool {
 // A single string that is the result of concatenating all input strings with a colon (":") separator.
 func GenerateKey(parts ...string) string {
 	return strings.Join(parts, ":")
+}
+
+// EnsureMutualExclusiveCurrentContexts ensures mutual exclusive behavior among k8s and tae current contexts,
+// i.e, if both k8s and tae current contexts types are set (a case where plugin using old plugin-runtime API
+// can set k8s current context though tae current context is set by CLI or plugin with latest plugin-runtime
+// in config file) it would remove the tae current context to maintain backward compatibility
+func EnsureMutualExclusiveCurrentContexts() error {
+	ccmap, err := config.GetAllCurrentContextsMap()
+	if err != nil {
+		return err
+	}
+	if ccmap[configtypes.TargetK8s] != nil && ccmap[configtypes.TargetTAE] != nil {
+		return config.RemoveCurrentContext(configtypes.TargetTAE)
+	}
+	return nil
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/telemetry"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -134,6 +135,12 @@ func newRootCmd() *cobra.Command {
 		// Flag parsing must be deactivated because the root plugin won't know about all flags.
 		DisableFlagParsing: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// Ensure mutual exclusion in current contexts just in case if any plugins with old
+			// plugin-runtime sets k8s context as current when tae context is already set as current
+			if err := utils.EnsureMutualExclusiveCurrentContexts(); err != nil {
+				return err
+			}
+
 			if !shouldSkipTelemetryCollection(cmd) {
 				if err := telemetry.Client().UpdateCmdPreRunMetrics(cmd, args); err != nil {
 					telemetry.LogError(err, "")
@@ -160,6 +167,14 @@ func newRootCmd() *cobra.Command {
 				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
 					return err
 				}
+			}
+			return nil
+		},
+		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			// Ensure mutual exclusion in current contexts just in case if any plugins with old
+			// plugin-runtime sets k8s context as current when tae context is already set as current
+			if err := utils.EnsureMutualExclusiveCurrentContexts(); err != nil {
+				return err
 			}
 			return nil
 		},
