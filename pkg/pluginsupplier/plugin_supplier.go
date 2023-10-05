@@ -73,7 +73,7 @@ func getInstalledStandaloneAndServerPlugins() (standalonePlugins, serverPlugins 
 	standalonePlugins = standAloneCatalog.List()
 
 	// Get all the server plugins found in the catalog
-	serverNames, err := configlib.GetAllCurrentContextsList()
+	serverNames, err := configlib.GetAllActiveContextsList()
 	if err != nil {
 		return nil, nil, err
 	}

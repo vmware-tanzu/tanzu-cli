@@ -30,12 +30,13 @@ import (
 )
 
 var (
-	local        string
-	version      string
-	forceDelete  bool
-	outputFormat string
-	targetStr    string
-	group        string
+	local          string
+	version        string
+	forceDelete    bool
+	outputFormat   string
+	targetStr      string
+	contextTypeStr string
+	group          string
 )
 
 const (

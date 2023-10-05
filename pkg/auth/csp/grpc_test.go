@@ -133,9 +133,9 @@ func initializeConfigSource(gsa configtypes.GlobalServerAuth) configSource {
 				Target: configtypes.TargetK8s,
 			},
 		},
-		CurrentContext: map[configtypes.Target]string{
-			configtypes.TargetTMC: globalServer.Name,
-			configtypes.TargetK8s: managementServer.Name,
+		CurrentContext: map[configtypes.ContextType]string{
+			configtypes.ContextTypeTMC: globalServer.Name,
+			configtypes.ContextTypeK8s: managementServer.Name,
 		},
 	}
 	return configSource{

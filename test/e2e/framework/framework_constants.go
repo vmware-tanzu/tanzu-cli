@@ -101,13 +101,13 @@ const (
 	TanzuCliTmcUnstableURL                 = "TANZU_CLI_TMC_UNSTABLE_URL"
 
 	// context specific
-	ContextShouldNotExists         = "the context %s should not exists"
-	ContextShouldExistsAsCreated   = "the context %s should exists as its been created"
-	ContextNotExistsForTarget      = "The provided context %v does not exist or is not active for the given target %v"
-	NoActiveContextExistsForTarget = "There is no active context for the given target %v"
-	ContextNotActiveOrNotExists    = "The provided context %v is not active or does not exist"
-	ContextForTargetSetInactive    = "The context %v for the target %v has been set as inactive"
-	DeactivatingPlugin             = "Deactivating plugin '%v:%v' for context '%v'"
+	ContextShouldNotExists              = "the context %s should not exists"
+	ContextShouldExistsAsCreated        = "the context %s should exists as its been created"
+	ContextNotExistsForTarget           = "The provided context '%v' does not exist or is not active for the given context type '%v'"
+	NoActiveContextExistsForContextType = "There is no active context for the given context type '%v'"
+	ContextNotActiveOrNotExists         = "The provided context '%v' is not active or does not exist"
+	ContextForContextTypeSetInactive    = "The context '%v' of type '%v' has been set as inactive"
+	DeactivatingPlugin                  = "Deactivating plugin '%v:%v' for context '%v'"
 
 	KindClusterCreate = "kind create cluster --name %s"
 	KindClusterStatus = "kubectl cluster-info --context %s"

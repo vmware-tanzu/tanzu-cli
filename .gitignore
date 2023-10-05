@@ -29,3 +29,6 @@ coverage.txt
 *.out
 test/e2e/coexistence/
 test/e2e/testresults/
+
+# Extra go module files
+go.work.sum

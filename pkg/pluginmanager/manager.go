@@ -165,7 +165,7 @@ func DiscoverServerPlugins() ([]discovery.Discovered, error) {
 	var plugins []discovery.Discovered
 	var errList []error
 
-	currentContextMap, err := configlib.GetAllCurrentContextsMap()
+	currentContextMap, err := configlib.GetAllActiveContextsMap()
 	if err != nil {
 		return nil, err
 	}
@@ -889,7 +889,7 @@ func deletePluginFromCommandTreeCache(plugin *cli.PluginInfo) {
 
 // DeletePlugin deletes a plugin.
 func DeletePlugin(options DeletePluginOptions) error {
-	serverNames, err := configlib.GetAllCurrentContextsList()
+	serverNames, err := configlib.GetAllActiveContextsList()
 	if err != nil {
 		return err
 	}

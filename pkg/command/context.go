@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"reflect"
 
 	"net/http"
 	"net/url"
@@ -18,7 +19,6 @@ import (
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
@@ -56,13 +56,14 @@ const (
 	apiTokenType       = "api-token"
 	defaultTAEEndpoint = "https://api.tanzu.cloud.vmware.com"
 
-	contextNotExistsForTarget      = "The provided context %v does not exist or is not active for the given target %v"
-	noActiveContextExistsForTarget = "There is no active context for the given target %v"
-	contextNotActiveOrNotExists    = "The provided context %v is not active or does not exist"
-	contextForTargetSetInactive    = "The context %v for the target %v has been set as inactive"
-	deactivatingPlugin             = "Deactivating plugin '%v:%v' for context '%v'"
+	contextNotExistsForContextType      = "The provided context '%v' does not exist or is not active for the given context type '%v'"
+	noActiveContextExistsForContextType = "There is no active context for the given context type '%v'"
+	contextNotActiveOrNotExists         = "The provided context '%v' is not active or does not exist"
+	contextForContextTypeSetInactive    = "The context '%v' of type '%v' has been set as inactive"
+	deactivatingPlugin                  = "Deactivating plugin '%v:%v' for context '%v'"
 
-	invalidTarget = "invalid target specified. Please specify a correct value for the `--target/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]"
+	invalidTarget      = "invalid target specified. Please specify a correct value for the `--target/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]"
+	invalidContextType = "invalid context type specified. Please specify a correct value for the `--type/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]"
 )
 
 // constants that define context creation types
@@ -74,6 +75,8 @@ const (
 )
 
 type ContextCreationType string
+
+const NA = "n/a"
 
 var contextCmd = &cobra.Command{
 	Use:     "context",
@@ -99,9 +102,14 @@ func init() {
 
 	initCreateCtxCmd()
 
-	listCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc]/application-engine[tae])")
+	listCtxCmd.Flags().StringVarP(&targetStr, "target", "", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc]/application-engine[tae])")
 	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sTarget, compTAETarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+		return []string{compK8sContextType, compTAEContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+	}))
+
+	listCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "list only contexts associated with the specified context-type (kubernetes[k8s]/mission-control[tmc]/application-engine[tae])")
+	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{compK8sContextType, compTAEContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
 	listCtxCmd.Flags().BoolVar(&onlyCurrent, "current", false, "list only current active contexts")
@@ -113,10 +121,18 @@ func init() {
 
 	deleteCtxCmd.Flags().BoolVarP(&unattended, "yes", "y", false, "delete the context entry without confirmation")
 
-	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "t", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc]|application-engine[tae])")
+	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc]|application-engine[tae])")
 	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sTarget, compTAETarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+		return []string{compK8sContextType, compTAEContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
 	}))
+	unsetCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "unset active context associated with the specified context-type (kubernetes[k8s]|mission-control[tmc]|application-engine[tae])")
+	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{compK8sContextType, compTAEContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+	}))
+
+	msg := "this was done in the v1.1.0 release, it will be removed following the deprecation policy (6 months). Use the --type flag instead.\n"
+	utils.PanicOnErr(listCtxCmd.Flags().MarkDeprecated("target", msg))
+	utils.PanicOnErr(unsetCtxCmd.Flags().MarkDeprecated("target", msg))
 }
 
 var createCtxCmd = &cobra.Command{
@@ -216,9 +232,9 @@ func createCtx(_ *cobra.Command, args []string) (err error) {
 	if err != nil {
 		return err
 	}
-	if ctx.Target == configtypes.TargetK8s {
+	if ctx.ContextType == configtypes.ContextTypeK8s {
 		err = k8sLogin(ctx)
-	} else if ctx.Target == configtypes.TargetTAE {
+	} else if ctx.ContextType == configtypes.ContextTypeTAE {
 		err = globalTAELogin(ctx)
 	} else {
 		err = globalLogin(ctx)
@@ -376,8 +392,8 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 	}
 
 	context = &configtypes.Context{
-		Name:   ctxName,
-		Target: configtypes.TargetK8s,
+		Name:        ctxName,
+		ContextType: configtypes.ContextTypeK8s,
 		ClusterOpts: &configtypes.ClusterServer{
 			Path:                kubeConfig,
 			Context:             kubeContext,
@@ -411,9 +427,9 @@ func createContextWithTMCEndpoint() (context *configtypes.Context, err error) {
 	}
 
 	context = &configtypes.Context{
-		Name:       ctxName,
-		Target:     configtypes.TargetTMC,
-		GlobalOpts: &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
+		Name:        ctxName,
+		ContextType: configtypes.ContextTypeTMC,
+		GlobalOpts:  &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 	}
 
 	return context, err
@@ -450,8 +466,8 @@ func createContextWithClusterEndpoint() (context *configtypes.Context, err error
 	}
 
 	context = &configtypes.Context{
-		Name:   ctxName,
-		Target: configtypes.TargetK8s,
+		Name:        ctxName,
+		ContextType: configtypes.ContextTypeK8s,
 		ClusterOpts: &configtypes.ClusterServer{
 			Path:                kubeConfig,
 			Context:             kubeContext,
@@ -488,7 +504,7 @@ func createContextWithTAEEndpoint() (context *configtypes.Context, err error) {
 	// TAE context would have both CSP(GlobalOpts) auth details and kubeconfig(ClusterOpts),
 	context = &configtypes.Context{
 		Name:        ctxName,
-		Target:      configtypes.TargetTAE,
+		ContextType: configtypes.ContextTypeTAE,
 		GlobalOpts:  &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 		ClusterOpts: &configtypes.ClusterServer{},
 	}
@@ -770,12 +786,16 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	if !configtypes.IsValidContextType(contextTypeStr) {
+		return errors.New(invalidContextType)
+	}
+
 	if !configtypes.IsValidTarget(targetStr, false, true) {
 		return errors.New(invalidTarget)
 	}
 
 	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
-		displayContextListOutputSplitViewTarget(cfg, cmd.OutOrStdout())
+		displayContextListOutputWithDynamicColumns(cfg, cmd.OutOrStdout())
 	} else {
 		displayContextListOutputListView(cfg, cmd.OutOrStdout())
 	}
@@ -823,7 +843,7 @@ func promptCtx() (*configtypes.Context, error) {
 
 // promptActiveCtx prompts with active list of contexts for user selection.
 func promptActiveCtx() (*configtypes.Context, error) {
-	currentCtxMap, err := config.GetAllCurrentContextsMap()
+	currentCtxMap, err := config.GetAllActiveContextsMap()
 	if err != nil {
 		return nil, err
 	}
@@ -842,7 +862,7 @@ func getCtxPromptMessage(ctxs []*configtypes.Context) (*configtypes.Context, err
 		if err != nil {
 			return nil, err
 		}
-		if info == "" && ctx.Target == configtypes.TargetK8s && ctx.ClusterOpts != nil {
+		if info == "" && ctx.ContextType == configtypes.ContextTypeK8s && ctx.ClusterOpts != nil {
 			info = fmt.Sprintf("%s:%s", ctx.ClusterOpts.Path, ctx.ClusterOpts.Context)
 		}
 
@@ -882,7 +902,7 @@ func getKeys(m map[string]*configtypes.Context) []string {
 	return keys
 }
 
-func getValues(m map[configtypes.Target]*configtypes.Context) []*configtypes.Context {
+func getValues(m map[configtypes.ContextType]*configtypes.Context) []*configtypes.Context {
 	values := make([]*configtypes.Context, 0, len(m))
 	for _, value := range m {
 		values = append(values, value)
@@ -979,7 +999,7 @@ func useCtx(_ *cobra.Command, args []string) error {
 		}
 	}
 
-	err = config.SetCurrentContext(name)
+	err = config.SetActiveContext(name)
 	if err != nil {
 		return err
 	}
@@ -1007,49 +1027,52 @@ var unsetCtxCmd = &cobra.Command{
 
 func unsetCtx(_ *cobra.Command, args []string) error {
 	var name string
+	if !configtypes.IsValidContextType(contextTypeStr) {
+		return errors.New(invalidContextType)
+	}
 	if !configtypes.IsValidTarget(targetStr, false, true) {
 		return errors.New(invalidTarget)
 	}
-	target := getTarget()
+	contextType := getContextType()
 	if len(args) > 0 {
 		name = args[0]
 	}
-	if name == "" && target == "" {
+	if name == "" && contextType == "" {
 		ctx, err := promptActiveCtx()
 		if err != nil {
 			return err
 		}
 		name = ctx.Name
 	}
-	return unsetGivenContext(name, target)
+	return unsetGivenContext(name, contextType)
 }
 
-func unsetGivenContext(name string, target configtypes.Target) error {
+func unsetGivenContext(name string, contextType configtypes.ContextType) error {
 	var unset bool
 	installed, _, _, _ := getInstalledAndMissingContextPlugins() //nolint:dogsled
-	currentCtxMap, err := config.GetAllCurrentContextsMap()
-	if target != "" && name != "" {
-		ctx, ok := currentCtxMap[target]
+	currentCtxMap, err := config.GetAllActiveContextsMap()
+	if contextType != "" && name != "" {
+		ctx, ok := currentCtxMap[contextType]
 		if ok && ctx.Name == name {
-			err = config.RemoveCurrentContext(target)
+			err = config.RemoveActiveContext(contextType)
 			unset = true
 		} else {
-			return errors.Errorf(contextNotExistsForTarget, name, target)
+			return errors.Errorf(contextNotExistsForContextType, name, contextType)
 		}
-	} else if target != "" {
-		ctx, ok := currentCtxMap[target]
+	} else if contextType != "" {
+		ctx, ok := currentCtxMap[contextType]
 		if ok {
 			name = ctx.Name
-			err = config.RemoveCurrentContext(target)
+			err = config.RemoveActiveContext(contextType)
 			unset = true
 		} else {
-			log.Warningf(noActiveContextExistsForTarget, target)
+			log.Warningf(noActiveContextExistsForContextType, contextType)
 		}
 	} else if name != "" {
-		for t, ctx := range currentCtxMap {
+		for ct, ctx := range currentCtxMap {
 			if ctx.Name == name {
-				target = t
-				err = config.RemoveCurrentContext(t)
+				contextType = ct
+				err = config.RemoveActiveContext(contextType)
 				unset = true
 				break
 			}
@@ -1061,7 +1084,7 @@ func unsetGivenContext(name string, target configtypes.Target) error {
 	if err != nil {
 		return err
 	} else if unset {
-		log.Outputf(contextForTargetSetInactive, name, target)
+		log.Outputf(contextForContextTypeSetInactive, name, contextType)
 		listDeactivatedPlugins(installed, name)
 	}
 	return nil
@@ -1077,7 +1100,7 @@ func listDeactivatedPlugins(deactivatedPlugins []discovery.Discovered, ctxName s
 }
 
 func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.Writer) {
-	target := getTarget()
+	contextType := getContextType()
 
 	// switching to use the new OutputWriter because we want to render the
 	// additional metadata map correctly in their native JSON/YAML form
@@ -1085,18 +1108,18 @@ func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.W
 	op := component.NewOutputWriterWithOptions(writer, outputFormat, opts, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext", "AdditionalMetadata")
 
 	for _, ctx := range cfg.KnownContexts {
-		if target != configtypes.TargetUnknown && ctx.Target != target {
+		if contextType != "" && ctx.ContextType != contextType {
 			continue
 		}
 		isMgmtCluster := ctx.IsManagementCluster()
-		isCurrent := ctx.Name == cfg.CurrentContext[ctx.Target]
+		isCurrent := ctx.Name == cfg.CurrentContext[ctx.ContextType]
 		if onlyCurrent && !isCurrent {
 			continue
 		}
 
 		var ep, path, context string
-		switch ctx.Target {
-		case configtypes.TargetTMC:
+		switch ctx.ContextType {
+		case configtypes.ContextTypeTMC:
 			ep = ctx.GlobalOpts.Endpoint
 		default:
 			if ctx.ClusterOpts != nil {
@@ -1106,27 +1129,27 @@ func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.W
 			}
 		}
 
-		op.AddRow(ctx.Name, ctx.Target, strconv.FormatBool(isMgmtCluster), strconv.FormatBool(isCurrent), ep, path, context, ctx.AdditionalMetadata)
+		op.AddRow(ctx.Name, ctx.ContextType, strconv.FormatBool(isMgmtCluster), strconv.FormatBool(isCurrent), ep, path, context, ctx.AdditionalMetadata)
 	}
 	op.Render()
 }
 
 // getContextsToDisplay returns a filtered list of contexts, and a boolean on
 // whether the contexts include some with TAE fields to display
-func getContextsToDisplay(cfg *configtypes.ClientConfig, target configtypes.Target, onlyCurrent bool) ([]*configtypes.Context, bool) {
+func getContextsToDisplay(cfg *configtypes.ClientConfig, contextType configtypes.ContextType, onlyCurrent bool) ([]*configtypes.Context, bool) {
 	var contextOutputList []*configtypes.Context
 	var hasTAEFields bool
 
 	for _, ctx := range cfg.KnownContexts {
-		if target != configtypes.TargetUnknown && ctx.Target != target {
+		if contextType != "" && ctx.ContextType != contextType {
 			continue
 		}
-		isCurrent := ctx.Name == cfg.CurrentContext[ctx.Target]
+		isCurrent := ctx.Name == cfg.CurrentContext[ctx.ContextType]
 		if onlyCurrent && !isCurrent {
 			continue
 		}
 		// could be fine-tuned to check for non-empty values as well
-		if ctx.Target == configtypes.TargetTAE {
+		if ctx.ContextType == configtypes.ContextTypeTAE {
 			hasTAEFields = true
 		}
 		contextOutputList = append(contextOutputList, ctx)
@@ -1134,67 +1157,66 @@ func getContextsToDisplay(cfg *configtypes.ClientConfig, target configtypes.Targ
 	return contextOutputList, hasTAEFields
 }
 
-func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writer io.Writer) {
-	var k8sContextTable component.OutputWriter
-	target := getTarget()
+type ContextListOutputRow struct {
+	Name           string
+	IsActive       string
+	Type           string
+	Endpoint       string
+	KubeconfigPath string
+	KubeContext    string
+	Project        string
+	Space          string
+}
 
-	ctxs, showTAEColumns := getContextsToDisplay(cfg, target, onlyCurrent)
+func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, writer io.Writer) {
+	ct := getContextType()
+	ctxs, _ := getContextsToDisplay(cfg, ct, onlyCurrent)
 
 	opts := []component.OutputWriterOption{}
-	if showTAEColumns {
-		k8sContextTable = component.NewOutputWriterWithOptions(writer, outputFormat, opts, "Name", "IsActive", "Type", "Endpoint", "KubeConfigPath", "KubeContext", "Project", "Space")
-	} else {
-		k8sContextTable = component.NewOutputWriterWithOptions(writer, outputFormat, opts, "Name", "IsActive", "Type", "Endpoint", "KubeConfigPath", "KubeContext")
-	}
-	outputWriterTMCTarget := component.NewOutputWriterWithOptions(writer, outputFormat, opts, "Name", "IsActive", "Endpoint")
+	rows := []ContextListOutputRow{}
 	for _, ctx := range ctxs {
-		var ep, path, context string
-		var project, space string
+		ep := NA
+		path := NA
+		context := NA
+		project := NA
+		space := NA
 
-		isCurrent := ctx.Name == cfg.CurrentContext[ctx.Target]
+		isCurrent := ctx.Name == cfg.CurrentContext[ctx.ContextType]
 
-		switch ctx.Target {
-		case configtypes.TargetTMC:
+		switch ctx.ContextType {
+		case configtypes.ContextTypeTMC:
 			if ctx.GlobalOpts != nil {
 				ep = ctx.GlobalOpts.Endpoint
 			}
-
-			outputWriterTMCTarget.AddRow(ctx.Name, isCurrent, ep)
+		case configtypes.ContextTypeTAE:
+			project = ""
+			space = ""
+			ep = ""
+			path = ""
+			context = ""
+			if ctx.ClusterOpts != nil {
+				ep = ctx.ClusterOpts.Endpoint
+				path = ctx.ClusterOpts.Path
+				context = ctx.ClusterOpts.Context
+			}
+			if ctx.AdditionalMetadata["taeProjectName"] != nil {
+				project = ctx.AdditionalMetadata["taeProjectName"].(string)
+			}
+			if ctx.AdditionalMetadata["taeSpaceName"] != nil {
+				space = ctx.AdditionalMetadata["taeSpaceName"].(string)
+			}
 		default:
 			if ctx.ClusterOpts != nil {
 				ep = ctx.ClusterOpts.Endpoint
 				path = ctx.ClusterOpts.Path
 				context = ctx.ClusterOpts.Context
 			}
-			contextType := "cluster"
-			if ctx.Target == configtypes.TargetTAE {
-				contextType = "TAE"
-			}
-
-			if showTAEColumns {
-				if ctx.AdditionalMetadata["taeProjectName"] != nil {
-					project = ctx.AdditionalMetadata["taeProjectName"].(string)
-				}
-				if ctx.AdditionalMetadata["taeSpaceName"] != nil {
-					space = ctx.AdditionalMetadata["taeSpaceName"].(string)
-				}
-				k8sContextTable.AddRow(ctx.Name, isCurrent, contextType, ep, path, context, project, space)
-			} else {
-				k8sContextTable.AddRow(ctx.Name, isCurrent, contextType, ep, path, context)
-			}
 		}
+		row := ContextListOutputRow{ctx.Name, strconv.FormatBool(isCurrent), string(ctx.ContextType), ep, path, context, project, space}
+		rows = append(rows, row)
 	}
 
-	cyanBold := color.New(color.FgCyan).Add(color.Bold)
-	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
-	if target == configtypes.TargetUnknown || target == configtypes.TargetK8s || target == configtypes.TargetTAE {
-		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", configtypes.TargetK8s))
-		k8sContextTable.Render()
-	}
-	if target == configtypes.TargetUnknown || target == configtypes.TargetTMC {
-		_, _ = cyanBold.Println("Target: ", cyanBoldItalic.Sprintf("%s", configtypes.TargetTMC))
-		outputWriterTMCTarget.Render()
-	}
+	dynamicTableWriter(rows, component.NewOutputWriterWithOptions(writer, outputFormat, opts, "NAME", "ISACTIVE", "TYPE"))
 }
 
 var getCtxTokenCmd = &cobra.Command{
@@ -1212,7 +1234,7 @@ func getToken(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if ctx.Target != configtypes.TargetTAE {
+	if ctx.ContextType != configtypes.ContextTypeTAE {
 		return errors.Errorf("context %q is not of type TAE", name)
 	}
 	if csp.IsExpired(ctx.GlobalOpts.Auth.Expiration) {
@@ -1284,7 +1306,7 @@ func setTAECtxActiveResource(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if ctx.Target != configtypes.TargetTAE {
+	if ctx.ContextType != configtypes.ContextTypeTAE {
 		return errors.Errorf("context %q is not of type TAE", name)
 	}
 	if ctx.AdditionalMetadata == nil {
@@ -1336,6 +1358,15 @@ func prepareClusterServerURL(context *configtypes.Context, projectName, spaceNam
 	return serverURL + "/space/" + spaceName
 }
 
+func getContextType() configtypes.ContextType {
+	if contextTypeStr != "" {
+		return configtypes.StringToContextType(contextTypeStr)
+	} else if targetStr != "" {
+		return configtypes.ConvertTargetToContextType(getTarget())
+	}
+	return ""
+}
+
 // ====================================
 // Shell completion functions
 // ====================================
@@ -1349,11 +1380,11 @@ func completeAllContexts(_ *cobra.Command, args []string, _ string) ([]string, c
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	target := getTarget()
+	ct := getContextType()
 
 	var allCtxs []*configtypes.Context
 	for _, ctx := range cfg.KnownContexts {
-		if target == configtypes.TargetUnknown || target == ctx.Target {
+		if ct == "" || ct == ctx.ContextType {
 			allCtxs = append(allCtxs, ctx)
 		}
 	}
@@ -1372,7 +1403,7 @@ func completeTAEContexts(_ *cobra.Command, args []string, _ string) ([]string, c
 
 	var taeCtxs []*configtypes.Context
 	for _, ctx := range cfg.KnownContexts {
-		if ctx.Target == configtypes.TargetTAE {
+		if ctx.ContextType == configtypes.ContextTypeTAE {
 			taeCtxs = append(taeCtxs, ctx)
 		}
 	}
@@ -1384,16 +1415,16 @@ func completeActiveContexts(_ *cobra.Command, args []string, _ string) ([]string
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	currentCtxMap, err := config.GetAllCurrentContextsMap()
+	currentCtxMap, err := config.GetAllActiveContextsMap()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	target := getTarget()
+	ct := getContextType()
 
 	var allCtxs []*configtypes.Context
 	for _, ctx := range currentCtxMap {
-		if target == configtypes.TargetUnknown || target == ctx.Target {
+		if ct == "" || ct == ctx.ContextType {
 			allCtxs = append(allCtxs, ctx)
 		}
 	}
@@ -1457,4 +1488,58 @@ func completionFormatCtxs(ctxs []*configtypes.Context) []string {
 	// Sort the completion to make testing easier
 	sort.Strings(comps)
 	return comps
+}
+
+// dynamicTableWriter writes the data in table format dynamically by hiding column if all related rows for a column is `n/a`
+func dynamicTableWriter(slices interface{}, tableWriter component.OutputWriter) {
+	// Check if the input is a slice
+	valueOf := reflect.ValueOf(slices)
+	if valueOf.Kind() == reflect.Slice && valueOf.Len() > 0 {
+		// Collect header and column data
+		header := []string{}
+		isColumnFilled := make(map[int]bool)
+
+		for i := 0; i < valueOf.Len(); i++ {
+			elem := valueOf.Index(i)
+			elemValue := reflect.ValueOf(elem.Interface())
+
+			// Determine which columns are filled for this element
+			for j := 0; j < elemValue.NumField(); j++ {
+				field := elemValue.Field(j)
+				fieldValue := field.Interface()
+				isNA := reflect.DeepEqual(fieldValue, NA)
+				if !isNA {
+					isColumnFilled[j] = true
+				}
+			}
+		}
+
+		// Build the header based on the first element
+		elem := valueOf.Index(0)
+		elemValue := reflect.ValueOf(elem.Interface())
+		for j := 0; j < elemValue.NumField(); j++ {
+			if _, exists := isColumnFilled[j]; exists {
+				fieldName := elemValue.Type().Field(j).Name
+				header = append(header, fieldName)
+			}
+		}
+		// Set header
+		tableWriter.SetKeys(header...)
+
+		// Build the data rows and add them to tablewriter
+		for i := 0; i < valueOf.Len(); i++ {
+			elem := valueOf.Index(i)
+			elemValue := reflect.ValueOf(elem.Interface())
+			dataRow := []interface{}{}
+			for j := 0; j < elemValue.NumField(); j++ {
+				if _, exists := isColumnFilled[j]; exists {
+					field := elemValue.Field(j)
+					fieldValue := field.Interface()
+					dataRow = append(dataRow, fmt.Sprintf("%v", fieldValue))
+				}
+			}
+			tableWriter.AddRow(dataRow...)
+		}
+	}
+	tableWriter.Render()
 }
