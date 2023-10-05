@@ -66,7 +66,7 @@ func newListCertCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List available certificate configurations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "host", "ca-certificate", "skip-cert-verification", "insecure")
+			output := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "host", "ca-certificate", "skip-cert-verification", "insecure")
 			certs, _ := configlib.GetCerts()
 			for _, cert := range certs {
 				// TODO(prkalle): Remove the column "CACertData" if "<REDACTED>" string is not good UX, also would have to change if "Not configured" is not the apt word

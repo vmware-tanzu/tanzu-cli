@@ -137,7 +137,7 @@ func newGetCmd() *cobra.Command {
 }
 
 func displayGroupsFound(groups []*plugininventory.PluginGroup, writer io.Writer) {
-	output := component.NewOutputWriter(writer, outputFormat, "group", "description", "latest")
+	output := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "group", "description", "latest")
 
 	for _, pg := range groups {
 		id := plugininventory.PluginGroupToID(pg)
@@ -203,7 +203,7 @@ func displayGroupDetails(groups []*plugininventory.PluginGroup, writer io.Writer
 func displayGroupContentAsTable(group *plugininventory.PluginGroup, writer io.Writer) {
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
-	output := component.NewOutputWriter(writer, outputFormat, "Name", "Target", "Version")
+	output := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
 
 	groupID := plugininventory.PluginGroupToID(group)
 	_, _ = cyanBold.Println("Plugins in Group: ", cyanBoldItalic.Sprintf("%s:%s", groupID, group.RecommendedVersion))
@@ -217,7 +217,7 @@ func displayGroupContentAsTable(group *plugininventory.PluginGroup, writer io.Wr
 }
 
 func displayGroupContentAsList(group *plugininventory.PluginGroup, writer io.Writer) {
-	output := component.NewOutputWriter(writer, outputFormat, "Group", "PluginName", "PluginTarget", "PluginVersion")
+	output := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Group", "PluginName", "PluginTarget", "PluginVersion")
 
 	groupID := fmt.Sprintf("%s:%s", plugininventory.PluginGroupToID(group), group.RecommendedVersion)
 	for _, plugin := range group.Versions[group.RecommendedVersion] {

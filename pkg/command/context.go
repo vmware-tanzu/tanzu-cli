@@ -990,7 +990,12 @@ func listDeactivatedPlugins(deactivatedPlugins []discovery.Discovered, ctxName s
 
 func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.Writer) {
 	target := getTarget()
-	op := component.NewOutputWriter(writer, outputFormat, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext", "AdditionalMetadata")
+
+	// switching to use the new OutputWriter because we want to render the
+	// additional metadata map correctly in their native JSON/YAML form
+	opts := []component.OutputWriterOption{}
+	op := component.NewOutputWriterWithOptions(writer, outputFormat, opts, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext", "AdditionalMetadata")
+
 	for _, ctx := range cfg.KnownContexts {
 		if target != configtypes.TargetUnknown && ctx.Target != target {
 			continue
@@ -1047,12 +1052,13 @@ func displayContextListOutputSplitViewTarget(cfg *configtypes.ClientConfig, writ
 
 	ctxs, showTAEColumns := getContextsToDisplay(cfg, target, onlyCurrent)
 
+	opts := []component.OutputWriterOption{}
 	if showTAEColumns {
-		k8sContextTable = component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Type", "Endpoint", "KubeConfigPath", "KubeContext", "Project", "Space")
+		k8sContextTable = component.NewOutputWriterWithOptions(writer, outputFormat, opts, "Name", "IsActive", "Type", "Endpoint", "KubeConfigPath", "KubeContext", "Project", "Space")
 	} else {
-		k8sContextTable = component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Type", "Endpoint", "KubeConfigPath", "KubeContext")
+		k8sContextTable = component.NewOutputWriterWithOptions(writer, outputFormat, opts, "Name", "IsActive", "Type", "Endpoint", "KubeConfigPath", "KubeContext")
 	}
-	outputWriterTMCTarget := component.NewOutputWriter(writer, outputFormat, "Name", "IsActive", "Endpoint")
+	outputWriterTMCTarget := component.NewOutputWriterWithOptions(writer, outputFormat, opts, "Name", "IsActive", "Endpoint")
 	for _, ctx := range ctxs {
 		var ep, path, context string
 		var project, space string

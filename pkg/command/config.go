@@ -264,7 +264,7 @@ var listServersCmd = &cobra.Command{
 			return err
 		}
 
-		output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "Name", "Type", "Endpoint", "Path", "Context")
+		output := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "Name", "Type", "Endpoint", "Path", "Context")
 		for _, server := range cfg.KnownServers {
 			var endpoint, path, context string
 			if server.GlobalOpts != nil && server.IsGlobal() {

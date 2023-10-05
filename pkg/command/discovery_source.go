@@ -49,7 +49,7 @@ func newListDiscoverySourceCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List available discovery sources",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			output := component.NewOutputWriter(cmd.OutOrStdout(), outputFormat, "name", "image")
+			output := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "name", "image")
 			discoverySources, err := configlib.GetCLIDiscoverySources()
 			for _, ds := range discoverySources {
 				if ds.OCI != nil {
