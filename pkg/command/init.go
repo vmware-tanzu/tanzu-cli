@@ -22,7 +22,8 @@ var initCmd = &cobra.Command{
 	Annotations: map[string]string{
 		"group": string(plugin.SystemCmdGroup),
 	},
-	SilenceErrors: true,
+	SilenceErrors:     true,
+	ValidArgsFunction: cobra.NoFileCompletions,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Currently nothing to initialize.
 		// We are keeping this command as it may become useful

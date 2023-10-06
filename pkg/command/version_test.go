@@ -4,6 +4,7 @@
 package command
 
 import (
+	"bytes"
 	"io"
 	"os"
 	"testing"
@@ -57,4 +58,37 @@ func TestVersion(t *testing.T) {
 	got := <-c
 	expected := "version: 1.2.3\nbuildDate: today\nsha: cafecafe\n"
 	assert.Equal(expected, string(got))
+}
+
+func TestCompletionVersion(t *testing.T) {
+	tests := []struct {
+		test     string
+		args     []string
+		expected string
+	}{
+		{
+			test: "no completion for the version command",
+			args: []string{"__complete", "version", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+	}
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var out bytes.Buffer
+			rootCmd.SetOut(&out)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			assert.Equal(spec.expected, out.String())
+		})
+	}
 }

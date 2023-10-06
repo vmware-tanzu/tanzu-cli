@@ -79,7 +79,12 @@ var completionCmd = &cobra.Command{
 	Long:                  fmt.Sprintf(completionLongDesc, completionShells),
 	Example:               completionExamples,
 	DisableFlagsInUseLine: true,
-	ValidArgs:             completionShells,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 {
+			return completionShells, cobra.ShellCompDirectiveNoFileComp
+		}
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runCompletion(os.Stdout, cmd, args)
 	},
