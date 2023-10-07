@@ -629,13 +629,16 @@ func completePluginVersions(_ *cobra.Command, args []string, _ string) ([]string
 		return comps, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	var comps []string
-	comps = append(comps, plugins[0].SupportedVersions...)
-
-	// Sort to make it possible to test
-	sort.Strings(comps)
-
-	return comps, cobra.ShellCompDirectiveNoFileComp
+	// The versions are already sorted, but in ascending order.
+	// Since more recent versions are more likely to be of interest
+	// lets reverse the order and then tell the shell to respect
+	// that order using cobra.ShellCompDirectiveKeepOrder
+	versions := plugins[0].SupportedVersions
+	comps := make([]string, len(versions))
+	for i := range versions {
+		comps[len(versions)-1-i] = versions[i]
+	}
+	return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 }
 
 func completionAllPluginsFromLocal() []string {

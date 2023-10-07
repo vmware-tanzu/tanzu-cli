@@ -282,15 +282,12 @@ func completeGroupsAndVersion(cmd *cobra.Command, _ []string, toComplete string)
 		// so now we should complete the gID version
 		gID := toComplete[:idx]
 		versionToComplete := toComplete[idx+1:]
-		versions, _ := completeGroupVersions(cmd, []string{gID}, versionToComplete)
+		versions, directive := completeGroupVersions(cmd, []string{gID}, versionToComplete)
 		for _, v := range versions {
 			comps = append(comps, fmt.Sprintf("%s:%s", gID, v))
 		}
 
-		// Sort to allow for testing
-		sort.Strings(comps)
-
-		return comps, cobra.ShellCompDirectiveNoFileComp
+		return comps, directive
 	}
 
 	// We need to complete a group name.
@@ -323,13 +320,21 @@ func completeGroupVersions(_ *cobra.Command, args []string, toComplete string) (
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	var comps []string
+	// Since more recent versions are more likely to be
+	// useful, we return the list of versions in reverse order
+	// and tell the shell to preserve that order using
+	// cobra.ShellCompDirectiveKeepOrder
+	var versions []string
 	for v := range groups[0].Versions {
-		comps = append(comps, v)
+		versions = append(versions, v)
 	}
+	// Sort in ascending order
+	_ = utils.SortVersions(versions)
 
-	// Sort to allow for testing
-	sort.Strings(comps)
-
-	return comps, cobra.ShellCompDirectiveNoFileComp
+	// Create the completions in reverse order
+	comps := make([]string, len(versions))
+	for i := range versions {
+		comps[len(versions)-1-i] = versions[i]
+	}
+	return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 }

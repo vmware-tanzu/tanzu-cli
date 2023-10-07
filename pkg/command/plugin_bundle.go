@@ -151,14 +151,20 @@ func completeGroupVersionsForDownloadBundle(groups []*plugininventory.PluginGrou
 		return nil
 	}
 
-	var comps []string
+	// Since more recent versions are more likely to be
+	// useful, we return the list of versions in reverse order
+	var versions []string
 	for v := range group.Versions {
-		comps = append(comps, fmt.Sprintf("%s:%s", id, v))
+		versions = append(versions, v)
 	}
+	// Sort in ascending order
+	_ = utils.SortVersions(versions)
 
-	// Sort to allow for testing
-	sort.Strings(comps)
-
+	// Create the completions in reverse order
+	comps := make([]string, len(versions))
+	for i := range versions {
+		comps[len(versions)-1-i] = fmt.Sprintf("%s:%s", id, versions[i])
+	}
 	return comps
 }
 
@@ -202,11 +208,14 @@ func completeGroupsAndVersionForBundleDownload(cmd *cobra.Command, _ []string, t
 
 	if idx := strings.Index(toComplete, ":"); idx != -1 {
 		// The gID is already specified before the :
-		// so now we should complete the group version
+		// so now we should complete the group version.
+		// Since more recent versions are more likely to be
+		// useful, we tell the shell to preserve the order
+		// using cobra.ShellCompDirectiveKeepOrder
 		gID := toComplete[:idx]
 		versionToComplete := toComplete[idx+1:]
 
-		return completeGroupVersionsForDownloadBundle(pluginGroups, gID, versionToComplete), cobra.ShellCompDirectiveNoFileComp
+		return completeGroupVersionsForDownloadBundle(pluginGroups, gID, versionToComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 	}
 
 	// Complete plugin group names

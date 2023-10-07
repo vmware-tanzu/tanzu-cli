@@ -521,11 +521,11 @@ func TestCompletionPlugin(t *testing.T) {
 		{
 			test: "completion for the --group flag value for the version part of the plugin install command",
 			args: []string{"__complete", "plugin", "install", "--group", "vmware-tkg/default:"},
-			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: "vmware-tkg/default:v1.1.1\n" +
-				"vmware-tkg/default:v2.2.2\n" +
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "vmware-tkg/default:v2.2.2\n" +
 				"vmware-tkg/default:v2.2.2-beta\n" +
-				":4\n",
+				"vmware-tkg/default:v1.1.1\n" +
+				":36\n",
 		},
 		{
 			test: "completion for the --local-source flag value",
@@ -557,12 +557,12 @@ func TestCompletionPlugin(t *testing.T) {
 		{
 			test: "completion for the --version flag value for the plugin install command with a plugin name and --target",
 			args: []string{"__complete", "plugin", "install", "management-cluster", "--target", "tmc", "--version", ""},
-			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: "v0.0.1\n" +
-				"v0.0.2\n" +
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "v0.2.0\n" +
 				"v0.0.3\n" +
-				"v0.2.0\n" +
-				":4\n",
+				"v0.0.2\n" +
+				"v0.0.1\n" +
+				":36\n",
 		},
 		{
 			test: "no completion after the first arg for the plugin install command",

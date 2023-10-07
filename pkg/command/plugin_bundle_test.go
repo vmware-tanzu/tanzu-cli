@@ -80,11 +80,11 @@ func TestCompletionPluginBundle(t *testing.T) {
 			test:                  "completion for the --group flag value for the version part of the download-bundle command",
 			args:                  []string{"__complete", "plugin", "download-bundle", "--group", "vmware-tkg/default:"},
 			imageMustBeDownloaded: true,
-			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: "vmware-tkg/default:v1.1.1\n" +
-				"vmware-tkg/default:v2.2.2\n" +
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "vmware-tkg/default:v2.2.2\n" +
 				"vmware-tkg/default:v2.2.2-beta\n" +
-				":4\n",
+				"vmware-tkg/default:v1.1.1\n" +
+				":36\n",
 		},
 		{
 			test:                  "completion for the --group flag value for the group name part of the download-bundle command with --image",
@@ -99,11 +99,11 @@ func TestCompletionPluginBundle(t *testing.T) {
 			test:                  "completion for the --group flag value for the version part of the download-bundle command with --image",
 			args:                  []string{"__complete", "plugin", "download-bundle", "--image", "example.com/image:latest", "--group", "vmware-tkg/default:"},
 			imageMustBeDownloaded: true,
-			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: "vmware-tkg/default:v1.1.1\n" +
-				"vmware-tkg/default:v2.2.2\n" +
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "vmware-tkg/default:v2.2.2\n" +
 				"vmware-tkg/default:v2.2.2-beta\n" +
-				":4\n",
+				"vmware-tkg/default:v1.1.1\n" +
+				":36\n",
 		},
 		// ============================
 		// tanzu plugin upload-bundle

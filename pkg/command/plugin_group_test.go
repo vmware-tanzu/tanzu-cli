@@ -47,11 +47,11 @@ func TestCompletionPluginGroup(t *testing.T) {
 		{
 			test: "completion for the version name part of the group get command",
 			args: []string{"__complete", "plugin", "group", "get", "vmware-tkg/default:"},
-			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: "vmware-tkg/default:v1.1.1\n" +
-				"vmware-tkg/default:v2.2.2\n" +
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "vmware-tkg/default:v2.2.2\n" +
 				"vmware-tkg/default:v2.2.2-beta\n" +
-				":4\n",
+				"vmware-tkg/default:v1.1.1\n" +
+				":36\n",
 		},
 		{
 			test: "no completion after the first arg of the group get command",
