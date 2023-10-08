@@ -88,8 +88,9 @@ plugin-install-local:
 .PHONY: plugin-build
 plugin-build: $(PLUGIN_BUILD_TARGETS) generate-plugin-bundle ## Build all plugin binaries for all supported os-arch
 
+.PHONY: plugin-build-local
 plugin-build-local: plugin-build-$(GOHOSTOS)-$(GOHOSTARCH) ## Build all plugin binaries for local platform
-	
+
 plugin-build-%:
 	$(eval ARCH = $(word 2,$(subst -, ,$*)))
 	$(eval OS = $(word 1,$(subst -, ,$*)))
