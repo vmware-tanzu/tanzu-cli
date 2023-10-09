@@ -850,7 +850,7 @@ func deleteCtx(_ *cobra.Command, args []string) error {
 		}
 	}
 	installed, _, _, _ := getInstalledAndMissingContextPlugins() //nolint:dogsled
-	log.Infof("Deleting entry for cluster %s", name)
+	log.Infof("Deleting entry for context '%s'", name)
 	err := config.RemoveContext(name)
 	if err != nil {
 		return err
