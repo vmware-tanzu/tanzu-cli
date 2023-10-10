@@ -514,14 +514,14 @@ func doCSPAuthAndUpdateContext(c *configtypes.Context, endpointType string) (cla
 	if apiTokenExists {
 		log.Info("API token env var is set")
 	} else {
-		apiTokenValue, err = promptAPIToken("TAE")
+		apiTokenValue, err = promptAPIToken(endpointType)
 		if err != nil {
 			return nil, err
 		}
 	}
 	token, err := csp.GetAccessTokenFromAPIToken(apiTokenValue, issuer)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get token from CSP for TAE")
+		return nil, errors.Wrapf(err, "failed to get token from CSP for %s", endpointType)
 	}
 	claims, err = csp.ParseToken(&oauth2.Token{AccessToken: token.AccessToken})
 	if err != nil {
