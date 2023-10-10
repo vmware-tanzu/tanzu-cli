@@ -19,6 +19,7 @@ import (
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
@@ -50,6 +51,23 @@ var testPlugins = []plugininventory.PluginIdentifier{
 
 var testPluginsNoARM64 = []plugininventory.PluginIdentifier{
 	{Name: "pluginnoarm", Target: configtypes.TargetK8s, Version: "v1.0.0"},
+}
+
+var installedStandalonePlugins = []plugininventory.PluginIdentifier{
+	{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v0.1.0"},
+	{Name: "secret", Target: configtypes.TargetK8s, Version: "v0.3.0"},
+
+	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.0.1"},
+}
+
+var installedContextPlugins = map[string][]plugininventory.PluginIdentifier{
+	"myK8sCtx": {
+		{Name: "cluster", Target: configtypes.TargetK8s, Version: "v0.0.1"},
+		{Name: "feature", Target: configtypes.TargetK8s, Version: "v0.0.2"},
+	},
+	"myTMCCtx": {
+		{Name: "cluster", Target: configtypes.TargetTMC, Version: "v0.0.5"},
+	},
 }
 
 const createGroupsStmt = `
@@ -288,6 +306,65 @@ func setupTestPluginInventory() {
 	_, err = db.Exec(createGroupsStmt)
 	if err != nil {
 		log.Fatal(err, "failed to create plugin groups for testing")
+	}
+}
+
+func setupTestPluginCatalog() {
+	// Create catalog for standalone plugins
+	cc, err := catalog.NewContextCatalogUpdater("")
+	if err != nil {
+		log.Fatal(err, "unable to create catalog updater")
+	}
+
+	for _, plugin := range installedStandalonePlugins {
+		entry := cli.PluginInfo{
+			Name:             plugin.Name,
+			Target:           plugin.Target,
+			Version:          plugin.Version,
+			Description:      fmt.Sprintf("Plugin %s/%s description", plugin.Name, plugin.Target),
+			InstallationPath: "/path/" + string(plugin.Target) + "/" + plugin.Name,
+		}
+
+		err = cc.Upsert(&entry)
+		if err != nil {
+			log.Fatal(err, "unable to insert into catalog")
+		}
+	}
+	cc.Unlock()
+
+	for ctxName, plugins := range installedContextPlugins {
+		cc, err := catalog.NewContextCatalogUpdater(ctxName)
+		if err != nil {
+			log.Fatal(err, "unable to create catalog updater")
+		}
+
+		var target configtypes.Target
+		for _, plugin := range plugins {
+			entry := cli.PluginInfo{
+				Name:             plugin.Name,
+				Target:           plugin.Target,
+				Version:          plugin.Version,
+				Description:      fmt.Sprintf("Plugin %s/%s description", plugin.Name, plugin.Target),
+				InstallationPath: "/path/" + string(plugin.Target) + "/" + plugin.Name,
+			}
+
+			err = cc.Upsert(&entry)
+			if err != nil {
+				log.Fatal(err, "unable to insert into catalog")
+			}
+
+			target = plugin.Target
+		}
+
+		err = configlib.SetContext(&configtypes.Context{
+			Name:   ctxName,
+			Target: target,
+		}, true)
+		if err != nil {
+			log.Fatal(err, "unable to set context")
+		}
+
+		cc.Unlock()
 	}
 }
 
