@@ -333,4 +333,33 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			})
 		})
 	})
+	Describe("Fetch image", func() {
+		BeforeEach(func() {
+			configFile, err = os.CreateTemp("", "config")
+			Expect(err).To(BeNil())
+			os.Setenv("TANZU_CONFIG", configFile.Name())
+
+			configFileNG, err = os.CreateTemp("", "config_ng")
+			Expect(err).To(BeNil())
+			os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+		})
+		AfterEach(func() {
+			os.Unsetenv("TANZU_CONFIG")
+			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+			os.RemoveAll(configFile.Name())
+			os.RemoveAll(configFileNG.Name())
+		})
+		Context("checkImageCache function", func() {
+			It("should show a detailed error", func() {
+				discovery := NewOCIDiscovery("test-discovery", "test-image:latest")
+				Expect(err).To(BeNil(), "unable to create discovery")
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+				_, _, err := dbDiscovery.checkImageCache()
+				Expect(err).To(Not(BeNil()), "expected error when checking an invalid image")
+				Expect(err.Error()).To(ContainSubstring(`plugins discovery image resolution failed. Please check that the repository image URL "test-image:latest" is correct: error getting the image digest: GET https://index.docker.io/v2/library/test-image/manifests/latest`))
+			})
+		})
+	})
 })
