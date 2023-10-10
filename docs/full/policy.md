@@ -106,6 +106,8 @@ Any CLI feature or API can be marked as deprecated as part of a minor release bu
 
 - Deprecation window: 6 months
 
+- Note: The Tanzu CLI does NOT provide backward compatibility guarantees at the golang API level but provides this only for CLI command features and UX.
+
 - ***FAQ***:
   - What happens if the user uses a deprecated feature during the deprecation window?
     - The deprecated feature should continue to work as expected with a potential warning message about deprecated feature usage
