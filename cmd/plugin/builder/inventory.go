@@ -8,7 +8,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/inventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
 // newInventoryCmd creates a new command for inventory operations.
@@ -17,8 +16,6 @@ func newInventoryCmd() *cobra.Command {
 		Use:   "inventory",
 		Short: "Inventory Operations",
 	}
-
-	inventoryCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 
 	inventoryCmd.AddCommand(
 		newInventoryInitCmd(),

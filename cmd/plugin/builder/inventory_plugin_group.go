@@ -8,7 +8,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/cmd/plugin/builder/inventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
 // newInventoryPluginCmd creates a new command for plugin inventory operations.
@@ -17,8 +16,6 @@ func newInventoryPluginGroupCmd() *cobra.Command {
 		Use:   "plugin-group",
 		Short: "Plugin-Group Inventory Operations",
 	}
-
-	inventoryPluginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 
 	inventoryPluginCmd.AddCommand(
 		newInventoryPluginGroupAddCmd(),
