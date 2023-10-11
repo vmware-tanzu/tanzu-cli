@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -33,12 +32,6 @@ const (
 
 	// PinnipedOIDCScopes are the scopes of pinniped oidc
 	PinnipedOIDCScopes = "offline_access,openid,pinniped:request-audience"
-
-	// TanzuLocalKubeDir is the local config directory
-	TanzuLocalKubeDir = ".kube-tanzu"
-
-	// TanzuKubeconfigFile is the name the of the kubeconfig file
-	TanzuKubeconfigFile = "config"
 
 	// DefaultPinnipedLoginTimeout is the default login timeout
 	DefaultPinnipedLoginTimeout = time.Minute
@@ -185,37 +178,11 @@ func GetPinnipedKubeconfig(cluster *clientcmdapi.Cluster, pinnipedInfo *Pinniped
 	}, nil
 }
 
-// TanzuLocalKubeConfigPath returns the local tanzu kubeconfig path
-func TanzuLocalKubeConfigPath() (path string, err error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return path, errors.Wrap(err, "could not locate local tanzu dir")
-	}
-	path = filepath.Join(home, TanzuLocalKubeDir)
-	// create tanzu kubeconfig directory
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err = os.MkdirAll(path, 0755)
-		if err != nil {
-			return "", err
-		}
-	} else if err != nil {
-		return "", err
-	}
-
-	configFilePath := filepath.Join(path, TanzuKubeconfigFile)
-
-	return configFilePath, nil
-}
-
 func MergeAndSaveKubeconfigBytes(kubeconfigBytes []byte, options *KubeConfigOptions) (mergeFilePath, currentContext string, err error) {
 	if options != nil && options.MergeFilePath != "" {
 		mergeFilePath = options.MergeFilePath
 	} else {
-		mergeFilePath, err = TanzuLocalKubeConfigPath()
-		if err != nil {
-			err = errors.Wrap(err, "unable to get the Tanzu local kubeconfig path")
-			return
-		}
+		mergeFilePath = kubeutils.GetDefaultKubeConfigFile()
 	}
 
 	err = kubeutils.MergeKubeConfigWithoutSwitchContext(kubeconfigBytes, mergeFilePath)
