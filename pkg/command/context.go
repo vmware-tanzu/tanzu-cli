@@ -335,7 +335,7 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 			return
 		}
 	} else if kubeConfig == "" {
-		kubeConfig = getDefaultKubeconfigPath()
+		kubeConfig = kubecfg.GetDefaultKubeConfigFile()
 	}
 	kubeConfig = strings.TrimSpace(kubeConfig)
 
@@ -734,15 +734,6 @@ func sanitizeEndpoint(endpoint string) string {
 		return fmt.Sprintf("%s:443", endpoint)
 	}
 	return endpoint
-}
-
-func getDefaultKubeconfigPath() string {
-	kubeConfigPath := os.Getenv(clientcmd.RecommendedConfigPathEnvVar)
-	// fallback to default kubeconfig file location if no env variable set
-	if kubeConfigPath == "" {
-		kubeConfigPath = clientcmd.RecommendedHomeFile
-	}
-	return kubeConfigPath
 }
 
 func getDiscoveryHTTPClient(tlsConfig *tls.Config) *http.Client {

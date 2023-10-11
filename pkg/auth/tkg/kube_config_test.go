@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -232,21 +231,6 @@ var _ = Describe("Unit tests for tkg auth", func() {
 
 			})
 		})
-		Describe("Get Tanzu local Kubeconfig path", func() {
-			var localPath string
-			Context("When TanzuLocalKubeConfigPath() is called", func() {
-				BeforeEach(func() {
-					localPath, err = tkgauth.TanzuLocalKubeConfigPath()
-				})
-				It("should return the tanzu local kubeconfig path", func() {
-					Expect(err).ToNot(HaveOccurred())
-					home, err := os.UserHomeDir()
-					Expect(err).ToNot(HaveOccurred())
-					Expect(localPath).Should(Equal(filepath.Join(home, tkgauth.TanzuLocalKubeDir, tkgauth.TanzuKubeconfigFile)))
-				})
-			})
-		})
-
 	})
 })
 

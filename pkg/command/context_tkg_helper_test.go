@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -155,10 +154,11 @@ var _ = Describe("Test getKubeconfigForPriorTKGVersion()", func() {
 			issuerCA    = "fakeCAData"
 		)
 		var (
-			ep        string
-			tlsServer *ghttp.Server
-			servCert  *x509.Certificate
-			err       error
+			ep             string
+			kubeconfigFile *os.File
+			tlsServer      *ghttp.Server
+			servCert       *x509.Certificate
+			err            error
 		)
 		BeforeEach(func() {
 			tlsServer = ghttp.NewTLSServer()
@@ -167,12 +167,25 @@ var _ = Describe("Test getKubeconfigForPriorTKGVersion()", func() {
 			err = os.Setenv(constants.EULAPromptAnswer, "yes")
 			err = os.Setenv(constants.CEIPOptInUserPromptAnswer, "yes")
 			Expect(err).To(BeNil())
+
+			kubeconfigFile, err = os.CreateTemp("", "test-kube")
+			Expect(err).To(BeNil())
+			// multi-file Kubeconfig, the first existent file should be used
+			err = os.Setenv("KUBECONFIG", "./non-exist-kubeconfig-file:"+kubeconfigFile.Name())
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			resetContextCommandFlags()
 			tlsServer.Close()
-			os.Unsetenv(constants.EULAPromptAnswer)
-			os.Unsetenv(constants.CEIPOptInUserPromptAnswer)
+			err = os.Unsetenv(constants.EULAPromptAnswer)
+			Expect(err).To(BeNil())
+			err = os.Unsetenv(constants.CEIPOptInUserPromptAnswer)
+			Expect(err).To(BeNil())
+
+			err = os.Unsetenv("KUBECONFIG")
+			Expect(err).To(BeNil())
+			err = os.RemoveAll(kubeconfigFile.Name())
+			Expect(err).To(BeNil())
 		})
 		Context("When the given endpoint(non vSphere with Tanzu) fails to provide the pinniped info ", func() {
 			It("should return error", func() {
@@ -233,11 +246,7 @@ var _ = Describe("Test getKubeconfigForPriorTKGVersion()", func() {
 
 				Expect(err).To(BeNil())
 				Expect(KCfgCtx).To(Equal("tanzu-cli-" + clusterName + "@" + clusterName))
-				Expect(KCfgPath).To(Equal(filepath.Join(tmpHomeDir, ".kube-tanzu", "config")))
-
-				Expect(err).To(BeNil())
-				Expect(KCfgCtx).To(Equal("tanzu-cli-" + clusterName + "@" + clusterName))
-				Expect(KCfgPath).To(Equal(filepath.Join(tmpHomeDir, ".kube-tanzu", "config")))
+				Expect(KCfgPath).To(Equal(kubeconfigFile.Name()))
 
 				os.Setenv("HOME", oldHomeDir)
 
@@ -290,7 +299,7 @@ var _ = Describe("Test getKubeconfigForPriorTKGVersion()", func() {
 
 				Expect(err).To(BeNil())
 				Expect(KCfgCtx).To(Equal("tanzu-cli-" + clusterName + "@" + clusterName))
-				Expect(KCfgPath).To(Equal(filepath.Join(tmpHomeDir, ".kube-tanzu", "config")))
+				Expect(KCfgPath).To(Equal(kubeconfigFile.Name()))
 
 				os.Setenv("HOME", oldHomeDir)
 

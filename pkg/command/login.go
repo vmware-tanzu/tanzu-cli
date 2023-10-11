@@ -16,13 +16,14 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
+	kubecfg "github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 var (
@@ -243,7 +244,7 @@ func createServerWithKubeconfig() (server *configtypes.Server, err error) { //no
 	}
 	kubeConfig = strings.TrimSpace(kubeConfig)
 	if kubeConfig == "" {
-		kubeConfig = getDefaultKubeconfigPath()
+		kubeConfig = kubecfg.GetDefaultKubeConfigFile()
 	}
 
 	if kubeConfig != "" && kubeContext == "" {
