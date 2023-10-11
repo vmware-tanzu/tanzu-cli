@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -49,6 +51,68 @@ const (
 	testProject                          = "test-project"
 	testSpace                            = "test-space"
 )
+
+const kubeconfigContent1 = `apiVersion: v1
+kind: Config
+preferences: {}
+clusters:
+- cluster:
+    server: https://example.com/1:6443
+  name: cluster-name1
+- cluster:
+    server: https://example.com/2:6443
+  name: cluster-name2
+contexts:
+- context:
+    cluster: cluster-name1
+    namespace: default
+    user: user-name1
+  name: context-name1
+- context:
+    cluster: cluster-name2
+    namespace: default
+    user: user-name2
+  name: context-name2
+current-context: context-name1
+users:
+- name: user-name1
+  user:
+    token: token1
+- name: user-name2
+  user:
+    token: token2
+  `
+
+const kubeconfigContent2 = `apiVersion: v1
+kind: Config
+preferences: {}
+clusters:
+- cluster:
+    server: https://example.com/1:6443
+  name: cluster-name8
+- cluster:
+    server: https://example.com/2:6443
+  name: cluster-name9
+contexts:
+- context:
+    cluster: cluster-name8
+    namespace: default
+    user: user-name8
+  name: context-name8
+- context:
+    cluster: cluster-name9
+    namespace: default
+    user: user-name9
+  name: context-name9
+current-context: context-name8
+users:
+- name: user-name8
+  user:
+    token: token8
+- name: user-name9
+  user:
+    token: token9
+`
 
 var _ = Describe("Test tanzu context command", func() {
 	var (
@@ -829,6 +893,316 @@ var _ = Describe("testing context use", func() {
 		})
 	})
 })
+
+func Test_completionContext(t *testing.T) {
+	ctxK8s1 := &configtypes.Context{
+		Name:        "tkg1",
+		Target:      configtypes.TargetK8s,
+		ClusterOpts: &configtypes.ClusterServer{Endpoint: "https://example.com/myendpoint/k8s/1"},
+	}
+	ctxK8s2 := &configtypes.Context{
+		Name:        "tkg2",
+		Target:      configtypes.TargetK8s,
+		ClusterOpts: &configtypes.ClusterServer{Path: "/example.com/mypath/k8s/2", Context: "ctxTkg2"},
+	}
+	ctxTMC1 := &configtypes.Context{
+		Name:       "tmc1",
+		Target:     configtypes.TargetTMC,
+		GlobalOpts: &configtypes.GlobalServer{Endpoint: "https://example.com/myendpoint/tmc/1"},
+	}
+	ctxTMC2 := &configtypes.Context{
+		Name:       "tmc2",
+		Target:     configtypes.TargetTMC,
+		GlobalOpts: &configtypes.GlobalServer{Endpoint: "https://example.com/myendpoint/tmc/2"},
+	}
+	ctxTAE1 := &configtypes.Context{
+		Name:        "tae1",
+		Target:      configtypes.TargetTAE,
+		ClusterOpts: &configtypes.ClusterServer{Endpoint: "https://example.com/myendpoint/tae/1"},
+	}
+	ctxTAE2 := &configtypes.Context{
+		Name:        "tae2",
+		Target:      configtypes.TargetTAE,
+		ClusterOpts: &configtypes.ClusterServer{Endpoint: "https://example.com/myendpoint/tae/2"},
+	}
+
+	expectedOutForAllCtxs := ctxTAE1.Name + "\t" + ctxTAE1.ClusterOpts.Endpoint + "\n"
+	expectedOutForAllCtxs += ctxTAE2.Name + "\t" + ctxTAE2.ClusterOpts.Endpoint + "\n"
+	expectedOutForAllCtxs += ctxK8s1.Name + "\t" + ctxK8s1.ClusterOpts.Endpoint + "\n"
+	expectedOutForAllCtxs += ctxK8s2.Name + "\t" + ctxK8s2.ClusterOpts.Path + ":" + ctxK8s2.ClusterOpts.Context + "\n"
+	expectedOutForAllCtxs += ctxTMC1.Name + "\t" + ctxTMC1.GlobalOpts.Endpoint + "\n"
+	expectedOutForAllCtxs += ctxTMC2.Name + "\t" + ctxTMC2.GlobalOpts.Endpoint + "\n"
+
+	expectedOutForActiveCtxs := ctxK8s1.Name + "\t" + ctxK8s1.ClusterOpts.Endpoint + "\n"
+	expectedOutForActiveCtxs += ctxTMC1.Name + "\t" + ctxTMC1.GlobalOpts.Endpoint + "\n"
+
+	expectedOutForTMCActiveCtx := ctxTMC1.Name + "\t" + ctxTMC1.GlobalOpts.Endpoint + "\n"
+
+	expectedOutForTAECtxs := ctxTAE1.Name + "\t" + ctxTAE1.ClusterOpts.Endpoint + "\n"
+	expectedOutForTAECtxs += ctxTAE2.Name + "\t" + ctxTAE2.ClusterOpts.Endpoint + "\n"
+
+	expectedOutforTargetFlag := compK8sTarget + "\n" + compTAETarget + "\n" + compTMCTarget + "\n"
+
+	kubeconfigFile1, err := os.CreateTemp("", "kubeconfig")
+	assert.Nil(t, err)
+	n, err := kubeconfigFile1.WriteString(kubeconfigContent1)
+	assert.Nil(t, err)
+	assert.Equal(t, len(kubeconfigContent1), n)
+
+	kubeconfigFile2, err := os.CreateTemp("", "kubeconfig")
+	assert.Nil(t, err)
+	n, err = kubeconfigFile2.WriteString(kubeconfigContent2)
+	assert.Nil(t, err)
+	assert.Equal(t, len(kubeconfigContent2), n)
+
+	// Set the default config file to the second file
+	os.Setenv("KUBECONFIG", kubeconfigFile2.Name())
+
+	tests := []struct {
+		test     string
+		args     []string
+		expected string
+	}{
+		// =====================
+		// tanzu context list
+		// =====================
+		{
+			test: "no completion after the list command",
+			args: []string{"__complete", "context", "list", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion for the --target flag value of the list command",
+			args: []string{"__complete", "context", "list", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutforTargetFlag + ":4\n",
+		},
+		{
+			test: "completion for the --output flag value of the list command",
+			args: []string{"__complete", "context", "list", "--output", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForOutputFlag + ":4\n",
+		},
+		// =====================
+		// tanzu context delete
+		// =====================
+		{
+			test: "complete all contexts after the delete command",
+			args: []string{"__complete", "context", "delete", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForAllCtxs + ":4\n",
+		},
+		{
+			test: "no completion after the first argument of the delete command",
+			args: []string{"__complete", "context", "delete", "tkg1", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// =====================
+		// tanzu context get
+		// =====================
+		{
+			test: "complete all contexts after the get command",
+			args: []string{"__complete", "context", "get", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForAllCtxs + ":4\n",
+		},
+		{
+			test: "no completion after the first argument of the get command",
+			args: []string{"__complete", "context", "get", "tkg1", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion for the --output flag value of the get command",
+			args: []string{"__complete", "context", "get", "--output", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForOutputFlag + ":4\n",
+		},
+		// =====================
+		// tanzu context use
+		// =====================
+		{
+			test: "complete all contexts after the use command",
+			args: []string{"__complete", "context", "use", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForAllCtxs + ":4\n",
+		},
+		{
+			test: "no completion after the first argument of the use command",
+			args: []string{"__complete", "context", "use", "tkg1", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// =====================
+		// tanzu context unset
+		// =====================
+		{
+			test: "complete active contexts after the unset command",
+			args: []string{"__complete", "context", "unset", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForActiveCtxs + ":4\n",
+		},
+		{
+			test: "no completion after the first argument of the unset command",
+			args: []string{"__complete", "context", "unset", "tkg1", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "complete active context matching the --target flag for the unset command",
+			args: []string{"__complete", "context", "unset", "--target", "tmc", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForTMCActiveCtx + ":4\n",
+		},
+		{
+			test: "completion for the --target flag value of the unset command",
+			args: []string{"__complete", "context", "unset", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutforTargetFlag + ":4\n",
+		},
+		// =====================
+		// tanzu context create
+		// =====================
+		{
+			test: "completion for the arg of the create command",
+			args: []string{"__complete", "context", "create", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ Please specify a name for the context\n:4\n",
+		},
+		{
+			test: "completion after one arg of the create command",
+			args: []string{"__complete", "context", "create", "tkg1", ""},
+			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
+			expected: "--\n:6\n",
+		},
+		{
+			test: "completion after one arg of the create command with --endpoint",
+			args: []string{"__complete", "context", "create", "tkg1", "--endpoint", "uri", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion after one arg of the create command with --kubecontext",
+			args: []string{"__complete", "context", "create", "tkg1", "--kubecontext", "ctx", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion after one arg of the create command with --kubeconfig",
+			args: []string{"__complete", "context", "create", "tkg1", "--kubeconfig", "path", ""},
+			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
+			expected: "--\n:6\n",
+		},
+		{
+			test: "completion for the --endpoint flag value of the create command",
+			args: []string{"__complete", "context", "create", "--endpoint", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion for the --api-token flag value of the create command",
+			args: []string{"__complete", "context", "create", "--api-token", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion for the --kubeconfig flag value of the create command",
+			args: []string{"__complete", "context", "create", "--kubeconfig", ""},
+			// ":0" is the value of the ShellCompDirectiveDefault which indicates
+			// that file completion will be performed
+			expected: ":0\n",
+		},
+		{
+			test: "completion for the --kubecontext flag with --kubeconfig",
+			args: []string{"__complete", "context", "create", "--kubeconfig", kubeconfigFile1.Name(), "--kubecontext", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "context-name1\tuser-name1@cluster-name1\n" +
+				"context-name2\tuser-name2@cluster-name2\n" + ":4\n",
+		},
+		{
+			test: "completion for the --kubecontext flag without --kubeconfig",
+			args: []string{"__complete", "context", "create", "--kubecontext", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "context-name8\tuser-name8@cluster-name8\n" +
+				"context-name9\tuser-name9@cluster-name9\n" + ":4\n",
+		},
+		{
+			test: "completion for the --type flag",
+			args: []string{"__complete", "context", "create", "--type", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "mission-control\tContext for a Tanzu Mission Control endpoint\n" +
+				"application-engine\tContext for a Tanzu Application Engine endpoint\n" +
+				"k8s-cluster-endpoint\tContext for a Kubernetes Cluster endpoint\n" +
+				"k8s-local-kubeconfig\tContext using a Kubernetes local kubeconfig file\n" +
+				":4\n",
+		},
+		// =====================
+		// tanzu context get-token
+		// =====================
+		{
+			test: "completion for the context get-token tae command",
+			args: []string{"__complete", "context", "get-token", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForTAECtxs + ":4\n",
+		},
+		// =====================
+		// tanzu context update
+		// =====================
+		{
+			test: "completion for the context get-token tae command",
+			args: []string{"__complete", "context", "update", "tae-active-resource", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForTAECtxs + ":4\n",
+		},
+	}
+
+	// Setup a temporary configuration
+	configFile, err := os.CreateTemp("", "config")
+	assert.Nil(t, err)
+	os.Setenv("TANZU_CONFIG", configFile.Name())
+	configFileNG, err := os.CreateTemp("", "config_ng")
+	assert.Nil(t, err)
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+
+	// Add some context, two per target
+	_ = config.SetContext(ctxK8s1, true)
+	_ = config.SetContext(ctxK8s2, false)
+	_ = config.SetContext(ctxTMC1, true)
+	_ = config.SetContext(ctxTMC2, false)
+	_ = config.SetContext(ctxTAE1, false)
+	_ = config.SetContext(ctxTAE2, false)
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var out bytes.Buffer
+			rootCmd.SetOut(&out)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			assert.Equal(spec.expected, out.String())
+
+			resetContextCommandFlags()
+		})
+	}
+
+	os.Unsetenv("TANZU_CONFIG")
+	os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+	os.RemoveAll(configFile.Name())
+	os.RemoveAll(configFileNG.Name())
+
+	os.Unsetenv("KUBECONFIG")
+	os.RemoveAll(kubeconfigFile1.Name())
+	os.RemoveAll(kubeconfigFile2.Name())
+}
 
 func resetContextCommandFlags() {
 	ctxName = ""
