@@ -1185,9 +1185,9 @@ func Test_completionContext(t *testing.T) {
 			test: "completion for the --type flag",
 			args: []string{"__complete", "context", "create", "--type", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: "tmc\tContext for a Tanzu Mission Control endpoint\n" +
-				"tae\tContext for a Tanzu Application Engine endpoint\n" +
-				"k8s\tContext for a Kubernetes cluster\n" +
+			expected: "k8s\tFor interactions with a Kubernetes cluster\n" +
+				"tae\tFor interactions with a Application Engine endpoint\n" +
+				"tmc\tFor interactions with a Mission-Control endpoint\n" +
 				":4\n",
 		},
 		// =====================
