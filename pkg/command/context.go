@@ -67,11 +67,13 @@ const (
 
 // constants that define context creation types
 const (
-	ContextMissionControl     = "Mission Control"
-	ContextK8SClusterEndpoint = "Kubernetes Cluster Endpoint"
-	ContextLocalKubeconfig    = "Kubernetes Local Kubeconfig"
-	ContextApplicationEngine  = "Application Engine"
+	ContextMissionControl     ContextCreationType = "Mission Control"
+	ContextK8SClusterEndpoint ContextCreationType = "Kubernetes (Cluster Endpoint)"
+	ContextLocalKubeconfig    ContextCreationType = "Kubernetes (Local Kubeconfig)"
+	ContextApplicationEngine  ContextCreationType = "Application Engine"
 )
+
+type ContextCreationType string
 
 var contextCmd = &cobra.Command{
 	Use:     "context",
@@ -125,7 +127,7 @@ var createCtxCmd = &cobra.Command{
 	RunE:              createCtx,
 	Example: `
     # Create a TKG management cluster context using endpoint and type (--type is optional, if not provided the CLI will infer the type from the endpoint)
-    tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port] --type k8s-cluster-endpoint
+    tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port] --type k8s
 
     # Create a TKG management cluster context using endpoint
     tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port]
@@ -183,13 +185,12 @@ func initCreateCtxCmd() {
 	// Shell completion for this flag is the default behavior of doing file completion
 	createCtxCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
 	createCtxCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
-	createCtxCmd.Flags().StringVar(&contextType, "type", "", "type of context to create (mission-control | application-engine | k8s-cluster-endpoint | k8s-local-kubeconfig)")
+	createCtxCmd.Flags().StringVar(&contextType, "type", "", "type of context to create (kubernetes[k8s]/mission-control[tmc]/application-engine[tae])")
 	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{
-				"mission-control\tContext for a Tanzu Mission Control endpoint",
-				"application-engine\tContext for a Tanzu Application Engine endpoint",
-				"k8s-cluster-endpoint\tContext for a Kubernetes Cluster endpoint",
-				"k8s-local-kubeconfig\tContext using a Kubernetes local kubeconfig file"},
+				"tmc\tContext for a Tanzu Mission Control endpoint",
+				"tae\tContext for a Tanzu Application Engine endpoint",
+				"k8s\tContext for a Kubernetes cluster"},
 			cobra.ShellCompDirectiveNoFileComp
 	}))
 
@@ -272,20 +273,30 @@ func getPromptOpts() []component.PromptOpt {
 	return promptOpts
 }
 
-func createNewContext() (context *configtypes.Context, err error) {
-	ctxCreationType := ""
+func createNewContext() (context *configtypes.Context, err error) { //nolint:gocyclo
+	var ctxCreationType ContextCreationType
 	contextType = strings.TrimSpace(contextType)
-	// user provided command line option "k8s-local-kubeconfig" or provided command line options to create a context using kubeconfig[optional] and context
-	if contextType == "k8s-local-kubeconfig" || kubeContext != "" {
-		ctxCreationType = ContextLocalKubeconfig
-	} else if contextType == "application-engine" || (endpoint != "" && isGlobalTAEEndpoint(endpoint)) {
+
+	if (contextType == "application-engine" || contextType == "tae") || (endpoint != "" && isGlobalTAEEndpoint(endpoint)) {
 		ctxCreationType = ContextApplicationEngine
-	} else if contextType == "mission-control" || (endpoint != "" && isGlobalContext(endpoint)) {
+	} else if (contextType == "mission-control" || contextType == "tmc") || (endpoint != "" && isGlobalContext(endpoint)) { //nolint: goconst
 		ctxCreationType = ContextMissionControl
-	} else if contextType == "k8s-cluster-endpoint" || endpoint != "" {
+	} else if endpoint != "" {
+		// user provided command line option endpoint is provided that is not globalTAE or GlobalContext=> it is Kubernetes(Cluster Endpoint) type
 		ctxCreationType = ContextK8SClusterEndpoint
+	} else if kubeContext != "" {
+		// user provided command line option kubeContext is provided => it is Kubernetes(Local Kubeconfig) type
+		ctxCreationType = ContextLocalKubeconfig
+	} else if contextType == "kubernetes" || contextType == "k8s" {
+		// If user provided only command line option type as "kubernetes" without any other flags to infer
+		// ask user for kubernetes context type("Cluster Endpoint" or "Local Kubeconfig")
+		ctxCreationType, err = promptKubernetesContextType()
+		if err != nil {
+			return context, err
+		}
 	}
-	// user provided command line options to create a context using endpoint
+
+	// if user not provided command line options to infer cluster creation type, prompt user
 	if ctxCreationType == "" {
 		ctxCreationType, err = promptContextType()
 		if err != nil {
@@ -296,7 +307,7 @@ func createNewContext() (context *configtypes.Context, err error) {
 	return createContextUsingContextType(ctxCreationType)
 }
 
-func createContextUsingContextType(ctxCreationType string) (context *configtypes.Context, err error) {
+func createContextUsingContextType(ctxCreationType ContextCreationType) (context *configtypes.Context, err error) {
 	var ctxCreateFunc func() (*configtypes.Context, error)
 	switch ctxCreationType {
 	case ContextMissionControl:
@@ -572,21 +583,55 @@ func doCSPAuthAndUpdateContext(c *configtypes.Context, endpointType string) (cla
 	return claims, nil
 }
 
-func promptContextType() (ctxCreationType string, err error) {
+func promptContextType() (ctxCreationType ContextCreationType, err error) {
+	ctxCreationTypeStr := ""
 	promptOpts := getPromptOpts()
 	err = component.Prompt(
 		&component.PromptConfig{
 			Message: "Select context creation type",
-			Options: []string{ContextMissionControl, ContextApplicationEngine, ContextK8SClusterEndpoint, ContextLocalKubeconfig},
-			Default: ContextMissionControl,
+			Options: []string{string(ContextMissionControl), string(ContextApplicationEngine), string(ContextK8SClusterEndpoint), string(ContextLocalKubeconfig)},
+			Default: string(ContextMissionControl),
 		},
-		&ctxCreationType,
+		&ctxCreationTypeStr,
 		promptOpts...,
 	)
 	if err != nil {
 		return
 	}
-	return
+
+	return stringToContextCreationType(ctxCreationTypeStr), nil
+}
+
+func stringToContextCreationType(ctxCreationTypeStr string) ContextCreationType {
+	if ctxCreationTypeStr == string(ContextMissionControl) {
+		return ContextMissionControl
+	} else if ctxCreationTypeStr == string(ContextApplicationEngine) {
+		return ContextApplicationEngine
+	} else if ctxCreationTypeStr == string(ContextK8SClusterEndpoint) {
+		return ContextK8SClusterEndpoint
+	} else if ctxCreationTypeStr == string(ContextLocalKubeconfig) {
+		return ContextLocalKubeconfig
+	}
+
+	return ""
+}
+
+func promptKubernetesContextType() (ctxCreationType ContextCreationType, err error) {
+	ctxCreationTypeStr := ""
+	promptOpts := getPromptOpts()
+	err = component.Prompt(
+		&component.PromptConfig{
+			Message: "Select the kubernetes context type",
+			Options: []string{string(ContextLocalKubeconfig), string(ContextK8SClusterEndpoint)},
+			Default: string(ContextLocalKubeconfig),
+		},
+		&ctxCreationTypeStr,
+		promptOpts...,
+	)
+	if err != nil {
+		return
+	}
+	return stringToContextCreationType(ctxCreationTypeStr), nil
 }
 
 func promptEndpoint(defaultEndpoint string) (ep string, err error) {
