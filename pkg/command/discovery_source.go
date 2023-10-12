@@ -5,6 +5,7 @@ package command
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/pkg/errors"
 
@@ -211,5 +212,8 @@ func completeDiscoverySources(_ *cobra.Command, args []string, toComplete string
 			comps = append(comps, fmt.Sprintf("%s\t%s", ds.OCI.Name, ds.OCI.Image))
 		}
 	}
+	// Sort the completion to make testing easier
+	sort.Strings(comps)
+
 	return comps, cobra.ShellCompDirectiveNoFileComp
 }

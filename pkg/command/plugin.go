@@ -616,8 +616,18 @@ func completePluginVersions(_ *cobra.Command, args []string, _ string) ([]string
 		discovery.WithPluginDiscoveryCriteria(criteria),
 		discovery.WithUseLocalCacheOnly())
 
-	if err != nil || len(plugins) == 0 {
+	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	if len(plugins) == 0 {
+		var comps []string
+		if targetStr == "" {
+			comps = cobra.AppendActiveHelp(nil, fmt.Sprintf("Unable to find plugin '%s'", args[0]))
+		} else {
+			comps = cobra.AppendActiveHelp(nil, fmt.Sprintf("Unable to find plugin '%s' for target '%s'", args[0], targetStr))
+		}
+		return comps, cobra.ShellCompDirectiveNoFileComp
 	}
 
 	// There could be more than one plugin if the target was not specified and

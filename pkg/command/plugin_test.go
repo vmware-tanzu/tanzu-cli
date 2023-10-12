@@ -555,6 +555,20 @@ func TestCompletionPlugin(t *testing.T) {
 				":4\n",
 		},
 		{
+			test: "completion for the --version flag value for the plugin install command with an invalid plugin name",
+			args: []string{"__complete", "plugin", "install", "invalid", "--version", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ Unable to find plugin 'invalid'\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --version flag value for the plugin install command with an invalid plugin name for a specified target",
+			args: []string{"__complete", "plugin", "install", "feature", "--target", "tmc", "--version", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ Unable to find plugin 'feature' for target 'tmc'\n" +
+				":4\n",
+		},
+		{
 			test: "completion for the --version flag value for the plugin install command with a plugin name and --target",
 			args: []string{"__complete", "plugin", "install", "management-cluster", "--target", "tmc", "--version", ""},
 			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
