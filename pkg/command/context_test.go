@@ -793,12 +793,7 @@ var _ = Describe("create new context", func() {
 
 var _ = Describe("testing context use", func() {
 	const (
-		existingContext    = "test-mc"
-		testKubeContext    = "test-k8s-context"
-		testKubeConfigPath = "/fake/path/kubeconfig"
-		testContextName    = "fake-context-name"
-		fakeTMCEndpoint    = "https://cloud.vmware.com/auth"
-		fakeTAEEndpoint    = "https://fake.api.tanzu.cloud.vmware.com"
+		existingContext = "test-mc"
 	)
 	var (
 		tkgConfigFile   *os.File
@@ -1132,10 +1127,9 @@ func Test_completionContext(t *testing.T) {
 			test: "completion for the --type flag",
 			args: []string{"__complete", "context", "create", "--type", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: "mission-control\tContext for a Tanzu Mission Control endpoint\n" +
-				"application-engine\tContext for a Tanzu Application Engine endpoint\n" +
-				"k8s-cluster-endpoint\tContext for a Kubernetes Cluster endpoint\n" +
-				"k8s-local-kubeconfig\tContext using a Kubernetes local kubeconfig file\n" +
+			expected: "tmc\tContext for a Tanzu Mission Control endpoint\n" +
+				"tae\tContext for a Tanzu Application Engine endpoint\n" +
+				"k8s\tContext for a Kubernetes cluster\n" +
 				":4\n",
 		},
 		// =====================
