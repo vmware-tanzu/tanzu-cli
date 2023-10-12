@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 )
 
 func readOutput(t *testing.T, r io.Reader, c chan<- []byte) {
@@ -45,10 +46,13 @@ func TestVersion(t *testing.T) {
 	buildinfo.Version = "1.2.3"
 	buildinfo.Date = "today"
 	buildinfo.SHA = "cafecafe"
+	originalArch := cli.GOARCH
+	cli.GOARCH = "amd64"
 	defer func() {
 		buildinfo.Version = ""
 		buildinfo.Date = ""
 		buildinfo.SHA = ""
+		cli.GOARCH = originalArch
 	}()
 
 	err = newVersionCmd().Execute()
@@ -56,7 +60,7 @@ func TestVersion(t *testing.T) {
 	w.Close()
 
 	got := <-c
-	expected := "version: 1.2.3\nbuildDate: today\nsha: cafecafe\n"
+	expected := "version: 1.2.3\nbuildDate: today\nsha: cafecafe\narch: amd64\n"
 	assert.Equal(expected, string(got))
 }
 
