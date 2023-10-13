@@ -98,6 +98,51 @@ var _ = Describe("Unit tests for kubeconfig use cases", func() {
 			})
 
 		})
+		Context("Deleting Context related information from Kubeconfig", func() {
+			Context("when context is not present in kubeconfig file", func() {
+				It("should not fail", func() {
+					copyFile(kubeconfigFilePath, kubeconfigFilePath3)
+					validateKubeconfig(kubeconfigFilePath3, 3, "foo-context")
+					err := DeleteContextFromKubeConfig(kubeconfigFilePath3, "MISSING-context")
+					Expect(err).To(BeNil())
+					validateKubeconfig(kubeconfigFilePath3, 3, "foo-context")
+				})
+			})
+
+			Context("when context is not provided", func() {
+				It("should not fail", func() {
+					copyFile(kubeconfigFilePath, kubeconfigFilePath3)
+					validateKubeconfig(kubeconfigFilePath3, 3, "foo-context")
+					err := DeleteContextFromKubeConfig(kubeconfigFilePath3, "")
+					Expect(err).To(BeNil())
+					validateKubeconfig(kubeconfigFilePath3, 3, "foo-context")
+				})
+			})
+
+			Context("when kubeconfig is not loadable", func() {
+				It("should fail", func() {
+					err := DeleteContextFromKubeConfig("MISSING-file", "bar-context")
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(ContainSubstring("unable to load kubeconfig:"))
+				})
+			})
+
+			Context("when context is present in kubeconfig file", func() {
+				It("should delete the context,cluster and user and also delete the current-context if the deleted context is current", func() {
+					copyFile(kubeconfigFilePath, kubeconfigFilePath3)
+					validateKubeconfig(kubeconfigFilePath3, 3, "foo-context")
+					err := DeleteContextFromKubeConfig(kubeconfigFilePath3, "foo-context")
+					Expect(err).To(BeNil())
+					kubecfg, err := clientcmd.LoadFromFile(kubeconfigFilePath3)
+					Expect(err).To(BeNil())
+					Expect(kubecfg.Clusters["foo-cluster"]).To(BeNil())
+					Expect(kubecfg.AuthInfos["blue-user"]).To(BeNil())
+					Expect(kubecfg.Contexts["foo-context"]).To(BeNil())
+					Expect(kubecfg.CurrentContext).To(BeEmpty())
+				})
+			})
+
+		})
 	})
 
 })

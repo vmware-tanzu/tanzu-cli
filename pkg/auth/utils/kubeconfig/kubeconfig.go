@@ -10,6 +10,8 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 func GetDefaultKubeConfigFile() string {
@@ -67,4 +69,41 @@ func SetCurrentContext(kubeConfigPath, contextName string) error {
 	}
 
 	return errors.Errorf("context %q does not exist", contextName)
+}
+
+// DeleteContextFromKubeConfig deletes the context,user and the cluster information from give kubeconfigPath
+func DeleteContextFromKubeConfig(kubeconfigPath, context string) error {
+	config, err := clientcmd.LoadFromFile(kubeconfigPath)
+	if err != nil {
+		return errors.Wrap(err, "unable to load kubeconfig")
+	}
+
+	clusterName := ""
+	// if the context is not present in the kubeconfigPath, nothing to do
+	c, ok := config.Contexts[context]
+	if !ok {
+		return nil
+	}
+	clusterName = c.Cluster
+	userName := c.AuthInfo
+
+	delete(config.Contexts, context)
+	delete(config.Clusters, clusterName)
+	delete(config.AuthInfos, userName)
+
+	shouldWarn := false
+	if config.CurrentContext == context {
+		config.CurrentContext = ""
+		shouldWarn = true
+	}
+	err = clientcmd.WriteToFile(*config, kubeconfigPath)
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete the kubeconfig context '%s' ", context)
+	}
+
+	if shouldWarn {
+		log.Warningf("warning: this removed your active context, use \"kubectl config use-context\" to select a different one")
+	}
+
+	return nil
 }
