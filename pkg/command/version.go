@@ -23,7 +23,9 @@ func newVersionCmd() *cobra.Command {
 		},
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("version: %s\nbuildDate: %s\nsha: %s\n", buildinfo.Version, buildinfo.Date, buildinfo.SHA)
+			fmt.Printf(
+				"version: %s\nbuildDate: %s\nsha: %s\narch: %s\n",
+				buildinfo.Version, buildinfo.Date, buildinfo.SHA, cli.GOARCH)
 			return nil
 		},
 	}
