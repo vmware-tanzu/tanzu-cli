@@ -22,6 +22,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
@@ -66,9 +67,13 @@ func newPluginCmd() *cobra.Command {
 	discoverySourceCmd := newDiscoverySourceCmd()
 
 	listPluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
+	utils.PanicOnErr(listPluginCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
+
 	describePluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
+	utils.PanicOnErr(describePluginCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
 
 	installPluginCmd.Flags().StringVar(&group, "group", "", "install the plugins specified by a plugin-group version")
+	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("group", completeGroupsAndVersion))
 
 	// --local is renamed to --local-source
 	installPluginCmd.Flags().StringVarP(&local, "local", "", "", "path to local plugin source")
@@ -77,17 +82,30 @@ func newPluginCmd() *cobra.Command {
 
 	// The --local-source flag for installing plugins is only used in development testing
 	// and should not be used in production.  We mark it as hidden to help convey this reality.
+	// Shell completion for this flag is the default behavior of doing file completion
 	installPluginCmd.Flags().StringVarP(&local, "local-source", "l", "", "path to local plugin source")
 	utils.PanicOnErr(installPluginCmd.Flags().MarkHidden("local-source"))
 
 	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
+	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("version", completePluginVersions))
+
 	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "delete the plugin without asking for confirmation")
 
+	completeTargets := func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+	}
 	targetFlagDesc := fmt.Sprintf("target of the plugin (%s)", common.TargetList)
 	installPluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("target", completeTargets))
+
 	upgradePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+	utils.PanicOnErr(upgradePluginCmd.RegisterFlagCompletionFunc("target", completeTargets))
+
 	deletePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+	utils.PanicOnErr(deletePluginCmd.RegisterFlagCompletionFunc("target", completeTargets))
+
 	describePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+	utils.PanicOnErr(describePluginCmd.RegisterFlagCompletionFunc("target", completeTargets))
 
 	installPluginCmd.MarkFlagsMutuallyExclusive("group", "local")
 	installPluginCmd.MarkFlagsMutuallyExclusive("group", "local-source")
@@ -114,9 +132,10 @@ func newPluginCmd() *cobra.Command {
 
 func newListPluginCmd() *cobra.Command {
 	var listCmd = &cobra.Command{
-		Use:   "list",
-		Short: "List installed plugins",
-		Long:  "List installed standalone plugins or plugins recommended by the contexts being used",
+		Use:               "list",
+		Short:             "List installed plugins",
+		Long:              "List installed standalone plugins or plugins recommended by the contexts being used",
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			errorList := make([]error, 0)
 			// List installed standalone plugins
@@ -153,13 +172,14 @@ func newListPluginCmd() *cobra.Command {
 
 func newDescribePluginCmd() *cobra.Command {
 	var describeCmd = &cobra.Command{
-		Use:   "describe " + pluginNameCaps,
-		Short: "Describe a plugin",
-		Long:  "Displays detailed information for a plugin",
+		Use:               "describe " + pluginNameCaps,
+		Short:             "Describe a plugin",
+		Long:              "Displays detailed information for a plugin",
+		ValidArgsFunction: completeInstalledPlugins,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			output := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "name", "version", "status", "target", "description", "installationPath")
 			if len(args) != 1 {
-				return fmt.Errorf("must provide plugin name as positional argument")
+				return fmt.Errorf("must provide one plugin name as a positional argument")
 			}
 			pluginName := args[0]
 
@@ -213,7 +233,8 @@ func newInstallPluginCmd() *cobra.Command { //nolint:funlen
 
     # Install latest minor and patch version of v1 of plugin "myPlugin"
     tanzu plugin install myPlugin --version v1`,
-		Args: cobra.MaximumNArgs(1),
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeAllPlugins,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			var pluginName string
@@ -292,9 +313,10 @@ func newInstallPluginCmd() *cobra.Command { //nolint:funlen
 
 func newUpgradePluginCmd() *cobra.Command {
 	var upgradeCmd = &cobra.Command{
-		Use:   "upgrade " + pluginNameCaps,
-		Short: "Upgrade a plugin",
-		Long:  "Installs the latest version available for the specified plugin",
+		Use:               "upgrade " + pluginNameCaps,
+		Short:             "Upgrade a plugin",
+		Long:              "Installs the latest version available for the specified plugin",
+		ValidArgsFunction: completeAllPlugins,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			if len(args) != 1 {
 				return fmt.Errorf("must provide plugin name as positional argument")
@@ -321,12 +343,13 @@ func newUpgradePluginCmd() *cobra.Command {
 
 func newDeletePluginCmd() *cobra.Command {
 	var deleteCmd = &cobra.Command{
-		Use:   "delete " + pluginNameCaps,
-		Short: "Delete a plugin",
-		Long:  "Uninstalls the specified plugin",
+		Use:               "delete " + pluginNameCaps,
+		Short:             "Delete a plugin",
+		Long:              "Uninstalls the specified plugin",
+		ValidArgsFunction: completeInstalledPlugins,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			if len(args) != 1 {
-				return fmt.Errorf("must provide plugin name as positional argument")
+				return fmt.Errorf("must provide one plugin name as a positional argument")
 			}
 			pluginName := args[0]
 
@@ -354,9 +377,10 @@ func newDeletePluginCmd() *cobra.Command {
 
 func newCleanPluginCmd() *cobra.Command {
 	var cleanCmd = &cobra.Command{
-		Use:   "clean",
-		Short: "Clean the plugins",
-		Long:  "Remove all installed plugins from the system",
+		Use:               "clean",
+		Short:             "Clean the plugins",
+		Long:              "Remove all installed plugins from the system",
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			err = pluginmanager.Clean()
 			if err != nil {
@@ -375,6 +399,7 @@ func newSyncPluginCmd() *cobra.Command {
 		Short: "Installs all plugins recommended by the active contexts",
 		Long: `Installs all plugins recommended by the active contexts.
 Plugins installed with this command will only be available while the context remains active.`,
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			err = pluginmanager.SyncPlugins()
 			if err != nil {
@@ -476,15 +501,15 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 		fmt.Println("")
 		_, _ = cyanBold.Println("Plugins from Context: ", cyanBoldItalic.Sprintf(context))
 		for i := range ctxPluginsByContext[context] {
-			version := ctxPluginsByContext[context][i].InstalledVersion
+			v := ctxPluginsByContext[context][i].InstalledVersion
 			if ctxPluginsByContext[context][i].Status == common.PluginStatusNotInstalled {
-				version = ctxPluginsByContext[context][i].RecommendedVersion
+				v = ctxPluginsByContext[context][i].RecommendedVersion
 			}
 			outputWriter.AddRow(
 				ctxPluginsByContext[context][i].Name,
 				ctxPluginsByContext[context][i].Description,
 				string(ctxPluginsByContext[context][i].Target),
-				version,
+				v,
 				ctxPluginsByContext[context][i].Status,
 			)
 		}
@@ -539,4 +564,238 @@ func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginI
 
 func getTarget() configtypes.Target {
 	return configtypes.StringToTarget(strings.ToLower(targetStr))
+}
+
+// ====================================
+// Shell completion functions
+// ====================================
+func completeInstalledPlugins(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	var comps []string
+	target := getTarget()
+	if len(args) == 0 {
+		// Complete all plugin names as long as the target matches and let the shell filter
+		for i := range installedPlugins {
+			if target == configtypes.TargetUnknown || target == installedPlugins[i].Target {
+				// Make sure the name of the plugin is part of the description so that
+				// zsh does not lump many plugins that have the same description
+				comps = append(comps, fmt.Sprintf("%[1]s\tTarget: %[2]s for %[1]s", installedPlugins[i].Name, installedPlugins[i].Target))
+			}
+		}
+	}
+
+	comps = completionMergeSimilarPlugins(comps)
+
+	return comps, cobra.ShellCompDirectiveNoFileComp
+}
+
+func completeAllPlugins(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return completionAllPlugins(), cobra.ShellCompDirectiveNoFileComp
+}
+
+func completePluginVersions(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) == 0 {
+		// We can't complete the version if we don't have a plugin name
+		comps := cobra.AppendActiveHelp(nil, "You must first specify a plugin name to be able to complete its version")
+		return comps, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	criteria := &discovery.PluginDiscoveryCriteria{
+		Name:   args[0],
+		Target: configtypes.StringToTarget(targetStr),
+	}
+
+	plugins, err := pluginmanager.DiscoverStandalonePlugins(
+		discovery.WithPluginDiscoveryCriteria(criteria),
+		discovery.WithUseLocalCacheOnly())
+
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	if len(plugins) == 0 {
+		var comps []string
+		if targetStr == "" {
+			comps = cobra.AppendActiveHelp(nil, fmt.Sprintf("Unable to find plugin '%s'", args[0]))
+		} else {
+			comps = cobra.AppendActiveHelp(nil, fmt.Sprintf("Unable to find plugin '%s' for target '%s'", args[0], targetStr))
+		}
+		return comps, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	// There could be more than one plugin if the target was not specified and
+	// the plugin name exists for multiple targets.  It would be confusing to
+	// do completion for versions of different plugins, so instead, as the user
+	// to provide the target
+	if len(plugins) > 1 {
+		comps := cobra.AppendActiveHelp(nil, "Unable to uniquely identify this plugin. Please specify a target using the `--target` flag")
+		return comps, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	// The versions are already sorted, but in ascending order.
+	// Since more recent versions are more likely to be of interest
+	// lets reverse the order and then tell the shell to respect
+	// that order using cobra.ShellCompDirectiveKeepOrder
+	versions := plugins[0].SupportedVersions
+	comps := make([]string, len(versions))
+	for i := range versions {
+		comps[len(versions)-1-i] = versions[i]
+	}
+	return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
+}
+
+func completionAllPluginsFromLocal() []string {
+	// The user requested the list of plugins from a local path
+	var err error
+	local, err = filepath.Abs(local)
+	if err != nil {
+		return nil
+	}
+	allPlugins, err := pluginmanager.DiscoverPluginsFromLocalSource(local)
+
+	if err != nil {
+		return nil
+	}
+
+	var comps []string
+	target := getTarget()
+	for i := range allPlugins {
+		if target == configtypes.TargetUnknown || target == allPlugins[i].Target {
+			comps = append(comps, fmt.Sprintf("%s\t%s", allPlugins[i].Name, allPlugins[i].Description))
+		}
+	}
+
+	// When using the --local-source flag, the "all" keyword can be used
+	if len(comps) > 0 {
+		comps = append(comps, fmt.Sprintf("%s\t%s", cli.AllPlugins, "All plugins of the local source"))
+
+		comps = completionMergeSimilarPlugins(comps)
+	}
+	return comps
+}
+
+func completionAllPluginsFromGroup() []string {
+	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(group)
+	if groupIdentifier == nil {
+		return nil
+	}
+
+	if groupIdentifier.Version == "" {
+		groupIdentifier.Version = cli.VersionLatest
+	}
+
+	groups, err := pluginmanager.DiscoverPluginGroups(
+		discovery.WithGroupDiscoveryCriteria(&discovery.GroupDiscoveryCriteria{
+			Vendor:    groupIdentifier.Vendor,
+			Publisher: groupIdentifier.Publisher,
+			Name:      groupIdentifier.Name,
+			Version:   groupIdentifier.Version,
+		}),
+		discovery.WithUseLocalCacheOnly())
+	if err != nil || len(groups) == 0 {
+		return nil
+	}
+
+	var comps []string
+	for _, plugin := range groups[0].Versions[groups[0].RecommendedVersion] {
+		if showNonMandatory || plugin.Mandatory {
+			// To get the description we would need to query the central repo again.
+			// Let's avoid that extra delay and simply not provide a description.
+			comps = append(comps, plugin.Name)
+		}
+	}
+
+	// When using the --group flag, the "all" keyword can be used
+	comps = append(comps, cli.AllPlugins)
+
+	comps = completionMergeSimilarPlugins(comps)
+
+	return comps
+}
+
+func completionAllPlugins() []string {
+	if local != "" {
+		return completionAllPluginsFromLocal()
+	}
+
+	if group != "" {
+		return completionAllPluginsFromGroup()
+	}
+
+	// Show plugins found in the central repos
+	allPlugins, err := pluginmanager.DiscoverStandalonePlugins(
+		discovery.WithPluginDiscoveryCriteria(&discovery.PluginDiscoveryCriteria{
+			Target: configtypes.StringToTarget(targetStr)}),
+		discovery.WithUseLocalCacheOnly())
+
+	if err != nil {
+		return nil
+	}
+
+	if len(allPlugins) == 0 {
+		// If no plugin was returned it probably means the cache is empty.
+		// Try the call again but allow it to download the plugin DB.
+		allPlugins, err = pluginmanager.DiscoverStandalonePlugins(
+			discovery.WithPluginDiscoveryCriteria(&discovery.PluginDiscoveryCriteria{
+				Target: configtypes.StringToTarget(targetStr)}))
+
+		if err != nil {
+			return nil
+		}
+	}
+
+	var comps []string
+	for i := range allPlugins {
+		comps = append(comps, fmt.Sprintf("%s\t%s", allPlugins[i].Name, allPlugins[i].Description))
+	}
+
+	comps = completionMergeSimilarPlugins(comps)
+
+	return comps
+}
+
+// completionMergeSimilarPlugins A plugin completion is made up as the plugin name as
+// the completion choice and a description, the two separated by a '\t'.
+// This function will merge multiple entries with the same plugin name into a single one
+// and update the description accordingly.  We do this because zsh and fish, when receiving
+// two identical completions with only the description different, will only show the first
+// completion. E.g.,
+// $ tanzu plugin install cluster<TAB>
+// cluster       -- A TMC managed Kubernetes cluster
+// clustergroup  -- A group of Kubernetes clusters
+//
+// There should have been a second "cluster" entry for target Kubernetes.
+// This can be confusing to users, as if there is no cluster plugin for Kubernetes.
+func completionMergeSimilarPlugins(completions []string) []string {
+	// Sort the completions so we can get duplicates to be sequential
+	sort.Strings(completions)
+
+	var mergedCompletions []string
+	var prevName, mergedComp string
+	for _, comp := range completions {
+		pluginName, _, _ := strings.Cut(comp, "\t")
+
+		if pluginName != prevName {
+			// New plugin name.  The completion of the previous plugin can be stored.
+			if mergedComp != "" {
+				mergedCompletions = append(mergedCompletions, mergedComp)
+			}
+			prevName = pluginName
+			mergedComp = comp
+		} else {
+			// Duplicate plugin name
+			mergedComp = fmt.Sprintf("%[1]s\tMultiple entries for plugin %[1]s. You will need to use the --target flag.", pluginName)
+		}
+	}
+	// Store the last completion now that the loop is done
+	mergedCompletions = append(mergedCompletions, mergedComp)
+
+	return mergedCompletions
 }

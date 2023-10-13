@@ -81,18 +81,27 @@ func newSearchPluginCmd() *cobra.Command {
 	f := searchCmd.Flags()
 	f.BoolVar(&showDetails, "show-details", false, "show the details of the specified plugin, including all available versions")
 	f.StringVarP(&pluginName, "name", "n", "", "limit the search to plugins with the specified name")
+	utils.PanicOnErr(searchCmd.RegisterFlagCompletionFunc("name", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return completionAllPlugins(), cobra.ShellCompDirectiveNoFileComp
+	}))
+
 	f.StringVarP(&outputFormat, "output", "o", "", "output format (yaml|json|table)")
+	utils.PanicOnErr(searchCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
 
 	f.StringVarP(&local, "local", "", "", "path to local plugin source")
 	msg := fmt.Sprintf("this was done in the %q release, it will be removed following the deprecation policy (6 months). Use the %q flag instead.\n", "v1.0.0", "--local-source")
 	utils.PanicOnErr(f.MarkDeprecated("local", msg))
 
+	// Shell completion for this flag is the default behavior of doing file completion
 	f.StringVarP(&local, "local-source", "l", "", "path to local plugin source")
 	// We hide the "local-source" flag because installing from a local-source is not supported in production.
 	// See the "local-source" flag of the "plugin install" command.
 	utils.PanicOnErr(f.MarkHidden("local-source"))
 
 	f.StringVarP(&targetStr, "target", "t", "", fmt.Sprintf("limit the search to plugins of the specified target (%s)", common.TargetList))
+	utils.PanicOnErr(searchCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+	}))
 
 	searchCmd.MarkFlagsMutuallyExclusive("local", "name")
 	searchCmd.MarkFlagsMutuallyExclusive("local", "target")

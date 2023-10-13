@@ -393,3 +393,81 @@ func Test_deleteDiscoverySource(t *testing.T) {
 	os.Unsetenv(constants.CEIPOptInUserPromptAnswer)
 	os.Unsetenv(constants.EULAPromptAnswer)
 }
+
+func TestCompletionPluginSource(t *testing.T) {
+	tests := []struct {
+		test     string
+		args     []string
+		expected string
+	}{
+		{
+			test: "no completion after the source init command",
+			args: []string{"__complete", "plugin", "source", "init", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "no completion after the source list command",
+			args: []string{"__complete", "plugin", "source", "list", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion for the --output flag value",
+			args: []string{"__complete", "plugin", "source", "list", "--output", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: expectedOutForOutputFlag + ":4\n",
+		},
+		{
+			test: "completion for the source update command",
+			args: []string{"__complete", "plugin", "source", "update", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "--uri\tURI for discovery source. The URI must be of an OCI image\n" +
+				"-u\tURI for discovery source. The URI must be of an OCI image\n" +
+				"default\texample.com/tanzu_cli/plugins/plugin-inventory:latest\n" +
+				":4\n",
+		},
+		{
+			test: "no completion after the first arg of the source update command",
+			args: []string{"__complete", "plugin", "source", "update", "default", "-u", "someURI", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion for the source delete command",
+			args: []string{"__complete", "plugin", "source", "delete", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "default\texample.com/tanzu_cli/plugins/plugin-inventory:latest\n" +
+				":4\n",
+		},
+		{
+			test: "no completion after the first arg of the source delete command",
+			args: []string{"__complete", "plugin", "source", "delete", "default", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+	}
+
+	// Setup a plugin source and a set of installed plugins
+	defer setupPluginSourceForTesting(t)()
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var out bytes.Buffer
+			rootCmd.SetOut(&out)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			assert.Equal(spec.expected, out.String())
+
+			resetPluginCommandFlags()
+		})
+	}
+}
