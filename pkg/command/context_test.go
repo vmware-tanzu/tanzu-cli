@@ -325,13 +325,63 @@ clusterOpts:
 
 		})
 		It("should delete context successfully if the config file has contexts available", func() {
-
 			err = deleteCtx(cmd, []string{existingContext})
 			Expect(err).To(BeNil())
 
 			err = getCtx(cmd, []string{existingContext})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("context test-mc not found"))
+		})
+		It("should delete context successfully and also delete(best-effort) the kubecontext in the kubeconfig", func() {
+			kubeconfigFilePath, err := os.CreateTemp("", "kubeconfig")
+			Expect(err).To(BeNil())
+
+			err = copy.Copy(filepath.Join("..", "fakes", "config", "kubeconfig1.yaml"), kubeconfigFilePath.Name())
+			Expect(err).To(BeNil(), "Error while copying kubeconfig config file for testing")
+
+			c, err := config.GetContext("test-tae-context")
+			Expect(err).To(BeNil())
+			c.ClusterOpts.Path = kubeconfigFilePath.Name()
+			c.ClusterOpts.Context = "tanzu-cli-mytae"
+
+			err = config.SetContext(c, false)
+			Expect(err).To(BeNil())
+
+			err = deleteCtx(cmd, []string{"test-tae-context"})
+			Expect(err).To(BeNil())
+
+			err = getCtx(cmd, []string{"test-tae-context"})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("context test-tae-context not found"))
+
+			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
+			Expect(err).To(BeNil())
+			Expect(kubeconfig.Clusters["tanzu-cli-mytae/current"]).To(BeNil())
+			Expect(kubeconfig.Contexts["tanzu-cli-mytae"]).To(BeNil())
+			Expect(kubeconfig.AuthInfos["tanzu-cli-mytae-user"]).To(BeNil())
+		})
+		It("should delete context successfully and should not return error if deleting(best-effort) the kubecontext in the kubeconfig fails", func() {
+			kubeconfigFilePath, err := os.CreateTemp("", "kubeconfig")
+			Expect(err).To(BeNil())
+
+			err = copy.Copy(filepath.Join("..", "fakes", "config", "kubeconfig1.yaml"), kubeconfigFilePath.Name())
+			Expect(err).To(BeNil(), "Error while copying kubeconfig config file for testing")
+
+			c, err := config.GetContext("test-tae-context")
+			Expect(err).To(BeNil())
+			c.ClusterOpts.Path = "non-existent-kubeconfigFile"
+			c.ClusterOpts.Context = "non-existing-context"
+
+			err = config.SetContext(c, false)
+			Expect(err).To(BeNil())
+
+			err = deleteCtx(cmd, []string{"test-tae-context"})
+			Expect(err).To(BeNil())
+
+			err = getCtx(cmd, []string{"test-tae-context"})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("context test-tae-context not found"))
+
 		})
 	})
 

@@ -916,14 +916,33 @@ func deleteCtx(_ *cobra.Command, args []string) error {
 			return nil
 		}
 	}
+	ctx, err := config.GetContext(name)
+	if err != nil {
+		return err
+	}
 	installed, _, _, _ := getInstalledAndMissingContextPlugins() //nolint:dogsled
 	log.Infof("Deleting entry for context '%s'", name)
-	err := config.RemoveContext(name)
+	err = config.RemoveContext(name)
 	if err != nil {
 		return err
 	}
 	listDeactivatedPlugins(installed, name)
+	deleteKubeconfigContext(ctx)
+
 	return nil
+}
+
+func deleteKubeconfigContext(ctx *configtypes.Context) {
+	// Note: currently cleaning up the kubeconfig for TAE context types only.
+	// (Since the kubernetes context type can have kube context provided by the user, it may not be
+	// desired outcome for user if CLI deletes/cleanup kubeconfig provided by the user.)
+	// TODO(prkalle): To delete the context created by CLI for Kubernetes (Cluster Endpoint) (eg.TKG with pinniped)
+	if ctx.Target == configtypes.TargetTAE {
+		log.Infof("Deleting kubeconfig context '%s' from the file '%s'", ctx.ClusterOpts.Context, ctx.ClusterOpts.Path)
+		if err := kubecfg.DeleteContextFromKubeConfig(ctx.ClusterOpts.Path, ctx.ClusterOpts.Context); err != nil {
+			log.Warningf("Failed to delete the kubeconfig context '%s' from the file '%s'", ctx.ClusterOpts.Context, ctx.ClusterOpts.Path)
+		}
+	}
 }
 
 var useCtxCmd = &cobra.Command{
@@ -1384,7 +1403,7 @@ func completeActiveContexts(_ *cobra.Command, args []string, _ string) ([]string
 // Setup shell completion for the kube-context flag
 func completeKubeContext(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if kubeConfig == "" {
-		kubeConfig = getDefaultKubeconfigPath()
+		kubeConfig = kubecfg.GetDefaultKubeConfigFile()
 	}
 
 	cobra.CompDebugln("About to get the different kube-contexts", false)
