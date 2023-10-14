@@ -83,16 +83,16 @@ var getConfigCmd = &cobra.Command{
 }
 
 var setConfigCmd = &cobra.Command{
-	Use:               "set <path> <value>",
-	Short:             "Set config values at the given path",
-	Long:              "Set config values at the given path. path values: [unstable-versions, cli.edition, features.global.<feature>, features.<plugin>.<feature>, env.<variable>]",
+	Use:               "set PATH <value>",
+	Short:             "Set config values at the given PATH",
+	Long:              "Set config values at the given PATH. Supported PATH values: [features.global.<feature>, features.<plugin>.<feature>, env.<variable>]",
 	ValidArgsFunction: completeSetConfig,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 2 {
-			return errors.Errorf("both path and value are required")
+			return errors.Errorf("both PATH and <value> are required")
 		}
 		if len(args) > 2 {
-			return errors.Errorf("only path and value are allowed")
+			return errors.Errorf("only PATH and <value> are allowed")
 		}
 
 		// Acquire tanzu config lock
@@ -322,16 +322,16 @@ var deleteServersCmd = &cobra.Command{
 }
 
 var unsetConfigCmd = &cobra.Command{
-	Use:               "unset <path>",
-	Short:             "Unset config values at the given path",
-	Long:              "Unset config values at the given path. path values: [features.global.<feature>, features.<plugin>.<feature>, env.global.<variable>, env.<plugin>.<variable>]",
+	Use:               "unset PATH",
+	Short:             "Unset config values at the given PATH",
+	Long:              "Unset config values at the given PATH. Supported PATH values: [features.global.<feature>, features.<plugin>.<feature>, env.<variable>]",
 	ValidArgsFunction: completeUnsetConfig,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			return errors.Errorf("path is required")
+			return errors.Errorf("PATH is required")
 		}
 		if len(args) > 1 {
-			return errors.Errorf("only path is allowed")
+			return errors.Errorf("only PATH is allowed")
 		}
 
 		return unsetConfiguration(args[0])
