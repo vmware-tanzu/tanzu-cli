@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -18,6 +19,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 var (
@@ -38,18 +40,45 @@ func newCertCmd() *cobra.Command {
 	updateCertCmd := newUpdateCertCmd()
 	deleteCertCmd := newDeleteCertCmd()
 
+	compSkipFlag := func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{
+				"true\tSkip TLS certificate verification (insecure)",
+				"false\tPerform TLS certificate verification"},
+			cobra.ShellCompDirectiveNoFileComp
+	}
+
+	compInsecureFlag := func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{
+				"true\tAllow the use of http when interacting with the host (insecure)",
+				"false\tPrevent the use of http when interacting with the host"},
+			cobra.ShellCompDirectiveNoFileComp
+	}
+
 	addCertCmd.Flags().StringVarP(&host, "host", "", "", "host or host:port")
+	utils.PanicOnErr(addCertCmd.RegisterFlagCompletionFunc("host", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return cobra.AppendActiveHelp(nil, "Please provide 'host' or 'host:port'"), cobra.ShellCompDirectiveNoFileComp
+	}))
+
+	// The completion for this flag is simple file completion, which is configured by default
 	addCertCmd.Flags().StringVarP(&caCertPathForAdd, "ca-certificate", "", "", "path to the public certificate")
 	addCertCmd.Flags().StringVarP(&skipCertVerifyForAdd, "skip-cert-verify", "", "false", "skip server's TLS certificate verification")
-	addCertCmd.Flags().StringVarP(&insecureForAdd, "insecure", "", "false", "allow the use of http when interacting with the host")
-	// Not handling errors below because cobra handles the error when flag user doesn't provide these required flags
-	_ = cobra.MarkFlagRequired(addCertCmd.Flags(), "host")
+	utils.PanicOnErr(addCertCmd.RegisterFlagCompletionFunc("skip-cert-verify", compSkipFlag))
 
+	addCertCmd.Flags().StringVarP(&insecureForAdd, "insecure", "", "false", "allow the use of http when interacting with the host")
+	utils.PanicOnErr(addCertCmd.RegisterFlagCompletionFunc("insecure", compInsecureFlag))
+
+	utils.PanicOnErr(cobra.MarkFlagRequired(addCertCmd.Flags(), "host"))
+
+	// The completion for this flag is simple file completion, which is configured by default
 	updateCertCmd.Flags().StringVarP(&caCertPathForUpdate, "ca-certificate", "", "", "path to the public certificate")
 	updateCertCmd.Flags().StringVarP(&skipCertVerifyForUpdate, "skip-cert-verify", "", "", "skip server's TLS certificate verification (true|false)")
+	utils.PanicOnErr(updateCertCmd.RegisterFlagCompletionFunc("skip-cert-verify", compSkipFlag))
+
 	updateCertCmd.Flags().StringVarP(&insecureForUpdate, "insecure", "", "", "allow the use of http when interacting with the host (true|false)")
+	utils.PanicOnErr(updateCertCmd.RegisterFlagCompletionFunc("insecure", compInsecureFlag))
 
 	listCertCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "output format (yaml|json|table)")
+	utils.PanicOnErr(listCertCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
 
 	certCmd.AddCommand(
 		listCertCmd,
@@ -63,8 +92,9 @@ func newCertCmd() *cobra.Command {
 
 func newListCertCmd() *cobra.Command {
 	var listCertsCmd = &cobra.Command{
-		Use:   "list",
-		Short: "List available certificate configurations",
+		Use:               "list",
+		Short:             "List available certificate configurations",
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			output := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "host", "ca-certificate", "skip-cert-verification", "insecure")
 			certs, _ := configlib.GetCerts()
@@ -107,6 +137,7 @@ func newAddCertCmd() *cobra.Command {
 
     # Set to allow insecure (http) connection while interacting with host
     tanzu config cert add --host test.vmware.com  --insecure true`,
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if skipCertVerifyForAdd != "" {
 				if !strings.EqualFold(skipCertVerifyForAdd, "true") && !strings.EqualFold(skipCertVerifyForAdd, "false") {
@@ -161,6 +192,7 @@ func newUpdateCertCmd() *cobra.Command {
 
     # Update whether to allow insecure (http) connection while interacting with host
     tanzu config cert update test.vmware.com  --insecure true`,
+		ValidArgsFunction: completeCertHosts,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if skipCertVerifyForUpdate != "" {
 				if !strings.EqualFold(skipCertVerifyForUpdate, "true") && !strings.EqualFold(skipCertVerifyForUpdate, "false") {
@@ -208,6 +240,7 @@ func newDeleteCertCmd() *cobra.Command {
 
     # Delete a certificate for host:port
     tanzu config cert delete test.vmware.com:5443`,
+		ValidArgsFunction: completeCertHosts,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			aHost := args[0]
 
@@ -243,4 +276,25 @@ func createCert(host, caCertPath, skipCertVerify, insecure string) (*configtypes
 	}
 
 	return cert, nil
+}
+
+// ====================================
+// Shell completion functions
+// ====================================
+func completeCertHosts(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var comps []string
+	certs, _ := configlib.GetCerts()
+	for _, cert := range certs {
+		desc := fmt.Sprintf("Insecure: %s, Skip cert verification: %s", cert.Insecure, cert.SkipCertVerify)
+		comps = append(comps, fmt.Sprintf("%s\t%s", cert.Host, desc))
+	}
+
+	// Sort to allow for testing
+	sort.Strings(comps)
+
+	return comps, cobra.ShellCompDirectiveNoFileComp
 }

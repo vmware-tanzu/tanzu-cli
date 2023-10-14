@@ -4,6 +4,8 @@
 package command
 
 import (
+	"bytes"
+	"os"
 	"strings"
 	"testing"
 
@@ -179,4 +181,117 @@ func TestConfigEditionInvalid(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected error returned for cli.edition argument: %s", value)
 	}
+}
+
+func TestCompletionConfig(t *testing.T) {
+	// Setup a temporary configuration
+	configFile, err := os.CreateTemp("", "config")
+	assert.Nil(t, err)
+	os.Setenv("TANZU_CONFIG", configFile.Name())
+	configFileNG, err := os.CreateTemp("", "config_ng")
+	assert.Nil(t, err)
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+
+	// Set some env vars
+	_ = config.SetEnv("VAR1", "value1")
+	_ = config.SetEnv("VAR2", "value2")
+
+	// Set some features
+	_ = config.SetFeature("global", "feat1", "val1")
+	_ = config.SetFeature("plugin2", "feat2", "val2")
+
+	tests := []struct {
+		test     string
+		args     []string
+		expected string
+	}{
+		// ======================
+		// tanzu config get
+		// ======================
+		{
+			test: "no completion for the config get command",
+			args: []string{"__complete", "config", "get", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// ======================
+		// tanzu config set
+		// ======================
+		{
+			test: "completions for the config set command",
+			args: []string{"__complete", "config", "set", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ You can modify the below entries, or provide a new one\n" +
+				"env.VAR1\tValue: \"value1\"\n" +
+				"env.VAR2\tValue: \"value2\"\n" +
+				"features.global.feat1\tValue: \"val1\"\n" +
+				"features.plugin2.feat2\tValue: \"val2\"\n" +
+				":4\n",
+		},
+		{
+			test: "active help after the first arg for the config set command",
+			args: []string{"__complete", "config", "set", "env.VAR", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ You must provide a value as a second argument\n:4\n",
+		},
+		{
+			test: "no completion after the second arg for the config set command",
+			args: []string{"__complete", "config", "set", "env.VAR", "val", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// ======================
+		// tanzu config unset
+		// ======================
+		{
+			test: "completions for the config unset command",
+			args: []string{"__complete", "config", "unset", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "env.VAR1\tValue: \"value1\"\n" +
+				"env.VAR2\tValue: \"value2\"\n" +
+				"features.global.feat1\tValue: \"val1\"\n" +
+				"features.plugin2.feat2\tValue: \"val2\"\n" +
+				":4\n",
+		},
+		{
+			test: "no completion after the first arg for the config unset command",
+			args: []string{"__complete", "config", "unset", "env.VAR", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		// ======================
+		// tanzu config init
+		// ======================
+		{
+			test: "no completion for the config init command",
+			args: []string{"__complete", "config", "init", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+	}
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var out bytes.Buffer
+			rootCmd.SetOut(&out)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			assert.Equal(spec.expected, out.String())
+
+			resetCertCommandFlags()
+		})
+	}
+
+	os.RemoveAll(configFile.Name())
+	os.RemoveAll(configFileNG.Name())
+	os.Unsetenv("TANZU_CONFIG")
+	os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
 }

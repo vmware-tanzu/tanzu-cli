@@ -34,10 +34,10 @@ func newEULACmd() *cobra.Command {
 
 func newShowEULACmd() *cobra.Command {
 	var showEULACmd = &cobra.Command{
-		Use:   "show",
-		Short: "Present EULA",
-		Long:  "Present EULA for review",
-
+		Use:               "show",
+		Short:             "Present EULA",
+		Long:              "Present EULA for review",
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return config.ConfigureEULA(true)
 		},
@@ -47,9 +47,10 @@ func newShowEULACmd() *cobra.Command {
 
 func newAcceptEULACmd() *cobra.Command {
 	var acceptEULACmd = &cobra.Command{
-		Use:   "accept",
-		Short: "Accept the EULA",
-		Long:  "Accept the EULA for Tanzu CLI non-interactively.",
+		Use:               "accept",
+		Short:             "Accept the EULA",
+		Long:              "Accept the EULA for Tanzu CLI non-interactively.",
+		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := configlib.SetEULAStatus(configlib.EULAStatusAccepted)
 			if err != nil {
