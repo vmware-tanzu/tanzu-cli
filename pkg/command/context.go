@@ -957,7 +957,7 @@ func deleteKubeconfigContext(ctx *configtypes.Context) {
 	// (Since the kubernetes context type can have kube context provided by the user, it may not be
 	// desired outcome for user if CLI deletes/cleanup kubeconfig provided by the user.)
 	// TODO(prkalle): To delete the context created by CLI for Kubernetes (Cluster Endpoint) (eg.TKG with pinniped)
-	if ctx.Target == configtypes.TargetTAE {
+	if ctx.ContextType == configtypes.ContextTypeTAE {
 		log.Infof("Deleting kubeconfig context '%s' from the file '%s'", ctx.ClusterOpts.Context, ctx.ClusterOpts.Path)
 		if err := kubecfg.DeleteContextFromKubeConfig(ctx.ClusterOpts.Path, ctx.ClusterOpts.Context); err != nil {
 			log.Warningf("Failed to delete the kubeconfig context '%s' from the file '%s'", ctx.ClusterOpts.Context, ctx.ClusterOpts.Path)

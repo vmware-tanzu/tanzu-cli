@@ -11,7 +11,6 @@ const (
 	// Completion strings for the values of the --target flag
 	compGlobalTarget = "global\tApplicable globally"
 	compK8sTarget    = "k8s\tFor interactions with a Kubernetes cluster"
-	compTAETarget    = "tae\tFor interactions with a Application Engine endpoint"
 	compTMCTarget    = "tmc\tFor interactions with a Mission-Control endpoint"
 
 	// Completion strings for the values of the --type flag
