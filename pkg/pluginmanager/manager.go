@@ -191,10 +191,12 @@ func DiscoverServerPlugins() ([]discovery.Discovered, error) {
 			discoveredPlugins[i].ContextName = context.Name
 
 			// Associate Target of the plugin based on the Context Type of the Context
-			switch context.Target {
-			case configtypes.TargetTMC:
+			switch context.ContextType {
+			case configtypes.ContextTypeTMC:
 				discoveredPlugins[i].Target = configtypes.TargetTMC
-			case configtypes.TargetK8s:
+			case configtypes.ContextTypeK8s:
+				discoveredPlugins[i].Target = configtypes.TargetK8s
+			case configtypes.ContextTypeTAE:
 				discoveredPlugins[i].Target = configtypes.TargetK8s
 			}
 

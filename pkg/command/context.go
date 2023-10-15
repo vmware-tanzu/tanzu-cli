@@ -49,6 +49,7 @@ var (
 	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify                              bool
 	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath string
 	projectStr, spaceStr                                                                   string
+	contextTypeStr                                                                         string
 )
 
 const (
@@ -62,8 +63,8 @@ const (
 	contextForContextTypeSetInactive    = "The context '%v' of type '%v' has been set as inactive"
 	deactivatingPlugin                  = "Deactivating plugin '%v:%v' for context '%v'"
 
-	invalidTarget      = "invalid target specified. Please specify a correct value for the `--target/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]"
-	invalidContextType = "invalid context type specified. Please specify a correct value for the `--type/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]"
+	invalidTarget      = "invalid target specified. Please specify a correct value for the `--target` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]'"
+	invalidContextType = "invalid context type specified. Please specify a correct value for the `--type/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]'"
 )
 
 // constants that define context creation types
@@ -1478,7 +1479,7 @@ func completionFormatCtxs(ctxs []*configtypes.Context) []string {
 	for _, ctx := range ctxs {
 		info, _ := config.EndpointFromContext(ctx)
 
-		if info == "" && ctx.Target == configtypes.TargetK8s && ctx.ClusterOpts != nil {
+		if info == "" && ctx.ContextType == configtypes.ContextTypeK8s && ctx.ClusterOpts != nil {
 			info = fmt.Sprintf("%s:%s", ctx.ClusterOpts.Path, ctx.ClusterOpts.Context)
 		}
 

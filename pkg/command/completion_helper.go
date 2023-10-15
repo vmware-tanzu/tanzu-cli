@@ -14,9 +14,9 @@ const (
 	compTMCTarget    = "tmc\tFor interactions with a Mission-Control endpoint"
 
 	// Completion strings for the values of the --type flag
-	compK8sContextType = "k8s\tFor interactions with a Kubernetes cluster"
-	compTAEContextType = "tae\tFor interactions with a Application Engine endpoint"
-	compTMCContextType = "tmc\tFor interactions with a Mission-Control endpoint"
+	compK8sContextType = "k8s\tContext for a Kubernetes cluster"
+	compTAEContextType = "tae\tContext for a Tanzu Application Engine endpoint"
+	compTMCContextType = "tmc\tContext for a Tanzu Mission Control endpoint"
 
 	// Completion strings for the values of the --output flag
 	compTableOutput = "table\tOutput results in human-readable format"
