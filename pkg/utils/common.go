@@ -39,12 +39,12 @@ func GenerateKey(parts ...string) string {
 // can set k8s current context though tae current context is set by CLI or plugin with latest plugin-runtime
 // in config file) it would remove the tae current context to maintain backward compatibility
 func EnsureMutualExclusiveCurrentContexts() error {
-	ccmap, err := config.GetAllCurrentContextsMap()
+	ccmap, err := config.GetAllActiveContextsMap()
 	if err != nil {
 		return err
 	}
-	if ccmap[configtypes.TargetK8s] != nil && ccmap[configtypes.TargetTAE] != nil {
-		return config.RemoveCurrentContext(configtypes.TargetTAE)
+	if ccmap[configtypes.ContextTypeK8s] != nil && ccmap[configtypes.ContextTypeTAE] != nil {
+		return config.RemoveActiveContext(configtypes.ContextTypeTAE)
 	}
 	return nil
 }

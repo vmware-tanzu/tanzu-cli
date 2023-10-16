@@ -98,7 +98,7 @@ func k8sContextLifeCycleTests() bool {
 
 			stdOut, _, err := tf.ContextCmd.UnsetContext(contextNames[0])
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
-			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForTargetSetInactive, contextNames[0], framework.KubernetesTarget)))
+			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForContextTypeSetInactive, contextNames[0], framework.KubernetesTarget)))
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
 			Expect(active).To(Equal(""), "there should not be any active context as unset performed")
@@ -123,9 +123,9 @@ func k8sContextLifeCycleTests() bool {
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
 
-			stdOut, _, err := tf.ContextCmd.UnsetContext("", framework.AddAdditionalFlagAndValue("--target k8s"))
+			stdOut, _, err := tf.ContextCmd.UnsetContext("", framework.AddAdditionalFlagAndValue("--type k8s"))
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
-			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForTargetSetInactive, contextNames[0], framework.KubernetesTarget)))
+			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForContextTypeSetInactive, contextNames[0], framework.KubernetesTarget)))
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
 			Expect(active).To(Equal(""), "there should not be any active context as unset performed")
@@ -138,9 +138,9 @@ func k8sContextLifeCycleTests() bool {
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
 
-			stdOut, _, err := tf.ContextCmd.UnsetContext(contextNames[0], framework.AddAdditionalFlagAndValue("--target k8s"))
+			stdOut, _, err := tf.ContextCmd.UnsetContext(contextNames[0], framework.AddAdditionalFlagAndValue("--type k8s"))
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
-			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForTargetSetInactive, contextNames[0], framework.KubernetesTarget)))
+			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForContextTypeSetInactive, contextNames[0], framework.KubernetesTarget)))
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
 			Expect(active).To(Equal(""), "there should not be any active context as unset performed")
@@ -153,7 +153,7 @@ func k8sContextLifeCycleTests() bool {
 			Expect(err).To(BeNil(), "there should be a active context")
 			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
 
-			_, _, err := tf.ContextCmd.UnsetContext(contextNames[0], framework.AddAdditionalFlagAndValue("--target tmc"))
+			_, _, err := tf.ContextCmd.UnsetContext(contextNames[0], framework.AddAdditionalFlagAndValue("--type tmc"))
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.ContextNotExistsForTarget, contextNames[0], framework.MissionControlTarget)))
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should not be any error for the get context")

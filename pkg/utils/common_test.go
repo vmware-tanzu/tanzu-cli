@@ -133,45 +133,45 @@ func TestEnsureMutualExclusiveCurrentContexts(t *testing.T) {
 	err := EnsureMutualExclusiveCurrentContexts()
 	assert.NoError(t, err)
 
-	ccmap, err := config.GetAllCurrentContextsMap()
+	ccmap, err := config.GetAllActiveContextsMap()
 	assert.NoError(t, err)
-	assert.Equal(t, ccmap[configtypes.TargetK8s].Name, "test-mc-context")
-	assert.Equal(t, ccmap[configtypes.TargetTMC].Name, "test-tmc-context")
-	assert.Nil(t, ccmap[configtypes.TargetTAE])
+	assert.Equal(t, ccmap[configtypes.ContextTypeK8s].Name, "test-mc-context")
+	assert.Equal(t, ccmap[configtypes.ContextTypeTMC].Name, "test-tmc-context")
+	assert.Nil(t, ccmap[configtypes.ContextTypeTAE])
 
 	// if there is only k8s current context, calling again should not affect the current contexts
 	err = EnsureMutualExclusiveCurrentContexts()
 	assert.NoError(t, err)
 
-	ccmap, err = config.GetAllCurrentContextsMap()
+	ccmap, err = config.GetAllActiveContextsMap()
 	assert.NoError(t, err)
-	assert.Equal(t, ccmap[configtypes.TargetK8s].Name, "test-mc-context")
-	assert.Equal(t, ccmap[configtypes.TargetTMC].Name, "test-tmc-context")
-	assert.Nil(t, ccmap[configtypes.TargetTAE])
+	assert.Equal(t, ccmap[configtypes.ContextTypeK8s].Name, "test-mc-context")
+	assert.Equal(t, ccmap[configtypes.ContextTypeTMC].Name, "test-tmc-context")
+	assert.Nil(t, ccmap[configtypes.ContextTypeTAE])
 
 	// if there is only tae current context, calling again should not affect the current contexts
-	err = config.SetCurrentContext("test-tae-context")
+	err = config.SetActiveContext("test-tae-context")
 	assert.NoError(t, err)
 
 	err = EnsureMutualExclusiveCurrentContexts()
 	assert.NoError(t, err)
 
-	ccmap, err = config.GetAllCurrentContextsMap()
+	ccmap, err = config.GetAllActiveContextsMap()
 	assert.NoError(t, err)
-	assert.Nil(t, ccmap[configtypes.TargetK8s])
-	assert.Equal(t, ccmap[configtypes.TargetTMC].Name, "test-tmc-context")
-	assert.Equal(t, ccmap[configtypes.TargetTAE].Name, "test-tae-context")
+	assert.Nil(t, ccmap[configtypes.ContextTypeK8s])
+	assert.Equal(t, ccmap[configtypes.ContextTypeTMC].Name, "test-tmc-context")
+	assert.Equal(t, ccmap[configtypes.ContextTypeTAE].Name, "test-tae-context")
 
 	// if there are no current context, calling again should not affect the current contexts
-	err = config.RemoveCurrentContext(configtypes.TargetTAE)
+	err = config.RemoveActiveContext(configtypes.ContextTypeTAE)
 	assert.NoError(t, err)
-	err = config.RemoveCurrentContext(configtypes.TargetTMC)
+	err = config.RemoveActiveContext(configtypes.ContextTypeTMC)
 	assert.NoError(t, err)
 
 	err = EnsureMutualExclusiveCurrentContexts()
 	assert.NoError(t, err)
 
-	ccmap, err = config.GetAllCurrentContextsMap()
+	ccmap, err = config.GetAllActiveContextsMap()
 	assert.NoError(t, err)
 	assert.Equal(t, len(ccmap), 0)
 }

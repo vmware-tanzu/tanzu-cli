@@ -39,7 +39,7 @@ var (
 )
 
 const (
-	invalidTargetMsg                = "invalid target specified. Please specify a correct value for the `--target/-t` flag from '" + common.TargetList + "'"
+	invalidTargetMsg                = "invalid target specified. Please specify a correct value for the `--target` flag from '" + common.TargetList + "'"
 	errorWhileDiscoveringPlugins    = "there was an error while discovering plugins, error information: '%v'"
 	errorWhileGettingContextPlugins = "there was an error while getting installed context plugins, error information: '%v'"
 	pluginNameCaps                  = "PLUGIN_NAME"

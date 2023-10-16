@@ -11,8 +11,12 @@ const (
 	// Completion strings for the values of the --target flag
 	compGlobalTarget = "global\tApplicable globally"
 	compK8sTarget    = "k8s\tFor interactions with a Kubernetes cluster"
-	compTAETarget    = "tae\tFor interactions with a Application Engine endpoint"
-	compTMCTarget    = "tmc\tFor interactions with a Mission-Control endpoint"
+	compTMCTarget    = "tmc\tFor interactions with a Tanzu Mission Control endpoint"
+
+	// Completion strings for the values of the --type flag
+	compK8sContextType = "k8s\tContext for a Kubernetes cluster"
+	compTAEContextType = "tae\tContext for a Tanzu Application Engine endpoint"
+	compTMCContextType = "tmc\tContext for a Tanzu Mission Control endpoint"
 
 	// Completion strings for the values of the --output flag
 	compTableOutput = "table\tOutput results in human-readable format"
