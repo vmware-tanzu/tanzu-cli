@@ -63,7 +63,7 @@ const (
 	contextForContextTypeSetInactive    = "The context '%v' of type '%v' has been set as inactive"
 	deactivatingPlugin                  = "Deactivating plugin '%v:%v' for context '%v'"
 
-	invalidTargetErrorForContextCommands = "invalid target specified. Please specify a correct value for the `--target` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]'"
+	invalidTargetErrorForContextCommands = "invalid target specified. Please specify a correct value for the `--target` flag from 'kubernetes[k8s]/mission-control[tmc]'"
 	invalidContextType                   = "invalid context type specified. Please specify a correct value for the `--type/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]'"
 )
 
@@ -103,9 +103,9 @@ func init() {
 
 	initCreateCtxCmd()
 
-	listCtxCmd.Flags().StringVarP(&targetStr, "target", "", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc]/application-engine[tae])")
+	listCtxCmd.Flags().StringVarP(&targetStr, "target", "", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc])")
 	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sContextType, compTAEContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+		return []string{compK8sContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
 	listCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "list only contexts associated with the specified context-type (kubernetes[k8s]/mission-control[tmc]/application-engine[tae])")
@@ -122,9 +122,9 @@ func init() {
 
 	deleteCtxCmd.Flags().BoolVarP(&unattended, "yes", "y", false, "delete the context entry without confirmation")
 
-	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc]|application-engine[tae])")
+	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc])")
 	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sContextType, compTAEContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+		return []string{compK8sContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
 	}))
 	unsetCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "unset active context associated with the specified context-type (kubernetes[k8s]|mission-control[tmc]|application-engine[tae])")
 	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
