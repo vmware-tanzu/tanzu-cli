@@ -596,7 +596,7 @@ clusterOpts:
 			targetStr = "incorrect"
 			err = unsetCtx(cmd, []string{name})
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring(invalidTarget))
+			Expect(err.Error()).To(ContainSubstring(invalidTargetErrorForContextCommands))
 		})
 		// correct context name and but incorrect target
 		It("should return error when context type is invalid", func() {

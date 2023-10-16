@@ -64,8 +64,8 @@ const (
 	contextForContextTypeSetInactive    = "The context '%v' of type '%v' has been set as inactive"
 	deactivatingPlugin                  = "Deactivating plugin '%v:%v' for context '%v'"
 
-	invalidTarget      = "invalid target specified. Please specify a correct value for the `--target` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]'"
-	invalidContextType = "invalid context type specified. Please specify a correct value for the `--type/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]'"
+	invalidTargetErrorForContextCommands = "invalid target specified. Please specify a correct value for the `--target` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]'"
+	invalidContextType                   = "invalid context type specified. Please specify a correct value for the `--type/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]'"
 )
 
 // constants that define context creation types
@@ -793,7 +793,7 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 	}
 
 	if !configtypes.IsValidTarget(targetStr, false, true) {
-		return errors.New(invalidTarget)
+		return errors.New(invalidTargetErrorForContextCommands)
 	}
 
 	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
@@ -1033,7 +1033,7 @@ func unsetCtx(_ *cobra.Command, args []string) error {
 		return errors.New(invalidContextType)
 	}
 	if !configtypes.IsValidTarget(targetStr, false, true) {
-		return errors.New(invalidTarget)
+		return errors.New(invalidTargetErrorForContextCommands)
 	}
 	contextType := getContextType()
 	if len(args) > 0 {
@@ -1205,7 +1205,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 				project = ctx.AdditionalMetadata[tae.ProjectNameKey].(string)
 			}
 			if ctx.AdditionalMetadata[tae.SpaceNameKey] != nil {
-				space = ctx.AdditionalMetadata[tae.SpaceNameKey].(string)
+				space = ctx.AdditionalMetadata["taeSpaceName"].(string)
 			}
 		default:
 			if ctx.ClusterOpts != nil {
