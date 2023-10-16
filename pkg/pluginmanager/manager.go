@@ -194,9 +194,8 @@ func DiscoverServerPlugins() ([]discovery.Discovered, error) {
 			switch context.ContextType {
 			case configtypes.ContextTypeTMC:
 				discoveredPlugins[i].Target = configtypes.TargetTMC
-			case configtypes.ContextTypeK8s:
-				discoveredPlugins[i].Target = configtypes.TargetK8s
-			case configtypes.ContextTypeTAE:
+			default:
+				// All other context types are associated with the kubernetes target
 				discoveredPlugins[i].Target = configtypes.TargetK8s
 			}
 

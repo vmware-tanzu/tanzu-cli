@@ -34,9 +34,9 @@ func defaultDiscoverySourceBasedOnContext(context *configtypes.Context) []config
 	// kubernetes discovery endpoint pointing to the cluster kubeconfig
 	// If the current context is of type tmc, then add the default REST endpoint
 	// for the tmc discovery service
-	if context.Target == configtypes.TargetK8s && context.ClusterOpts != nil {
+	if context.ContextType == configtypes.ContextTypeK8s && context.ClusterOpts != nil {
 		defaultDiscoveries = append(defaultDiscoveries, defaultDiscoverySourceForK8sTargetedContext(context.Name, context.ClusterOpts.Path, context.ClusterOpts.Context))
-	} else if context.Target == configtypes.TargetTMC && context.GlobalOpts != nil {
+	} else if context.ContextType == configtypes.ContextTypeTMC && context.GlobalOpts != nil {
 		defaultDiscoveries = append(defaultDiscoveries, defaultDiscoverySourceForTMCTargetedContext(context))
 	}
 	return defaultDiscoveries
