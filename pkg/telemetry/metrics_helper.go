@@ -69,8 +69,7 @@ func computeEndpointSHAForTAEContext(ctx *configtypes.Context) string {
 	if ctx.AdditionalMetadata[tae.SpaceNameKey] != nil {
 		space = ctx.AdditionalMetadata[tae.SpaceNameKey].(string)
 	}
-	// returns SHA256 of concatenated string of Endpoint and RefreshToken
-	// (usually RefreshToken is valid for long duration, hence it is considered for TAE Context uniqueness for telemetry)
+	// returns SHA256 of concatenated string of Endpoint and orgId/ProjectName/SpaceName
 	return hashString(ctx.GlobalOpts.Endpoint + orgID + project + space)
 }
 

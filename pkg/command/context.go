@@ -1204,7 +1204,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 				project = ctx.AdditionalMetadata[taert.ProjectNameKey].(string)
 			}
 			if ctx.AdditionalMetadata[taert.SpaceNameKey] != nil {
-				space = ctx.AdditionalMetadata["taeSpaceName"].(string)
+				space = ctx.AdditionalMetadata[taert.SpaceNameKey].(string)
 			}
 		default:
 			if ctx.ClusterOpts != nil {
