@@ -6,7 +6,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.12.0
 	github.com/onsi/gomega v1.27.10
 	github.com/pkg/errors v0.9.1
-	github.com/vmware-tanzu/tanzu-plugin-runtime v1.1.0-dev.0.20231002160823-1da8552a1589
+	github.com/vmware-tanzu/tanzu-plugin-runtime v1.1.0-alpha.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.26.3
 	k8s.io/client-go v0.26.1
