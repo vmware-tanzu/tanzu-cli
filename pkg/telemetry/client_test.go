@@ -158,7 +158,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 
 			})
 		})
-		Context("when the core command (not requiring hashed values) has arguments and flags provided", func() {
+		Context("when the core command (not requiring hashed values for args and flags) has arguments and flags provided", func() {
 			It("should return success and the metrics should have name arg(first argument) hashed and flags values should be hashed", func() {
 				// change the command name to "plugin" since CLI wouldn't hash the flag values for plugin LCM commands
 				cmd.Use = "plugin"
@@ -175,7 +175,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 				Expect(err).ToNot(HaveOccurred())
 				metricsPayload := tc.currentOperationMetrics
 				Expect(metricsPayload.CommandName).To(Equal("plugin"))
-				Expect(metricsPayload.NameArg).To(Equal(hashString("arg1")))
+				Expect(metricsPayload.NameArg).To(Equal("arg1"))
 				Expect(metricsPayload.CliID).ToNot(BeEmpty())
 				Expect(metricsPayload.StartTime.IsZero()).To(BeFalse())
 
