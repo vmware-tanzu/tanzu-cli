@@ -181,7 +181,11 @@ func (tc *telemetryClient) updateMetricsForCoreCommand(cmd *cobra.Command, args 
 
 	// CLI recommendation is to have a single argument for a command
 	if len(args) != 0 {
-		tc.currentOperationMetrics.NameArg = hashString(args[0])
+		tc.currentOperationMetrics.NameArg = args[0]
+		hashRequired := isHashRequiredForCmdArgs(cmd.CommandPath())
+		if hashRequired {
+			tc.currentOperationMetrics.NameArg = hashString(args[0])
+		}
 	}
 
 	flagMap := make(map[string]string)
@@ -344,6 +348,23 @@ func isHashRequiredForCmdFlags(cmdPath string) bool {
 	return true
 }
 
+// isHashRequiredForCmdArgs determines if hashing is required for a core command read from command path
+// currently, for each command we are either hashing all the values or none. A possible enhancement would be
+// to have a list of command paths for each command to be excluded from the list.
+func isHashRequiredForCmdArgs(cmdPath string) bool {
+	coreCommandsAllowedWithCommandArgs := map[string]struct{}{
+		"plugin": struct{}{},
+	}
+	cmds := strings.Split(cmdPath, " ")
+	if len(cmds) < 2 {
+		return false
+	}
+
+	if _, exists := coreCommandsAllowedWithCommandArgs[cmds[1]]; exists {
+		return false
+	}
+	return true
+}
 func pluginCommandTreeCacheGetter() (plugincmdtree.Cache, error) {
 	pctCache, err := plugincmdtree.NewCache()
 	if err != nil {
