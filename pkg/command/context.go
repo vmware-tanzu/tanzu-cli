@@ -31,7 +31,6 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/tae"
 	taert "github.com/vmware-tanzu/tanzu-plugin-runtime/tae"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
@@ -1201,10 +1200,10 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 				path = ctx.ClusterOpts.Path
 				context = ctx.ClusterOpts.Context
 			}
-			if ctx.AdditionalMetadata[tae.ProjectNameKey] != nil {
-				project = ctx.AdditionalMetadata[tae.ProjectNameKey].(string)
+			if ctx.AdditionalMetadata[taert.ProjectNameKey] != nil {
+				project = ctx.AdditionalMetadata[taert.ProjectNameKey].(string)
 			}
-			if ctx.AdditionalMetadata[tae.SpaceNameKey] != nil {
+			if ctx.AdditionalMetadata[taert.SpaceNameKey] != nil {
 				space = ctx.AdditionalMetadata["taeSpaceName"].(string)
 			}
 		default:

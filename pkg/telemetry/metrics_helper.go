@@ -33,19 +33,19 @@ func computeEndpointSHAForContext(curCtx map[configtypes.ContextType]*configtype
 	case configtypes.TargetK8s:
 		ctx, exists := curCtx[configtypes.ContextTypeK8s]
 		if exists {
-			return computeEndpointSHAForK8sContext(*ctx)
+			return computeEndpointSHAForK8sContext(ctx)
 		}
 		// If Target is k8s and k8s context type is not active, fall back to TAE context-type
 		ctx, exists = curCtx[configtypes.ContextTypeTAE]
 		if exists {
-			return computeEndpointSHAForTAEContext(*ctx)
+			return computeEndpointSHAForTAEContext(ctx)
 		}
 		return ""
 
 	case configtypes.TargetTMC:
 		ctx, exists := curCtx[configtypes.ContextTypeTMC]
 		if exists {
-			computeEndpointSHAForTMCContext(*ctx)
+			computeEndpointSHAForTMCContext(ctx)
 		}
 		return ""
 	}
@@ -58,7 +58,7 @@ func hashString(str string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func computeEndpointSHAForTAEContext(ctx configtypes.Context) string {
+func computeEndpointSHAForTAEContext(ctx *configtypes.Context) string {
 	var orgID, project, space string
 	if ctx.AdditionalMetadata[tae.OrgIDKey] != nil {
 		orgID = ctx.AdditionalMetadata[tae.ProjectNameKey].(string)
@@ -74,13 +74,13 @@ func computeEndpointSHAForTAEContext(ctx configtypes.Context) string {
 	return hashString(ctx.GlobalOpts.Endpoint + orgID + project + space)
 }
 
-func computeEndpointSHAForTMCContext(ctx configtypes.Context) string {
+func computeEndpointSHAForTMCContext(ctx *configtypes.Context) string {
 	// returns SHA256 of concatenated string of Endpoint and RefreshToken
 	// (usually RefreshToken is valid for long duration, hence it is considered for TMC Context uniqueness for telemetry)
 	return hashString(ctx.GlobalOpts.Endpoint + ctx.GlobalOpts.Auth.RefreshToken)
 }
 
-func computeEndpointSHAForK8sContext(ctx configtypes.Context) string {
+func computeEndpointSHAForK8sContext(ctx *configtypes.Context) string {
 	// returns SHA256 of the complete context
 	ctxBytes, _ := json.Marshal(ctx)
 	return hashString(string(ctxBytes))
