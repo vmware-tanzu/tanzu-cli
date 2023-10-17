@@ -61,7 +61,7 @@ func hashString(str string) string {
 func computeEndpointSHAForTAEContext(ctx *configtypes.Context) string {
 	var orgID, project, space string
 	if ctx.AdditionalMetadata[tae.OrgIDKey] != nil {
-		orgID = ctx.AdditionalMetadata[tae.ProjectNameKey].(string)
+		orgID = ctx.AdditionalMetadata[tae.OrgIDKey].(string)
 	}
 	if ctx.AdditionalMetadata[tae.ProjectNameKey] != nil {
 		project = ctx.AdditionalMetadata[tae.ProjectNameKey].(string)
