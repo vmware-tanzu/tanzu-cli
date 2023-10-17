@@ -27,7 +27,10 @@ problems. By choosing to participate in CEIP, you agree that VMware may collect
 technical information about your use of VMware products and services on a
 regular basis. This information does not personally identify you.
 
-For more details about the program, please see https://www.vmware.com/trustvmware/ceip.html
+For more details about the program, please see https://www.vmware.com/trustvmware/ceip.html.
+
+Note: this prompt can be avoided by setting the environment variable 
+TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER to "yes" or "no".
 
 Do you agree to participate in the Customer Experience Improvement Program?
 `
@@ -40,9 +43,11 @@ Terms covers all software installed via the Tanzu CLI during any Session.
 is installed, (3) software is accessed in a separate software distribution
 registry, or (4) re-acceptance of the General Terms is prompted by VMware.
 
-To view the VMware General Terms, please see https://www.vmware.com/vmware-general-terms.html
+To view the VMware General Terms, please see https://www.vmware.com/vmware-general-terms.html.
 
-If you agree, the essential plugins will be installed that are necessary for the tanzu cli experience
+If you agree, the essential plugins (required by the tanzu cli) will be automatically installed.
+
+Note: this prompt can be avoided by running "tanzu config eula accept".
 
 Do you agree to the VMware General Terms?
 `
