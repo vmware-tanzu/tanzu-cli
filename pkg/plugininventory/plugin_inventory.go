@@ -205,3 +205,12 @@ type PluginGroupFilter struct {
 	// IncludeHidden indicates if hidden plugin groups should be included
 	IncludeHidden bool
 }
+
+// PluginGroupSorter sorts PluginGroup objects.
+type PluginGroupSorter []*PluginGroup
+
+func (p PluginGroupSorter) Len() int      { return len(p) }
+func (p PluginGroupSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p PluginGroupSorter) Less(i, j int) bool {
+	return PluginGroupToID(p[i]) < PluginGroupToID(p[j])
+}
