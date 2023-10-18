@@ -263,11 +263,11 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil())
 			Expect(out).To(ContainSubstring("tanzu plugin upgrade PLUGIN_NAME [flags]"))
 		})
-		// Test case: d. plugin delete help message
-		It("tanzu plugin delete help message", func() {
-			out, _, err := tf.PluginCmd.RunPluginCmd("delete -h")
+		// Test case: d. plugin uninstall help message
+		It("tanzu plugin uninstall help message", func() {
+			out, _, err := tf.PluginCmd.RunPluginCmd("uninstall -h")
 			Expect(err).To(BeNil())
-			Expect(out).To(ContainSubstring("tanzu plugin delete PLUGIN_NAME [flags]"))
+			Expect(out).To(ContainSubstring("tanzu plugin uninstall PLUGIN_NAME [flags]"))
 		})
 	})
 

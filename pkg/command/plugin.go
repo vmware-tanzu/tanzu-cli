@@ -343,8 +343,9 @@ func newUpgradePluginCmd() *cobra.Command {
 
 func newDeletePluginCmd() *cobra.Command {
 	var deleteCmd = &cobra.Command{
-		Use:               "delete " + pluginNameCaps,
-		Short:             "Delete a plugin",
+		Use:               "uninstall " + pluginNameCaps,
+		Aliases:           []string{"delete"},
+		Short:             "Uninstall a plugin",
 		Long:              "Uninstall the specified plugin or specify 'all' to uninstall all plugins of a target",
 		ValidArgsFunction: completeDeletePlugin,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
