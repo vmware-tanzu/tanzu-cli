@@ -15,6 +15,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	helper "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugin_lifecycle"
+	"github.com/vmware-tanzu/tanzu-cli/test/e2e/util"
 )
 
 func TestPluginSyncLifecycle(t *testing.T) {
@@ -117,17 +118,17 @@ var _ = BeforeSuite(func() {
 	Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 
 	// Check that all required plugin groups for life cycle tests (listed in framework.PluginGroupsForLifeCycleTests) are available in the plugin group search output.
-	Expect(framework.IsAllPluginGroupsExists(pluginGroups, framework.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
+	Expect(framework.IsAllPluginGroupsExists(pluginGroups, util.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 	// Retrieve the TMC specific plugin group from which plugins will be used to perform E2E tests.
-	usePluginsFromTmcPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(framework.PluginGroupsForLifeCycleTests, framework.TMCPluginGroupPrefix)
+	usePluginsFromTmcPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(util.PluginGroupsForLifeCycleTests, framework.TMCPluginGroupPrefix)
 	Expect(usePluginsFromTmcPluginGroup).NotTo(BeEmpty(), "there should be a tmc specific plugin group")
 	// Retrieve the k8s specific plugin group from which plugins will be used to perform E2E tests.
-	usePluginsFromK8sPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(framework.PluginGroupsForLifeCycleTests, framework.K8SPluginGroupPrefix)
+	usePluginsFromK8sPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(util.PluginGroupsForLifeCycleTests, framework.K8SPluginGroupPrefix)
 	Expect(usePluginsFromTmcPluginGroup).NotTo(BeEmpty(), "there should be a k8s specific plugin group")
 
 	// Retrieve the Essentials plugin group from which plugins will be used to perform E2E tests.
-	usePluginsFromEssentialsPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(framework.EssentialPluginGroups, framework.EssentialsPluginGroupPrefix)
+	usePluginsFromEssentialsPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(util.EssentialPluginGroups, framework.EssentialsPluginGroupPrefix)
 	Expect(usePluginsFromEssentialsPluginGroup).NotTo(BeEmpty(), "there should be a essentials plugin group")
 
 	// search plugins and make sure there are plugins available
@@ -136,7 +137,7 @@ var _ = BeforeSuite(func() {
 	Expect(len(pluginsSearchList)).Should(BeNumerically(">", 0))
 
 	pluginGroupToPluginListMap = make(map[string][]*framework.PluginInfo)
-	for _, pg := range framework.PluginGroupsForLifeCycleTests {
+	for _, pg := range util.PluginGroupsForLifeCycleTests {
 		// Setup plugin list for both versions of the group
 		for _, v := range []string{"v9.9.9", "v0.0.1"} {
 			pg.Latest = v

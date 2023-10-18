@@ -56,6 +56,9 @@ ifndef TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_PASSWORD
 TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_PASSWORD = testpassword
 endif
 
+ifndef TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH
+TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH = ${ROOT_DIR}/test/e2e/config_data/input_data.yaml
+endif
 
 
 # Set the plugin group name for the plugins used to execute E2E test cases.
@@ -92,6 +95,7 @@ e2e-plugin-lifecycle-tests:
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH) ; \
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
+	export TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH=$(TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH) ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugin_lifecycle  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
@@ -104,6 +108,7 @@ e2e-plugin-sync-k8s:
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH) ; \
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
+	export TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH=$(TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH) ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugin_sync/k8s  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
@@ -120,6 +125,7 @@ e2e-plugin-sync-tmc:
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH) ; \
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST} ; \
 		export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
+		export TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH=$(TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH) ; \
 		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 		export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 		export TANZU_CLI_E2E_TEST_ENVIRONMENT="true" ; \
@@ -134,7 +140,7 @@ e2e-context-tmc-tests:
 	@if [ "${TANZU_API_TOKEN}" = "" ] || [ "$(TANZU_CLI_TMC_UNSTABLE_URL)" = "" ]; then \
 		echo "***Skipping TMC specific e2e tests cases because environment variables TANZU_API_TOKEN and TANZU_CLI_TMC_UNSTABLE_URL are not set***" ; \
 	else \
-	    export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 		export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 		${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/context/tmc  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
 	fi
@@ -160,6 +166,7 @@ e2e-airgapped-tests:
 	export TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH=$(TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH) ; \
 	export TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_USERNAME=$(TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_USERNAME) ; \
 	export TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_PASSWORD=$(TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_PASSWORD) ; \
+	export TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH=$(TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH) ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/airgapped  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
