@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
+	"github.com/vmware-tanzu/tanzu-cli/test/e2e/util"
 )
 
 func TestPluginLifecycle(t *testing.T) {
@@ -69,7 +70,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 
 	// check all required plugin groups (framework.PluginGroupsForLifeCycleTests) need for life cycle test are available in plugin group search output
-	Expect(framework.IsAllPluginGroupsExists(pluginGroups, framework.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
+	Expect(framework.IsAllPluginGroupsExists(pluginGroups, util.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 	// search plugins and make sure there are plugins available
 	pluginsSearchList, err = SearchAllPlugins(tf)
@@ -77,10 +78,10 @@ var _ = BeforeSuite(func() {
 	Expect(len(pluginsSearchList)).Should(BeNumerically(">", 0))
 
 	// check all required plugins (framework.PluginsForLifeCycleTests) for plugin life cycle e2e are available in plugin search output
-	Expect(framework.CheckAllPluginsExists(pluginsSearchList, framework.PluginsForLifeCycleTests)).To(BeTrue())
+	Expect(framework.CheckAllPluginsExists(pluginsSearchList, util.PluginsForLifeCycleTests)).To(BeTrue())
 
 	pluginGroupToPluginListMap = make(map[string][]*framework.PluginInfo)
-	for _, pg := range framework.PluginGroupsForLifeCycleTests {
+	for _, pg := range util.PluginGroupsForLifeCycleTests {
 		plugins, err := GetAllPluginsFromGroup(tf, pg)
 		Expect(err).To(BeNil(), framework.NoErrorForPluginGroupGet)
 

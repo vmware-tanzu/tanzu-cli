@@ -15,6 +15,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
+	"github.com/vmware-tanzu/tanzu-cli/test/e2e/util"
 
 	pluginlifecyclee2e "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugin_lifecycle"
 )
@@ -89,7 +90,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(BeNil(), "looks like airgapped plugin inventory image already exists before starting the airgapped tests. This should not be the case as it leads to incorrect test results")
 
 	// check all required plugin groups are available in the central repository with plugin group search output before running airgapped tests
-	Expect(framework.IsAllPluginGroupsExists(pluginGroups, framework.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
+	Expect(framework.IsAllPluginGroupsExists(pluginGroups, util.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 	// search plugins and make sure there are plugins available
 	pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
@@ -97,7 +98,7 @@ var _ = BeforeSuite(func() {
 	Expect(len(pluginsSearchList)).Should(BeNumerically(">", 0))
 
 	// check all required plugins are available in the central repository with plugin search output before running airgapped tests
-	Expect(framework.CheckAllPluginsExists(pluginsSearchList, framework.PluginsForLifeCycleTests)).To(BeTrue())
+	Expect(framework.CheckAllPluginsExists(pluginsSearchList, util.PluginsForLifeCycleTests)).To(BeTrue())
 
 	// Configure temporary directory to save the plugin bundles for tests
 	tempDir, err = os.MkdirTemp("", "")
