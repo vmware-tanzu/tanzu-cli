@@ -14,7 +14,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/tae"
 )
 
-func getEndpointSHA(plugin *cli.PluginInfo) string {
+func getEndpointSHAWithCtxTypePrefix(plugin *cli.PluginInfo) string {
 	cfg, err := configlib.GetClientConfig()
 	if err != nil {
 		return ""
@@ -24,28 +24,28 @@ func getEndpointSHA(plugin *cli.PluginInfo) string {
 		return ""
 	}
 
-	return computeEndpointSHAForContext(curCtxMap, plugin.Target)
+	return computeEndpointSHAWithCtxTypePrefix(curCtxMap, plugin.Target)
 }
 
-// computeEndpointSHAForContext computes the endpoint SHA for based on the target type(context type) used
-func computeEndpointSHAForContext(curCtx map[configtypes.ContextType]*configtypes.Context, targetType configtypes.Target) string {
+// computeEndpointSHAWithCtxTypePrefix computes the endpoint SHA based on the target type(context type) used with context type as prefix
+func computeEndpointSHAWithCtxTypePrefix(curCtx map[configtypes.ContextType]*configtypes.Context, targetType configtypes.Target) string {
 	switch targetType {
 	case configtypes.TargetK8s:
 		ctx, exists := curCtx[configtypes.ContextTypeK8s]
 		if exists {
-			return computeEndpointSHAForK8sContext(ctx)
+			return string(configtypes.ContextTypeK8s) + ":" + computeEndpointSHAForK8sContext(ctx)
 		}
 		// If Target is k8s and k8s context type is not active, fall back to TAE context-type
 		ctx, exists = curCtx[configtypes.ContextTypeTAE]
 		if exists {
-			return computeEndpointSHAForTAEContext(ctx)
+			return string(configtypes.ContextTypeTAE) + ":" + computeEndpointSHAForTAEContext(ctx)
 		}
 		return ""
 
 	case configtypes.TargetTMC:
 		ctx, exists := curCtx[configtypes.ContextTypeTMC]
 		if exists {
-			computeEndpointSHAForTMCContext(ctx)
+			return string(configtypes.ContextTypeTMC) + ":" + computeEndpointSHAForTMCContext(ctx)
 		}
 		return ""
 	}
@@ -59,18 +59,11 @@ func hashString(str string) string {
 }
 
 func computeEndpointSHAForTAEContext(ctx *configtypes.Context) string {
-	var orgID, project, space string
-	if ctx.AdditionalMetadata[tae.OrgIDKey] != nil {
-		orgID = ctx.AdditionalMetadata[tae.OrgIDKey].(string)
-	}
-	if ctx.AdditionalMetadata[tae.ProjectNameKey] != nil {
-		project = ctx.AdditionalMetadata[tae.ProjectNameKey].(string)
-	}
-	if ctx.AdditionalMetadata[tae.SpaceNameKey] != nil {
-		space = ctx.AdditionalMetadata[tae.SpaceNameKey].(string)
-	}
 	// returns SHA256 of concatenated string of Endpoint and orgId/ProjectName/SpaceName
-	return hashString(ctx.GlobalOpts.Endpoint + orgID + project + space)
+	return hashString(ctx.GlobalOpts.Endpoint +
+		stringValue(ctx.AdditionalMetadata[tae.OrgIDKey]) +
+		stringValue(ctx.AdditionalMetadata[tae.ProjectNameKey]) +
+		stringValue(ctx.AdditionalMetadata[tae.SpaceNameKey]))
 }
 
 func computeEndpointSHAForTMCContext(ctx *configtypes.Context) string {
@@ -83,4 +76,15 @@ func computeEndpointSHAForK8sContext(ctx *configtypes.Context) string {
 	// returns SHA256 of the complete context
 	ctxBytes, _ := json.Marshal(ctx)
 	return hashString(string(ctxBytes))
+}
+
+func stringValue(val interface{}) string {
+	if val == nil {
+		return ""
+	}
+	str, valid := val.(string)
+	if !valid {
+		return ""
+	}
+	return str
 }
