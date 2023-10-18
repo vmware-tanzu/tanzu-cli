@@ -14,6 +14,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	helper "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugin_lifecycle"
+	"github.com/vmware-tanzu/tanzu-cli/test/e2e/util"
 )
 
 func TestPluginSyncLifecycle(t *testing.T) {
@@ -74,10 +75,10 @@ var _ = BeforeSuite(func() {
 	Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 
 	// check all required plugin groups (framework.PluginGroupsForLifeCycleTests) need for life cycle test are available in plugin group search output
-	Expect(framework.IsAllPluginGroupsExists(pluginGroups, framework.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
+	Expect(framework.IsAllPluginGroupsExists(pluginGroups, util.PluginGroupsForLifeCycleTests)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
 
 	// get k8s plugin group
-	usePluginsFromPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(framework.PluginGroupsForLifeCycleTests, framework.K8SPluginGroupPrefix)
+	usePluginsFromPluginGroup = framework.GetPluginGroupWhichStartsWithGivenPrefix(util.PluginGroupsForLifeCycleTests, framework.K8SPluginGroupPrefix)
 	Expect(usePluginsFromPluginGroup).NotTo(BeEmpty(), "there should be a k8s specific plugin group")
 
 	// search plugins and make sure there are plugins available
@@ -86,10 +87,10 @@ var _ = BeforeSuite(func() {
 	Expect(len(pluginsSearchList)).Should(BeNumerically(">", 0))
 
 	// check all required plugins (framework.PluginsForLifeCycleTests) for plugin life cycle e2e are available in plugin search output
-	Expect(framework.CheckAllPluginsExists(pluginsSearchList, framework.PluginsForLifeCycleTests)).To(BeTrue())
+	Expect(framework.CheckAllPluginsExists(pluginsSearchList, util.PluginsForLifeCycleTests)).To(BeTrue())
 
 	pluginGroupToPluginListMap = make(map[string][]*framework.PluginInfo)
-	for _, pg := range framework.PluginGroupsForLifeCycleTests {
+	for _, pg := range util.PluginGroupsForLifeCycleTests {
 		// Setup plugin list for both versions of the group
 		for _, v := range []string{"v9.9.9", "v0.0.1"} {
 			pg.Latest = v

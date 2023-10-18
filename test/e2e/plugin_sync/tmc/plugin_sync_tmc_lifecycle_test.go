@@ -63,7 +63,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 			var mockResPluginsInfo f.TMCPluginsInfo
 			// check the tmc mocked endpoint is working as expected
@@ -90,7 +90,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("delete current context and stop mock server", func() {
 			_, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
@@ -123,7 +123,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 			var mockResPluginsInfo f.TMCPluginsInfo
 			// check the tmc mocked endpoint is working as expected
@@ -180,7 +180,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(pluginsList)).Should(Equal(0), "all context plugins should be uninstalled as context delete")
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
@@ -224,7 +224,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			// skip last plugin in the slice as it has incorrect version info, which is not available in the mock response
 			pluginsGeneratedMockResponseWithCorrectInfo = pluginsToGenerateMockResponse[:numberOfPluginsToInstall-1]
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 			var mockResPluginsInfo f.TMCPluginsInfo
 			// check the tmc mocked endpoint is working as expected
@@ -285,7 +285,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			for i := range installedPluginsList {
 				Expect(stdOut).To(ContainSubstring(fmt.Sprintf(f.DeactivatingPlugin, installedPluginsList[i].Name, installedPluginsList[i].Version, contextName)))
 			}
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
@@ -324,7 +324,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 
 			var mockResPluginsInfo f.TMCPluginsInfo
@@ -355,7 +355,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 
 			// check the tmc mocked endpoint is working as expected
@@ -383,7 +383,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), deleteContextWithoutError)
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameTwo)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
@@ -422,7 +422,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 
 			var mockResPluginsInfo f.TMCPluginsInfo
@@ -453,7 +453,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 
 			// check the tmc mocked endpoint is working as expected
@@ -475,7 +475,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("delete current context", func() {
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameOne)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
@@ -559,7 +559,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 			var mockResPluginsInfo f.TMCPluginsInfo
 			// check the tmc mocked endpoint is working as expected
@@ -656,7 +656,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("delete tmc/k8s contexts and the KIND cluster", func() {
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameTMC)
 			Expect(err).To(BeNil(), "context should be deleted without error")
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameK8s)
@@ -764,7 +764,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForMockResponseFileUpdate)
 
 			// start http mock server
-			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HttpMockServerName)
+			err = f.StartMockServer(tf, tmcConfigFolderPath, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStartWithoutError)
 			var mockResPluginsInfo f.TMCPluginsInfo
 			// check the tmc mocked endpoint is working as expected
@@ -842,7 +842,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("delete tmc/k8s contexts", func() {
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameTMC)
 			Expect(err).To(BeNil(), "context should be deleted without error")
-			err = f.StopContainer(tf, f.HttpMockServerName)
+			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameK8s)

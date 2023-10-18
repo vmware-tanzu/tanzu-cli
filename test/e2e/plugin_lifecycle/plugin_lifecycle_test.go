@@ -13,6 +13,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
+	"github.com/vmware-tanzu/tanzu-cli/test/e2e/util"
 )
 
 // This test suite covers plugin life cycle use cases for central repository
@@ -98,7 +99,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		})
 		// Test case: install all plugins from framework.PluginsForLifeCycleTests, and validate the installation by running describe command on each plugin
 		It("install plugins and describe each installed plugin", func() {
-			for _, plugin := range framework.PluginsForLifeCycleTests {
+			for _, plugin := range util.PluginsForLifeCycleTests {
 				target := plugin.Target
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				Expect(err).To(BeNil(), "should not get any error for plugin install")
@@ -117,27 +118,27 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		})
 		// Test case: (negative) describe plugin with incorrect target type
 		It("plugin describe: describe installed plugin with incorrect target type", func() {
-			_, err := tf.PluginCmd.DescribePlugin(framework.PluginsForLifeCycleTests[0].Name, framework.RandomString(5), framework.GetJsonOutputFormatAdditionalFlagFunction())
+			_, err := tf.PluginCmd.DescribePlugin(util.PluginsForLifeCycleTests[0].Name, framework.RandomString(5), framework.GetJsonOutputFormatAdditionalFlagFunction())
 			Expect(err.Error()).To(ContainSubstring(framework.InvalidTargetSpecified))
 		})
 		// Test case: (negative) describe plugin with incorrect plugin name
 		It("plugin describe: describe installed plugin with incorrect plugin name as input", func() {
 			name := framework.RandomString(5)
-			_, err := tf.PluginCmd.DescribePlugin(name, framework.PluginsForLifeCycleTests[0].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
+			_, err := tf.PluginCmd.DescribePlugin(name, util.PluginsForLifeCycleTests[0].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.UnableToFindPlugin, name)))
 		})
 		// Test case: list plugins and validate the list plugins output has all plugins which are installed in previous steps
 		It("list plugins and check number plugins should be same as installed in previous test", func() {
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(Equal(len(framework.PluginsForLifeCycleTests)), "plugins list should return all installed plugins")
-			Expect(framework.CheckAllPluginsExists(pluginsList, framework.PluginsForLifeCycleTests)).Should(BeTrue(), "the plugin list output is not same as the plugins being installed")
+			Expect(len(pluginsList)).Should(Equal(len(util.PluginsForLifeCycleTests)), "plugins list should return all installed plugins")
+			Expect(framework.CheckAllPluginsExists(pluginsList, util.PluginsForLifeCycleTests)).Should(BeTrue(), "the plugin list output is not same as the plugins being installed")
 		})
 		// Test case: delete all plugins which are installed for a specific target, and validate by running list plugin command
 		It("delete all plugins for target kubernetes and verify with plugin list", func() {
 			// count how many plugins are installed that are not for the k8s target
 			count := 0
-			for _, plugin := range framework.PluginsForLifeCycleTests {
+			for _, plugin := range util.PluginsForLifeCycleTests {
 				if plugin.Target != framework.KubernetesTarget {
 					count++
 				}
@@ -156,7 +157,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		})
 		// Test case: delete all plugins which are installed, and validate by running list plugin command
 		It("delete all remaining plugins and verify with plugin list", func() {
-			for _, plugin := range framework.PluginsForLifeCycleTests {
+			for _, plugin := range util.PluginsForLifeCycleTests {
 				if plugin.Target != framework.KubernetesTarget {
 					// We don't delete kubernetes plugins since they were all deleted in the previous step
 					err := tf.PluginCmd.DeletePlugin(plugin.Name, plugin.Target)
@@ -185,7 +186,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		})
 		// Test case: install all plugins from framework.PluginsForLifeCycleTests
 		It("install plugins and describe installed plugins", func() {
-			for _, plugin := range framework.PluginsForLifeCycleTests {
+			for _, plugin := range util.PluginsForLifeCycleTests {
 				target := plugin.Target
 				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				Expect(err).To(BeNil(), "should not get any error for plugin install")
@@ -198,7 +199,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			// validate installed plugins count same as number of plugins installed
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(Equal(len(framework.PluginsForLifeCycleTests)), "plugins list should return all installed plugins")
+			Expect(len(pluginsList)).Should(Equal(len(util.PluginsForLifeCycleTests)), "plugins list should return all installed plugins")
 		})
 		// Test case: run clean plugin command and validate with list plugin command
 		It("clean plugins and verify with plugin list", func() {
@@ -217,7 +218,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 	Context("plugin use cases: negative test cases for plugin install and plugin delete commands", func() {
 		// Test case: a. install plugin with incorrect value target flag
 		It("install plugin with random string for target flag", func() {
-			err := tf.PluginCmd.InstallPlugin(framework.PluginsForLifeCycleTests[0].Name, framework.RandomString(5), framework.PluginsForLifeCycleTests[0].Version)
+			err := tf.PluginCmd.InstallPlugin(util.PluginsForLifeCycleTests[0].Name, framework.RandomString(5), util.PluginsForLifeCycleTests[0].Version)
 			Expect(err.Error()).To(ContainSubstring(framework.InvalidTargetSpecified))
 		})
 		// Test case: b. install plugin with incorrect plugin name
@@ -228,7 +229,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		})
 		// Test case: c. install plugin with incorrect value for flag --version
 		It("install plugin with incorrect version", func() {
-			for _, plugin := range framework.PluginsForLifeCycleTests {
+			for _, plugin := range util.PluginsForLifeCycleTests {
 				if !(plugin.Target == framework.GlobalTarget) {
 					version := plugin.Version + framework.RandomNumber(3)
 					err := tf.PluginCmd.InstallPlugin(plugin.Name, plugin.Target, version)
