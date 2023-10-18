@@ -888,20 +888,17 @@ func deletePluginFromCommandTreeCache(plugin *cli.PluginInfo) {
 	}
 }
 
-// DeletePlugin deletes a plugin.
-func DeletePlugin(options DeletePluginOptions) error {
-	serverNames, err := configlib.GetAllActiveContextsList()
+func matchPluginsForDeletion(options DeletePluginOptions) ([]cli.PluginInfo, error) {
+	var matchedPlugins []cli.PluginInfo
+	catalogNames, err := configlib.GetAllActiveContextsList()
 	if err != nil {
-		return err
+		return matchedPlugins, err
 	}
 
-	var matchedCatalogNames []string
-	var matchedPlugins []cli.PluginInfo
-
 	// Add empty serverName for standalone plugins
-	serverNames = append(serverNames, "")
+	catalogNames = append(catalogNames, "")
 
-	for _, serverName := range serverNames {
+	for _, serverName := range catalogNames {
 		c, err := catalog.NewContextCatalog(serverName)
 		if err != nil {
 			continue
@@ -909,52 +906,97 @@ func DeletePlugin(options DeletePluginOptions) error {
 
 		plugins := c.List()
 		for i := range plugins {
-			if plugins[i].Name == options.PluginName &&
+			if (plugins[i].Name == options.PluginName || options.PluginName == cli.AllPlugins) &&
 				(options.Target == configtypes.TargetUnknown || options.Target == plugins[i].Target) {
 				matchedPlugins = append(matchedPlugins, plugins[i])
-				matchedCatalogNames = append(matchedCatalogNames, serverName)
 			}
 		}
 	}
+	return matchedPlugins, nil
+}
+
+// DeletePlugin deletes a plugin.
+//
+//nolint:gocyclo
+func DeletePlugin(options DeletePluginOptions) error {
+	matchedPlugins, err := matchPluginsForDeletion(options)
+	if err != nil {
+		return err
+	}
 
 	if len(matchedPlugins) == 0 {
-		if options.Target != configtypes.TargetUnknown {
-			return errors.Errorf("unable to find plugin '%v' for target '%s'", options.PluginName, string(options.Target))
+		if options.PluginName == cli.AllPlugins {
+			if options.Target != configtypes.TargetUnknown {
+				return errors.Errorf("unable to find any installed plugins for target '%s'", string(options.Target))
+			}
+			return errors.Errorf("unable to find any installed plugins")
+		} else {
+			if options.Target != configtypes.TargetUnknown {
+				return errors.Errorf("unable to find plugin '%v' for target '%s'", options.PluginName, string(options.Target))
+			}
+			return errors.Errorf("unable to find plugin '%v'", options.PluginName)
 		}
-		return errors.Errorf("unable to find plugin '%v'", options.PluginName)
 	}
 
 	// It is possible that the catalog contains two entries for a name/target combination:
 	// a context-scope installation and a standalone installation.  We need to delete both in this case.
 	// If all matched plugins are from the same target, this is when we can still delete them all.
-	uniqueTarget := matchedPlugins[0].Target
-	for i := range matchedPlugins {
-		if matchedPlugins[i].Target != uniqueTarget {
-			return errors.Errorf(missingTargetStr, options.PluginName)
+	var uniqueTarget configtypes.Target
+	if options.PluginName != cli.AllPlugins {
+		uniqueTarget = matchedPlugins[0].Target
+		for i := range matchedPlugins {
+			if matchedPlugins[i].Target != uniqueTarget {
+				return errors.Errorf(missingTargetStr, options.PluginName)
+			}
 		}
 	}
 
 	if !options.ForceDelete {
-		if err := component.AskForConfirmation(
-			fmt.Sprintf("Deleting Plugin '%s' for target '%s'. Are you sure?",
-				options.PluginName, string(uniqueTarget))); err != nil {
-			return err
+		if options.PluginName == cli.AllPlugins {
+			if options.Target == configtypes.TargetUnknown {
+				if err := component.AskForConfirmation("All plugins will be deleted. Are you sure?"); err != nil {
+					return err
+				}
+			} else {
+				if err := component.AskForConfirmation(
+					fmt.Sprintf("All plugins for target '%s' will be deleted. Are you sure?",
+						string(options.Target))); err != nil {
+					return err
+				}
+			}
+		} else {
+			if err := component.AskForConfirmation(
+				fmt.Sprintf("Deleting plugin '%s' for target '%s'. Are you sure?",
+					options.PluginName, string(uniqueTarget))); err != nil {
+				return err
+			}
 		}
 	}
-	// Delete the plugins from the command tree cache which would be consumed by telemetry
+
 	for i := range matchedPlugins {
+		// Delete the plugins from the command tree cache which would be consumed by telemetry
 		deletePluginFromCommandTreeCache(&matchedPlugins[i])
 	}
-	// Delete all plugins that match since they are all from the same target
-	return doDeletePluginFromCatalog(options.PluginName, uniqueTarget, matchedCatalogNames)
+
+	// Delete the plugins that match from the catalog
+	return doDeletePluginsFromCatalog(matchedPlugins)
 
 	// TODO: delete the plugin binary if it is not used by any server
 }
 
-func doDeletePluginFromCatalog(pluginName string, target configtypes.Target, catalogNames []string) error {
+func doDeletePluginsFromCatalog(plugins []cli.PluginInfo) error {
+	errList := make([]error, 0)
+
+	catalogNames, err := configlib.GetAllActiveContextsList()
+	if err != nil {
+		return err
+	}
+	// Add empty serverName for standalone plugins
+	catalogNames = append(catalogNames, "")
+
 	for _, n := range catalogNames {
 		// We must create one catalog at a time to be able to delete a plugin.
-		// If we re-use the catalogs created above, when we delete the plugin
+		// If we create more than one catalog at a time, then, when we delete the plugin
 		// in one catalog, the next catalog will put it back since that catalog
 		// was created before the plugin was deleted.
 		c, err := catalog.NewContextCatalogUpdater(n)
@@ -962,14 +1004,19 @@ func doDeletePluginFromCatalog(pluginName string, target configtypes.Target, cat
 			continue
 		}
 
-		err = c.Delete(catalog.PluginNameTarget(pluginName, target))
-		c.Unlock()
-		if err != nil {
-			return fmt.Errorf("plugin %q could not be deleted from cache", pluginName)
+		for i := range plugins {
+			err = c.Delete(catalog.PluginNameTarget(plugins[i].Name, plugins[i].Target))
+			if err != nil {
+				errList = append(errList, fmt.Errorf("plugin %q could not be deleted from cache", plugins[i].Name))
+			}
 		}
+		c.Unlock()
 	}
 
-	return nil
+	for i := range plugins {
+		log.Infof("Deleting plugin '%s' for target '%s'", plugins[i].Name, plugins[i].Target)
+	}
+	return kerrors.NewAggregate(errList)
 }
 
 // SyncPlugins will install the plugins required by the current contexts.

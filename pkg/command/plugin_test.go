@@ -123,7 +123,7 @@ func TestPluginList(t *testing.T) {
 			for i, pluginName := range spec.plugins {
 				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
 				assert.Nil(err)
-				pluginInstallationPath = filepath.Join(dir, pluginName)
+				pluginInstallationPath = filepath.Join(dir, fmt.Sprintf("%s_%s", pluginName, string(spec.targets[i])))
 				pi := &cli.PluginInfo{
 					Name:             pluginName,
 					Description:      fmt.Sprintf("some %s description", pluginName),
@@ -177,6 +177,7 @@ func TestDeletePlugin(t *testing.T) {
 	tests := []struct {
 		test             string
 		plugins          []string
+		remainingPlugins []bool
 		versions         []string
 		targets          []configtypes.Target
 		args             []string
@@ -186,18 +187,56 @@ func TestDeletePlugin(t *testing.T) {
 		{
 			test:             "delete an uninstalled plugin",
 			plugins:          []string{},
-			versions:         []string{"v0.1.0"},
+			versions:         []string{},
+			targets:          []configtypes.Target{},
 			args:             []string{"plugin", "delete", "foo", "-y"},
 			expectedFailure:  true,
 			expectedErrorMsg: "unable to find plugin 'foo'",
 		},
 		{
-			test:            "delete an installed plugin",
-			plugins:         []string{"foo"},
-			versions:        []string{"v0.1.0"},
-			targets:         []configtypes.Target{configtypes.TargetK8s},
-			args:            []string{"plugin", "delete", "foo", "-y"},
-			expectedFailure: false,
+			test:             "delete an installed plugin",
+			plugins:          []string{"foo"},
+			remainingPlugins: []bool{false},
+			versions:         []string{"v0.1.0"},
+			targets:          []configtypes.Target{configtypes.TargetK8s},
+			args:             []string{"plugin", "delete", "foo", "-y"},
+			expectedFailure:  false,
+		},
+		{
+			test:             "delete an installed plugin present for multiple targets",
+			plugins:          []string{"foo", "foo"},
+			versions:         []string{"v0.1.0", "v0.2.0"},
+			targets:          []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s},
+			args:             []string{"plugin", "delete", "foo", "-y"},
+			expectedFailure:  true,
+			expectedErrorMsg: "unable to uniquely identify plugin 'foo'. Please specify the target (kubernetes[k8s]/mission-control[tmc]/global) of the plugin using the `--target` flag",
+		},
+		{
+			test:             "delete an installed plugin present for multiple targets using --target",
+			plugins:          []string{"foo", "foo"},
+			remainingPlugins: []bool{true, false},
+			versions:         []string{"v0.1.0", "v0.2.0"},
+			targets:          []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s},
+			args:             []string{"plugin", "delete", "foo", "--target", string(configtypes.TargetK8s), "-y"},
+			expectedFailure:  false,
+		},
+		{
+			test:             "delete all installed plugins without using --target",
+			plugins:          []string{"foo", "bar"},
+			versions:         []string{"v0.1.0", "v0.2.0"},
+			targets:          []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s},
+			args:             []string{"plugin", "delete", "all", "-y"},
+			expectedFailure:  true,
+			expectedErrorMsg: "the 'all' argument can only be used with the '--target' flag",
+		},
+		{
+			test:             "delete all installed plugins using --target",
+			plugins:          []string{"foo", "bar", "spaz"},
+			remainingPlugins: []bool{true, false, false},
+			versions:         []string{"v0.1.0", "v0.2.0", "v0.3.0"},
+			targets:          []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s, configtypes.TargetK8s},
+			args:             []string{"plugin", "delete", "all", "--target", string(configtypes.TargetK8s), "-y"},
+			expectedFailure:  false,
 		},
 	}
 
@@ -205,6 +244,19 @@ func TestDeletePlugin(t *testing.T) {
 		dir, err := os.MkdirTemp("", "tanzu-cli-root-cmd")
 		assert.Nil(t, err)
 		defer os.RemoveAll(dir)
+
+		// Setup a temporary configuration.  This means no
+		// plugin source will be available which will prevent
+		// trying to install the essential plugins.
+		// This speeds up the test.
+		configFile, _ := os.CreateTemp("", "config")
+		os.Setenv("TANZU_CONFIG", configFile.Name())
+		defer os.RemoveAll(configFile.Name())
+
+		configFileNG, _ := os.CreateTemp("", "config_ng")
+		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+		defer os.RemoveAll(configFileNG.Name())
+
 		os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
 		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 		os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
@@ -219,13 +271,14 @@ func TestDeletePlugin(t *testing.T) {
 				err = setupFakePlugin(dir, pluginName, spec.versions[i], plugin.SystemCmdGroup, completionType, spec.targets[i], 1, false, []string{pluginName[:2]})
 				assert.Nil(err)
 
-				pluginInstallationPath = filepath.Join(dir, pluginName)
+				pluginInstallationPath = filepath.Join(dir, fmt.Sprintf("%s_%s", pluginName, string(spec.targets[i])))
 				pi := &cli.PluginInfo{
 					Name:             pluginName,
 					Description:      fmt.Sprintf("some %s description", pluginName),
 					Group:            plugin.SystemCmdGroup,
 					Aliases:          []string{pluginName[:2]},
 					Version:          spec.versions[i],
+					Target:           spec.targets[i],
 					InstallationPath: pluginInstallationPath,
 				}
 				assert.Nil(err)
@@ -233,31 +286,47 @@ func TestDeletePlugin(t *testing.T) {
 				assert.Nil(err)
 			}
 			cupdater.Unlock()
+
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 
+			// Execute the test command
 			err = rootCmd.Execute()
-			assert.Equal(err != nil, spec.expectedFailure)
+			assert.Equal(spec.expectedFailure, err != nil)
 			if spec.expectedErrorMsg != "" {
 				assert.Contains(err.Error(), spec.expectedErrorMsg)
 			}
 
+			// Verify the catalog after a successful delete
 			// Need to get a new catalog because the rootCmd.Execute()
 			// updated the catalog file
 			creader, err := catalog.NewContextCatalog("")
 			assert.Nil(err)
 
 			if !spec.expectedFailure {
-				_, exists := creader.Get(spec.args[2])
-				assert.Equal(exists, false)
+				assert.Equal(len(spec.plugins), len(spec.remainingPlugins), "test definition error")
 
-				// tanzu plugin delete does not remove the binary
-				_, err := os.Stat(pluginInstallationPath)
-				assert.Nil(err)
+				for i := range spec.plugins {
+					if spec.remainingPlugins[i] {
+						// The plugin must still be present
+						_, exists := creader.Get(catalog.PluginNameTarget(spec.plugins[i], spec.targets[i]))
+						assert.Equal(true, exists)
+					} else {
+						// The plugin should have been removed
+						_, exists := creader.Get(catalog.PluginNameTarget(spec.plugins[i], spec.targets[i]))
+						assert.Equal(false, exists)
+					}
+
+					// tanzu plugin delete does not remove the binary
+					_, err := os.Stat(filepath.Join(dir, fmt.Sprintf("%s_%s", spec.plugins[i], string(spec.targets[i]))))
+					assert.Nil(err)
+				}
 			}
 		})
 		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
 		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
 		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 	}
@@ -629,22 +698,43 @@ func TestCompletionPlugin(t *testing.T) {
 		{
 			test: "completion for the plugin delete command",
 			args: []string{"__complete", "plugin", "delete", ""},
-			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: "cluster\tMultiple entries for plugin cluster. You will need to use the --target flag.\n" +
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "all\tAll plugins for a target. You will need to use the --target flag.\n" +
+				"cluster\tMultiple entries for plugin cluster. You will need to use the --target flag.\n" +
 				"feature\tTarget: kubernetes for feature\n" +
 				"management-cluster\tMultiple entries for plugin management-cluster. You will need to use the --target flag.\n" +
 				"secret\tTarget: kubernetes for secret\n" +
-				":4\n",
+				":36\n",
 		},
 		{
 			test: "completion for the plugin delete command using --target",
 			args: []string{"__complete", "plugin", "delete", "--target", "k8s", ""},
-			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: "cluster\tTarget: kubernetes for cluster\n" +
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "all\tAll plugins of target kubernetes\n" +
+				"cluster\tTarget: kubernetes for cluster\n" +
 				"feature\tTarget: kubernetes for feature\n" +
 				"management-cluster\tTarget: kubernetes for management-cluster\n" +
 				"secret\tTarget: kubernetes for secret\n" +
+				":36\n",
+		},
+		{
+			test: "no more completions after the first arg for the plugin delete command",
+			args: []string{"__complete", "plugin", "delete", "feature", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
+		},
+		{
+			test: "completion of the --target flag if 'all' is specified",
+			args: []string{"__complete", "plugin", "delete", "all", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "--target\n" +
 				":4\n",
+		},
+		{
+			test: "no more completions after 'all' if --target is specified",
+			args: []string{"__complete", "plugin", "delete", "--target", "k8s", "all", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: ":4\n",
 		},
 		{
 			test: "completion for the --target flag value for the plugin delete command",
