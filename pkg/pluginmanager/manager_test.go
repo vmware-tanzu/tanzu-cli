@@ -595,44 +595,93 @@ func Test_DescribePlugin(t *testing.T) {
 	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
 }
 
+func checkPluginIsInstalled(name string, target configtypes.Target) bool {
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+	if err == nil {
+		for i := range installedPlugins {
+			if installedPlugins[i].Name == name &&
+				installedPlugins[i].Target == target {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func Test_DeletePlugin(t *testing.T) {
 	assertions := assert.New(t)
 
-	defer setupLocalDistroForTesting()()
+	defer setupPluginSourceForTesting()()
 
-	// Try to delete plugin when plugin is not installed
-	err := DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: configtypes.TargetTMC, ForceDelete: true})
+	setupTestPluginCatalog()
+
+	// Try to delete plugin when plugin is not installed without a target
+	err := DeletePlugin(DeletePluginOptions{PluginName: "invalid", Target: configtypes.TargetUnknown, ForceDelete: true})
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to find plugin 'cluster'")
+	assertions.Contains(err.Error(), "unable to find plugin 'invalid'")
+	assertions.NotContains(err.Error(), "for target")
 
-	// Install cluster package from TMC target
-	mockInstallPlugin(assertions, "myplugin", "v0.2.0", configtypes.TargetTMC)
-
-	// Try to Delete plugin after installing plugin
-	err = DeletePlugin(DeletePluginOptions{PluginName: "myplugin", Target: configtypes.TargetTMC, ForceDelete: true})
-	assertions.Nil(err)
-
-	// Install myplugin package from TMC target
-	mockInstallPlugin(assertions, "myplugin", "v0.2.0", configtypes.TargetTMC)
-
-	// Try to Delete plugin after installing plugin
-	err = DeletePlugin(DeletePluginOptions{PluginName: "myplugin", Target: "", ForceDelete: true})
-	assertions.Nil(err)
-
-	// Install the feature plugin for k8s
-	mockInstallPlugin(assertions, "feature", "v0.2.0", configtypes.TargetK8s)
-	// Try to delete the feature plugin but requesting the TMC target
-	err = DeletePlugin(DeletePluginOptions{PluginName: "feature", Target: configtypes.TargetTMC, ForceDelete: true})
+	// Try to delete plugin when plugin is not installed with a target
+	err = DeletePlugin(DeletePluginOptions{PluginName: "invalid", Target: configtypes.TargetTMC, ForceDelete: true})
 	assertions.NotNil(err)
-	assertions.Contains(err.Error(), "unable to find plugin 'feature' for target 'mission-control'")
+	assertions.Contains(err.Error(), "unable to find plugin 'invalid' for target 'mission-control'")
 
-	// Install myplugin package from TMC target
-	mockInstallPlugin(assertions, "myplugin", "v0.2.0", configtypes.TargetTMC)
-	// Install myplugin package from k8s target
-	mockInstallPlugin(assertions, "myplugin", "v1.6.0", configtypes.TargetK8s)
-	// Try to Delete plugin without passing target after installing plugin with different targets
-	err = DeletePlugin(DeletePluginOptions{PluginName: "myplugin", Target: "", ForceDelete: true})
-	assertions.Contains(err.Error(), fmt.Sprintf(missingTargetStr, "myplugin"))
+	// Try to Delete plugin present for two targets without specifying the target
+	assertions.True(checkPluginIsInstalled("cluster", configtypes.TargetK8s))
+	assertions.True(checkPluginIsInstalled("cluster", configtypes.TargetTMC))
+	err = DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: configtypes.TargetUnknown, ForceDelete: true})
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), fmt.Sprintf(missingTargetStr, "cluster"))
+
+	// Try to Delete one of the two plugins specifying the target
+	err = DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: configtypes.TargetTMC, ForceDelete: true})
+	assertions.Nil(err)
+	assertions.False(checkPluginIsInstalled("cluster", configtypes.TargetTMC))
+	assertions.True(checkPluginIsInstalled("cluster", configtypes.TargetK8s))
+
+	// Try to Delete plugin without specifying the target now that the other is deleted
+	err = DeletePlugin(DeletePluginOptions{PluginName: "cluster", Target: "", ForceDelete: true})
+	assertions.Nil(err)
+	assertions.False(checkPluginIsInstalled("cluster", configtypes.TargetTMC))
+	assertions.False(checkPluginIsInstalled("cluster", configtypes.TargetK8s))
+
+	// Try to delete a plugin with the wrong target
+	assertions.False(checkPluginIsInstalled("secret", configtypes.TargetTMC))
+	err = DeletePlugin(DeletePluginOptions{PluginName: "secret", Target: configtypes.TargetTMC, ForceDelete: true})
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to find plugin 'secret' for target 'mission-control'")
+	assertions.True(checkPluginIsInstalled("secret", configtypes.TargetK8s))
+
+	// Delete all plugins for the k8s target
+	assertions.True(checkPluginIsInstalled("secret", configtypes.TargetK8s))
+	assertions.True(checkPluginIsInstalled("management-cluster", configtypes.TargetK8s))
+	assertions.True(checkPluginIsInstalled("management-cluster", configtypes.TargetTMC))
+	err = DeletePlugin(DeletePluginOptions{PluginName: "all", Target: configtypes.TargetK8s, ForceDelete: true})
+	assertions.Nil(err)
+	assertions.False(checkPluginIsInstalled("secret", configtypes.TargetK8s))
+	assertions.False(checkPluginIsInstalled("management-cluster", configtypes.TargetK8s))
+	assertions.True(checkPluginIsInstalled("management-cluster", configtypes.TargetTMC))
+
+	// Delete all remaining plugins without specifying a target
+	err = DeletePlugin(DeletePluginOptions{PluginName: "all", Target: configtypes.TargetUnknown, ForceDelete: true})
+	assertions.Nil(err)
+	assertions.False(checkPluginIsInstalled("management-cluster", configtypes.TargetTMC))
+
+	// There should be no more plugins installed
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+	assertions.Nil(err)
+	assertions.Zero(len(installedPlugins))
+
+	// Try to delete all plugins again
+	err = DeletePlugin(DeletePluginOptions{PluginName: "all", Target: configtypes.TargetUnknown, ForceDelete: true})
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to find any installed plugins")
+	assertions.NotContains(err.Error(), "for target")
+
+	// Try to delete all plugins for a specific target again
+	err = DeletePlugin(DeletePluginOptions{PluginName: "all", Target: configtypes.TargetK8s, ForceDelete: true})
+	assertions.NotNil(err)
+	assertions.Contains(err.Error(), "unable to find any installed plugins for target 'kubernetes'")
 }
 
 func Test_SyncPlugins(t *testing.T) {

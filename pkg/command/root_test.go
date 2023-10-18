@@ -250,6 +250,22 @@ func TestSubcommands(t *testing.T) {
 		assert.Nil(t, err)
 		defer os.RemoveAll(dir)
 		os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
+
+		// Setup a temporary configuration.  This means no
+		// plugin source will be available which will prevent
+		// trying to install the essential plugins.
+		// This speeds up the test.
+		configFile, _ := os.CreateTemp("", "config")
+		os.Setenv("TANZU_CONFIG", configFile.Name())
+		defer os.RemoveAll(configFile.Name())
+
+		configFileNG, _ := os.CreateTemp("", "config_ng")
+		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+		defer os.RemoveAll(configFileNG.Name())
+
+		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+		os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
+
 		var completionType uint8
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
@@ -280,7 +296,7 @@ func TestSubcommands(t *testing.T) {
 				Group:            spec.cmdGroup,
 				Aliases:          []string{},
 				Hidden:           spec.hidden,
-				InstallationPath: filepath.Join(dir, spec.plugin),
+				InstallationPath: filepath.Join(dir, fmt.Sprintf("%s_%s", spec.plugin, string(spec.target))),
 				Target:           spec.target,
 			}
 			cc, err := catalog.NewContextCatalogUpdater("")
@@ -307,6 +323,10 @@ func TestSubcommands(t *testing.T) {
 			}
 		})
 		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 	}
 }
 
@@ -362,7 +382,7 @@ func TestEnvVarsSet(t *testing.T) {
 }
 
 func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGroup, completionType uint8, target configtypes.Target, postInstallResult uint8, hidden bool, aliases []string) error {
-	filePath := filepath.Join(dir, pluginName)
+	filePath := filepath.Join(dir, fmt.Sprintf("%s_%s", pluginName, string(target)))
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
 	if err != nil {
