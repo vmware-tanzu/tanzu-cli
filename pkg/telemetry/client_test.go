@@ -7,12 +7,14 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
@@ -191,6 +193,32 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 	})
 
 	Describe("when the command is plugin command", func() {
+		var (
+			configFile   *os.File
+			configFileNG *os.File
+		)
+		BeforeEach(func() {
+			configFile, err = os.CreateTemp("", "config")
+			Expect(err).To(BeNil())
+			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), configFile.Name())
+			Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
+			os.Setenv("TANZU_CONFIG", configFile.Name())
+
+			configFileNG, err = os.CreateTemp("", "config_ng")
+			Expect(err).To(BeNil())
+			os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+			err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), configFileNG.Name())
+			Expect(err).To(BeNil(), "Error while copying tanzu-ng config file for testing")
+
+			err = configlib.SetCLIId("fake-cli-id")
+			Expect(err).To(BeNil())
+		})
+		AfterEach(func() {
+			os.Unsetenv("TANZU_CONFIG")
+			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+			os.RemoveAll(configFile.Name())
+			os.RemoveAll(configFileNG.Name())
+		})
 
 		//Since cobra can only recognize the plugin command in the current plugin architecture, all the subcommands and flags are considered as args for the plugin command
 		Context("when plugin command has only args ", func() {
@@ -271,7 +299,10 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 				Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
 				Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
 				Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
-				Expect(metricsPayload.Endpoint).To(BeEmpty())
+
+				ctx, err := configlib.GetActiveContext(configtypes.ContextTypeK8s)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(metricsPayload.Endpoint).To(Equal(string(configtypes.ContextTypeK8s) + ":" + computeEndpointSHAForK8sContext(ctx)))
 				Expect(metricsPayload.NameArg).To(BeEmpty())
 
 				flagMap := make(map[string]string)
@@ -350,7 +381,10 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 					Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
 					Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
 					Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
-					Expect(metricsPayload.Endpoint).To(BeEmpty())
+
+					ctx, err := configlib.GetActiveContext(configtypes.ContextTypeK8s)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(metricsPayload.Endpoint).To(Equal(string(configtypes.ContextTypeK8s) + ":" + computeEndpointSHAForK8sContext(ctx)))
 					Expect(metricsPayload.NameArg).To(BeEmpty())
 
 					flagMap := make(map[string]string)
@@ -382,7 +416,10 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 					Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
 					Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
 					Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
-					Expect(metricsPayload.Endpoint).To(BeEmpty())
+
+					ctx, err := configlib.GetActiveContext(configtypes.ContextTypeK8s)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(metricsPayload.Endpoint).To(Equal(string(configtypes.ContextTypeK8s) + ":" + computeEndpointSHAForK8sContext(ctx)))
 					Expect(metricsPayload.NameArg).To(BeEmpty())
 
 					flagMap := make(map[string]string)
@@ -413,7 +450,10 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 					Expect(metricsPayload.PluginName).To(Equal("k8s-plugin1"))
 					Expect(metricsPayload.PluginVersion).To(Equal("1.0.0"))
 					Expect(metricsPayload.Target).To(Equal(string(configtypes.TargetK8s)))
-					Expect(metricsPayload.Endpoint).To(BeEmpty())
+
+					ctx, err := configlib.GetActiveContext(configtypes.ContextTypeK8s)
+					Expect(err).ToNot(HaveOccurred())
+					Expect(metricsPayload.Endpoint).To(Equal(string(configtypes.ContextTypeK8s) + ":" + computeEndpointSHAForK8sContext(ctx)))
 					Expect(metricsPayload.NameArg).To(BeEmpty())
 
 					flagMap := make(map[string]string)
