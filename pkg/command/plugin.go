@@ -345,8 +345,8 @@ func newDeletePluginCmd() *cobra.Command {
 	var deleteCmd = &cobra.Command{
 		Use:               "delete " + pluginNameCaps,
 		Short:             "Delete a plugin",
-		Long:              "Uninstalls the specified plugin",
-		ValidArgsFunction: completeInstalledPlugins,
+		Long:              "Uninstall the specified plugin or specify 'all' to uninstall all plugins of a target",
+		ValidArgsFunction: completeDeletePlugin,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			if len(args) != 1 {
 				return fmt.Errorf("must provide one plugin name as a positional argument")
@@ -357,9 +357,16 @@ func newDeletePluginCmd() *cobra.Command {
 				return errors.New(invalidTargetMsg)
 			}
 
+			target := getTarget()
+			if pluginName == cli.AllPlugins {
+				if target == configtypes.TargetUnknown {
+					return fmt.Errorf("the '%s' argument can only be used with the '--target' flag", cli.AllPlugins)
+				}
+			}
+
 			deletePluginOptions := pluginmanager.DeletePluginOptions{
 				PluginName:  pluginName,
-				Target:      getTarget(),
+				Target:      target,
 				ForceDelete: forceDelete,
 			}
 
@@ -368,7 +375,11 @@ func newDeletePluginCmd() *cobra.Command {
 				return err
 			}
 
-			log.Successf("successfully deleted plugin '%s'", pluginName)
+			if pluginName == cli.AllPlugins {
+				log.Successf("successfully deleted all plugins of target '%s'", target)
+			} else {
+				log.Successf("successfully deleted plugin '%s'", pluginName)
+			}
 			return nil
 		},
 	}
@@ -649,6 +660,37 @@ func completePluginVersions(_ *cobra.Command, args []string, _ string) ([]string
 		comps[len(versions)-1-i] = versions[i]
 	}
 	return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
+}
+
+func completeDeletePlugin(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 1 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	targetFlag := cmd.Flags().Lookup("target")
+	if len(args) == 1 {
+		if args[0] == cli.AllPlugins {
+			// With 'all' the '--target' flag must be used
+			if !targetFlag.Changed {
+				// The target flag needs to be used
+				return []string{"--target"}, cobra.ShellCompDirectiveNoFileComp
+			}
+		}
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var comps []string
+	compsForInstalledPlugins, directive := completeInstalledPlugins(cmd, args, toComplete)
+	if !targetFlag.Changed {
+		// Add the 'all' completion as the first one and ask the shell to preserve the order
+		comps = append(comps, "all\tAll plugins for a target. You will need to use the --target flag.")
+	} else {
+		target := configtypes.StringToTarget(targetFlag.Value.String())
+		// Add the 'all' completion as the first one and ask the shell to preserve the order
+		comps = append(comps, fmt.Sprintf("all\tAll plugins of target %s", target))
+	}
+	comps = append(comps, compsForInstalledPlugins...)
+	return comps, directive | cobra.ShellCompDirectiveKeepOrder
 }
 
 func completionAllPluginsFromLocal() []string {

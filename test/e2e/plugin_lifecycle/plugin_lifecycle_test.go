@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 )
@@ -132,13 +133,37 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(len(pluginsList)).Should(Equal(len(framework.PluginsForLifeCycleTests)), "plugins list should return all installed plugins")
 			Expect(framework.CheckAllPluginsExists(pluginsList, framework.PluginsForLifeCycleTests)).Should(BeTrue(), "the plugin list output is not same as the plugins being installed")
 		})
-		// Test case: delete all plugins which are installed, and validate by running list plugin command
-		It("delete all plugins and verify with plugin list", func() {
+		// Test case: delete all plugins which are installed for a specific target, and validate by running list plugin command
+		It("delete all plugins for target kubernetes and verify with plugin list", func() {
+			// count how many plugins are installed that are not for the k8s target
+			count := 0
 			for _, plugin := range framework.PluginsForLifeCycleTests {
-				err := tf.PluginCmd.DeletePlugin(plugin.Name, plugin.Target)
-				Expect(err).To(BeNil(), "should not get any error for plugin delete")
+				if plugin.Target != framework.KubernetesTarget {
+					count++
+				}
 			}
-			// validate above plugin delete with plugin list command, plugin list should return 0 plugins
+
+			err := tf.PluginCmd.DeletePlugin(cli.AllPlugins, framework.KubernetesTarget)
+			Expect(err).To(BeNil(), "should not get any error for plugin delete all")
+
+			// validate above plugin delete with plugin list command, plugin list should return 0 plugins of target kubernetes
+			pluginsList, err := framework.GetPluginsList(tf, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(len(pluginsList)).Should(Equal(count), "incorrect number of installed plugins after deleting")
+			for _, plugin := range pluginsList {
+				Expect(plugin.Target).To(Not(Equal(framework.KubernetesTarget)))
+			}
+		})
+		// Test case: delete all plugins which are installed, and validate by running list plugin command
+		It("delete all remaining plugins and verify with plugin list", func() {
+			for _, plugin := range framework.PluginsForLifeCycleTests {
+				if plugin.Target != framework.KubernetesTarget {
+					// We don't delete kubernetes plugins since they were all deleted in the previous step
+					err := tf.PluginCmd.DeletePlugin(plugin.Name, plugin.Target)
+					Expect(err).To(BeNil(), "should not get any error for plugin delete")
+				}
+			}
+			// validate above plugin delete with plugin list command, plugin list should return 1 plugin (the essential plugin)
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			// This is because essential plugins will always be installed
