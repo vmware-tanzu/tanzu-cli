@@ -295,6 +295,9 @@ func setupPluginSourceForTesting(t *testing.T) func() {
 	assert.Nil(t, err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 
+	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
+
 	// Setup a temporary cache directory
 	dir, err := os.MkdirTemp("", "cache")
 	assert.Nil(t, err)
@@ -321,6 +324,7 @@ func setupPluginSourceForTesting(t *testing.T) func() {
 		os.Unsetenv("TANZU_CONFIG")
 		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
 		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
-		os.Unsetenv("TEST_TANZU_CLI_USE_DB_CACHE_ONLY")
+		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 	}
 }
