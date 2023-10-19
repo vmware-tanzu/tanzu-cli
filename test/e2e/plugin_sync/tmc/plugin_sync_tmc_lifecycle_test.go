@@ -834,7 +834,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("plugin group search and plugin install by group when active context has issues", func() {
 			pgs, err := pl.SearchAllPluginGroups(tf)
 			Expect(err).To(BeNil())
-			err = tf.PluginCmd.InstallPluginsFromGroup("", pgs[0].Name)
+			_, _, err = tf.PluginCmd.InstallPluginsFromGroup("", pgs[0].Name)
 			Expect(err).To(BeNil(), "should be no error for plugin install by group")
 		})
 

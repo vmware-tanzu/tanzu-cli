@@ -133,7 +133,7 @@ func newGetCmd() *cobra.Command {
 			}
 
 			if outputFormat == "" || outputFormat == string(component.TableOutputType) {
-				displayGroupContentAsTable(groups[0], specifiedVersion, cmd.OutOrStdout())
+				displayGroupContentAsTable(groups[0], specifiedVersion, outputFormat, true, showNonMandatory, cmd.OutOrStdout())
 			} else {
 				displayGroupContentAsList(groups[0], cmd.OutOrStdout())
 			}
@@ -215,14 +215,14 @@ func displayGroupDetails(groups []*plugininventory.PluginGroup, writer io.Writer
 	component.NewObjectWriter(writer, outputFormat, details).Render()
 }
 
-func displayGroupContentAsTable(group *plugininventory.PluginGroup, specifiedVersion string, writer io.Writer) {
+func displayGroupContentAsTable(group *plugininventory.PluginGroup, specifiedVersion, outputFormat string, showPreText, showNonMandatory bool, writer io.Writer) {
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	cyanBoldItalic := color.New(color.FgCyan).Add(color.Bold, color.Italic)
 	outputStandalone := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
-
 	gID := plugininventory.PluginGroupToID(group)
-	_, _ = cyanBold.Fprintln(writer, "Plugins in Group: ", cyanBoldItalic.Sprintf("%s:%s", gID, group.RecommendedVersion))
-
+	if showPreText {
+		_, _ = cyanBold.Fprintln(writer, "Plugins in Group: ", cyanBoldItalic.Sprintf("%s:%s", gID, group.RecommendedVersion))
+	}
 	if showNonMandatory {
 		_, _ = cyanBold.Fprintln(writer, "\nStandalone Plugins")
 	}
