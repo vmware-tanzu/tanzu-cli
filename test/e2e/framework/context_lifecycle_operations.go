@@ -24,8 +24,8 @@ type ContextCmdOps interface {
 	ListContext(opts ...E2EOption) ([]*ContextListInfo, error)
 	// DeleteContext helps to run `context delete` command
 	DeleteContext(contextName string, opts ...E2EOption) (stdOutStr, stdErrStr string, err error)
-	// GetActiveContext returns current active context
-	GetActiveContext(targetType string, opts ...E2EOption) (string, error)
+	// GetActiveContext returns current active context for given context-type
+	GetActiveContext(contextType string, opts ...E2EOption) (string, error)
 	// GetActiveContexts returns all active contexts
 	GetActiveContexts(opts ...E2EOption) ([]*ContextListInfo, error)
 	// UnsetContext unsets the given context with 'tanzu context unset' and returns stdOut, stdErr and error
@@ -103,7 +103,7 @@ func (cc *contextCmdOps) GetActiveContexts(opts ...E2EOption) ([]*ContextListInf
 	if err != nil {
 		return contexts, err
 	}
-	for i, _ := range list {
+	for i := range list {
 		if list[i].Iscurrent == True {
 			contexts = append(contexts, list[i])
 		}

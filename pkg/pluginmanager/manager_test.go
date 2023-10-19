@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
@@ -717,6 +718,90 @@ func Test_SyncPlugins(t *testing.T) {
 	assertions.Equal(len(installedServerPlugins), len(serverPlugins))
 
 	for _, isp := range installedServerPlugins {
+		p := findDiscoveredPlugin(serverPlugins, isp.Name, isp.Target)
+		assertions.NotNil(p)
+	}
+}
+
+// TestSyncPluginsForK8SSpecificContextType tests to sync plugins for k8s specific ContextType only
+func TestSyncPluginsForK8SSpecificContextType(t *testing.T) {
+	assertions := assert.New(t)
+	ctx, err := configlib.GetActiveContext("k8s")
+	fmt.Println(ctx, err)
+	defer setupPluginSourceForTesting()()
+	execCommand = fakeInfoExecCommand
+	defer func() { execCommand = exec.Command }()
+
+	// Get the server plugins (they are not installed yet)
+	serverPlugins, err := DiscoverServerPlugins()
+	assertions.NotNil(err)
+	// There is an error for the kubernetes discovery since we don't have a cluster
+	// but other server plugins will be found, so we use those
+	assertions.Contains(err.Error(), `Failed to load Kubeconfig file from "config"`)
+	assertions.Equal(len(expectedDiscoveredContextPlugins), len(serverPlugins))
+	var k8sContextPlugins []*discovery.Discovered
+	for _, edp := range expectedDiscoveredContextPlugins {
+		p := findDiscoveredPlugin(serverPlugins, edp.Name, edp.Target)
+		assertions.NotNil(p)
+		assertions.Equal(common.PluginStatusNotInstalled, p.Status)
+		if p.Target == configtypes.TargetK8s {
+			k8sContextPlugins = append(k8sContextPlugins, p)
+		}
+	}
+
+	// Sync all available plugins
+	err = SyncPluginsForContextType(configtypes.ContextTypeK8s)
+	assertions.NotNil(err)
+	// There is an error for the kubernetes discovery since we don't have a cluster
+	// but other server plugins will be found, so we use those
+	assertions.Contains(err.Error(), `Failed to load Kubeconfig file from "config"`)
+
+	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
+	assertions.Nil(err)
+	assertions.Equal(len(installedServerPlugins), len(k8sContextPlugins))
+
+	for _, isp := range installedServerPlugins {
+		assertions.Equal(isp.Target, configtypes.TargetK8s)
+		p := findDiscoveredPlugin(serverPlugins, isp.Name, isp.Target)
+		assertions.NotNil(p)
+	}
+}
+
+// TestSyncPluginsForTMCSpecificContextType tests to sync plugins for tmc specific ContextType only
+func TestSyncPluginsForTMCSpecificContextType(t *testing.T) {
+	assertions := assert.New(t)
+
+	defer setupPluginSourceForTesting()()
+	execCommand = fakeInfoExecCommand
+	defer func() { execCommand = exec.Command }()
+
+	// Get the server plugins (they are not installed yet)
+	serverPlugins, err := DiscoverServerPlugins()
+	assertions.NotNil(err)
+	// There is an error for the kubernetes discovery since we don't have a cluster
+	// but other server plugins will be found, so we use those
+	assertions.Contains(err.Error(), `Failed to load Kubeconfig file from "config"`)
+	assertions.Equal(len(expectedDiscoveredContextPlugins), len(serverPlugins))
+	var tmcTargetPlugins []*discovery.Discovered
+	for _, edp := range expectedDiscoveredContextPlugins {
+		p := findDiscoveredPlugin(serverPlugins, edp.Name, edp.Target)
+		assertions.NotNil(p)
+		assertions.Equal(common.PluginStatusNotInstalled, p.Status)
+		if p.Target == configtypes.TargetTMC {
+			tmcTargetPlugins = append(tmcTargetPlugins, p)
+		}
+	}
+
+	// Sync all available plugins
+	err = SyncPluginsForContextType(configtypes.ContextTypeTMC)
+	assertions.Nil(err)
+
+	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
+	assertions.Nil(err)
+	assertions.Equal(len(installedServerPlugins), len(tmcTargetPlugins))
+
+	for _, isp := range installedServerPlugins {
+		assertions.Equal(isp.Target, configtypes.TargetTMC)
 		p := findDiscoveredPlugin(serverPlugins, isp.Name, isp.Target)
 		assertions.NotNil(p)
 	}
