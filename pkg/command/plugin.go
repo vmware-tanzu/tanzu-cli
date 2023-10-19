@@ -89,7 +89,7 @@ func newPluginCmd() *cobra.Command {
 	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
 	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("version", completePluginVersions))
 
-	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "delete the plugin without asking for confirmation")
+	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "uninstall the plugin without asking for confirmation")
 
 	completeTargets := func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
@@ -343,8 +343,9 @@ func newUpgradePluginCmd() *cobra.Command {
 
 func newDeletePluginCmd() *cobra.Command {
 	var deleteCmd = &cobra.Command{
-		Use:               "delete " + pluginNameCaps,
-		Short:             "Delete a plugin",
+		Use:               "uninstall " + pluginNameCaps,
+		Aliases:           []string{"delete"},
+		Short:             "Uninstall a plugin",
 		Long:              "Uninstall the specified plugin or specify 'all' to uninstall all plugins of a target",
 		ValidArgsFunction: completeDeletePlugin,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -376,9 +377,9 @@ func newDeletePluginCmd() *cobra.Command {
 			}
 
 			if pluginName == cli.AllPlugins {
-				log.Successf("successfully deleted all plugins of target '%s'", target)
+				log.Successf("successfully uninstalled all plugins of target '%s'", target)
 			} else {
-				log.Successf("successfully deleted plugin '%s'", pluginName)
+				log.Successf("successfully uninstalled plugin '%s'", pluginName)
 			}
 			return nil
 		},

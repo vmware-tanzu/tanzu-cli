@@ -108,7 +108,7 @@ tanzu <plugin> info
 To remove a plugin:
 
 ```sh
-tanzu plugin delete <plugin-name>
+tanzu plugin uninstall <plugin-name>
 ```
 
 ## Context
