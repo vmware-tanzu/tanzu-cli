@@ -21,9 +21,9 @@ As a plugin developer, I want to,
 
 As a user, I want to,
 
-- Install the recommended version of all plugins for the current context during context create
-- Install the recommended version of any missing plugin for the current context via a `plugin sync` command
-- Upgrade all installed plugins to newer versions via a `plugin sync` command, if the installed versions are not supported anymore
+- Install the recommended version of all plugins for the active context during context create
+- Install the recommended version of any missing plugin for the active context via a `tanzu plugin sync` command
+- Upgrade all installed plugins to newer versions via a `tanzu plugin sync` command, if the installed versions are not supported anymore
 - Avoid re-downloading a plugin version if it was already installed previously (e.g., if the same version of the `package` plugin is provided by two management clusters, do not re-download that plugin)
 
 ## Plugin Discovery and Distribution

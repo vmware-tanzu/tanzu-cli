@@ -4,48 +4,35 @@ This document aims to provide a general overview of the Tanzu CLI architecture.
 
 ## Definition
 
-_Plugin_ - The CLI consists of plugins, each being a cmd developed in Go and conforming to Cobra CLI standard.
+**_Plugin_** - The CLI consists of plugins, each being a cmd developed in Go and conforming to Cobra CLI standard.
 
-_Context_ - An isolated scope of relevant client-side configurations for a combination of user identity and server identity.
+**_Context_** - An isolated scope of relevant client-side configurations for a combination of user identity and server identity.
 
-_Target_ - Target is a top level entity used to make the control plane, that a user is interacting against, more explicit in command invocations.
+**_Context-Type_** - Type of control plane or cluster or service that the user connects to.  The currently supported context types are: “kubernetes” (e.g., TKG, a vanilla workload cluster, TAP-enabled workload cluster, etc…), “mission-control” (for TMC SaaS endpoints), "application-engine" (for TAE endpoints)
 
-_DiscoverySource_ - Represents a group of plugin artifacts and their distribution details that are installable by the Tanzu CLI.
+**_Target_** - Represents a group of Tanzu CLI Plugins that are of the same category (generally talking to similar endpoints) and are represented as the `tanzu <target-name> <plugin-name>` command.
 
-_Catalog_ - A catalog holds the information of all currently installed plugins on a host OS.
+**_DiscoverySource_** - Represents a group of plugin artifacts and their distribution details that are installable by the Tanzu CLI.
+
+**_Catalog_** - A catalog holds the information of all currently installed plugins on a host OS.
 
 ## Plugins
 
-The CLI is based on a plugin architecture. This architecture enables teams to build, own, and release their own piece of functionality as well as enable external partners to integrate with the system.
+The CLI is based on a plugin architecture. This architecture enables teams to build, own, and release their piece of functionality as well as enable external partners to integrate with the system.
 
-There are two category of plugins that are determined based on Plugin Discovery. Standalone Plugins and Context-Scoped Plugins
+Two categories of plugins are determined based on Plugin Discovery. Standalone Plugins and Context-Scoped Plugins
 
 ## Plugin Discovery
 
-A plugin discovery points to a group of plugin artifacts that are installable by the Tanzu CLI. It uses an interface to fetch the list of available plugins, their supported versions and how to download them.
+A plugin discovery points to a group of plugin artifacts that are installable by the Tanzu CLI. It uses an interface to fetch the list of available plugins, their supported versions, and how to download them.
 
-There are two types of plugin discovery: Standalone Discovery and Context-Scoped Discovery.
+To install a plugin, the CLI uses an OCI discovery source, which contains
+the inventory of plugins including metadata for each plugin. This plugin inventory
+also includes the location from which a plugin's binary can be downloaded.
 
-Standalone Discovery: Independent of the CLI context. E.g. OCI based plugin discovery not associated with any context
+More details about the centralized plugin discovery can be found [here](../dev/centralized_plugin_discovery.md).
 
-Context-Scoped Discovery - Associated with a context (generally active context) E.g., the CLIPlugin API in a kubernetes cluster
-
-Standalone Plugins: Plugins that are discovered through standalone discovery source
-
-Context-Scoped Plugins: Plugins that are discovered through context-scoped discovery source
-
-The `tanzu plugin source` command is applicable to standalone plugin discovery only.
-
-Adding discovery sources to tanzu configuration file:
-
-```sh
-# Add a local discovery source. If URI is relative path,
-# $HOME/.config/tanzu-plugins will be considered based path
-tanzu plugin source add --name standalone-local --type local --uri path/to/local/discovery
-
-# Add an OCI discovery source. URI should be an OCI image.
-tanzu plugin source add --name standalone-oci --type oci --uri projects.registry.vmware.com/tkg/tanzu-plugins/standalone:latest
-```
+The `tanzu plugin source` command is used for configuring the discovery sources.
 
 Listing available discovery sources:
 
@@ -56,42 +43,34 @@ tanzu plugin source list
 Update a discovery source:
 
 ```sh
-# Update a local discovery source. If URI is relative path,
-# $HOME/.config/tanzu-plugins will be considered based path
-tanzu plugin source update standalone-local --type local --uri new/path/to/local/discovery
-
-# Update an OCI discovery source. URI should be an OCI image.
-tanzu plugin source update standalone-oci --type oci --uri projects.registry.vmware.com/tkg/tanzu-plugins/standalone:v1.0
-```
-
-Delete a discovery source:
-
-```sh
-tanzu plugin source delete standalone-oci
+# Update the discovery source for an air-gapped scenario. The URI must be an OCI image.
+tanzu plugin source update default --uri registry.example.com/tanzu/plugin-inventory:latest`
 ```
 
 Sample tanzu configuration file after adding discovery:
 
 ```yaml
 apiVersion: config.tanzu.vmware.com/v1alpha1
-clientOptions:
-  cli:
-    discoverySources:
-    - local:
-        name: standalone-local
-        path: new/path/to/local/discovery
+cli:
+  ceipOptIn: "false"
+  eulaStatus: accepted
+  discoverySources:
     - oci:
-        name: standalone-oci
-        image: projects.registry.vmware.com/tkg/tanzu-plugins/standalone:v1.0
+        name: default
+        image: registry.example.com/tanzu/plugin-inventory:latest
 ```
 
-To list all the available plugin that are getting discovered:
+To list all the available plugins that are getting discovered:
 
 ```sh
-tanzu plugin list
+tanzu plugin search
 ```
 
-It will list the plugins from all the discoveries found in the local config file.
+To install a plugin:
+
+```sh
+tanzu plugin install <plugin-name>
+```
 
 To describe a plugin use:
 
@@ -105,7 +84,7 @@ To see specific plugin information:
 tanzu <plugin> info
 ```
 
-To remove a plugin:
+To uninstall a plugin:
 
 ```sh
 tanzu plugin uninstall <plugin-name>
@@ -115,23 +94,19 @@ tanzu plugin uninstall <plugin-name>
 
 Context is an isolated scope of relevant client-side configurations for a combination of user identity and server identity.
 There can be multiple contexts for the same combination of `(user, server)`. Previously, this was referred to as `Server` in the Tanzu CLI.
-Going forward we shall refer to them as `Context` to be explicit. Also, the context can be managed at one place using the `tanzu context` command.
-Earlier, this was distributed between the `tanzu login` command and `tanzu config server` command.
+Going forward we shall refer to them as `Context` to be explicit. Also, the context can be managed in one place using the `tanzu context` command.
+Earlier, this was distributed between the `tanzu login` command and the `tanzu config server` command.
 
-- Each `Context` is associated with a `Target`.
-- While multiple contexts can be associated with a target.
-- There is at most one context that is active for each target.
-
-More details regarding Target is available in next section.
+- Each `Context` has a type associated with it which is specified with `ContextType`.
 
 Create a new context:
 
 ```sh
-# Deprecated: Login to TKG management cluster by using kubeconfig path and context for the management cluster
+# Deprecated: Login to the TKG management cluster by using the kubeconfig path and context for the management cluster
 tanzu login --kubeconfig path/to/kubeconfig --context context-name --name mgmt-cluster
 
 # New Command
-tanzu context create --kubeconfig path/to/kubeconfig --kubecontext context-name --name mgmt-cluster
+tanzu context create --kubeconfig path/to/kubeconfig --kubecontext context-name --name mgmt-cluster --type kubernetes
 ```
 
 List known contexts:
@@ -164,23 +139,59 @@ tanzu login mgmt-cluster
 tanzu context use mgmt-cluster
 ```
 
+## Context-Type
+
+Context Type represents a type of control plane or service that the user connects to.
+
+The Tanzu CLI supports three context types: `kubernetes` (e.g., TKG, a vanilla workload cluster, TAP-enabled workload cluster, etc), `mission-control` (for TMC SaaS endpoints), and `application-engine`` (for TAE endpoints).
+
+Plugins use Tanzu Plugin Runtime API to find the kubeconfig or other credentials to connect to the endpoint.
+
+When creating a new context with Tanzu CLI, the user can pass the optional `--type` flag along with the `tanzu context create` command to specify the type of the context.
+
+```sh
+# Create a TKG management cluster context using endpoint and type (--type is optional, if not provided the CLI will infer the type from the endpoint)
+tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port] --type k8s
+
+# Create an Application Engine (TAE) context with the default endpoint (--type is not necessary for the default endpoint)
+tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com
+
+# Create an Application Engine (TAE) context (--type is needed for a non-default endpoint)
+tanzu context create mytae --endpoint https://non-default.tae.endpoint.com --type application-engine
+```
+
+To list the available contexts, the user can run the `tanzu context list` command and it will show the following details:
+
+```sh
+tanzu context list
+  NAME        ISACTIVE  TYPE                ENDPOINT                            KUBECONFIGPATH             KUBECONTEXT            PROJECT  SPACE
+  tkg-mc      false     kubernetes                                              /Users/abc/.kube/config
+  tmc-ctx-1   false     mission-control     https://tmc.cloud.vmware.com        n/a                        n/a                    n/a      n/a
+  tanzu-ctx-1 true      application-engine  https://api.tanzu.cloud.vmware.com  /Users/abc/.kube/config    tanzu-cli-tanzu-ctx-1
+```
+
+To make a context active, the user can run the `tanzu context use <context-name>` command.
+
+Only one context of any type can be active at a time. So, if the user runs `tanzu context use tkg-mc`, it will make `tkg-mc` as an active context and mark `tanzu-ctx-1` inactive.
+Note: For backward compatibility reasons, one `mission-control` context can be active along with other contexts.
+
 ## Target
 
-Target is a top level entity used to make the control plane, that a user is interacting against, more explicit in command invocations.
-This is done by creating a separate target specific command under root level command for Tanzu CLI. e.g. `tanzu <target>`
+Target represents a group of Tanzu CLI Plugins that are of the same category (generally talking to similar endpoints) and are represented as the `tanzu <target-name> <plugin-name>` command.
+  
+The Tanzu CLI supports three targets: `global`, `kubernetes` (alias `k8s`), and `mission-control` (alias `tmc`).
 
-The Tanzu CLI supports two targets: `kubernetes` (alias `k8s`), `mission-control` (alias `tmc`). To respect backwards-compatibility, when no target command is specified, the kubernetes target is used automatically.
+Each plugin is associated with one of the above targets. `global`` is a special target that links the plugin under the root tanzu cli command.
 
-Target of a plugin is determined differently for Standalone Plugins and Context-Scoped plugins.
+Below are some examples of plugin invocation commands formed for different targets:
 
-For Standalone Plugins, the target is determined based on `target` field defined in `CLIPlugin` CR as part of the discovery API.
+- PluginName: `foo`, Target: `kubernetes`, Commnd: `tanzu kubernetes foo`
+- PluginName: `bar`, Target: `mission-control`, Commnd: `tanzu mission-control bar`
+- PluginName: `baz`, Target: `global`, Commnd: `tanzu baz`
 
-For Context-scoped Plugins, the target is determined based on the `target` associated with Context itself.
-E.g. all plugins discovered through the Context `test-context` will have the same target that is associated with the `test-context`.
+For backward compatibility reasons, the plugins with the `kubernetes` target are also available under the root `tanzu` command along with the `tanzu kubernetes` command.
 
-Using the target concept, we can differentiate between listing TKG workload clusters or TMC workload clusters.
-
-To list TKG workload clusters using the TKG cluster plugin which is associated with the kubernetes target:
+To list TKG workload clusters using the TKG cluster plugin which is associated with the `kubernetes` target:
 
 ```sh
 # Without target grouping (a TKG management cluster is set as the current active server)
@@ -190,7 +201,7 @@ tanzu cluster list
 tanzu kubernetes cluster list
 ```
 
-To list TMC workload clusters using the TMC cluster plugin which is associated with the tmc target:
+To list TMC workload clusters using the TMC cluster plugin which is associated with the `mission-control` target:
 
 ```sh
 # With target grouping
@@ -217,7 +228,7 @@ The catalog gets built while installing or upgrading any plugins by executing th
 
 When the root `tanzu` command is executed it gathers the plugin descriptors from the catalog for all the installed plugins and builds cobra commands for each one.
 
-When this plugin specific commands are invoked, Core CLI simply executes the plugin binary for the associated plugins and passes along stdout/in/err and any environment variables.
+When these plugin-specific commands are invoked, Core CLI simply executes the plugin binary for the associated plugins and passes along stdout/in/err and any environment variables.
 
 ## Versioning
 
@@ -243,7 +254,7 @@ Currently, updating plugin groups is not available to end users as new groups mu
 
 ## Testing
 
-Every plugin requires a test which the compiler enforces. Plugin tests are a nested binary under the plugin which should implement the test framework.
+Every plugin requires a test that the compiler enforces. Plugin tests are a nested binary under the plugin which should implement the test framework.
 
 Plugin tests can be run by installing the admin test plugin, which provides the ability to run tests for any of the currently installed plugins. It will fetch the test binaries for each plugin from its respective repo.
 
@@ -263,7 +274,7 @@ In the future, we should have every plugin implement a `docs` command which outp
 
 ## Builder
 
-The builder admin plugin is a means to build Tanzu CLI plugins. Builder provides a set of commands to bootstrap plugin repositories, add commands to them and compile them into an artifacts directory
+The builder admin plugin is a means to build Tanzu CLI plugins. Builder provides a set of commands to bootstrap plugin repositories, add commands to them, and compile them into an artifacts directory
 
 Initialize a plugin repo:
 
