@@ -963,19 +963,19 @@ func DeletePlugin(options DeletePluginOptions) error {
 	if !options.ForceDelete {
 		if options.PluginName == cli.AllPlugins {
 			if options.Target == configtypes.TargetUnknown {
-				if err := component.AskForConfirmation("All plugins will be deleted. Are you sure?"); err != nil {
+				if err := component.AskForConfirmation("All plugins will be uninstalled. Are you sure?"); err != nil {
 					return err
 				}
 			} else {
 				if err := component.AskForConfirmation(
-					fmt.Sprintf("All plugins for target '%s' will be deleted. Are you sure?",
+					fmt.Sprintf("All plugins for target '%s' will be uninstalled. Are you sure?",
 						string(options.Target))); err != nil {
 					return err
 				}
 			}
 		} else {
 			if err := component.AskForConfirmation(
-				fmt.Sprintf("Deleting plugin '%s' for target '%s'. Are you sure?",
+				fmt.Sprintf("Uninstalling plugin '%s' for target '%s'. Are you sure?",
 					options.PluginName, string(uniqueTarget))); err != nil {
 				return err
 			}
@@ -1023,7 +1023,7 @@ func doDeletePluginsFromCatalog(plugins []cli.PluginInfo) error {
 	}
 
 	for i := range plugins {
-		log.Infof("Deleting plugin '%s' for target '%s'", plugins[i].Name, plugins[i].Target)
+		log.Infof("Uninstalling plugin '%s' for target '%s'", plugins[i].Name, plugins[i].Target)
 	}
 	return kerrors.NewAggregate(errList)
 }

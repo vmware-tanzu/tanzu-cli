@@ -241,7 +241,7 @@ plugin was previously installed through a legacy version of the CLI.
 If the user needs to continue using any legacy Tanzu CLI for a while,
 it is preferable to keep the `login` plugin installed, as it is needed
 for such CLIs.  Once the user no longer needs any legacy CLI, they
-can run `tanzu plugin delete login` to remove this plugin for the new CLI.
+can run `tanzu plugin uninstall login` to remove this plugin for the new CLI.
 
 The second change to the `tanzu login` command is that it is now deprecated
 and therefore no longer shown in the help text when running `tanzu -h`.

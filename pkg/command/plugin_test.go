@@ -318,7 +318,7 @@ func TestDeletePlugin(t *testing.T) {
 						assert.Equal(false, exists)
 					}
 
-					// tanzu plugin delete does not remove the binary
+					// tanzu plugin uninstall does not remove the binary
 					_, err := os.Stat(filepath.Join(dir, fmt.Sprintf("%s_%s", spec.plugins[i], string(spec.targets[i]))))
 					assert.Nil(err)
 				}
@@ -693,11 +693,11 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: ":4\n",
 		},
 		// =====================
-		// tanzu plugin delete
+		// tanzu plugin uninstall
 		// =====================
 		{
-			test: "completion for the plugin delete command",
-			args: []string{"__complete", "plugin", "delete", ""},
+			test: "completion for the plugin uninstall command",
+			args: []string{"__complete", "plugin", "uninstall", ""},
 			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
 			expected: "all\tAll plugins for a target. You will need to use the --target flag.\n" +
 				"cluster\tMultiple entries for plugin cluster. You will need to use the --target flag.\n" +
@@ -707,8 +707,8 @@ func TestCompletionPlugin(t *testing.T) {
 				":36\n",
 		},
 		{
-			test: "completion for the plugin delete command using --target",
-			args: []string{"__complete", "plugin", "delete", "--target", "k8s", ""},
+			test: "completion for the plugin uninstall command using --target",
+			args: []string{"__complete", "plugin", "uninstall", "--target", "k8s", ""},
 			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
 			expected: "all\tAll plugins of target kubernetes\n" +
 				"cluster\tTarget: kubernetes for cluster\n" +
