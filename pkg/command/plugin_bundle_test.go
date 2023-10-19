@@ -40,13 +40,13 @@ func TestCompletionPluginBundle(t *testing.T) {
 			test: "no completion after the download-bundle command with --to-tar",
 			args: []string{"__complete", "plugin", "download-bundle", "--to-tar", "plugin.tar", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "no completion after the download-bundle command with --dry-run",
 			args: []string{"__complete", "plugin", "download-bundle", "--dry-run", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion of flags after the download-bundle command with --image",
@@ -59,7 +59,7 @@ func TestCompletionPluginBundle(t *testing.T) {
 			test: "no completion for the --image flag value of the download-bundle command",
 			args: []string{"__complete", "plugin", "download-bundle", "--image", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ Please enter the URI of the plugin discovery image providing the plugins\n:4\n",
 		},
 		{
 			test: "file completion for the --to-tar flag value of the download-bundle command",
@@ -68,8 +68,9 @@ func TestCompletionPluginBundle(t *testing.T) {
 			expected: ":0\n",
 		},
 		{
-			test:                  "completion for the --group flag value for the group name part of the download-bundle command",
-			args:                  []string{"__complete", "plugin", "download-bundle", "--group", ""},
+			test: "completion for the --group flag value for the group name part of the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--group", ""},
+			// This command should trigger downloading an OCI plugin inventory image
 			imageMustBeDownloaded: true,
 			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
 			expected: "vmware-tap/default\tPlugins for TAP\n" +
@@ -77,8 +78,9 @@ func TestCompletionPluginBundle(t *testing.T) {
 				":6\n",
 		},
 		{
-			test:                  "completion for the --group flag value for the version part of the download-bundle command",
-			args:                  []string{"__complete", "plugin", "download-bundle", "--group", "vmware-tkg/default:"},
+			test: "completion for the --group flag value for the version part of the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--group", "vmware-tkg/default:"},
+			// This command should trigger downloading an OCI plugin inventory image
 			imageMustBeDownloaded: true,
 			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
 			expected: "vmware-tkg/default:v2.2.2\n" +
@@ -87,8 +89,18 @@ func TestCompletionPluginBundle(t *testing.T) {
 				":36\n",
 		},
 		{
-			test:                  "completion for the --group flag value for the group name part of the download-bundle command with --image",
-			args:                  []string{"__complete", "plugin", "download-bundle", "--image", "example.com/image:latest", "--group", ""},
+			test: "completion for the --group flag value for the version part of an invalid group for the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--group", "invalid:"},
+			// This command should trigger downloading an OCI plugin inventory image
+			imageMustBeDownloaded: true,
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "_activeHelp_ There is no group named: 'invalid'\n" +
+				":36\n",
+		},
+		{
+			test: "completion for the --group flag value for the group name part of the download-bundle command with --image",
+			args: []string{"__complete", "plugin", "download-bundle", "--image", "example.com/image:latest", "--group", ""},
+			// This command should trigger downloading an OCI plugin inventory image
 			imageMustBeDownloaded: true,
 			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
 			expected: "vmware-tap/default\tPlugins for TAP\n" +
@@ -96,8 +108,9 @@ func TestCompletionPluginBundle(t *testing.T) {
 				":6\n",
 		},
 		{
-			test:                  "completion for the --group flag value for the version part of the download-bundle command with --image",
-			args:                  []string{"__complete", "plugin", "download-bundle", "--image", "example.com/image:latest", "--group", "vmware-tkg/default:"},
+			test: "completion for the --group flag value for the version part of the download-bundle command with --image",
+			args: []string{"__complete", "plugin", "download-bundle", "--image", "example.com/image:latest", "--group", "vmware-tkg/default:"},
+			// This command should trigger downloading an OCI plugin inventory image
 			imageMustBeDownloaded: true,
 			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
 			expected: "vmware-tkg/default:v2.2.2\n" +
@@ -115,10 +128,10 @@ func TestCompletionPluginBundle(t *testing.T) {
 			expected: ":0\n",
 		},
 		{
-			test: "completion for the --group flag value for the version part of the download-bundle command",
+			test: "completion for the --to-repo flag value for the upload-bundle command",
 			args: []string{"__complete", "plugin", "upload-bundle", "--tar", "plugin.tar", "--to-repo", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ Please enter the URI of the destination repository for publishing plugins\n:4\n",
 		},
 		{
 			test: "flag completion after the upload-bundle command when no flags are present",
@@ -139,7 +152,7 @@ func TestCompletionPluginBundle(t *testing.T) {
 			test: "no completion after the upload-bundle command when all flags are present",
 			args: []string{"__complete", "plugin", "upload-bundle", "--tar", "plugin.tar", "--to-repo", "repo", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 	}
 

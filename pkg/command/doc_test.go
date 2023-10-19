@@ -19,7 +19,7 @@ func TestCompletionGenerateDocs(t *testing.T) {
 			test: "no completion for the generate-all-docs command",
 			args: []string{"__complete", "generate-all-docs", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "file completion for the generate-all-docs --docs-dir flag",

@@ -212,7 +212,7 @@ func TestCompletionConfig(t *testing.T) {
 			test: "no completion for the config get command",
 			args: []string{"__complete", "config", "get", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// ======================
 		// tanzu config set
@@ -238,7 +238,7 @@ func TestCompletionConfig(t *testing.T) {
 			test: "no completion after the second arg for the config set command",
 			args: []string{"__complete", "config", "set", "env.VAR", "val", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// ======================
 		// tanzu config unset
@@ -257,7 +257,7 @@ func TestCompletionConfig(t *testing.T) {
 			test: "no completion after the first arg for the config unset command",
 			args: []string{"__complete", "config", "unset", "env.VAR", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// ======================
 		// tanzu config init
@@ -266,7 +266,7 @@ func TestCompletionConfig(t *testing.T) {
 			test: "no completion for the config init command",
 			args: []string{"__complete", "config", "init", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 	}
 

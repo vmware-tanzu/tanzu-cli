@@ -74,7 +74,7 @@ func TestCompletionVersion(t *testing.T) {
 			test: "no completion for the version command",
 			args: []string{"__complete", "version", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 	}
 

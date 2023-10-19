@@ -185,10 +185,14 @@ func initCreateCtxCmd() {
 	utils.PanicOnErr(createCtxCmd.Flags().MarkDeprecated("name", "it has been replaced by using an argument to the command"))
 
 	createCtxCmd.Flags().StringVar(&endpoint, "endpoint", "", "endpoint to create a context for")
-	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("endpoint", cobra.NoFileCompletions))
+	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("endpoint", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return cobra.AppendActiveHelp(nil, "Please enter the endpoint for which to create the context"), cobra.ShellCompDirectiveNoFileComp
+	}))
 
 	createCtxCmd.Flags().StringVar(&apiToken, "api-token", "", "API token for the SaaS context")
-	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("api-token", cobra.NoFileCompletions))
+	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("api-token", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return cobra.AppendActiveHelp(nil, fmt.Sprintf("Please enter your api-token (you can instead set the variable %s)", config.EnvAPITokenKey)), cobra.ShellCompDirectiveNoFileComp
+	}))
 
 	// Shell completion for this flag is the default behavior of doing file completion
 	createCtxCmd.Flags().StringVar(&kubeConfig, "kubeconfig", "", "path to the kubeconfig file; valid only if user doesn't choose 'endpoint' option.(See [*])")
@@ -777,7 +781,7 @@ func vSphereSupervisorLogin(endpoint string) (mergeFilePath, currentContext stri
 var listCtxCmd = &cobra.Command{
 	Use:               "list",
 	Short:             "List contexts",
-	ValidArgsFunction: cobra.NoFileCompletions,
+	ValidArgsFunction: noMoreCompletions,
 	RunE:              listCtx,
 }
 
@@ -1373,7 +1377,7 @@ func getContextType() configtypes.ContextType {
 // ====================================
 func completeAllContexts(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
 
 	cfg, err := config.GetClientConfig()
@@ -1394,7 +1398,7 @@ func completeAllContexts(_ *cobra.Command, args []string, _ string) ([]string, c
 
 func completeTAEContexts(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
 
 	cfg, err := config.GetClientConfig()
@@ -1413,7 +1417,7 @@ func completeTAEContexts(_ *cobra.Command, args []string, _ string) ([]string, c
 
 func completeActiveContexts(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
 
 	currentCtxMap, err := config.GetAllActiveContextsMap()

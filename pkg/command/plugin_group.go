@@ -50,7 +50,7 @@ func newSearchCmd() *cobra.Command {
 		Short:             "Search for available plugin-groups",
 		Long:              "Search from the list of available plugin-groups.  A plugin-group provides a list of plugin name/version combinations which can be installed in one step.",
 		Args:              cobra.MaximumNArgs(0),
-		ValidArgsFunction: cobra.NoFileCompletions,
+		ValidArgsFunction: noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var criteria *discovery.GroupDiscoveryCriteria
 			if groupID != "" {
@@ -273,7 +273,7 @@ func displayGroupContentAsList(group *plugininventory.PluginGroup, writer io.Wri
 // ====================================
 func completeGroupGet(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
 	return completeGroupsAndVersion(cmd, args, toComplete)
 }
@@ -311,13 +311,7 @@ func completeGroupsAndVersion(cmd *cobra.Command, _ []string, toComplete string)
 		// The gID is already specified before the :
 		// so now we should complete the gID version
 		gID := toComplete[:idx]
-		versionToComplete := toComplete[idx+1:]
-		versions, directive := completeGroupVersions(cmd, []string{gID}, versionToComplete)
-		for _, v := range versions {
-			comps = append(comps, fmt.Sprintf("%s:%s", gID, v))
-		}
-
-		return comps, directive
+		return completeGroupVersions(cmd, gID)
 	}
 
 	// We need to complete a group name.
@@ -327,14 +321,11 @@ func completeGroupsAndVersion(cmd *cobra.Command, _ []string, toComplete string)
 	return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 }
 
-func completeGroupVersions(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	if len(args) != 1 {
-		return nil, cobra.ShellCompDirectiveError
-	}
-	gID := args[0]
+func completeGroupVersions(_ *cobra.Command, gID string) ([]string, cobra.ShellCompDirective) {
 	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(gID)
 	if groupIdentifier == nil {
-		return nil, cobra.ShellCompDirectiveError
+		comps := cobra.AppendActiveHelp(nil, fmt.Sprintf("Invalid group format: '%s'", gID))
+		return comps, cobra.ShellCompDirectiveNoFileComp
 	}
 
 	criteria := &discovery.GroupDiscoveryCriteria{
@@ -346,8 +337,13 @@ func completeGroupVersions(_ *cobra.Command, args []string, toComplete string) (
 	groups, err := pluginmanager.DiscoverPluginGroups(
 		discovery.WithGroupDiscoveryCriteria(criteria),
 		discovery.WithUseLocalCacheOnly())
-	if err != nil || len(groups) == 0 {
+	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
+	}
+
+	if len(groups) == 0 {
+		comps := cobra.AppendActiveHelp(nil, fmt.Sprintf("There is no group named: '%s'", gID))
+		return comps, cobra.ShellCompDirectiveNoFileComp
 	}
 
 	// Since more recent versions are more likely to be
@@ -364,7 +360,8 @@ func completeGroupVersions(_ *cobra.Command, args []string, toComplete string) (
 	// Create the completions in reverse order
 	comps := make([]string, len(versions))
 	for i := range versions {
-		comps[len(versions)-1-i] = versions[i]
+		comps[len(versions)-1-i] = fmt.Sprintf("%s:%s", gID, versions[i])
 	}
+
 	return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 }

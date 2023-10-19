@@ -400,17 +400,23 @@ func TestCompletionPluginSource(t *testing.T) {
 		args     []string
 		expected string
 	}{
+		// ========================
+		// tanzu plugin source init
+		// ========================
 		{
 			test: "no completion after the source init command",
 			args: []string{"__complete", "plugin", "source", "init", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
+		// ========================
+		// tanzu plugin source list
+		// ========================
 		{
 			test: "no completion after the source list command",
 			args: []string{"__complete", "plugin", "source", "list", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --output flag value",
@@ -418,6 +424,9 @@ func TestCompletionPluginSource(t *testing.T) {
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: expectedOutForOutputFlag + ":4\n",
 		},
+		// ==========================
+		// tanzu plugin source update
+		// ==========================
 		{
 			test: "completion for the source update command",
 			args: []string{"__complete", "plugin", "source", "update", ""},
@@ -428,11 +437,29 @@ func TestCompletionPluginSource(t *testing.T) {
 				":4\n",
 		},
 		{
-			test: "no completion after the first arg of the source update command",
-			args: []string{"__complete", "plugin", "source", "update", "default", "-u", "someURI", ""},
+			test: "completion after the first arg of the source update command without --uri",
+			args: []string{"__complete", "plugin", "source", "update", "default", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "--uri\tURI for discovery source. The URI must be of an OCI image\n" +
+				"-u\tURI for discovery source. The URI must be of an OCI image\n" +
+				":4\n",
 		},
+		{
+			test: "no completion after the first arg of the source update command with --uri",
+			args: []string{"__complete", "plugin", "source", "update", "default", "--uri", "someURI", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
+		},
+		{
+			test: "completion of the --uri flag value for the source update command",
+			args: []string{"__complete", "plugin", "source", "update", "default", "--uri", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ Please enter the uri of the OCI image for plugin discovery\n:4\n",
+		},
+		// ==========================
+		// tanzu plugin source delete
+		// ==========================
+
 		{
 			test: "completion for the source delete command",
 			args: []string{"__complete", "plugin", "source", "delete", ""},
@@ -444,7 +471,7 @@ func TestCompletionPluginSource(t *testing.T) {
 			test: "no completion after the first arg of the source delete command",
 			args: []string{"__complete", "plugin", "source", "delete", "default", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 	}
 
