@@ -35,6 +35,8 @@ var _ = Describe("Unit tests for kubeconfig use cases", func() {
 			kubeconfigFilePath3 = "../../../fakes/config/kubeconfig3_temp_rnhwe.yaml"
 			validateKubeconfig(kubeconfigFilePath, 3, "foo-context")
 			validateKubeconfig(kubeconfigFilePath2, 1, "baz-context")
+		})
+		AfterEach(func() {
 			deleteTempFile(kubeconfigFilePath3)
 		})
 		It("should merge with existing kubeconf file without switching context", func() {
