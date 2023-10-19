@@ -476,8 +476,6 @@ func TestCompletionPlugin(t *testing.T) {
 	// Test local discovery
 	localSourcePath := filepath.Join("..", "fakes", "plugins", cli.GOOS, cli.GOARCH)
 
-	expectedOutforTargetFlag := compGlobalTarget + "\n" + compK8sTarget + "\n" + compTMCTarget + "\n"
-
 	tests := []struct {
 		test     string
 		args     []string
@@ -543,6 +541,15 @@ func TestCompletionPlugin(t *testing.T) {
 				"management-cluster\n" +
 				"package\n" +
 				"secret\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the plugin install command using --group with no version",
+			args: []string{"__complete", "plugin", "install", "--group", "vmware-tkg/default", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			// There are no descriptions in this case because the plugin group only contains plugin names
+			expected: "all\n" +
+				"isolated-cluster\n" +
 				":4\n",
 		},
 		{
@@ -619,11 +626,31 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: ":0\n",
 		},
 		{
-			test: "completion for the --target flag value for the plugin install command",
+			test: "completion for the --target flag value for the plugin install command with no plugin name",
 			args: []string{"__complete", "plugin", "install", "--target", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: expectedOutforTargetFlag + ":4\n",
+			expected: compGlobalTarget + "\n" +
+				compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
 		},
+		{
+			test: "completion for the --target flag value for the plugin install command with a plugin name",
+			args: []string{"__complete", "plugin", "install", "isolated-cluster", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: compGlobalTarget + "\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin install command with an invalid plugin",
+			args: []string{"__complete", "plugin", "install", "invalid", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: compGlobalTarget + "\n" +
+				compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
+		},
+
 		{
 			test: "no completion for the --version flag value for the plugin install command with no plugin name",
 			args: []string{"__complete", "plugin", "install", "--version", ""},
@@ -722,11 +749,32 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
-			test: "completion for the --target flag value for the plugin upgrade command",
+			test: "completion for the --target flag value for the plugin upgrade command with no plugin name",
 			args: []string{"__complete", "plugin", "upgrade", "--target", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: expectedOutforTargetFlag + ":4\n",
+			expected: compGlobalTarget + "\n" +
+				compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
 		},
+		{
+			test: "completion for the --target flag value for the plugin upgrade command with a plugin name",
+			args: []string{"__complete", "plugin", "upgrade", "management-cluster", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin upgrade command with an invalid plugin",
+			args: []string{"__complete", "plugin", "upgrade", "invalid", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: compGlobalTarget + "\n" +
+				compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
+		},
+
 		{
 			test: "no completion after the first arg for the plugin upgrade command",
 			args: []string{"__complete", "plugin", "upgrade", "builder", ""},
@@ -791,10 +839,39 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
-			test: "completion for the --target flag value for the plugin delete command",
+			test: "completion for the --target flag value for the plugin delete command with no plugin name",
 			args: []string{"__complete", "plugin", "delete", "--target", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: expectedOutforTargetFlag + ":4\n",
+			expected: compGlobalTarget + "\n" +
+				compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin delete command with a plugin name",
+			args: []string{"__complete", "plugin", "delete", "cluster", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin delete command with 'all'",
+			args: []string{"__complete", "plugin", "delete", "all", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: compGlobalTarget + "\n" +
+				compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin delete command with an invalid plugin",
+			args: []string{"__complete", "plugin", "delete", "invalid", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: compGlobalTarget + "\n" +
+				compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
 		},
 		// =====================
 		// tanzu plugin describe
@@ -839,10 +916,29 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: expectedOutForOutputFlag + ":4\n",
 		},
 		{
-			test: "completion for the --target flag value for the plugin describe command",
+			test: "completion for the --target flag value for the plugin describe command with no plugin name",
 			args: []string{"__complete", "plugin", "describe", "--target", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: expectedOutforTargetFlag + ":4\n",
+			expected: compGlobalTarget + "\n" +
+				compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin describe command with a plugin name",
+			args: []string{"__complete", "plugin", "describe", "secret", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: compK8sTarget + "\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --target flag value for the plugin describe command with an invalid plugin",
+			args: []string{"__complete", "plugin", "describe", "invalid", "--target", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: compGlobalTarget + "\n" +
+				compK8sTarget + "\n" +
+				compTMCTarget + "\n" +
+				":4\n",
 		},
 	}
 

@@ -42,6 +42,7 @@ var availablePlugins = []plugininventory.PluginIdentifier{
 	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.0.3"},
 	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.2.0"},
 	{Name: "cluster", Target: configtypes.TargetTMC, Version: "v0.0.5"},
+	{Name: "secret", Target: configtypes.TargetK8s, Version: "v0.0.6"},
 }
 
 var installedStandalonePlugins = []plugininventory.PluginIdentifier{
