@@ -5,7 +5,6 @@ package command
 import (
 	"bytes"
 	"os"
-	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -13,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
@@ -45,10 +43,6 @@ var _ = Describe("EULA command tests", func() {
 			tanzuConfigFileNG, err = os.CreateTemp("", "config_ng")
 			Expect(err).To(BeNil())
 			os.Setenv("TANZU_CONFIG_NEXT_GEN", tanzuConfigFileNG.Name())
-
-			featureArray := strings.Split(constants.FeatureContextCommand, ".")
-			err = config.SetFeature(featureArray[1], featureArray[2], "true")
-			Expect(err).To(BeNil())
 
 			os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 		})
