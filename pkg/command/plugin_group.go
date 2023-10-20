@@ -145,8 +145,7 @@ func newGetCmd() *cobra.Command {
 	f.StringVarP(&outputFormat, "output", "o", "", "output format (yaml|json|table)")
 	utils.PanicOnErr(getCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
 
-	f.BoolVarP(&showNonMandatory, "all", "", false, "include the non-mandatory plugins")
-	_ = f.MarkHidden("all")
+	f.BoolVarP(&showNonMandatory, "all", "", false, "include the contextual plugins")
 
 	return getCmd
 }
