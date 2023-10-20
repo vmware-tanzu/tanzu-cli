@@ -380,6 +380,10 @@ other mechanism).
 3. Upload the plugin bundle `tar.gz` to the air-gapped private registry using
 the `tanzu plugin upload-bundle` command.
 
+**Note**: The Tanzu CLI supports uploading plugins to private registries that
+require authentication. However, such private registries must allow pulling the
+resulting images without authentication.
+
 #### Downloading plugin bundle
 
 You can download all plugins within the default central repository by running
@@ -428,7 +432,11 @@ Once you download the plugin bundle as a `tar.gz` file and copy the file to the
 air-gapped network, you can run the following command to migrate plugins to the
 private registry (e.g. `registry.example.com/tanzu-cli/plugin`).
 
-Note: If you private registry is using self-signed certificates please configure
+If the private registry requires authentication to upload images to the registry
+run `docker login` or `crane auth login` to setup authentication with the registry
+before running the `tanzu plugin upload-bundle` command.
+
+Note: If the private registry is using self-signed certificates please configure
 certs for the registry as mentioned [here](#interacting-with-a-central-repository-hosted-on-a-registry-with-self-signed-ca-or-with-expired-ca).
 
 ```sh
