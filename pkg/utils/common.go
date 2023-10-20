@@ -34,17 +34,17 @@ func GenerateKey(parts ...string) string {
 	return strings.Join(parts, ":")
 }
 
-// EnsureMutualExclusiveCurrentContexts ensures mutual exclusive behavior among k8s and tae current contexts,
-// i.e, if both k8s and tae current contexts types are set (a case where plugin using old plugin-runtime API
-// can set k8s current context though tae current context is set by CLI or plugin with latest plugin-runtime
-// in config file) it would remove the tae current context to maintain backward compatibility
+// EnsureMutualExclusiveCurrentContexts ensures mutual exclusive behavior among k8s and tanzu current contexts,
+// i.e, if both k8s and tanzu current contexts types are set (a case where plugin using old plugin-runtime API
+// can set k8s current context though tanzu current context is set by CLI or plugin with latest plugin-runtime
+// in config file) it would remove the tanzu current context to maintain backward compatibility
 func EnsureMutualExclusiveCurrentContexts() error {
 	ccmap, err := config.GetAllActiveContextsMap()
 	if err != nil {
 		return err
 	}
-	if ccmap[configtypes.ContextTypeK8s] != nil && ccmap[configtypes.ContextTypeTAE] != nil {
-		return config.RemoveActiveContext(configtypes.ContextTypeTAE)
+	if ccmap[configtypes.ContextTypeK8s] != nil && ccmap[configtypes.ContextTypeTanzu] != nil {
+		return config.RemoveActiveContext(configtypes.ContextTypeTanzu)
 	}
 	return nil
 }
