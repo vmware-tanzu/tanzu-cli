@@ -129,7 +129,7 @@ func TestEnsureMutualExclusiveCurrentContexts(t *testing.T) {
 
 	defer cleanup()
 
-	// it should remove the tae current context and keep k8s and tmc current context
+	// it should remove the tanzu current context and keep k8s and tmc current context
 	err := EnsureMutualExclusiveCurrentContexts()
 	assert.NoError(t, err)
 
@@ -137,7 +137,7 @@ func TestEnsureMutualExclusiveCurrentContexts(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, ccmap[configtypes.ContextTypeK8s].Name, "test-mc-context")
 	assert.Equal(t, ccmap[configtypes.ContextTypeTMC].Name, "test-tmc-context")
-	assert.Nil(t, ccmap[configtypes.ContextTypeTAE])
+	assert.Nil(t, ccmap[configtypes.ContextTypeTanzu])
 
 	// if there is only k8s current context, calling again should not affect the current contexts
 	err = EnsureMutualExclusiveCurrentContexts()
@@ -147,10 +147,10 @@ func TestEnsureMutualExclusiveCurrentContexts(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, ccmap[configtypes.ContextTypeK8s].Name, "test-mc-context")
 	assert.Equal(t, ccmap[configtypes.ContextTypeTMC].Name, "test-tmc-context")
-	assert.Nil(t, ccmap[configtypes.ContextTypeTAE])
+	assert.Nil(t, ccmap[configtypes.ContextTypeTanzu])
 
-	// if there is only tae current context, calling again should not affect the current contexts
-	err = config.SetActiveContext("test-tae-context")
+	// if there is only tanzu current context, calling again should not affect the current contexts
+	err = config.SetActiveContext("test-tanzu-context")
 	assert.NoError(t, err)
 
 	err = EnsureMutualExclusiveCurrentContexts()
@@ -160,10 +160,10 @@ func TestEnsureMutualExclusiveCurrentContexts(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, ccmap[configtypes.ContextTypeK8s])
 	assert.Equal(t, ccmap[configtypes.ContextTypeTMC].Name, "test-tmc-context")
-	assert.Equal(t, ccmap[configtypes.ContextTypeTAE].Name, "test-tae-context")
+	assert.Equal(t, ccmap[configtypes.ContextTypeTanzu].Name, "test-tanzu-context")
 
 	// if there are no current context, calling again should not affect the current contexts
-	err = config.RemoveActiveContext(configtypes.ContextTypeTAE)
+	err = config.RemoveActiveContext(configtypes.ContextTypeTanzu)
 	assert.NoError(t, err)
 	err = config.RemoveActiveContext(configtypes.ContextTypeTMC)
 	assert.NoError(t, err)
