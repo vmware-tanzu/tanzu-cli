@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"golang.org/x/mod/semver"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -51,6 +52,14 @@ Note: this prompt can be avoided by running "tanzu config eula accept".
 
 Do you agree to the VMware General Terms?
 `
+
+	// CurrentEULAVersion (vMajor.Minor.Patch) is the version of the EULA to
+	// display if user has not agreed to a compatible EULA.
+	// A user is considered to have accepted the  EULA if one of the recorded
+	// accepted semver versions matches in the major.minor of this value.
+	// If this value is empty, however, any previously recorded acceptance
+	// is considered valid.
+	CurrentEULAVersion = ""
 )
 
 func init() {
@@ -122,12 +131,68 @@ func getCEIPUserOptIn() (bool, error) {
 	return strings.EqualFold(ceipOptIn, "Yes"), nil
 }
 
+func IsCompatibleEULAAccepted(acceptedVersions []string) bool {
+	// As a special case, if there is no expected or valid CurrentEULAVersion to
+	// match, no incompatibility is flagged.
+	if CurrentEULAVersion == "" || !semver.IsValid(CurrentEULAVersion) {
+		return true
+	}
+
+	if len(acceptedVersions) == 0 {
+		return false
+	}
+
+	expectedEULAVersionMajorMinor := semver.MajorMinor(CurrentEULAVersion)
+	for _, v := range acceptedVersions {
+		if semver.IsValid(v) && semver.MajorMinor(v) == expectedEULAVersionMajorMinor {
+			return true
+		}
+	}
+
+	return false
+}
+
+// UpdateEULAAcceptance updates the user's EULA accept status, and records the current
+// EULA version as accepted, if necessary
+func UpdateEULAAcceptance(status configlib.EULAStatus) error {
+	err := configlib.SetEULAStatus(status)
+	if err != nil {
+		return errors.Wrapf(err, "failed update EULA status")
+	}
+
+	if status == configlib.EULAStatusAccepted && CurrentEULAVersion != "" {
+		acceptedVersions, err := configlib.GetEULAAcceptedVersions()
+		if err != nil {
+			return errors.Wrapf(err, "unable to get accepted eula versions")
+		}
+		// check if version already registered as accepted
+		for _, v := range acceptedVersions {
+			if v == CurrentEULAVersion {
+				return nil
+			}
+		}
+		acceptedVersions = append(acceptedVersions, CurrentEULAVersion)
+		err = configlib.SetEULAAcceptedVersions(acceptedVersions)
+		if err != nil {
+			return errors.Wrapf(err, "unable to update accepted eula version")
+		}
+	}
+
+	return nil
+}
+
 // ConfigureEULA checks and configures the user's EULA acceptance status
 func ConfigureEULA(alwaysPrompt bool) error {
 	configVal, _ := configlib.GetEULAStatus()
 
-	// Unless forced to always prompt, it is a no-op if EULA is already accepted.
-	if !alwaysPrompt && configVal == configlib.EULAStatusAccepted {
+	acceptedVersions, err := configlib.GetEULAAcceptedVersions()
+	compatibleAcceptedEULAFound := false
+	if err == nil {
+		compatibleAcceptedEULAFound = IsCompatibleEULAAccepted(acceptedVersions)
+	}
+
+	// Unless forced to always prompt, it is a no-op if a compatible EULA is already accepted.
+	if !alwaysPrompt && configVal == configlib.EULAStatusAccepted && compatibleAcceptedEULAFound {
 		return nil
 	}
 
@@ -138,15 +203,14 @@ func ConfigureEULA(alwaysPrompt bool) error {
 
 	status := configlib.EULAStatusShown
 	if accepted {
+		err = configlib.SetEULAAcceptedVersions(acceptedVersions)
+		if err != nil {
+			return errors.Wrapf(err, "unable to update accepted eula version")
+		}
 		status = configlib.EULAStatusAccepted
 	}
 
-	err = configlib.SetEULAStatus(status)
-	if err != nil {
-		return errors.Wrapf(err, "failed to update the EULA status to %s", status)
-	}
-
-	return nil
+	return UpdateEULAAcceptance(status)
 }
 
 func promptForEULA() (bool, error) {

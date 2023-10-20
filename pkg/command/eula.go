@@ -52,7 +52,7 @@ func newAcceptEULACmd() *cobra.Command {
 		Long:              "Accept the EULA for Tanzu CLI non-interactively.",
 		ValidArgsFunction: cobra.NoFileCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := configlib.SetEULAStatus(configlib.EULAStatusAccepted)
+			err := config.UpdateEULAAcceptance(configlib.EULAStatusAccepted)
 			if err != nil {
 				return err
 			}
