@@ -663,6 +663,19 @@ func TestCompletionPlugin(t *testing.T) {
 				":36\n",
 		},
 		{
+			test: "completion for the plugin install command when the specified plugin name is not unique",
+			args: []string{"__complete", "plugin", "install", "cluster", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "--target\n" +
+				":4\n",
+		},
+		{
+			test: "no more completions for the plugin install command when the specified plugin name is not unique and --target is specified",
+			args: []string{"__complete", "plugin", "install", "cluster", "--target", "k8s", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
+		},
+		{
 			test: "no completion after the first arg for the plugin install command",
 			args: []string{"__complete", "plugin", "install", "builder", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
@@ -694,6 +707,19 @@ func TestCompletionPlugin(t *testing.T) {
 				"package\tPlugin package/kubernetes description\n" +
 				"secret\tPlugin secret/kubernetes description\n" +
 				":4\n",
+		},
+		{
+			test: "completion for the plugin upgrade command when the specified plugin name is not unique",
+			args: []string{"__complete", "plugin", "upgrade", "cluster", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "--target\n" +
+				":4\n",
+		},
+		{
+			test: "no more completions for the plugin upgrade command when the specified plugin name is not unique and --target is specified",
+			args: []string{"__complete", "plugin", "upgrade", "cluster", "--target", "k8s", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --target flag value for the plugin upgrade command",
@@ -733,6 +759,19 @@ func TestCompletionPlugin(t *testing.T) {
 				":36\n",
 		},
 		{
+			test: "completion for the plugin delete command when the specified plugin name is not unique",
+			args: []string{"__complete", "plugin", "delete", "cluster", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "--target\n" +
+				":4\n",
+		},
+		{
+			test: "no more completions for the plugin delete command when the specified plugin name is not unique and --target is specified",
+			args: []string{"__complete", "plugin", "delete", "cluster", "--target", "k8s", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
+		},
+		{
 			test: "no more completions after the first arg for the plugin delete command",
 			args: []string{"__complete", "plugin", "delete", "feature", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
@@ -769,6 +808,19 @@ func TestCompletionPlugin(t *testing.T) {
 				"management-cluster\tMultiple entries for plugin management-cluster. You will need to use the --target flag.\n" +
 				"secret\tTarget: kubernetes for secret\n" +
 				":4\n",
+		},
+		{
+			test: "completion for the plugin describe command when the specified plugin name is not unique",
+			args: []string{"__complete", "plugin", "describe", "cluster", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "--target\n" +
+				":4\n",
+		},
+		{
+			test: "no more completions for the plugin describe command when the specified plugin name is not unique and --target is specified",
+			args: []string{"__complete", "plugin", "describe", "cluster", "--target", "k8s", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the plugin describe command using --target",

@@ -234,7 +234,7 @@ func newInstallPluginCmd() *cobra.Command { //nolint:funlen
     # Install latest minor and patch version of v1 of plugin "myPlugin"
     tanzu plugin install myPlugin --version v1`,
 		Args:              cobra.MaximumNArgs(1),
-		ValidArgsFunction: completeAllPlugins,
+		ValidArgsFunction: completeAllPluginsToInstall,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			var pluginName string
@@ -316,7 +316,7 @@ func newUpgradePluginCmd() *cobra.Command {
 		Use:               "upgrade " + pluginNameCaps,
 		Short:             "Upgrade a plugin",
 		Long:              "Installs the latest version available for the specified plugin",
-		ValidArgsFunction: completeAllPlugins,
+		ValidArgsFunction: completeAllPluginsToInstall,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			if len(args) != 1 {
 				return fmt.Errorf("must provide plugin name as positional argument")
@@ -581,10 +581,22 @@ func getTarget() configtypes.Target {
 // ====================================
 // Shell completion functions
 // ====================================
-func completeInstalledPlugins(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
-	if len(args) > 0 {
+func completeInstalledPlugins(cmd *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 1 {
+		// Too many args
 		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
+
+	if len(args) == 1 {
+		// Check if the plugin name specified applies to more than one plugin
+		if needTargetFlag := compCheckIfTargetFlagNeededForInstalled(cmd, args[0]); needTargetFlag {
+			// The target flag needs to be used
+			return []string{"--target"}, cobra.ShellCompDirectiveNoFileComp
+		}
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
+	}
+
+	// Need to complete the names of installed plugins
 
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
@@ -607,10 +619,21 @@ func completeInstalledPlugins(_ *cobra.Command, args []string, _ string) ([]stri
 	return comps, cobra.ShellCompDirectiveNoFileComp
 }
 
-func completeAllPlugins(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
-	if len(args) > 0 {
+func completeAllPluginsToInstall(cmd *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 1 {
+		// Too many args
 		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
+
+	if len(args) == 1 {
+		// Check if the plugin name specified applies to more than one discovered plugin
+		if needTargetFlag := compCheckIfTargetFlagNeededForAll(cmd, args[0]); needTargetFlag {
+			// The target flag needs to be used
+			return []string{"--target"}, cobra.ShellCompDirectiveNoFileComp
+		}
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
+	}
+
 	return completionAllPlugins(), cobra.ShellCompDirectiveNoFileComp
 }
 
@@ -667,6 +690,7 @@ func completePluginVersions(_ *cobra.Command, args []string, _ string) ([]string
 
 func completeDeletePlugin(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 1 {
+		// Too many arguments
 		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
 
@@ -675,6 +699,12 @@ func completeDeletePlugin(cmd *cobra.Command, args []string, toComplete string) 
 		if args[0] == cli.AllPlugins {
 			// With 'all' the '--target' flag must be used
 			if !targetFlag.Changed {
+				// The target flag needs to be used
+				return []string{"--target"}, cobra.ShellCompDirectiveNoFileComp
+			}
+		} else {
+			// Check if the plugin name specified applies to more than one installed plugin
+			if needTargetFlag := compCheckIfTargetFlagNeededForInstalled(cmd, args[0]); needTargetFlag {
 				// The target flag needs to be used
 				return []string{"--target"}, cobra.ShellCompDirectiveNoFileComp
 			}
@@ -843,4 +873,60 @@ func completionMergeSimilarPlugins(completions []string) []string {
 	mergedCompletions = append(mergedCompletions, mergedComp)
 
 	return mergedCompletions
+}
+
+func compCheckIfTargetFlagNeededForInstalled(cmd *cobra.Command, name string) bool {
+	targetFlag := cmd.Flags().Lookup("target")
+	if targetFlag.Changed {
+		// The target flag is already on the command-line
+		return false
+	}
+
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+	if err != nil {
+		return false
+	}
+
+	// Check if the pluginName applies to more than one installed plugin
+	matchingCount := 0
+	for i := range installedPlugins {
+		if installedPlugins[i].Name == name {
+			matchingCount++
+			if matchingCount > 1 {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func compCheckIfTargetFlagNeededForAll(cmd *cobra.Command, name string) bool {
+	targetFlag := cmd.Flags().Lookup("target")
+	if targetFlag.Changed {
+		// The target flag is already on the command-line
+		return false
+	}
+
+	allPlugins, err := pluginmanager.DiscoverStandalonePlugins(
+		discovery.WithPluginDiscoveryCriteria(&discovery.PluginDiscoveryCriteria{
+			Target: configtypes.StringToTarget(targetStr)}),
+		discovery.WithUseLocalCacheOnly())
+
+	if err != nil {
+		return false
+	}
+
+	// Check if the pluginName applies to more than one installed plugin
+	matchingCount := 0
+	for i := range allPlugins {
+		if allPlugins[i].Name == name {
+			matchingCount++
+			if matchingCount > 1 {
+				return true
+			}
+		}
+	}
+
+	return false
 }
