@@ -142,7 +142,7 @@ func TestCompletionCompletion(t *testing.T) {
 			test: "no completion after the first arg for the completion command",
 			args: []string{"__complete", "completion", "fish", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 	}
 

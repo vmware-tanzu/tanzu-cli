@@ -112,7 +112,7 @@ func TestCompletionPluginSearch(t *testing.T) {
 			test: "no completion after the plugin search command",
 			args: []string{"__complete", "plugin", "search", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --name flag value",

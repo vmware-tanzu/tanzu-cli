@@ -135,7 +135,7 @@ func newListPluginCmd() *cobra.Command {
 		Use:               "list",
 		Short:             "List installed plugins",
 		Long:              "List installed standalone plugins or plugins recommended by the contexts being used",
-		ValidArgsFunction: cobra.NoFileCompletions,
+		ValidArgsFunction: noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			errorList := make([]error, 0)
 			// List installed standalone plugins
@@ -392,7 +392,7 @@ func newCleanPluginCmd() *cobra.Command {
 		Use:               "clean",
 		Short:             "Clean the plugins",
 		Long:              "Remove all installed plugins from the system",
-		ValidArgsFunction: cobra.NoFileCompletions,
+		ValidArgsFunction: noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			err = pluginmanager.Clean()
 			if err != nil {
@@ -411,7 +411,7 @@ func newSyncPluginCmd() *cobra.Command {
 		Short: "Installs all plugins recommended by the active contexts",
 		Long: `Installs all plugins recommended by the active contexts.
 Plugins installed with this command will only be available while the context remains active.`,
-		ValidArgsFunction: cobra.NoFileCompletions,
+		ValidArgsFunction: noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			err = pluginmanager.SyncPlugins()
 			if err != nil {
@@ -582,21 +582,23 @@ func getTarget() configtypes.Target {
 // Shell completion functions
 // ====================================
 func completeInstalledPlugins(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 {
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
+	}
+
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
-		return nil, cobra.ShellCompDirectiveError
+		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
 	var comps []string
 	target := getTarget()
-	if len(args) == 0 {
-		// Complete all plugin names as long as the target matches and let the shell filter
-		for i := range installedPlugins {
-			if target == configtypes.TargetUnknown || target == installedPlugins[i].Target {
-				// Make sure the name of the plugin is part of the description so that
-				// zsh does not lump many plugins that have the same description
-				comps = append(comps, fmt.Sprintf("%[1]s\tTarget: %[2]s for %[1]s", installedPlugins[i].Name, installedPlugins[i].Target))
-			}
+	// Complete all plugin names as long as the target matches and let the shell filter
+	for i := range installedPlugins {
+		if target == configtypes.TargetUnknown || target == installedPlugins[i].Target {
+			// Make sure the name of the plugin is part of the description so that
+			// zsh does not lump many plugins that have the same description
+			comps = append(comps, fmt.Sprintf("%[1]s\tTarget: %[2]s for %[1]s", installedPlugins[i].Name, installedPlugins[i].Target))
 		}
 	}
 
@@ -607,7 +609,7 @@ func completeInstalledPlugins(_ *cobra.Command, args []string, _ string) ([]stri
 
 func completeAllPlugins(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
 	return completionAllPlugins(), cobra.ShellCompDirectiveNoFileComp
 }
@@ -665,7 +667,7 @@ func completePluginVersions(_ *cobra.Command, args []string, _ string) ([]string
 
 func completeDeletePlugin(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 1 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
 
 	targetFlag := cmd.Flags().Lookup("target")
@@ -677,7 +679,7 @@ func completeDeletePlugin(cmd *cobra.Command, args []string, toComplete string) 
 				return []string{"--target"}, cobra.ShellCompDirectiveNoFileComp
 			}
 		}
-		return nil, cobra.ShellCompDirectiveNoFileComp
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
 
 	var comps []string
