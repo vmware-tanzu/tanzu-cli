@@ -1,7 +1,7 @@
 // Copyright 2023 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package tae
+package tanzu
 
 import (
 	"fmt"
@@ -19,35 +19,35 @@ import (
 
 var testingDir string
 
-func TestTAEAuth(t *testing.T) {
+func TestTanzuAuth(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "pkg/auth/tae Suite")
+	RunSpecs(t, "pkg/auth/tanzu Suite")
 }
 
 const (
 	fakeCAcertPath = "../../fakes/certs/fake-ca.crt"
 )
 
-var _ = Describe("Unit tests for tae auth", func() {
+var _ = Describe("Unit tests for tanzu auth", func() {
 	var (
-		err        error
-		endpoint   string
-		taeContext *configtypes.Context
+		err          error
+		endpoint     string
+		tanzuContext *configtypes.Context
 	)
 
 	const (
-		fakeContextName = "fake-tae-context"
+		fakeContextName = "fake-tanzu-context"
 		fakeAccessToken = "fake-access-token"
 		fakeOrgID       = "fake-org-id"
-		fakeEndpoint    = "fake.tae.cloud.vmware.com"
+		fakeEndpoint    = "fake.tanzu.cloud.vmware.com"
 	)
 
-	Describe("GetTAEKubeconfig()", func() {
+	Describe("GetTanzuKubeconfig()", func() {
 		var kubeConfigPath, kubeContext, clusterAPIServerURL string
 		BeforeEach(func() {
 			err = createTempDirectory("kubeconfig-test")
 			Expect(err).ToNot(HaveOccurred())
-			taeContext = &configtypes.Context{
+			tanzuContext = &configtypes.Context{
 				Name: fakeContextName,
 				GlobalOpts: &configtypes.GlobalServer{
 					Auth: configtypes.GlobalServerAuth{
@@ -66,7 +66,7 @@ var _ = Describe("Unit tests for tae auth", func() {
 		Context("When the endpoint caCertPath file doesn't exist", func() {
 			BeforeEach(func() {
 				nonExistingCACertPath := filepath.Join(testingDir, "non-existing-file")
-				_, _, _, err = GetTAEKubeconfig(taeContext, fakeEndpoint, fakeOrgID, nonExistingCACertPath, false)
+				_, _, _, err = GetTanzuKubeconfig(tanzuContext, fakeEndpoint, fakeOrgID, nonExistingCACertPath, false)
 			})
 			It("should return the error", func() {
 				Expect(err).To(HaveOccurred())
@@ -75,12 +75,12 @@ var _ = Describe("Unit tests for tae auth", func() {
 		})
 		Context("When the endpoint caCertPath provided exists and skipTLSVerify is set to false", func() {
 			BeforeEach(func() {
-				kubeConfigPath, kubeContext, clusterAPIServerURL, err = GetTAEKubeconfig(taeContext, fakeEndpoint, fakeOrgID, fakeCAcertPath, false)
+				kubeConfigPath, kubeContext, clusterAPIServerURL, err = GetTanzuKubeconfig(tanzuContext, fakeEndpoint, fakeOrgID, fakeCAcertPath, false)
 			})
 			It("should set the 'certificate-authority-data' in kubeconfig and 'insecure-skip-tls-verify' should be unset", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(kubeConfigPath).Should(Equal(filepath.Join(testingDir, ".kube", "config")))
-				Expect(kubeContext).Should(Equal(kubeconfigContextName(taeContext.Name)))
+				Expect(kubeContext).Should(Equal(kubeconfigContextName(tanzuContext.Name)))
 				config, err := clientcmd.LoadFromFile(kubeConfigPath)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -89,20 +89,20 @@ var _ = Describe("Unit tests for tae auth", func() {
 				user := config.AuthInfos[config.Contexts[kubeContext].AuthInfo]
 
 				Expect(cluster.Server).To(Equal(clusterAPIServerURL))
-				Expect(config.Contexts[kubeContext].AuthInfo).To(Equal(kubeconfigUserName(taeContext.Name)))
-				Expect(gotClusterName).To(Equal(kubeconfigClusterName(taeContext.Name)))
+				Expect(config.Contexts[kubeContext].AuthInfo).To(Equal(kubeconfigUserName(tanzuContext.Name)))
+				Expect(gotClusterName).To(Equal(kubeconfigClusterName(tanzuContext.Name)))
 				Expect(len(cluster.CertificateAuthorityData)).ToNot(Equal(0))
-				Expect(user.Exec).To(Equal(getExecConfig(taeContext)))
+				Expect(user.Exec).To(Equal(getExecConfig(tanzuContext)))
 			})
 		})
 		Context("When endpointCACertPath is not provided and skipTLSVerify is set to true", func() {
 			BeforeEach(func() {
-				kubeConfigPath, kubeContext, clusterAPIServerURL, err = GetTAEKubeconfig(taeContext, endpoint, fakeOrgID, "", true)
+				kubeConfigPath, kubeContext, clusterAPIServerURL, err = GetTanzuKubeconfig(tanzuContext, endpoint, fakeOrgID, "", true)
 			})
 			It("should not set the 'certificate-authority-data' in kubeconfig and 'insecure-skip-tls-verify' should be set", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(kubeConfigPath).Should(Equal(filepath.Join(testingDir, ".kube", "config")))
-				Expect(kubeContext).Should(Equal("tanzu-cli-" + taeContext.Name))
+				Expect(kubeContext).Should(Equal("tanzu-cli-" + tanzuContext.Name))
 				config, err := clientcmd.LoadFromFile(kubeConfigPath)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -111,11 +111,11 @@ var _ = Describe("Unit tests for tae auth", func() {
 				user := config.AuthInfos[config.Contexts[kubeContext].AuthInfo]
 
 				Expect(cluster.Server).To(Equal(clusterAPIServerURL))
-				Expect(config.Contexts[kubeContext].AuthInfo).To(Equal("tanzu-cli-" + taeContext.Name + "-user"))
-				Expect(gotClusterName).To(Equal("tanzu-cli-" + taeContext.Name + "/current"))
+				Expect(config.Contexts[kubeContext].AuthInfo).To(Equal("tanzu-cli-" + tanzuContext.Name + "-user"))
+				Expect(gotClusterName).To(Equal("tanzu-cli-" + tanzuContext.Name + "/current"))
 				Expect(len(cluster.CertificateAuthorityData)).To(Equal(0))
 				Expect(cluster.InsecureSkipTLSVerify).To(Equal(true))
-				Expect(user.Exec).To(Equal(getExecConfig(taeContext)))
+				Expect(user.Exec).To(Equal(getExecConfig(tanzuContext)))
 			})
 		})
 

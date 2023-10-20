@@ -31,10 +31,10 @@ contexts:
         type: api-token2
         userName: test-user-name2
         refresh_token: test-refresh-token2
-  - name: test-tae-context
-    target: application-engine
+  - name: test-tanzu-context
+    target: tanzu
     globalOpts:
-      endpoint: tae-endpoint
+      endpoint: tanzu-endpoint
       auth:
         IDToken: test-id-token
         accessToken: test-access-token
@@ -47,9 +47,9 @@ contexts:
       path: dummy/path
       context: dummy-context
     additionalMetadata:
-      taeProjectName: dummyP
-      taeOrgID: dummyO
+      tanzuProjectName: dummyP
+      tanzuOrgID: dummyO
 currentContext:
   kubernetes: test-mc-context
   mission-control: test-tmc-context
-  application-engine: test-tae-context
+  tanzu: test-tanzu-context

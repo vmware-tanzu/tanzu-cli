@@ -136,7 +136,7 @@ func newRootCmd() *cobra.Command {
 		DisableFlagParsing: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Ensure mutual exclusion in current contexts just in case if any plugins with old
-			// plugin-runtime sets k8s context as current when tae context is already set as current
+			// plugin-runtime sets k8s context as current when tanzu context is already set as current
 			if err := utils.EnsureMutualExclusiveCurrentContexts(); err != nil {
 				return err
 			}
@@ -172,7 +172,7 @@ func newRootCmd() *cobra.Command {
 		},
 		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
 			// Ensure mutual exclusion in current contexts just in case if any plugins with old
-			// plugin-runtime sets k8s context as current when tae context is already set as current
+			// plugin-runtime sets k8s context as current when tanzu context is already set as current
 			if err := utils.EnsureMutualExclusiveCurrentContexts(); err != nil {
 				return err
 			}
