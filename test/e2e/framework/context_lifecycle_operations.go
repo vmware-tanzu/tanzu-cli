@@ -17,7 +17,7 @@ type ContextCmdOps interface {
 	// ContextCreateOps helps context create operations
 	ContextCreateOps
 	// UseContext helps to run 'context use' command
-	UseContext(contextName string, opts ...E2EOption) error
+	UseContext(contextName string, opts ...E2EOption) (stdOutStr, stdErrStr string, err error)
 	// GetContext helps to run `context get` command
 	GetContext(contextName string, opts ...E2EOption) (ContextInfo, error)
 	// ListContext helps to run `context list` command
@@ -45,10 +45,10 @@ func NewContextCmdOps() ContextCmdOps {
 	}
 }
 
-func (cc *contextCmdOps) UseContext(contextName string, opts ...E2EOption) error {
+func (cc *contextCmdOps) UseContext(contextName string, opts ...E2EOption) (stdOutStr, stdErrStr string, err error) {
 	useContextCmd := fmt.Sprintf(UseContext, "%s", contextName)
-	_, _, err := cc.cmdExe.TanzuCmdExec(useContextCmd, opts...)
-	return err
+	stdOutBuff, stdErrBuff, err := cc.cmdExe.TanzuCmdExec(useContextCmd, opts...)
+	return stdOutBuff.String(), stdErrBuff.String(), err
 }
 
 func (cc *contextCmdOps) UnsetContext(contextName string, opts ...E2EOption) (string, string, error) {
