@@ -21,6 +21,7 @@ const (
 	TzPrefix         = "tz"
 
 	// Config commands
+	ConfigCmd          = "%s config"
 	ConfigSet          = "%s config set "
 	ConfigGet          = "%s config get "
 	ConfigUnset        = "%s config unset "

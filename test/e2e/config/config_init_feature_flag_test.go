@@ -79,4 +79,16 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:config]", func() {
 			})
 		})
 	})
+	Context("config help message", func() {
+		It("validate `config set --help` output", func() {
+			stdout, _, err := tf.Config.ConfigWithOptions(framework.AddAdditionalFlagAndValue("set --help"))
+			Expect(err).To(BeNil())
+			Expect(stdout.String()).To(ContainSubstring("Set config values at the given PATH. Supported PATH values: [features.global.<feature>, features.<plugin>.<feature>, env.<variable>]"))
+		})
+		It("validate `config unset --help` output", func() {
+			stdout, _, err := tf.Config.ConfigWithOptions(framework.AddAdditionalFlagAndValue("unset --help"))
+			Expect(err).To(BeNil())
+			Expect(stdout.String()).To(ContainSubstring("Unset config values at the given PATH. Supported PATH values: [features.global.<feature>, features.<plugin>.<feature>, env.<variable>]"))
+		})
+	})
 })
