@@ -91,21 +91,18 @@ func newPluginCmd() *cobra.Command {
 
 	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "uninstall the plugin without asking for confirmation")
 
-	completeTargets := func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
-	}
 	targetFlagDesc := fmt.Sprintf("target of the plugin (%s)", common.TargetList)
 	installPluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
-	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("target", completeTargets))
+	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("target", completeTargetsForAllPlugins))
 
 	upgradePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
-	utils.PanicOnErr(upgradePluginCmd.RegisterFlagCompletionFunc("target", completeTargets))
+	utils.PanicOnErr(upgradePluginCmd.RegisterFlagCompletionFunc("target", completeTargetsForAllPlugins))
 
 	deletePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
-	utils.PanicOnErr(deletePluginCmd.RegisterFlagCompletionFunc("target", completeTargets))
+	utils.PanicOnErr(deletePluginCmd.RegisterFlagCompletionFunc("target", completeTargetsForInstalledPlugins))
 
 	describePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
-	utils.PanicOnErr(describePluginCmd.RegisterFlagCompletionFunc("target", completeTargets))
+	utils.PanicOnErr(describePluginCmd.RegisterFlagCompletionFunc("target", completeTargetsForInstalledPlugins))
 
 	installPluginCmd.MarkFlagsMutuallyExclusive("group", "local")
 	installPluginCmd.MarkFlagsMutuallyExclusive("group", "local-source")
@@ -627,7 +624,7 @@ func completeAllPluginsToInstall(cmd *cobra.Command, args []string, _ string) ([
 
 	if len(args) == 1 {
 		// Check if the plugin name specified applies to more than one discovered plugin
-		if needTargetFlag := compCheckIfTargetFlagNeededForAll(cmd, args[0]); needTargetFlag {
+		if needTargetFlag := compCheckIfTargetFlagNeededForAllPlugins(cmd, args[0]); needTargetFlag {
 			// The target flag needs to be used
 			return []string{"--target"}, cobra.ShellCompDirectiveNoFileComp
 		}
@@ -807,7 +804,8 @@ func completionAllPlugins() []string {
 	// Show plugins found in the central repos
 	allPlugins, err := pluginmanager.DiscoverStandalonePlugins(
 		discovery.WithPluginDiscoveryCriteria(&discovery.PluginDiscoveryCriteria{
-			Target: configtypes.StringToTarget(targetStr)}),
+			Target: configtypes.StringToTarget(targetStr),
+		}),
 		discovery.WithUseLocalCacheOnly())
 
 	if err != nil {
@@ -819,7 +817,8 @@ func completionAllPlugins() []string {
 		// Try the call again but allow it to download the plugin DB.
 		allPlugins, err = pluginmanager.DiscoverStandalonePlugins(
 			discovery.WithPluginDiscoveryCriteria(&discovery.PluginDiscoveryCriteria{
-				Target: configtypes.StringToTarget(targetStr)}))
+				Target: configtypes.StringToTarget(targetStr),
+			}))
 
 		if err != nil {
 			return nil
@@ -901,32 +900,98 @@ func compCheckIfTargetFlagNeededForInstalled(cmd *cobra.Command, name string) bo
 	return false
 }
 
-func compCheckIfTargetFlagNeededForAll(cmd *cobra.Command, name string) bool {
+func compCheckIfTargetFlagNeededForAllPlugins(cmd *cobra.Command, pluginName string) bool {
 	targetFlag := cmd.Flags().Lookup("target")
 	if targetFlag.Changed {
 		// The target flag is already on the command-line
 		return false
 	}
 
-	allPlugins, err := pluginmanager.DiscoverStandalonePlugins(
+	// Check if the pluginName applies to more than one installed plugin
+	plugins, err := pluginmanager.DiscoverStandalonePlugins(
 		discovery.WithPluginDiscoveryCriteria(&discovery.PluginDiscoveryCriteria{
-			Target: configtypes.StringToTarget(targetStr)}),
+			Name: pluginName,
+		}),
 		discovery.WithUseLocalCacheOnly())
 
 	if err != nil {
 		return false
 	}
 
-	// Check if the pluginName applies to more than one installed plugin
-	matchingCount := 0
-	for i := range allPlugins {
-		if allPlugins[i].Name == name {
-			matchingCount++
-			if matchingCount > 1 {
-				return true
+	return len(plugins) > 1
+}
+
+func completeTargetsForInstalledPlugins(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) == 1 {
+		// Only suggest targets that match the specified plugin
+		pluginName := args[0]
+		if pluginName == cli.AllPlugins {
+			// Suggest all targets
+			return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+		if err != nil {
+			return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		// Find all plugins matching the pluginName.  Each of the corresponding target should be suggested
+		var availableTargets []string
+		for i := range installedPlugins {
+			if installedPlugins[i].Name == pluginName {
+				availableTargets = append(availableTargets, compTargetToCompString(installedPlugins[i].Target))
 			}
 		}
+
+		// If we found no plugins with the correct name, just complete all targets
+		if len(availableTargets) == 0 {
+			return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		sort.Strings(availableTargets)
+		return availableTargets, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	return false
+	// Suggest all targets
+	return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+}
+
+func completeTargetsForAllPlugins(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if len(args) == 1 {
+		// Only suggest targets that match the specified plugin
+		pluginName := args[0]
+		plugins, err := pluginmanager.DiscoverStandalonePlugins(
+			discovery.WithPluginDiscoveryCriteria(&discovery.PluginDiscoveryCriteria{
+				Name: pluginName,
+			}),
+			discovery.WithUseLocalCacheOnly())
+
+		// If we found no plugins with the correct name, just complete all targets
+		if err != nil || len(plugins) == 0 {
+			return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+		}
+
+		// For all plugins withe the specified name, the corresponding target should be suggested
+		var availableTargets []string
+		for i := range plugins {
+			availableTargets = append(availableTargets, compTargetToCompString(plugins[i].Target))
+		}
+		sort.Strings(availableTargets)
+		return availableTargets, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	// Suggest all targets
+	return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+}
+
+func compTargetToCompString(target configtypes.Target) string {
+	switch target {
+	case configtypes.TargetGlobal:
+		return compGlobalTarget
+	case configtypes.TargetK8s:
+		return compK8sTarget
+	case configtypes.TargetTMC:
+		return compTMCTarget
+	}
+	return string(target)
 }
