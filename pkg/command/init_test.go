@@ -19,7 +19,7 @@ func TestCompletionInit(t *testing.T) {
 			test: "no completion for the init command",
 			args: []string{"__complete", "init", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 	}
 

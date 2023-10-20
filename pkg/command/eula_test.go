@@ -128,7 +128,7 @@ func TestCompletionEULA(t *testing.T) {
 			test: "no completion for the eula accept command",
 			args: []string{"__complete", "config", "eula", "accept", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// =====================
 		// tanzu config eula show
@@ -137,7 +137,7 @@ func TestCompletionEULA(t *testing.T) {
 			test: "no completion for the eula show command",
 			args: []string{"__complete", "config", "eula", "show", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 	}
 

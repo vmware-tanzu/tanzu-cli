@@ -37,7 +37,7 @@ func newSearchPluginCmd() *cobra.Command {
 		Short:             "Search for available plugins",
 		Long:              searchLongDesc,
 		Args:              cobra.MaximumNArgs(0),
-		ValidArgsFunction: cobra.NoFileCompletions,
+		ValidArgsFunction: noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !configtypes.IsValidTarget(targetStr, true, true) {
 				return errors.New(invalidTargetMsg)
