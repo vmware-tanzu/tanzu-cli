@@ -490,7 +490,7 @@ func TestCompletionPlugin(t *testing.T) {
 			test: "no completion after the plugin list command",
 			args: []string{"__complete", "plugin", "list", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --output flag value of the plugin list command",
@@ -505,7 +505,7 @@ func TestCompletionPlugin(t *testing.T) {
 			test: "no completions for the plugin clean command",
 			args: []string{"__complete", "plugin", "clean", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// =====================
 		// tanzu plugin sync
@@ -514,7 +514,7 @@ func TestCompletionPlugin(t *testing.T) {
 			test: "no completions for the plugin sync command",
 			args: []string{"__complete", "plugin", "sync", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// =====================
 		// tanzu plugin install
@@ -597,6 +597,21 @@ func TestCompletionPlugin(t *testing.T) {
 				":36\n",
 		},
 		{
+			test: "completion for the --group flag value for the version part of an invalid group for the plugin install command",
+			args: []string{"__complete", "plugin", "install", "--group", "invalid:"},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ Invalid group format: 'invalid'\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the --group flag value for the version part of a missing group for the plugin install command",
+			args: []string{"__complete", "plugin", "install", "--group", "vmware-tkg/invalid:"},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ There is no group named: 'vmware-tkg/invalid'\n" +
+				":4\n",
+		},
+
+		{
 			test: "completion for the --local-source flag value",
 			args: []string{"__complete", "plugin", "install", "--local-source", ""},
 			// ":0" is the value of the ShellCompDirectiveDefault which indicates
@@ -651,7 +666,7 @@ func TestCompletionPlugin(t *testing.T) {
 			test: "no completion after the first arg for the plugin install command",
 			args: []string{"__complete", "plugin", "install", "builder", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// =====================
 		// tanzu plugin upgrade
@@ -690,7 +705,7 @@ func TestCompletionPlugin(t *testing.T) {
 			test: "no completion after the first arg for the plugin upgrade command",
 			args: []string{"__complete", "plugin", "upgrade", "builder", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// =====================
 		// tanzu plugin uninstall
@@ -721,7 +736,7 @@ func TestCompletionPlugin(t *testing.T) {
 			test: "no more completions after the first arg for the plugin delete command",
 			args: []string{"__complete", "plugin", "delete", "feature", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion of the --target flag if 'all' is specified",
@@ -734,7 +749,7 @@ func TestCompletionPlugin(t *testing.T) {
 			test: "no more completions after 'all' if --target is specified",
 			args: []string{"__complete", "plugin", "delete", "--target", "k8s", "all", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --target flag value for the plugin delete command",

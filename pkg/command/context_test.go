@@ -1023,7 +1023,7 @@ func Test_completionContext(t *testing.T) {
 			test: "no completion after the list command",
 			args: []string{"__complete", "context", "list", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --type flag value of the list command",
@@ -1050,7 +1050,7 @@ func Test_completionContext(t *testing.T) {
 			test: "no completion after the first argument of the delete command",
 			args: []string{"__complete", "context", "delete", "tkg1", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// =====================
 		// tanzu context get
@@ -1065,7 +1065,7 @@ func Test_completionContext(t *testing.T) {
 			test: "no completion after the first argument of the get command",
 			args: []string{"__complete", "context", "get", "tkg1", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --output flag value of the get command",
@@ -1086,7 +1086,7 @@ func Test_completionContext(t *testing.T) {
 			test: "no completion after the first argument of the use command",
 			args: []string{"__complete", "context", "use", "tkg1", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// =====================
 		// tanzu context unset
@@ -1101,7 +1101,7 @@ func Test_completionContext(t *testing.T) {
 			test: "no completion after the first argument of the unset command",
 			args: []string{"__complete", "context", "unset", "tkg1", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "complete active context matching the --type flag for the unset command",
@@ -1152,13 +1152,13 @@ func Test_completionContext(t *testing.T) {
 			test: "completion for the --endpoint flag value of the create command",
 			args: []string{"__complete", "context", "create", "--endpoint", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ Please enter the endpoint for which to create the context\n:4\n",
 		},
 		{
 			test: "completion for the --api-token flag value of the create command",
 			args: []string{"__complete", "context", "create", "--api-token", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ Please enter your api-token (you can instead set the variable TANZU_API_TOKEN)\n:4\n",
 		},
 		{
 			test: "completion for the --kubeconfig flag value of the create command",
@@ -1196,14 +1196,26 @@ func Test_completionContext(t *testing.T) {
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: expectedOutForTAECtxs + ":4\n",
 		},
+		{
+			test: "no completion after the first argument of the context get-token command",
+			args: []string{"__complete", "context", "get-token", "tae", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
+		},
 		// =====================
 		// tanzu context update
 		// =====================
 		{
-			test: "completion for the context get-token tae command",
+			test: "completion for the context update tae command",
 			args: []string{"__complete", "context", "update", "tae-active-resource", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: expectedOutForTAECtxs + ":4\n",
+		},
+		{
+			test: "no completion after the first argument of the context update tae command",
+			args: []string{"__complete", "context", "update", "tae-active-resource", "tae", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 	}
 

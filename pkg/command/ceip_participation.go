@@ -74,7 +74,7 @@ func newCEIPParticipationGetCmd() *cobra.Command {
 		Use:               "get",
 		Short:             "Get the current CEIP opt-in status (subject to change)",
 		Long:              "Get the current CEIP opt-in status (subject to change)",
-		ValidArgsFunction: cobra.NoFileCompletions,
+		ValidArgsFunction: noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			optInVal, err := configlib.GetCEIPOptIn()
 			if err != nil {
@@ -98,7 +98,7 @@ func newCEIPParticipationGetCmd() *cobra.Command {
 
 func completeCeipSet(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
 
 	// Keep the "true" choice first by using ShellCompDirectiveKeepOrder (may not work for all shells)

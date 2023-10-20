@@ -64,7 +64,9 @@ to an internet-restricted environment. Please also see the "upload-bundle" comma
 
 	f := downloadBundleCmd.Flags()
 	f.StringVarP(&dpbo.pluginDiscoveryOCIImage, "image", "", constants.TanzuCLIDefaultCentralPluginDiscoveryImage, "URI of the plugin discovery image providing the plugins")
-	utils.PanicOnErr(downloadBundleCmd.RegisterFlagCompletionFunc("image", cobra.NoFileCompletions))
+	utils.PanicOnErr(downloadBundleCmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return cobra.AppendActiveHelp(nil, "Please enter the URI of the plugin discovery image providing the plugins"), cobra.ShellCompDirectiveNoFileComp
+	}))
 
 	// Shell completion for this flag is the default behavior of doing file completion
 	f.StringVarP(&dpbo.tarFile, "to-tar", "", "", "local tar file path to store the plugin images")
@@ -98,7 +100,7 @@ environment. The plugin bundle is obtained using the "download-bundle" command.`
     # Upload the plugin bundle to the remote repository
     tanzu plugin upload-bundle --tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/
     tanzu plugin upload-bundle --tar /tmp/plugin_bundle_complete.tar.gz --to-repo custom.registry.company.com/tanzu-plugins/`,
-		ValidArgsFunction: cobra.NoFileCompletions,
+		ValidArgsFunction: completeUploadBundle,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			options := airgapped.UploadPluginBundleOptions{
 				Tar:             upbo.sourceTar,
@@ -114,7 +116,9 @@ environment. The plugin bundle is obtained using the "download-bundle" command.`
 	// Shell completion for this flag is the default behavior of doing file completion
 	f.StringVarP(&upbo.sourceTar, "tar", "", "", "source tar file")
 	f.StringVarP(&upbo.destinationRepo, "to-repo", "", "", "destination repository for publishing plugins")
-	utils.PanicOnErr(uploadBundleCmd.RegisterFlagCompletionFunc("to-repo", cobra.NoFileCompletions))
+	utils.PanicOnErr(uploadBundleCmd.RegisterFlagCompletionFunc("to-repo", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return cobra.AppendActiveHelp(nil, "Please enter the URI of the destination repository for publishing plugins"), cobra.ShellCompDirectiveNoFileComp
+	}))
 
 	_ = uploadBundleCmd.MarkFlagRequired("tar")
 	_ = uploadBundleCmd.MarkFlagRequired("to-repo")
@@ -135,7 +139,17 @@ func completeDownloadBundle(_ *cobra.Command, args []string, _ string) ([]string
 	}
 
 	// The user has provided enough information
-	return nil, cobra.ShellCompDirectiveNoFileComp
+	return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
+}
+
+func completeUploadBundle(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+	if upbo.destinationRepo == "" || upbo.sourceTar == "" {
+		// Both flags are required, so completion will be provided for them
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	// The user has provided enough information
+	return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 }
 
 func completeGroupVersionsForDownloadBundle(groups []*plugininventory.PluginGroup, id, versionToComplete string) []string {
@@ -148,7 +162,7 @@ func completeGroupVersionsForDownloadBundle(groups []*plugininventory.PluginGrou
 	}
 
 	if group == nil {
-		return nil
+		return cobra.AppendActiveHelp(nil, fmt.Sprintf("There is no group named: '%s'", id))
 	}
 
 	// Since more recent versions are more likely to be
@@ -168,7 +182,7 @@ func completeGroupVersionsForDownloadBundle(groups []*plugininventory.PluginGrou
 	return comps
 }
 
-func completionGetPluginGroupsForBundleDownload() []*plugininventory.PluginGroup {
+func completionGetPluginGroupsForBundleDownload() ([]*plugininventory.PluginGroup, error) {
 	// For a download-bundle, we cannot use the DB cache.  This is because
 	// the download-bundle does not use the configured plugin sources.  Instead it
 	// uses the repo specified by the `--image`` flag, or, without the `--image` flag,
@@ -180,7 +194,7 @@ func completionGetPluginGroupsForBundleDownload() []*plugininventory.PluginGroup
 	var err error
 	tempDBDir, err := os.MkdirTemp("", "")
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer os.RemoveAll(tempDBDir)
 
@@ -188,22 +202,26 @@ func completionGetPluginGroupsForBundleDownload() []*plugininventory.PluginGroup
 	repoImage := dpbo.pluginDiscoveryOCIImage
 	inventoryFile := filepath.Join(tempDBDir, plugininventory.SQliteDBFileName)
 	if err := imageProcessorForDownloadBundleComp.DownloadImageAndSaveFilesToDir(repoImage, filepath.Dir(inventoryFile)); err != nil {
-		return nil
+		return nil, err
 	}
 
 	// Read the plugin inventory database to read the plugin groups it contains
 	pi := plugininventory.NewSQLiteInventory(inventoryFile, path.Dir(repoImage))
 	pluginGroups, err := pi.GetPluginGroups(plugininventory.PluginGroupFilter{IncludeHidden: true}) // Include the hidden plugin groups during plugin migration
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	return pluginGroups
+	return pluginGroups, err
 }
 
 func completeGroupsAndVersionForBundleDownload(cmd *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	pluginGroups := completionGetPluginGroupsForBundleDownload()
-	if pluginGroups == nil {
+	pluginGroups, err := completionGetPluginGroupsForBundleDownload()
+	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	if pluginGroups == nil {
+		comps := cobra.AppendActiveHelp(nil, fmt.Sprintf("There are no plugin groups in %s", dpbo.pluginDiscoveryOCIImage))
+		return comps, cobra.ShellCompDirectiveNoFileComp
 	}
 
 	if idx := strings.Index(toComplete, ":"); idx != -1 {
