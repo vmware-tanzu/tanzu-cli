@@ -31,10 +31,9 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
-	taert "github.com/vmware-tanzu/tanzu-plugin-runtime/tae"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
-	taeauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tae"
+	tanzuauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tanzu"
 	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
 	kubecfg "github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig"
 	wcpauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/wcp"
@@ -53,9 +52,9 @@ var (
 )
 
 const (
-	knownGlobalHost    = "cloud.vmware.com"
-	apiTokenType       = "api-token"
-	defaultTAEEndpoint = "https://api.tanzu.cloud.vmware.com"
+	knownGlobalHost      = "cloud.vmware.com"
+	apiTokenType         = "api-token"
+	defaultTanzuEndpoint = "https://api.tanzu.cloud.vmware.com"
 
 	contextNotExistsForContextType      = "The provided context '%v' does not exist or is not active for the given context type '%v'"
 	noActiveContextExistsForContextType = "There is no active context for the given context type '%v'"
@@ -64,7 +63,7 @@ const (
 	deactivatingPlugin                  = "Deactivating plugin '%v:%v' for context '%v'"
 
 	invalidTargetErrorForContextCommands = "invalid target specified. Please specify a correct value for the `--target` flag from 'kubernetes[k8s]/mission-control[tmc]'"
-	invalidContextType                   = "invalid context type specified. Please specify a correct value for the `--type/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/application-engine[tae]'"
+	invalidContextType                   = "invalid context type specified. Please specify a correct value for the `--type/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/tanzu'"
 )
 
 // constants that define context creation types
@@ -72,7 +71,7 @@ const (
 	contextMissionControl     ContextCreationType = "Mission Control"
 	contextK8SClusterEndpoint ContextCreationType = "Kubernetes (Cluster Endpoint)"
 	contextLocalKubeconfig    ContextCreationType = "Kubernetes (Local Kubeconfig)"
-	contextApplicationEngine  ContextCreationType = "Application Engine"
+	contextTanzu              ContextCreationType = "Tanzu"
 )
 
 type ContextCreationType string
@@ -108,9 +107,9 @@ func init() {
 		return []string{compK8sContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
-	listCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "list only contexts associated with the specified context-type (kubernetes[k8s]/mission-control[tmc]/application-engine[tae])")
+	listCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "list only contexts associated with the specified context-type (kubernetes[k8s]/mission-control[tmc]/tanzu)")
 	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sContextType, compTAEContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+		return []string{compK8sContextType, compTanzuContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
 	listCtxCmd.Flags().BoolVar(&onlyCurrent, "current", false, "list only current active contexts")
@@ -126,9 +125,9 @@ func init() {
 	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 		return []string{compK8sContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
 	}))
-	unsetCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "unset active context associated with the specified context-type (kubernetes[k8s]|mission-control[tmc]|application-engine[tae])")
+	unsetCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "unset active context associated with the specified context-type (kubernetes[k8s]|mission-control[tmc]|tanzu)")
 	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sContextType, compTAEContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+		return []string{compK8sContextType, compTanzuContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
 	msg := "this was done in the v1.1.0 release, it will be removed following the deprecation policy (6 months). Use the --type flag instead.\n"
@@ -161,17 +160,17 @@ var createCtxCmd = &cobra.Command{
     # Create a TKG management cluster context using default kubeconfig path and a kubeconfig context
     tanzu context create mgmt-cluster --kubecontext kubecontext
 
-    # Create an Application Engine (TAE) context with the default endpoint (--type is not necessary for the default endpoint)
-    tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com
+    # Create an Tanzu context with the default endpoint (--type is not necessary for the default endpoint)
+    tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com
 
-    # Create an Application Engine (TAE) context (--type is needed for a non-default endpoint)
-    tanzu context create mytae --endpoint https://non-default.tae.endpoint.com --type application-engine
+    # Create an Tanzu context (--type is needed for a non-default endpoint)
+    tanzu context create mytanzu --endpoint https://non-default.tanzu.endpoint.com --type tanzu
 
-    # Create an Application Engine (TAE) context by using the provided CA Bundle for TLS verification:
-    tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com  --endpoint-ca-certificate /path/to/ca/ca-cert
+    # Create an Tanzu context by using the provided CA Bundle for TLS verification:
+    tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com  --endpoint-ca-certificate /path/to/ca/ca-cert
 
-    # Create an Application Engine (TAE) context but skipping TLS verification (this is insecure):
-    tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com --insecure-skip-tls-verify
+    # Create an Tanzu context but skipping TLS verification (this is insecure):
+    tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com --insecure-skip-tls-verify
 
     [*] : Users have two options to create a kubernetes cluster context. They can choose the control
     plane option by providing 'endpoint', or use the kubeconfig for the cluster by providing
@@ -206,9 +205,9 @@ func initCreateCtxCmd() {
 	// Shell completion for this flag is the default behavior of doing file completion
 	createCtxCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
 	createCtxCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
-	createCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "type of context to create (kubernetes[k8s]/mission-control[tmc]/application-engine[tae])")
+	createCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "type of context to create (kubernetes[k8s]/mission-control[tmc]/tanzu)")
 	utils.PanicOnErr(createCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sContextType, compTAEContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+		return []string{compK8sContextType, compTanzuContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
 	utils.PanicOnErr(createCtxCmd.Flags().MarkHidden("api-token"))
@@ -239,8 +238,9 @@ func createCtx(_ *cobra.Command, args []string) (err error) {
 	}
 	if ctx.ContextType == configtypes.ContextTypeK8s {
 		err = k8sLogin(ctx)
-	} else if ctx.ContextType == configtypes.ContextTypeTAE {
-		err = globalTAELogin(ctx)
+	} else if ctx.ContextType == configtypes.ContextTypeTanzu {
+		// Tanzu control plane login
+		err = globalTanzuLogin(ctx)
 	} else {
 		err = globalLogin(ctx)
 	}
@@ -273,8 +273,8 @@ func isGlobalContext(endpoint string) bool {
 	return false
 }
 
-func isGlobalTAEEndpoint(endpoint string) bool {
-	for _, hostStr := range []string{"api.tanzu.cloud.vmware.com", "api-dev.tanzu.cloud.vmware.com"} {
+func isGlobalTanzuEndpoint(endpoint string) bool {
+	for _, hostStr := range []string{"api.tanzu.cloud.vmware.com", "api.tanzu-dev.cloud.vmware.com", "api.tanzu-stable.cloud.vmware.com "} {
 		if strings.Contains(endpoint, hostStr) {
 			return true
 		}
@@ -298,12 +298,12 @@ func createNewContext() (context *configtypes.Context, err error) {
 	var ctxCreationType ContextCreationType
 	contextType := getContextType()
 
-	if (contextType == configtypes.ContextTypeTAE) || (endpoint != "" && isGlobalTAEEndpoint(endpoint)) {
-		ctxCreationType = contextApplicationEngine
+	if (contextType == configtypes.ContextTypeTanzu) || (endpoint != "" && isGlobalTanzuEndpoint(endpoint)) {
+		ctxCreationType = contextTanzu
 	} else if (contextType == configtypes.ContextTypeTMC) || (endpoint != "" && isGlobalContext(endpoint)) {
 		ctxCreationType = contextMissionControl
 	} else if endpoint != "" {
-		// user provided command line option endpoint is provided that is not globalTAE or GlobalContext=> it is Kubernetes(Cluster Endpoint) type
+		// user provided command line option endpoint is provided that is not globalTanzu or GlobalContext=> it is Kubernetes(Cluster Endpoint) type
 		ctxCreationType = contextK8SClusterEndpoint
 	} else if kubeContext != "" {
 		// user provided command line option kubeContext is provided => it is Kubernetes(Local Kubeconfig) type
@@ -337,8 +337,8 @@ func createContextUsingContextType(ctxCreationType ContextCreationType) (context
 		ctxCreateFunc = createContextWithClusterEndpoint
 	case contextLocalKubeconfig:
 		ctxCreateFunc = createContextWithKubeconfig
-	case contextApplicationEngine:
-		ctxCreateFunc = createContextWithTAEEndpoint
+	case contextTanzu:
+		ctxCreateFunc = createContextWithTanzuEndpoint
 	}
 	return ctxCreateFunc()
 }
@@ -483,9 +483,9 @@ func createContextWithClusterEndpoint() (context *configtypes.Context, err error
 	return context, err
 }
 
-func createContextWithTAEEndpoint() (context *configtypes.Context, err error) {
+func createContextWithTanzuEndpoint() (context *configtypes.Context, err error) {
 	if endpoint == "" {
-		endpoint, err = promptEndpoint(defaultTAEEndpoint)
+		endpoint, err = promptEndpoint(defaultTanzuEndpoint)
 		if err != nil {
 			return
 		}
@@ -506,10 +506,10 @@ func createContextWithTAEEndpoint() (context *configtypes.Context, err error) {
 		return
 	}
 
-	// TAE context would have both CSP(GlobalOpts) auth details and kubeconfig(ClusterOpts),
+	// Tanzu context would have both CSP(GlobalOpts) auth details and kubeconfig(ClusterOpts),
 	context = &configtypes.Context{
 		Name:        ctxName,
-		ContextType: configtypes.ContextTypeTAE,
+		ContextType: configtypes.ContextTypeTanzu,
 		GlobalOpts:  &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 		ClusterOpts: &configtypes.ClusterServer{},
 	}
@@ -532,14 +532,14 @@ func globalLogin(c *configtypes.Context) (err error) {
 	return nil
 }
 
-func globalTAELogin(c *configtypes.Context) error {
-	claims, err := doCSPAuthAndUpdateContext(c, "TAE")
+func globalTanzuLogin(c *configtypes.Context) error {
+	claims, err := doCSPAuthAndUpdateContext(c, "tanzu")
 	if err != nil {
 		return err
 	}
-	c.AdditionalMetadata[taert.OrgIDKey] = claims.OrgID
+	c.AdditionalMetadata[config.OrgIDKey] = claims.OrgID
 
-	kubeCfg, kubeCtx, serverEndpoint, err := taeauth.GetTAEKubeconfig(c, endpoint, claims.OrgID, endpointCACertPath, skipTLSVerify)
+	kubeCfg, kubeCtx, serverEndpoint, err := tanzuauth.GetTanzuKubeconfig(c, endpoint, claims.OrgID, endpointCACertPath, skipTLSVerify)
 	if err != nil {
 		return err
 	}
@@ -560,7 +560,7 @@ func globalTAELogin(c *configtypes.Context) error {
 
 	// format
 	fmt.Println()
-	log.Success("successfully created a Application Engine(TAE) context")
+	log.Success("successfully created a tanzu context")
 	return nil
 }
 
@@ -610,8 +610,8 @@ func promptContextType() (ctxCreationType ContextCreationType, err error) {
 	err = component.Prompt(
 		&component.PromptConfig{
 			Message: "Select context creation type",
-			Options: []string{string(contextMissionControl), string(contextApplicationEngine), string(contextK8SClusterEndpoint), string(contextLocalKubeconfig)},
-			Default: string(contextMissionControl),
+			Options: []string{string(contextTanzu), string(contextMissionControl), string(contextK8SClusterEndpoint), string(contextLocalKubeconfig)},
+			Default: string(contextTanzu),
 		},
 		&ctxCreationTypeStr,
 		promptOpts...,
@@ -626,8 +626,8 @@ func promptContextType() (ctxCreationType ContextCreationType, err error) {
 func stringToContextCreationType(ctxCreationTypeStr string) ContextCreationType {
 	if ctxCreationTypeStr == string(contextMissionControl) {
 		return contextMissionControl
-	} else if ctxCreationTypeStr == string(contextApplicationEngine) {
-		return contextApplicationEngine
+	} else if ctxCreationTypeStr == string(contextTanzu) {
+		return contextTanzu
 	} else if ctxCreationTypeStr == string(contextK8SClusterEndpoint) {
 		return contextK8SClusterEndpoint
 	} else if ctxCreationTypeStr == string(contextLocalKubeconfig) {
@@ -700,13 +700,18 @@ func promptAPIToken(endpointType string) (apiToken string, err error) {
 		Path:     "/csp/gateway/portal/",
 		Fragment: "/user/tokens",
 	}
+	// The below message is applicable for TMC
+	msg := fmt.Sprintf("If you don't have an API token, visit the VMware Cloud Services console, select your organization, and create an API token with the %s service roles:\n  %s\n",
+		endpointType, consoleURL.String())
+	// TODO: Update this message to mention that type of service roles instead of generic term 'appropriate'
+	if endpointType == "tanzu" {
+		msg = fmt.Sprintf("If you don't have an API token, visit the VMware Cloud Services console, select your organization, and create an API token with appropriate service roles:\n  %s\n",
+			consoleURL.String())
+	}
 
 	// format
 	fmt.Println()
-	log.Infof(
-		"If you don't have an API token, visit the VMware Cloud Services console, select your organization, and create an API token with the %s service roles:\n  %s\n",
-		endpointType, consoleURL.String(),
-	)
+	log.Infof(msg)
 
 	promptOpts := getPromptOpts()
 
@@ -958,11 +963,11 @@ func deleteCtx(_ *cobra.Command, args []string) error {
 }
 
 func deleteKubeconfigContext(ctx *configtypes.Context) {
-	// Note: currently cleaning up the kubeconfig for TAE context types only.
+	// Note: currently cleaning up the kubeconfig for tanzu context types only.
 	// (Since the kubernetes context type can have kube context provided by the user, it may not be
 	// desired outcome for user if CLI deletes/cleanup kubeconfig provided by the user.)
 	// TODO(prkalle): To delete the context created by CLI for Kubernetes (Cluster Endpoint) (eg.TKG with pinniped)
-	if ctx.ContextType == configtypes.ContextTypeTAE {
+	if ctx.ContextType == configtypes.ContextTypeTanzu {
 		log.Infof("Deleting kubeconfig context '%s' from the file '%s'", ctx.ClusterOpts.Context, ctx.ClusterOpts.Path)
 		if err := kubecfg.DeleteContextFromKubeConfig(ctx.ClusterOpts.Path, ctx.ClusterOpts.Context); err != nil {
 			log.Warningf("Failed to delete the kubeconfig context '%s' from the file '%s'", ctx.ClusterOpts.Context, ctx.ClusterOpts.Path)
@@ -1140,10 +1145,10 @@ func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.W
 }
 
 // getContextsToDisplay returns a filtered list of contexts, and a boolean on
-// whether the contexts include some with TAE fields to display
+// whether the contexts include some with tanzu context type fields to display
 func getContextsToDisplay(cfg *configtypes.ClientConfig, contextType configtypes.ContextType, onlyCurrent bool) ([]*configtypes.Context, bool) {
 	var contextOutputList []*configtypes.Context
-	var hasTAEFields bool
+	var hasTanzuFields bool
 
 	for _, ctx := range cfg.KnownContexts {
 		if contextType != "" && ctx.ContextType != contextType {
@@ -1154,12 +1159,12 @@ func getContextsToDisplay(cfg *configtypes.ClientConfig, contextType configtypes
 			continue
 		}
 		// could be fine-tuned to check for non-empty values as well
-		if ctx.ContextType == configtypes.ContextTypeTAE {
-			hasTAEFields = true
+		if ctx.ContextType == configtypes.ContextTypeTanzu {
+			hasTanzuFields = true
 		}
 		contextOutputList = append(contextOutputList, ctx)
 	}
-	return contextOutputList, hasTAEFields
+	return contextOutputList, hasTanzuFields
 }
 
 type ContextListOutputRow struct {
@@ -1193,7 +1198,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 			if ctx.GlobalOpts != nil {
 				ep = ctx.GlobalOpts.Endpoint
 			}
-		case configtypes.ContextTypeTAE:
+		case configtypes.ContextTypeTanzu:
 			project = ""
 			space = ""
 			ep = ""
@@ -1204,11 +1209,11 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 				path = ctx.ClusterOpts.Path
 				context = ctx.ClusterOpts.Context
 			}
-			if ctx.AdditionalMetadata[taert.ProjectNameKey] != nil {
-				project = ctx.AdditionalMetadata[taert.ProjectNameKey].(string)
+			if ctx.AdditionalMetadata[config.ProjectNameKey] != nil {
+				project = ctx.AdditionalMetadata[config.ProjectNameKey].(string)
 			}
-			if ctx.AdditionalMetadata[taert.SpaceNameKey] != nil {
-				space = ctx.AdditionalMetadata[taert.SpaceNameKey].(string)
+			if ctx.AdditionalMetadata[config.SpaceNameKey] != nil {
+				space = ctx.AdditionalMetadata[config.SpaceNameKey].(string)
 			}
 		default:
 			if ctx.ClusterOpts != nil {
@@ -1226,10 +1231,10 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 
 var getCtxTokenCmd = &cobra.Command{
 	Use:               "get-token CONTEXT_NAME",
-	Short:             "Get the valid CSP token for the given TAE context.",
+	Short:             "Get the valid CSP token for the given tanzu context.",
 	Args:              cobra.ExactArgs(1),
 	Hidden:            true,
-	ValidArgsFunction: completeTAEContexts,
+	ValidArgsFunction: completeTanzuContexts,
 	RunE:              getToken,
 }
 
@@ -1239,8 +1244,8 @@ func getToken(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if ctx.ContextType != configtypes.ContextTypeTAE {
-		return errors.Errorf("context %q is not of type TAE", name)
+	if ctx.ContextType != configtypes.ContextTypeTanzu {
+		return errors.Errorf("context %q is not of type tanzu", name)
 	}
 	if csp.IsExpired(ctx.GlobalOpts.Auth.Expiration) {
 		_, err := csp.GetToken(&ctx.GlobalOpts.Auth)
@@ -1281,28 +1286,28 @@ func newUpdateCtxCmd() *cobra.Command {
 		Short:  "Update an aspect of a context (subject to change)",
 		Hidden: true,
 	}
-	taeActiveResourceCmd.Flags().StringVarP(&projectStr, "project", "", "", "project name to be set as active")
-	taeActiveResourceCmd.Flags().StringVarP(&spaceStr, "space", "", "", "space name to be set as active")
+	tanzuActiveResourceCmd.Flags().StringVarP(&projectStr, "project", "", "", "project name to be set as active")
+	tanzuActiveResourceCmd.Flags().StringVarP(&spaceStr, "space", "", "", "space name to be set as active")
 
 	updateCtxCmd.AddCommand(
-		taeActiveResourceCmd,
+		tanzuActiveResourceCmd,
 	)
 	return updateCtxCmd
 }
 
-// taeActiveResourceCmd updates the TAE(Tanzu Application Engine) active resource referenced by tae context
+// tanzuActiveResourceCmd updates the tanzu active resource referenced by tanzu context
 //
 // NOTE!!: This command is EXPERIMENTAL and subject to change in future
-var taeActiveResourceCmd = &cobra.Command{
-	Use:               "tae-active-resource CONTEXT_NAME",
-	Short:             "updates the Tanzu Application Engine(TAE) active resource for the given TAE context (subject to change).",
+var tanzuActiveResourceCmd = &cobra.Command{
+	Use:               "tanzu-active-resource CONTEXT_NAME",
+	Short:             "Updates the tanzu active resource for the given context of type tanzu (subject to change).",
 	Hidden:            true,
 	Args:              cobra.ExactArgs(1),
-	ValidArgsFunction: completeTAEContexts,
-	RunE:              setTAECtxActiveResource,
+	ValidArgsFunction: completeTanzuContexts,
+	RunE:              setTanzuCtxActiveResource,
 }
 
-func setTAECtxActiveResource(_ *cobra.Command, args []string) error {
+func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	name := args[0]
 	if projectStr == "" && spaceStr != "" {
 		return errors.Errorf("space cannot be set without project name. Please provide project name also using --project option")
@@ -1311,27 +1316,27 @@ func setTAECtxActiveResource(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	if ctx.ContextType != configtypes.ContextTypeTAE {
-		return errors.Errorf("context %q is not of type TAE", name)
+	if ctx.ContextType != configtypes.ContextTypeTanzu {
+		return errors.Errorf("context %q is not of type tanzu", name)
 	}
 	if ctx.AdditionalMetadata == nil {
 		ctx.AdditionalMetadata = make(map[string]interface{})
 	}
-	ctx.AdditionalMetadata[taert.ProjectNameKey] = projectStr
-	ctx.AdditionalMetadata[taert.SpaceNameKey] = spaceStr
+	ctx.AdditionalMetadata[config.ProjectNameKey] = projectStr
+	ctx.AdditionalMetadata[config.SpaceNameKey] = spaceStr
 	err = config.SetContext(ctx, false)
 	if err != nil {
-		return errors.Wrap(err, "failed updating the context %q with the active TAE resource")
+		return errors.Wrap(err, "failed updating the context %q with the active tanzu resource")
 	}
-	err = updateTAEContextKubeconfig(ctx, projectStr, spaceStr)
+	err = updateTanzuContextKubeconfig(ctx, projectStr, spaceStr)
 	if err != nil {
-		return errors.Wrap(err, "failed to update the TAE context kubeconfig")
+		return errors.Wrap(err, "failed to update the tanzu context kubeconfig")
 	}
 
 	return nil
 }
 
-func updateTAEContextKubeconfig(cliContext *configtypes.Context, projectName, spaceName string) error {
+func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, spaceName string) error {
 	kcfg, err := clientcmd.LoadFromFile(cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "unable to load kubeconfig")
@@ -1396,7 +1401,7 @@ func completeAllContexts(_ *cobra.Command, args []string, _ string) ([]string, c
 	return completionFormatCtxs(allCtxs), cobra.ShellCompDirectiveNoFileComp
 }
 
-func completeTAEContexts(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+func completeTanzuContexts(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
 		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
@@ -1406,13 +1411,13 @@ func completeTAEContexts(_ *cobra.Command, args []string, _ string) ([]string, c
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	var taeCtxs []*configtypes.Context
+	var tanzuCtxs []*configtypes.Context
 	for _, ctx := range cfg.KnownContexts {
-		if ctx.ContextType == configtypes.ContextTypeTAE {
-			taeCtxs = append(taeCtxs, ctx)
+		if ctx.ContextType == configtypes.ContextTypeTanzu {
+			tanzuCtxs = append(tanzuCtxs, ctx)
 		}
 	}
-	return completionFormatCtxs(taeCtxs), cobra.ShellCompDirectiveNoFileComp
+	return completionFormatCtxs(tanzuCtxs), cobra.ShellCompDirectiveNoFileComp
 }
 
 func completeActiveContexts(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
