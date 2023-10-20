@@ -137,7 +137,7 @@ func TestCompletionCeip(t *testing.T) {
 			test: "no completion after the first arg for the ceip set command",
 			args: []string{"__complete", "ceip", "set", "true", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		// =====================
 		// tanzu ceip get
@@ -146,7 +146,7 @@ func TestCompletionCeip(t *testing.T) {
 			test: "no completion for the ceip get command",
 			args: []string{"__complete", "ceip", "get", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 	}
 

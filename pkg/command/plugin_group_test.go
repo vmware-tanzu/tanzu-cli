@@ -220,11 +220,14 @@ func TestCompletionPluginGroup(t *testing.T) {
 		args     []string
 		expected string
 	}{
+		// ============================
+		// tanzu plugin group search
+		// ============================
 		{
 			test: "no completion after the group search command",
 			args: []string{"__complete", "plugin", "group", "search", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --output flag value of the group search command",
@@ -240,6 +243,9 @@ func TestCompletionPluginGroup(t *testing.T) {
 				"vmware-tkg/default\tPlugins for TKG\n" +
 				":4\n",
 		},
+		// ============================
+		// tanzu plugin group get
+		// ============================
 		{
 			test: "completion for the group name part of the group get command",
 			args: []string{"__complete", "plugin", "group", "get", ""},
@@ -258,10 +264,24 @@ func TestCompletionPluginGroup(t *testing.T) {
 				":36\n",
 		},
 		{
+			test: "completion for the version name part of an invalid group for the group get command",
+			args: []string{"__complete", "plugin", "group", "get", "invalid:"},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ Invalid group format: 'invalid'\n" +
+				":4\n",
+		},
+		{
+			test: "completion for the version name part of an missing group for the group get command",
+			args: []string{"__complete", "plugin", "group", "get", "vmware-tkg/invalid:"},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ There is no group named: 'vmware-tkg/invalid'\n" +
+				":4\n",
+		},
+		{
 			test: "no completion after the first arg of the group get command",
 			args: []string{"__complete", "plugin", "group", "get", "vmware-tkg/default", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --output flag value for the group get command",

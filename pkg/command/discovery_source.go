@@ -50,7 +50,7 @@ func newListDiscoverySourceCmd() *cobra.Command {
 	var listDiscoverySourceCmd = &cobra.Command{
 		Use:               "list",
 		Short:             "List available discovery sources",
-		ValidArgsFunction: cobra.NoFileCompletions,
+		ValidArgsFunction: noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			output := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "name", "image")
 			discoverySources, err := configlib.GetCLIDiscoverySources()
@@ -87,7 +87,7 @@ func newUpdateDiscoverySourceCmd() *cobra.Command {
     # Update the discovery source for an air-gapped scenario. The URI must be an OCI image.
     tanzu plugin source update default --uri registry.example.com/tanzu/plugin-inventory:latest`,
 		Args:              cobra.ExactArgs(1),
-		ValidArgsFunction: completeDiscoverySources,
+		ValidArgsFunction: completeUpdateDiscoverySource,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			discoveryName := args[0]
 
@@ -113,7 +113,9 @@ func newUpdateDiscoverySourceCmd() *cobra.Command {
 
 	updateDiscoverySourceCmd.Flags().StringVarP(&uri, "uri", "u", "", "URI for discovery source. The URI must be of an OCI image")
 	_ = updateDiscoverySourceCmd.MarkFlagRequired("uri")
-	utils.PanicOnErr(updateDiscoverySourceCmd.RegisterFlagCompletionFunc("uri", cobra.NoFileCompletions))
+	utils.PanicOnErr(updateDiscoverySourceCmd.RegisterFlagCompletionFunc("uri", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return cobra.AppendActiveHelp(nil, "Please enter the uri of the OCI image for plugin discovery"), cobra.ShellCompDirectiveNoFileComp
+	}))
 
 	return updateDiscoverySourceCmd
 }
@@ -156,7 +158,7 @@ func newInitDiscoverySourceCmd() *cobra.Command {
 		Args:  cobra.MaximumNArgs(0),
 		// There are no flags
 		DisableFlagsInUseLine: true,
-		ValidArgsFunction:     cobra.NoFileCompletions,
+		ValidArgsFunction:     noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := config.PopulateDefaultCentralDiscovery(true)
 			if err != nil {
@@ -202,7 +204,7 @@ func checkDiscoverySource(source configtypes.PluginDiscovery) error {
 // ====================================
 func completeDiscoverySources(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
-		return nil, cobra.ShellCompDirectiveNoFileComp
+		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
 
 	var comps []string
@@ -216,4 +218,14 @@ func completeDiscoverySources(_ *cobra.Command, args []string, toComplete string
 	sort.Strings(comps)
 
 	return comps, cobra.ShellCompDirectiveNoFileComp
+}
+
+func completeUpdateDiscoverySource(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) > 0 && uri == "" {
+		// The --uri flag is required, so completion will be provided for it
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	// The user has provided enough information
+	return completeDiscoverySources(cmd, args, toComplete)
 }

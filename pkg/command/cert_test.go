@@ -284,7 +284,7 @@ func TestCompletionCert(t *testing.T) {
 			test: "no completion for the cert list command",
 			args: []string{"__complete", "config", "cert", "list", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --output flag value of the cert list command",
@@ -305,7 +305,7 @@ func TestCompletionCert(t *testing.T) {
 			test: "no completion for the cert add command once the --host flag is present",
 			args: []string{"__complete", "config", "cert", "add", "--host", "example.com", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --host flag value of the cert add command",
@@ -350,7 +350,7 @@ func TestCompletionCert(t *testing.T) {
 			test: "no completion after the first arg for the cert update command",
 			args: []string{"__complete", "config", "cert", "update", "localhost:9876", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion for the --ca-certificate flag value of the cert update command",
@@ -389,7 +389,7 @@ func TestCompletionCert(t *testing.T) {
 			test: "no completion after the first arg for the cert delete command",
 			args: []string{"__complete", "config", "cert", "delete", "localhost:9876", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
-			expected: ":4\n",
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 	}
 
