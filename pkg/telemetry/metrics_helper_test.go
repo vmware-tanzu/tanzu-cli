@@ -15,7 +15,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-	taert "github.com/vmware-tanzu/tanzu-plugin-runtime/tae"
 )
 
 var _ = Describe("metrics helper tests", func() {
@@ -63,47 +62,47 @@ var _ = Describe("metrics helper tests", func() {
 			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeK8s) + ":" + computeEndpointSHAForK8sContext(ctx)))
 		})
 	})
-	Context("when the plugin target is k8s and the current active context is of type 'application-engine'", func() {
-		It("should return the hash of application-engine active context prefixed with 'application-engine'", func() {
+	Context("when the plugin target is k8s and the current active context is of type 'tanzu'", func() {
+		It("should return the hash of tanzu active context prefixed with 'tanzu'", func() {
 			pluginInfo := &cli.PluginInfo{
 				Name:    "k8s-plugin",
 				Version: "1.0.0",
 				Target:  configtypes.TargetK8s,
 			}
-			// when TAE context has active org
-			ctx, err := configlib.GetContext("test-tae-context")
+			// when tanzu context has active org
+			ctx, err := configlib.GetContext("test-tanzu-context")
 			Expect(err).ToNot(HaveOccurred())
-			ctx.AdditionalMetadata[taert.ProjectNameKey] = ""
-			ctx.AdditionalMetadata[taert.SpaceNameKey] = ""
+			ctx.AdditionalMetadata[configlib.ProjectNameKey] = ""
+			ctx.AdditionalMetadata[configlib.SpaceNameKey] = ""
 			err = configlib.SetContext(ctx, true)
 			Expect(err).ToNot(HaveOccurred())
 
 			epHashStr := getEndpointSHAWithCtxTypePrefix(pluginInfo)
 			Expect(epHashStr).ToNot(BeEmpty())
-			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeTAE) + ":" + computeEndpointSHAForTAEContext(ctx)))
+			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeTanzu) + ":" + computeEndpointSHAForTanzuContext(ctx)))
 
-			// when TAE context has active project
-			ctx.AdditionalMetadata[taert.ProjectNameKey] = testProjectName
-			ctx.AdditionalMetadata[taert.SpaceNameKey] = ""
+			// when tanzu context has active project
+			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
+			ctx.AdditionalMetadata[configlib.SpaceNameKey] = ""
 			err = configlib.SetContext(ctx, true)
 			Expect(err).ToNot(HaveOccurred())
 
 			epHashStr = getEndpointSHAWithCtxTypePrefix(pluginInfo)
 			Expect(epHashStr).ToNot(BeEmpty())
-			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeTAE) + ":" + computeEndpointSHAForTAEContext(ctx)))
+			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeTanzu) + ":" + computeEndpointSHAForTanzuContext(ctx)))
 
-			// when TAE context has active space
-			ctx.AdditionalMetadata[taert.ProjectNameKey] = testProjectName
-			ctx.AdditionalMetadata[taert.SpaceNameKey] = testSpaceName
+			// when tanzu context has active space
+			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
+			ctx.AdditionalMetadata[configlib.SpaceNameKey] = testSpaceName
 			err = configlib.SetContext(ctx, true)
 			Expect(err).ToNot(HaveOccurred())
 
 			epHashStr = getEndpointSHAWithCtxTypePrefix(pluginInfo)
 			Expect(epHashStr).ToNot(BeEmpty())
-			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeTAE) + ":" + computeEndpointSHAForTAEContext(ctx)))
+			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeTanzu) + ":" + computeEndpointSHAForTanzuContext(ctx)))
 		})
 	})
-	Context("when the plugin target is k8s and there is no active context of type kubernetes/application-engine", func() {
+	Context("when the plugin target is k8s and there is no active context of type kubernetes/tanzu", func() {
 		It("should return the empty string", func() {
 			pluginInfo := &cli.PluginInfo{
 				Name:    "k8s-plugin",

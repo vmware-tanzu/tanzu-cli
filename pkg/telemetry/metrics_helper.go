@@ -11,7 +11,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/tae"
 )
 
 func getEndpointSHAWithCtxTypePrefix(plugin *cli.PluginInfo) string {
@@ -35,10 +34,10 @@ func computeEndpointSHAWithCtxTypePrefix(curCtx map[configtypes.ContextType]*con
 		if exists {
 			return string(configtypes.ContextTypeK8s) + ":" + computeEndpointSHAForK8sContext(ctx)
 		}
-		// If Target is k8s and k8s context type is not active, fall back to TAE context-type
-		ctx, exists = curCtx[configtypes.ContextTypeTAE]
+		// If Target is k8s and k8s context type is not active, fall back to tanzu context-type
+		ctx, exists = curCtx[configtypes.ContextTypeTanzu]
 		if exists {
-			return string(configtypes.ContextTypeTAE) + ":" + computeEndpointSHAForTAEContext(ctx)
+			return string(configtypes.ContextTypeTanzu) + ":" + computeEndpointSHAForTanzuContext(ctx)
 		}
 		return ""
 
@@ -58,12 +57,12 @@ func hashString(str string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func computeEndpointSHAForTAEContext(ctx *configtypes.Context) string {
+func computeEndpointSHAForTanzuContext(ctx *configtypes.Context) string {
 	// returns SHA256 of concatenated string of Endpoint and orgId/ProjectName/SpaceName
 	return hashString(ctx.GlobalOpts.Endpoint +
-		stringValue(ctx.AdditionalMetadata[tae.OrgIDKey]) +
-		stringValue(ctx.AdditionalMetadata[tae.ProjectNameKey]) +
-		stringValue(ctx.AdditionalMetadata[tae.SpaceNameKey]))
+		stringValue(ctx.AdditionalMetadata[configlib.OrgIDKey]) +
+		stringValue(ctx.AdditionalMetadata[configlib.ProjectNameKey]) +
+		stringValue(ctx.AdditionalMetadata[configlib.SpaceNameKey]))
 }
 
 func computeEndpointSHAForTMCContext(ctx *configtypes.Context) string {
