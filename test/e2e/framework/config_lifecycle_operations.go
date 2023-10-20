@@ -4,6 +4,7 @@
 package framework
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,6 +26,8 @@ const (
 
 // ConfigLifecycleOps performs "tanzu config" command operations
 type ConfigLifecycleOps interface {
+	// ConfigWithOptions performs config command with given options
+	ConfigWithOptions(opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error)
 	// ConfigSetFeatureFlag sets the tanzu config feature flag
 	ConfigSetFeatureFlag(path, value string, opts ...E2EOption) error
 	// ConfigGetFeatureFlag gets the tanzu config feature flag
@@ -99,6 +102,11 @@ func (co *configOps) ConfigSetFeatureFlag(path, value string, opts ...E2EOption)
 	confSetCmd := ConfigSet + path + " " + value
 	_, _, err = co.cmdExe.TanzuCmdExec(confSetCmd, opts...)
 	return err
+}
+
+// ConfigWithOptions performs config command with given options
+func (co *configOps) ConfigWithOptions(opts ...E2EOption) (stdOut, stdErr *bytes.Buffer, err error) {
+	return co.cmdExe.TanzuCmdExec(ConfigCmd, opts...)
 }
 
 // ConfigGetFeatureFlag gets the given tanzu config feature flag
