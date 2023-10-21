@@ -5,6 +5,7 @@ package command
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -18,6 +19,10 @@ import (
 )
 
 func TestCompletionPluginBundle(t *testing.T) {
+	// This is global logic and needs not be tested for each
+	// command.  Let's deactivate it.
+	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
+
 	var downloadImageCalled bool
 
 	tests := []struct {
@@ -205,4 +210,6 @@ func TestCompletionPluginBundle(t *testing.T) {
 			resetPluginCommandFlags()
 		})
 	}
+
+	os.Unsetenv("TANZU_ACTIVE_HELP")
 }

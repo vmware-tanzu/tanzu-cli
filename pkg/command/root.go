@@ -168,6 +168,9 @@ func newRootCmd() *cobra.Command {
 					return err
 				}
 			}
+
+			setupActiveHelp(cmd, args)
+
 			return nil
 		},
 		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
@@ -386,4 +389,70 @@ func Execute() error {
 		telemetry.LogError(sendErr, "")
 	}
 	return executionErr
+}
+
+// ====================================
+// Shell completion functions
+// ====================================
+func setupActiveHelp(cmd *cobra.Command, args []string) {
+	if cmd.Name() != cobra.ShellCompRequestCmd {
+		// We only setup ActiveHelp when we are dealing
+		// with the __complete command since that is the
+		// time shell completion is being performed.
+		return
+	}
+
+	printShortDescOfCmdInActiveHelp(cmd, args)
+}
+
+// printShortDescOfCmdInActiveHelp sets up a ValidArgsFunction for the
+// final command being run to print that command's "short" text as activeHelp.
+// For example, if the user does
+//
+//	tanzu context list <TAB>
+//
+// this function will add a ValidArgsFunction for the "context list"
+// command to print its short text as activeHelp.
+func printShortDescOfCmdInActiveHelp(cmd *cobra.Command, args []string) {
+	activeHelpConfig := os.Getenv("TANZU_ACTIVE_HELP")
+	if strings.Contains(activeHelpConfig, "no_short_help") {
+		return
+	}
+
+	// Find the final command that is being shell completed
+	finalCmd, _, err := cmd.Root().Find(args)
+
+	// Add the extra ValidArgsFunction to core commands only.
+	// This feature will be handled by tanzu-plugin-runtime for plugins.
+	if err == nil && finalCmd != nil && !isPluginCommand(finalCmd) {
+		// If there is already a ValidArgsFunction, we must continue
+		// using it once we have dealt with our extra activeHelp
+		originalValidArgsFunc := finalCmd.ValidArgsFunction
+
+		finalCmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			var comps []string
+			if cmd.Short != "" {
+				// Add the short text to activeHelp
+				// We need to prefix it with something to differentiate it from
+				// other active help text telling the user what to do.
+				comps = cobra.AppendActiveHelp(comps, fmt.Sprintf("Command help: %s", cmd.Short))
+			}
+
+			// By default don't provide file completion.
+			// This is important when we are doing sub-command
+			// completion such as "tanzu context <TAB>"; normally
+			// cobra would turn off file completion in this case,
+			// but the below will be overriding cobra's directive.
+			// For the cases that need file completion, we'll have
+			// to add a ValidArgsFunction.  Such cases are much more
+			// rare than needing to disable file completion.
+			directive := cobra.ShellCompDirectiveNoFileComp
+			if originalValidArgsFunc != nil {
+				var oriComps []string
+				oriComps, directive = originalValidArgsFunc(cmd, args, toComplete)
+				comps = append(comps, oriComps...)
+			}
+			return comps, directive
+		}
+	}
 }

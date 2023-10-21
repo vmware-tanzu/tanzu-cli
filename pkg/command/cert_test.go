@@ -252,6 +252,10 @@ func TestCompletionCert(t *testing.T) {
 	assert.Nil(t, err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 
+	// This is global logic and needs not be tested for each
+	// command.  Let's deactivate it.
+	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
+
 	// Create some test certs
 	cert1 := configtypes.Cert{
 		Host:           "example.com",
@@ -417,6 +421,7 @@ func TestCompletionCert(t *testing.T) {
 	os.RemoveAll(configFileNG.Name())
 	os.Unsetenv("TANZU_CONFIG")
 	os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+	os.Unsetenv("TANZU_ACTIVE_HELP")
 }
 
 func resetCertCommandFlags() {
