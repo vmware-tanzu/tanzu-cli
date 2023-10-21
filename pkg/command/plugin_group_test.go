@@ -215,6 +215,10 @@ func TestPluginGroupGet(t *testing.T) {
 }
 
 func TestCompletionPluginGroup(t *testing.T) {
+	// This is global logic and needs not be tested for each
+	// command.  Let's deactivate it.
+	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
+
 	tests := []struct {
 		test     string
 		args     []string
@@ -317,4 +321,6 @@ func TestCompletionPluginGroup(t *testing.T) {
 			resetPluginCommandFlags()
 		})
 	}
+
+	os.Unsetenv("TANZU_ACTIVE_HELP")
 }
