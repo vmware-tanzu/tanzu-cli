@@ -65,6 +65,10 @@ func TestVersion(t *testing.T) {
 }
 
 func TestCompletionVersion(t *testing.T) {
+	// This is global logic and needs not be tested for each
+	// command.  Let's deactivate it.
+	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
+
 	tests := []struct {
 		test     string
 		args     []string
@@ -95,4 +99,6 @@ func TestCompletionVersion(t *testing.T) {
 			assert.Equal(spec.expected, out.String())
 		})
 	}
+
+	os.Unsetenv("TANZU_ACTIVE_HELP")
 }

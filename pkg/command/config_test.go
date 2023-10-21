@@ -192,6 +192,10 @@ func TestCompletionConfig(t *testing.T) {
 	assert.Nil(t, err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 
+	// This is global logic and needs not be tested for each
+	// command.  Let's deactivate it.
+	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
+
 	// Set some env vars
 	_ = config.SetEnv("VAR1", "value1")
 	_ = config.SetEnv("VAR2", "value2")
@@ -294,4 +298,5 @@ func TestCompletionConfig(t *testing.T) {
 	os.RemoveAll(configFileNG.Name())
 	os.Unsetenv("TANZU_CONFIG")
 	os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+	os.Unsetenv("TANZU_ACTIVE_HELP")
 }

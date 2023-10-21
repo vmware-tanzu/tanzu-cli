@@ -4,6 +4,7 @@
 package command
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -401,4 +402,59 @@ func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGro
 	fmt.Fprintf(f, fakePluginScriptFmtString, pluginName, pluginName, commandGroup, strconv.FormatBool(hidden), aliasesString, completionType, target, postInstallResult, pluginName, pluginName)
 
 	return nil
+}
+
+func TestCompletionShortHelpInActiveHelp(t *testing.T) {
+	tests := []struct {
+		test     string
+		args     []string
+		expected string
+	}{
+		{
+			test: "short help as active help at level 1",
+			args: []string{"__complete", "plugin", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "clean\tClean the plugins\n" +
+				"describe\tDescribe a plugin\n" +
+				"download-bundle\tDownload plugin bundle to the local system\n" +
+				"group\tManage plugin-groups\n" +
+				"install\tInstall a plugin\n" +
+				"list\tList installed plugins\n" +
+				"search\tSearch for available plugins\n" +
+				"source\tManage plugin discovery sources\n" +
+				"sync\tInstalls all plugins recommended by the active contexts\n" +
+				"uninstall\tUninstall a plugin\n" +
+				"upgrade\tUpgrade a plugin\n" +
+				"upload-bundle\tUpload plugin bundle to a repository\n" +
+				"_activeHelp_ Command help: Manage CLI plugins\n" +
+				":4\n",
+		},
+		{
+			test: "short help as active help at level 2",
+			args: []string{"__complete", "plugin", "search", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ Command help: Search for available plugins\n" +
+				"_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
+		},
+	}
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var out bytes.Buffer
+			rootCmd.SetOut(&out)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			assert.Equal(spec.expected, out.String())
+		})
+	}
+
+	os.Unsetenv("TANZU_ACTIVE_HELP")
 }

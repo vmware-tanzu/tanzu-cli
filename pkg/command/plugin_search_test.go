@@ -101,6 +101,10 @@ func TestPluginSearch(t *testing.T) {
 }
 
 func TestCompletionPluginSearch(t *testing.T) {
+	// This is global logic and needs not be tested for each
+	// command.  Let's deactivate it.
+	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
+
 	expectedOutforTargetFlag := compGlobalTarget + "\n" + compK8sTarget + "\n" + compTMCTarget + "\n"
 
 	tests := []struct {
@@ -178,4 +182,6 @@ func TestCompletionPluginSearch(t *testing.T) {
 			resetPluginCommandFlags()
 		})
 	}
+
+	os.Unsetenv("TANZU_ACTIVE_HELP")
 }
