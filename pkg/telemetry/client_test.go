@@ -692,3 +692,30 @@ func TestTelemetryClient_isCoreCommand(t *testing.T) {
 		t.Error("isCoreCommand should return false for the command with plugin annotation")
 	}
 }
+
+func TestTelemetryClient_getTimeout(t *testing.T) {
+	var metricsDB *mockMetricsDB
+	metricsDB = &mockMetricsDB{}
+	tc := &telemetryClient{
+		currentOperationMetrics: &OperationMetricsPayload{
+			StartTime: time.Time{},
+		},
+		metricsDB: metricsDB,
+	}
+	// when getRowCount() returns error, it should return the minimum timeout
+	metricsDB.getRowCountError = errors.New("fake getRowCount error")
+	gotTimeout := tc.getTimeout()
+	assert.Equal(t, metricsSendMinTimeoutSecs, gotTimeout, "getTimeout() should return minimum timeout")
+
+	// when getRowCount() returns 1000, it should return the minimum timeout
+	metricsDB.getRowCountError = nil
+	metricsDB.getRowCountReturnVal = 1000
+	gotTimeout = tc.getTimeout()
+	assert.Equal(t, metricsSendMinTimeoutSecs, gotTimeout, "getTimeout() should return minimum timeout")
+
+	// when getRowCount() returns count more than 1k boundaries, it should return the timeout rounded to the next second
+	metricsDB.getRowCountError = nil
+	metricsDB.getRowCountReturnVal = 3002
+	gotTimeout = tc.getTimeout()
+	assert.Equal(t, 4, gotTimeout)
+}
