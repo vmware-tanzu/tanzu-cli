@@ -69,7 +69,10 @@ func (u *MainUsage) GenerateDescriptor(c *cobra.Command, w io.Writer) error {
 // Template returns the template for the main usage.
 func (u *MainUsage) Template() string {
 	return `{{ bold "Usage:" }}
-  {{.Command.CommandPath}} [command]{{if .HasExample}}
+  {{.Command.CommandPath}} [command]{{if gt (len .Aliases) 0}}
+
+{{ bold "Aliases:" }}
+  {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
 {{ bold "Examples:" }}
   {{.Example}}{{end}}
