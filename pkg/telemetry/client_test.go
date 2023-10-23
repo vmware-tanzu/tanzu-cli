@@ -694,8 +694,7 @@ func TestTelemetryClient_isCoreCommand(t *testing.T) {
 }
 
 func TestTelemetryClient_getTimeout(t *testing.T) {
-	var metricsDB *mockMetricsDB
-	metricsDB = &mockMetricsDB{}
+	metricsDB := &mockMetricsDB{}
 	tc := &telemetryClient{
 		currentOperationMetrics: &OperationMetricsPayload{
 			StartTime: time.Time{},

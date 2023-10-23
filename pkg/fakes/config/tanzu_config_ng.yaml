@@ -11,6 +11,8 @@ contexts:
           name: test
           bucket: test-bucket
           manifestPath: test-manifest-path
+    additionalMetadata:
+      isPinnipedEndpoint: true
   - name: test-tmc-context
     target: mission-control
     globalOpts:
