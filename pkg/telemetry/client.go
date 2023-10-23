@@ -7,6 +7,7 @@ package telemetry
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -30,6 +31,7 @@ import (
 const (
 	telemetryPluginName          = "telemetry"
 	metricsSendThresholdRowCount = 10
+	metricsSendMinTimeoutSecs    = 2
 )
 
 var once sync.Once
@@ -155,9 +157,12 @@ func (tc *telemetryClient) SendMetrics(ctx context.Context, timeoutInSecs int) e
 		return errors.Wrapf(err, "unable to get the telemetry plugin")
 	}
 	args := []string{"cli-usage-analytics", "collect", "-q"}
-	if timeoutInSecs != 0 {
-		args = append(args, "--timeout", strconv.Itoa(timeoutInSecs))
+	if timeoutInSecs == 0 {
+		// since the current DB count is limited to 10k rows, the max timeout is expected to be 10sec
+		// If the DB row count is increased,we should consider limiting the max timeout to some 10sec
+		timeoutInSecs = tc.getTimeout()
 	}
+	args = append(args, "--timeout", strconv.Itoa(timeoutInSecs))
 	runner := cli.NewRunner(plugin.Name, plugin.InstallationPath, args)
 	_, stdErr, err := runner.RunOutput(ctx)
 	if err != nil {
@@ -395,6 +400,18 @@ func (tc *telemetryClient) shouldSendTelemetryData() bool {
 		return false
 	}
 	return count >= metricsSendThresholdRowCount
+}
+
+// getTimeout returns the timeout in number of seconds based on the telemetry DB row count.
+// If the calculated timeout is less than minimum timeout, minimum timeout would be used
+func (tc *telemetryClient) getTimeout() int {
+	count, err := tc.metricsDB.GetRowCount()
+	if err != nil {
+		return metricsSendMinTimeoutSecs
+	}
+	// multiple of 1sec for every 1k DB rows
+	calculatedTimeout := math.Ceil(float64(count)/1000) * 1
+	return int(math.Max(calculatedTimeout, metricsSendMinTimeoutSecs))
 }
 
 // getIsInternalMetric returns if the metrics is for internal
