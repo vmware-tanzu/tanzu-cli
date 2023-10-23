@@ -55,6 +55,7 @@ const (
 	knownGlobalHost      = "cloud.vmware.com"
 	apiTokenType         = "api-token"
 	defaultTanzuEndpoint = "https://api.tanzu.cloud.vmware.com"
+	isPinnipedEndpoint   = "isPinnipedEndpoint"
 
 	contextNotExistsForContextType      = "The provided context '%v' does not exist or is not active for the given context type '%v'"
 	noActiveContextExistsForContextType = "There is no active context for the given context type '%v'"
@@ -478,6 +479,9 @@ func createContextWithClusterEndpoint() (context *configtypes.Context, err error
 			Context:             kubeContext,
 			Endpoint:            endpoint,
 			IsManagementCluster: true,
+		},
+		AdditionalMetadata: map[string]interface{}{
+			isPinnipedEndpoint: true,
 		},
 	}
 	return context, err
@@ -966,13 +970,24 @@ func deleteKubeconfigContext(ctx *configtypes.Context) {
 	// Note: currently cleaning up the kubeconfig for tanzu context types only.
 	// (Since the kubernetes context type can have kube context provided by the user, it may not be
 	// desired outcome for user if CLI deletes/cleanup kubeconfig provided by the user.)
-	// TODO(prkalle): To delete the context created by CLI for Kubernetes (Cluster Endpoint) (eg.TKG with pinniped)
-	if ctx.ContextType == configtypes.ContextTypeTanzu {
+	if ctx.ContextType == configtypes.ContextTypeTanzu || isPinnipedEndpointContext(ctx) {
 		log.Infof("Deleting kubeconfig context '%s' from the file '%s'", ctx.ClusterOpts.Context, ctx.ClusterOpts.Path)
 		if err := kubecfg.DeleteContextFromKubeConfig(ctx.ClusterOpts.Path, ctx.ClusterOpts.Context); err != nil {
 			log.Warningf("Failed to delete the kubeconfig context '%s' from the file '%s'", ctx.ClusterOpts.Context, ctx.ClusterOpts.Path)
 		}
 	}
+}
+
+func isPinnipedEndpointContext(ctx *configtypes.Context) bool {
+	if ctx.ContextType != configtypes.ContextTypeK8s || ctx.AdditionalMetadata == nil ||
+		ctx.AdditionalMetadata[isPinnipedEndpoint] == nil {
+		return false
+	}
+	isPinnipedEP, valid := (ctx.AdditionalMetadata[isPinnipedEndpoint]).(bool)
+	if valid && isPinnipedEP {
+		return true
+	}
+	return false
 }
 
 var useCtxCmd = &cobra.Command{

@@ -177,7 +177,8 @@ var _ = Describe("Test tanzu context command", func() {
 			err = listCtx(cmd, nil)
 			Expect(err).To(BeNil())
 			expectedYaml := `
-- additionalmetadata: {}
+- additionalmetadata:
+    isPinnipedEndpoint: true
   endpoint: test-endpoint
   iscurrent: "true"
   ismanagementcluster: "true"
@@ -331,7 +332,7 @@ clusterOpts:
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("context test-mc not found"))
 		})
-		It("should delete context successfully and also delete(best-effort) the kubecontext in the kubeconfig", func() {
+		It("should delete context successfully and also delete(best-effort) the kubecontext in the kubeconfig for tanzu context", func() {
 			kubeconfigFilePath, err := os.CreateTemp("", "kubeconfig")
 			Expect(err).To(BeNil())
 
@@ -358,6 +359,35 @@ clusterOpts:
 			Expect(kubeconfig.Clusters["tanzu-cli-mytanzu/current"]).To(BeNil())
 			Expect(kubeconfig.Contexts["tanzu-cli-mytanzu"]).To(BeNil())
 			Expect(kubeconfig.AuthInfos["tanzu-cli-mytanzu-user"]).To(BeNil())
+		})
+		It("should delete context successfully and also delete(best-effort) the kubecontext in the kubeconfig for k8s context with pinniped endpoint(specified as context's additionalMetadata)", func() {
+			kubeconfigFilePath, err := os.CreateTemp("", "kubeconfig")
+			Expect(err).To(BeNil())
+			Expect(tkgConfigFileNG.Name()).ToNot(BeEmpty())
+			err = copy.Copy(filepath.Join("..", "fakes", "config", "kubeconfig1.yaml"), kubeconfigFilePath.Name())
+			Expect(err).To(BeNil(), "Error while copying kubeconfig config file for testing")
+
+			// update the CLI k8s context to point to the existing kubeconfig context to validate the kubeconfig is deleted while deleting the CLI context
+			c, err := config.GetContext("test-mc")
+			Expect(err).To(BeNil())
+			c.ClusterOpts.Path = kubeconfigFilePath.Name()
+			c.ClusterOpts.Context = "foo-context"
+
+			err = config.SetContext(c, false)
+			Expect(err).To(BeNil())
+
+			err = deleteCtx(cmd, []string{"test-mc"})
+			Expect(err).To(BeNil())
+
+			err = getCtx(cmd, []string{"test-mc"})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("context test-mc not found"))
+
+			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
+			Expect(err).To(BeNil())
+			Expect(kubeconfig.Clusters["foo-cluster"]).To(BeNil())
+			Expect(kubeconfig.Contexts["foo-context"]).To(BeNil())
+			Expect(kubeconfig.AuthInfos["blue-user"]).To(BeNil())
 		})
 		It("should delete context successfully and should not return error if deleting(best-effort) the kubecontext in the kubeconfig fails", func() {
 			kubeconfigFilePath, err := os.CreateTemp("", "kubeconfig")
