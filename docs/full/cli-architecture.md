@@ -8,7 +8,7 @@ This document aims to provide a general overview of the Tanzu CLI architecture.
 
 **_Context_** - An isolated scope of relevant client-side configurations for a combination of user identity and server identity.
 
-**_Context-Type_** - Type of control plane or cluster or service that the user connects to.  The currently supported context types are: “kubernetes” (e.g., TKG, a vanilla workload cluster, TAP-enabled workload cluster, etc…), “mission-control” (for TMC SaaS endpoints), "application-engine" (for TAE endpoints)
+**_Context-Type_** - Type of control plane or cluster or service that the user connects to.  The currently supported context types are: “kubernetes” (e.g., TKG, a vanilla workload cluster, TAP-enabled workload cluster, etc…), “mission-control” (for TMC SaaS endpoints), "tanzu" (for Tanzu control plane endpoint)
 
 **_Target_** - Represents a group of Tanzu CLI Plugins that are of the same category (generally talking to similar endpoints) and are represented as the `tanzu <target-name> <plugin-name>` command.
 
@@ -44,7 +44,7 @@ Update a discovery source:
 
 ```sh
 # Update the discovery source for an air-gapped scenario. The URI must be an OCI image.
-tanzu plugin source update default --uri registry.example.com/tanzu/plugin-inventory:latest`
+tanzu plugin source update default --uri registry.example.com/tanzu/plugin-inventory:latest
 ```
 
 Sample tanzu configuration file after adding discovery:
@@ -143,7 +143,7 @@ tanzu context use mgmt-cluster
 
 Context Type represents a type of control plane or service that the user connects to.
 
-The Tanzu CLI supports three context types: `kubernetes` (e.g., TKG, a vanilla workload cluster, TAP-enabled workload cluster, etc), `mission-control` (for TMC SaaS endpoints), and `application-engine`` (for TAE endpoints).
+The Tanzu CLI supports three context types: `kubernetes` (e.g., TKG, a vanilla workload cluster, TAP-enabled workload cluster, etc), `mission-control` (for TMC SaaS endpoints), and `tanzu` (for Tanzu control plane endpoint).
 
 Plugins use Tanzu Plugin Runtime API to find the kubeconfig or other credentials to connect to the endpoint.
 
@@ -153,21 +153,21 @@ When creating a new context with Tanzu CLI, the user can pass the optional `--ty
 # Create a TKG management cluster context using endpoint and type (--type is optional, if not provided the CLI will infer the type from the endpoint)
 tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port] --type k8s
 
-# Create an Application Engine (TAE) context with the default endpoint (--type is not necessary for the default endpoint)
-tanzu context create mytae --endpoint https://api.tanzu.cloud.vmware.com
+# Create a Tanzu context with the default endpoint (--type is not necessary for the default endpoint)
+tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com
 
-# Create an Application Engine (TAE) context (--type is needed for a non-default endpoint)
-tanzu context create mytae --endpoint https://non-default.tae.endpoint.com --type application-engine
+# Create a Tanzu context (--type is needed for a non-default endpoint)
+tanzu context create mytanzu --endpoint https://non-default.tanzu.endpoint.com --type tanzu
 ```
 
 To list the available contexts, the user can run the `tanzu context list` command and it will show the following details:
 
 ```sh
 tanzu context list
-  NAME        ISACTIVE  TYPE                ENDPOINT                            KUBECONFIGPATH             KUBECONTEXT            PROJECT  SPACE
-  tkg-mc      false     kubernetes                                              /Users/abc/.kube/config
-  tmc-ctx-1   false     mission-control     https://tmc.cloud.vmware.com        n/a                        n/a                    n/a      n/a
-  tanzu-ctx-1 true      application-engine  https://api.tanzu.cloud.vmware.com  /Users/abc/.kube/config    tanzu-cli-tanzu-ctx-1
+  NAME        ISACTIVE  TYPE              ENDPOINT                            KUBECONFIGPATH             KUBECONTEXT            PROJECT  SPACE
+  tkg-mc      false     kubernetes                                            /Users/abc/.kube/config
+  tmc-ctx-1   false     mission-control   https://tmc.cloud.vmware.com        n/a                        n/a                    n/a      n/a
+  tanzu-ctx-1 true      tanzu             https://api.tanzu.cloud.vmware.com  /Users/abc/.kube/config    tanzu-cli-tanzu-ctx-1
 ```
 
 To make a context active, the user can run the `tanzu context use <context-name>` command.
@@ -181,13 +181,13 @@ Target represents a group of Tanzu CLI Plugins that are of the same category (ge
   
 The Tanzu CLI supports three targets: `global`, `kubernetes` (alias `k8s`), and `mission-control` (alias `tmc`).
 
-Each plugin is associated with one of the above targets. `global`` is a special target that links the plugin under the root tanzu cli command.
+Each plugin is associated with one of the above targets. `global` is a special target that links the plugin under the root tanzu cli command.
 
 Below are some examples of plugin invocation commands formed for different targets:
 
-- PluginName: `foo`, Target: `kubernetes`, Commnd: `tanzu kubernetes foo`
-- PluginName: `bar`, Target: `mission-control`, Commnd: `tanzu mission-control bar`
-- PluginName: `baz`, Target: `global`, Commnd: `tanzu baz`
+- PluginName: `foo`, Target: `kubernetes`, Command: `tanzu kubernetes foo`
+- PluginName: `bar`, Target: `mission-control`, Command: `tanzu mission-control bar`
+- PluginName: `baz`, Target: `global`, Command: `tanzu baz`
 
 For backward compatibility reasons, the plugins with the `kubernetes` target are also available under the root `tanzu` command along with the `tanzu kubernetes` command.
 
