@@ -264,7 +264,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextName = f.ContextPrefixK8s + f.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -280,7 +280,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 
 		const (
 			ContextActivated         = "Successfully activated context '%s'"
-			PluginWillBeInstalled    = "The following plugins will be installed for context '%s':"
+			PluginWillBeInstalled    = "The following plugins will be installed for context '%s' of contextType '%s':"
 			PluginsTableHeaderRegExp = "NAME\\s+TARGET\\s+VERSION"
 			PluginsRow               = "%s\\s+%s\\s+%s"
 			PluginInstallingRegExp   = "Installing plugin '%s:.+' with target '%s'"
@@ -300,7 +300,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(stdErr).To(ContainSubstring(fmt.Sprintf(ContextActivated, contextName)))
-			Expect(stdErr).To(ContainSubstring(fmt.Sprintf(PluginWillBeInstalled, contextName)))
+			Expect(stdErr).To(ContainSubstring(fmt.Sprintf(PluginWillBeInstalled, contextName, types.TargetK8s)))
 			Expect(stdErr).To(MatchRegexp(PluginsTableHeaderRegExp))
 			for i := range pluginsList {
 				Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginsRow, pluginsList[i].Name, pluginsList[i].Target, pluginsList[i].Version)))
