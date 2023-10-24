@@ -302,6 +302,24 @@ functionality available to the legacy CLI will function as before.
 Note that running `tanzu plugin sync` with the legacy CLI may undo certain
 plugin installation actions performed with the new CLI
 
+#### Limitation for global plugins when using a legacy version with a new version of the CLI
+
+Legacy versions of the CLI cannot invoke a **_global_** plugin that was installed with a new
+version of the Tanzu CLI (`>= v0.90.0`).
+This implies that if such plugins were installed with a legacy version of the CLI but then
+installed again using a new version of the CLI, those plugins will no longer be accessible
+through the legacy version of the CLI.
+
+Only two such plugins are both global and applicable to a legacy version of the CLI:
+
+1. `isolated-cluster`
+2. `pinniped-auth`
+
+##### Workaround
+
+If a global plugin needs to be used with a legacy version of the CLI, it should only be installed through that legacy CLI.
+Those plugin installations can then be used with both legacy and new CLIs, if required.
+
 ### Configuring the Registry and Proxy CA certificate
 
 Tanzu CLI would not be honoring existing environment variables `TKG_CUSTOM_IMAGE_REPOSITORY_CA_CERTIFICATE`
