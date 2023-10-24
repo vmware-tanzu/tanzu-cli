@@ -274,7 +274,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			for i := range installedPluginsList {
 				Expect(stdOut).To(ContainSubstring(fmt.Sprintf(f.DeactivatingPlugin, installedPluginsList[i].Name, installedPluginsList[i].Version, contextName)))
 			}
-			err = tf.ContextCmd.UseContext(contextName)
+			_, _, err = tf.ContextCmd.UseContext(contextName)
 			Expect(err).To(BeNil(), "use context should set context without any error")
 		})
 		// e.2 delete current context and stop mock server
@@ -603,7 +603,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// Test case: i. k8s: use first k8s context and check plugin list
 		It("use first context, check plugin list", func() {
-			err = tf.ContextCmd.UseContext(contextNameK8s)
+			_, _, err = tf.ContextCmd.UseContext(contextNameK8s)
 			Expect(err).To(BeNil(), "use context should not return any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeK8s))
 			Expect(err).To(BeNil(), activeContextShouldExists)
@@ -641,7 +641,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// Test case: k. tmc: use tmc context and check plugin list
 		It("use second context again, check plugin list", func() {
 
-			err = tf.ContextCmd.UseContext(contextNameTMC)
+			_, _, err = tf.ContextCmd.UseContext(contextNameTMC)
 			Expect(err).To(BeNil(), "use context should not return any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
@@ -705,7 +705,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextNameK8s = f.ContextPrefixK8s + f.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			err = tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeK8s))
 			Expect(err).To(BeNil(), thereShouldNotBeError+" while getting active context")
@@ -783,10 +783,10 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// sync should happen only for the specific context (k8s context), not for all active context's
 		// perform 'tanzu plugin clean' and 'tanzu context use' for k8s context again, and check plugins list, it should be same as previous
 		It("test context use for specific context-k8s", func() {
-			err = tf.ContextCmd.UseContext(contextNameK8s)
+			_, _, err = tf.ContextCmd.UseContext(contextNameK8s)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
-			err = tf.ContextCmd.UseContext(contextNameTMC)
+			_, _, err = tf.ContextCmd.UseContext(contextNameTMC)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			err = tf.PluginCmd.CleanPlugins()
@@ -795,7 +795,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			_, _, err = tf.ContextCmd.UnsetContext(contextNameK8s)
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
 
-			err = tf.ContextCmd.UseContext(contextNameK8s)
+			_, _, err = tf.ContextCmd.UseContext(contextNameK8s)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			// k8s contextType specific plugins only should be installed
@@ -812,7 +812,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			err = tf.PluginCmd.CleanPlugins()
 			Expect(err).To(BeNil(), "plugin clean should not return any error")
 
-			err = tf.ContextCmd.UseContext(contextNameK8s)
+			_, _, err = tf.ContextCmd.UseContext(contextNameK8s)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			// k8s contextType specific plugins only should be installed
@@ -834,10 +834,10 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// sync should happen only for the specific context (tmc context), not for all active context's
 		// perform 'tanzu plugin clean' and 'tanzu context use' for tmc context again, and check plugins list, it should be same as previous
 		It("test context use for specific context-TMC", func() {
-			err = tf.ContextCmd.UseContext(contextNameK8s)
+			_, _, err = tf.ContextCmd.UseContext(contextNameK8s)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
-			err = tf.ContextCmd.UseContext(contextNameTMC)
+			_, _, err = tf.ContextCmd.UseContext(contextNameTMC)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			err = tf.PluginCmd.CleanPlugins()
@@ -846,7 +846,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			_, _, err = tf.ContextCmd.UnsetContext(contextNameTMC)
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
 
-			err = tf.ContextCmd.UseContext(contextNameTMC)
+			_, _, err = tf.ContextCmd.UseContext(contextNameTMC)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			// tmc contextType specific plugins only should be installed
@@ -864,7 +864,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			err = tf.PluginCmd.CleanPlugins()
 			Expect(err).To(BeNil(), "plugin clean should not return any error")
 
-			err = tf.ContextCmd.UseContext(contextNameTMC)
+			_, _, err = tf.ContextCmd.UseContext(contextNameTMC)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			// tmc contextType specific plugins only should be installed
@@ -883,10 +883,10 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// Test case: context use for TMC context and K8s context
 		// plugin should get sync for both tmc and k8s context
 		It("context use for both TMC and k8s contexts", func() {
-			err = tf.ContextCmd.UseContext(contextNameK8s)
+			_, _, err = tf.ContextCmd.UseContext(contextNameK8s)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
-			err = tf.ContextCmd.UseContext(contextNameTMC)
+			_, _, err = tf.ContextCmd.UseContext(contextNameTMC)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			// tmc contextType specific plugins should be installed
@@ -905,10 +905,10 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// plugin should get sync for both tmc and k8s context
 		It("test plugin sync", func() {
 
-			err = tf.ContextCmd.UseContext(contextNameK8s)
+			_, _, err = tf.ContextCmd.UseContext(contextNameK8s)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
-			err = tf.ContextCmd.UseContext(contextNameTMC)
+			_, _, err = tf.ContextCmd.UseContext(contextNameTMC)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			// perform plugin clean, then perform plugin sync
