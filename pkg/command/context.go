@@ -23,9 +23,11 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	clientauthv1 "k8s.io/client-go/pkg/apis/clientauthentication/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -47,8 +49,9 @@ import (
 var (
 	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify                              bool
 	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath string
-	projectStr, spaceStr                                                                   string
-	contextTypeStr                                                                         string
+
+	projectStr, spaceStr string
+	contextTypeStr       string
 )
 
 const (
@@ -220,7 +223,7 @@ func initCreateCtxCmd() {
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
 }
 
-func createCtx(_ *cobra.Command, args []string) (err error) {
+func createCtx(cmd *cobra.Command, args []string) (err error) {
 	// The context name is an optional argument to allow for the prompt to be used
 	if len(args) > 0 {
 		if ctxName != "" {
@@ -251,17 +254,57 @@ func createCtx(_ *cobra.Command, args []string) (err error) {
 	}
 
 	// Sync all required plugins
-	_ = syncContextPlugins(ctx.ContextType)
+	_ = syncContextPlugins(cmd, ctx.ContextType, true)
 
 	return nil
 }
 
-func syncContextPlugins(contextType configtypes.ContextType) error {
-	err := pluginmanager.SyncPluginsForContextType(contextType)
+// syncContextPlugins syncs the plugins for the given context type
+// if listPlugins is true, it will list the plugins that will be installed for the given context type
+func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType, listPlugins bool) error {
+	plugins, err := pluginmanager.DiscoverPluginsForContextType(contextType)
+	errList := make([]error, 0)
+	if err != nil {
+		errList = append(errList, err)
+	}
+
+	// update plugins installation status
+	pluginmanager.UpdatePluginsInstallationStatus(plugins)
+
+	// list plugins only if listPlugins is true and there are plugins to be installed
+	if listPlugins {
+		pluginsNeedstoBeInstalled := 0
+		for idx := range plugins {
+			if plugins[idx].Status == common.PluginStatusNotInstalled || plugins[idx].Status == common.PluginStatusUpdateAvailable {
+				pluginsNeedstoBeInstalled++
+			}
+		}
+		if pluginsNeedstoBeInstalled > 0 {
+			log.Infof("The following plugins will be installed for context '%s': ", ctxName)
+			displayUninstalledPluginsContentAsTable(plugins, cmd.ErrOrStderr())
+		}
+	}
+
+	err = pluginmanager.InstallDiscoveredContextPlugins(plugins)
+	if err != nil {
+		errList = append(errList, err)
+	}
+	err = kerrors.NewAggregate(errList)
 	if err != nil {
 		log.Warningf("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
 	}
 	return err
+}
+
+// displayUninstalledPluginsContentAsTable takes a list of plugins and writes the uninstalled plugins as a table
+func displayUninstalledPluginsContentAsTable(plugins []discovery.Discovered, writer io.Writer) {
+	outputUninstalledPlugins := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
+	for i := range plugins {
+		if plugins[i].Status == common.PluginStatusNotInstalled || plugins[i].Status == common.PluginStatusUpdateAvailable {
+			outputUninstalledPlugins.AddRow(plugins[i].Name, plugins[i].Target, plugins[i].RecommendedVersion)
+		}
+	}
+	outputUninstalledPlugins.Render()
 }
 
 func isGlobalContext(endpoint string) bool {
@@ -997,8 +1040,7 @@ var useCtxCmd = &cobra.Command{
 	RunE:              useCtx,
 }
 
-func useCtx(_ *cobra.Command, args []string) error {
-	var name string
+func useCtx(cmd *cobra.Command, args []string) error {
 	var ctx *configtypes.Context
 	var err error
 
@@ -1007,12 +1049,12 @@ func useCtx(_ *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		name = ctx.Name
+		ctxName = ctx.Name
 	} else {
-		name = args[0]
+		ctxName = args[0]
 	}
 
-	ctx, err = config.GetContext(name)
+	ctx, err = config.GetContext(ctxName)
 	if err != nil {
 		return err
 	}
@@ -1024,13 +1066,15 @@ func useCtx(_ *cobra.Command, args []string) error {
 		}
 	}
 
-	err = config.SetActiveContext(name)
+	err = config.SetActiveContext(ctxName)
 	if err != nil {
 		return err
 	}
 
+	log.Infof("Successfully activated context '%s'", ctxName)
+
 	// Sync all required plugins
-	_ = syncContextPlugins(ctx.ContextType)
+	_ = syncContextPlugins(cmd, ctx.ContextType, true)
 
 	return nil
 }

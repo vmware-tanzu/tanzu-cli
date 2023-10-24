@@ -63,7 +63,7 @@ func tmcStressTestCases() bool {
 		It("use context command", func() {
 			By("use context command")
 			for i := 0; i < len(contextNamesStress); i++ {
-				err := tf.ContextCmd.UseContext(contextNamesStress[i])
+				_, _, err := tf.ContextCmd.UseContext(contextNamesStress[i])
 				Expect(err).To(BeNil(), "use context should set context without any error")
 				active, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 				Expect(err).To(BeNil(), "there should be a active context")
@@ -296,7 +296,7 @@ func tmcLifeCycleTests() bool {
 		})
 		// Test case: f. test 'tanzu context use' command with the specific context name (not the recently created one)
 		It("use context command", func() {
-			err := tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err := tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			activeCtx, err := tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -305,7 +305,7 @@ func tmcLifeCycleTests() bool {
 		// context unset command related use cases:::
 		// Test case: g. context unset command: test 'tanzu context unset' command with active context name
 		It("unset context command: by context name", func() {
-			err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -320,7 +320,7 @@ func tmcLifeCycleTests() bool {
 		})
 		// Test case: h. context unset command: test 'tanzu context unset' command with random context name
 		It("unset context command: negative use case: by random context name", func() {
-			err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -332,7 +332,7 @@ func tmcLifeCycleTests() bool {
 		})
 		// Test case: i.context unset command: test 'tanzu context unset' command by providing valid target
 		It("unset context command: by target", func() {
-			err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -347,7 +347,7 @@ func tmcLifeCycleTests() bool {
 		})
 		// Test case: j. context unset command: test 'tanzu context unset' by providing target and context name
 		It("unset context command: by target and context name", func() {
-			err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -362,7 +362,7 @@ func tmcLifeCycleTests() bool {
 		})
 		// Test case: k. context unset command: test 'tanzu context unset' command with incorrect target
 		It("unset context command: negative use case: by target and context name: incorrect target", func() {
-			err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetTMC))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -376,7 +376,7 @@ func tmcLifeCycleTests() bool {
 		})
 		// Test case: l. (negative test) test 'tanzu context use' command with the specific context name (incorrect, which is not exists)
 		It("use context command with incorrect context as input", func() {
-			err := tf.ContextCmd.UseContext(framework.RandomString(4))
+			_, _, err := tf.ContextCmd.UseContext(framework.RandomString(4))
 			Expect(err).ToNot(BeNil())
 		})
 		// Test case: m. test 'tanzu context list' command, should list all contexts created

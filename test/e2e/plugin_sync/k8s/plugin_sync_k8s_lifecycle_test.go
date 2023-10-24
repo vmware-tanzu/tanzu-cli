@@ -201,7 +201,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			for i := range installedPluginsList {
 				Expect(stdOut).To(ContainSubstring(fmt.Sprintf(f.DeactivatingPlugin, installedPluginsList[i].Name, installedPluginsList[i].Version, contextName)))
 			}
-			err = tf.ContextCmd.UseContext(contextName)
+			_, _, err = tf.ContextCmd.UseContext(contextName)
 			Expect(err).To(BeNil(), "use context should set context without any error")
 		})
 		// Test case: h.2 delete current context and the KIND cluster
@@ -276,6 +276,36 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(Equal(len(pluginsInfoForCRsApplied)), "number of plugins should be same as number of plugins CRs applied")
 			Expect(f.CheckAllPluginsExists(pluginsList, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
+		})
+
+		const (
+			ContextActivated         = "Successfully activated context '%s'"
+			PluginWillBeInstalled    = "The following plugins will be installed for context '%s':"
+			PluginsTableHeaderRegExp = "NAME\\s+TARGET\\s+VERSION"
+			PluginsRow               = "%s\\s+%s\\s+%s"
+			PluginInstallingRegExp   = "Installing plugin '%s:.+' with target '%s'"
+		)
+		// validate the 'context use' output UX
+		// clean plugins, unset context, set context, validate UX
+		It("perform plugin cleanup", func() {
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
+			// unset the context
+			_, _, err = tf.ContextCmd.UnsetContext(contextName)
+			Expect(err).To(BeNil(), "unset context should unset context without any error")
+			var stdErr string
+			stdOut, stdErr, err = tf.ContextCmd.UseContext(contextName)
+			Expect(len(stdOut)).Should(Equal(0), "should not get any output for context use")
+			Expect(err).To(BeNil(), "use context should set context without any error")
+			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(stdErr).To(ContainSubstring(fmt.Sprintf(ContextActivated, contextName)))
+			Expect(stdErr).To(ContainSubstring(fmt.Sprintf(PluginWillBeInstalled, contextName)))
+			Expect(stdErr).To(MatchRegexp(PluginsTableHeaderRegExp))
+			for i := range pluginsList {
+				Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginsRow, pluginsList[i].Name, pluginsList[i].Target, pluginsList[i].Version)))
+				Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginInstallingRegExp, pluginsList[i].Name, pluginsList[i].Target)))
+			}
 		})
 
 		// Test case: e. run plugin sync and validate the plugin list
@@ -432,14 +462,14 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 
 		// Test case: e. switch context's, make sure installed plugins also updated
 		It("switch context, make sure installed plugins also updated", func() {
-			err = tf.ContextCmd.UseContext(contextNameClusterTwo)
+			_, _, err = tf.ContextCmd.UseContext(contextNameClusterTwo)
 			Expect(err).To(BeNil(), "there should not be any error for use context")
 			pluginsListClusterTwo, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameClusterTwo, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsListClusterTwo)).Should(Equal(len(pluginsInfoForCRsAppliedClusterTwo)), "number of plugins should be same as number of plugins CRs applied")
 			Expect(f.CheckAllPluginsExists(pluginsListClusterTwo, pluginsInfoForCRsAppliedClusterTwo)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 
-			err = tf.ContextCmd.UseContext(contextNameClusterOne)
+			_, _, err = tf.ContextCmd.UseContext(contextNameClusterOne)
 			Expect(err).To(BeNil(), "there should not be any error for use context")
 			pluginsListClusterOne, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameClusterOne, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
@@ -489,7 +519,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextName = f.ContextPrefixK8s + f.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -513,7 +543,8 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 					Expect(err.Error()).To(ContainSubstring(testcase.err))
 				} else {
 					Expect(err).To(BeNil(), "should not get any error for syncing plugins")
-					pd, err := tf.PluginCmd.DescribePlugin(testcase.pluginInfo.Name, testcase.pluginInfo.Target, f.GetJsonOutputFormatAdditionalFlagFunction())
+					var pd []*f.PluginDescribe
+					pd, err = tf.PluginCmd.DescribePlugin(testcase.pluginInfo.Name, testcase.pluginInfo.Target, f.GetJsonOutputFormatAdditionalFlagFunction())
 					Expect(err).To(BeNil(), f.PluginDescribeShouldNotThrowErr)
 					Expect(len(pd)).To(Equal(1), f.PluginDescShouldExist)
 					Expect(pd[0].Name).To(Equal(testcase.pluginInfo.Name), f.PluginNameShouldMatch)
