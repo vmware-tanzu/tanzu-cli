@@ -197,7 +197,7 @@ func newDescribePluginCmd() *cobra.Command {
 	return describeCmd
 }
 
-func newInstallPluginCmd() *cobra.Command { //nolint:funlen
+func newInstallPluginCmd() *cobra.Command {
 	var installCmd = &cobra.Command{
 		Use:   "install [" + pluginNameCaps + "]",
 		Short: "Install a plugin",
@@ -241,26 +241,7 @@ func newInstallPluginCmd() *cobra.Command { //nolint:funlen
 			}
 
 			if group != "" {
-				// We are installing from a group
-				if len(args) == 0 {
-					// Default to 'all' when installing from a group
-					pluginName = cli.AllPlugins
-				} else {
-					pluginName = args[0]
-				}
-
-				groupWithVersion, err := pluginmanager.InstallPluginsFromGroup(pluginName, group)
-				if err != nil {
-					return err
-				}
-
-				if pluginName == cli.AllPlugins {
-					log.Successf("successfully installed all plugins from group '%s'", groupWithVersion)
-				} else {
-					log.Successf("successfully installed '%s' from group '%s'", pluginName, groupWithVersion)
-				}
-
-				return nil
+				return installPluginsForPluginGroup(cmd, args)
 			}
 
 			// Invoke install plugin from local source if local files are provided
@@ -306,6 +287,40 @@ func newInstallPluginCmd() *cobra.Command { //nolint:funlen
 		},
 	}
 	return installCmd
+}
+
+func installPluginsForPluginGroup(cmd *cobra.Command, args []string) error {
+	var pluginName string
+	// We are installing from a group
+	if len(args) == 0 {
+		// Default to 'all' when installing from a group
+		pluginName = cli.AllPlugins
+	} else {
+		pluginName = args[0]
+	}
+
+	if pluginName == cli.AllPlugins {
+		pg, err := pluginmanager.GetPluginGroup(group)
+		if err != nil {
+			return err
+		}
+		groupIDAndVersion := fmt.Sprintf("%s-%s/%s:%s", pg.Vendor, pg.Publisher, pg.Name, pg.RecommendedVersion)
+		log.Infof("The following plugins will be installed from plugin group '%s'", groupIDAndVersion)
+		// list plugins if we are installing all plugins from the plugin group
+		displayGroupContentAsTable(pg, pg.RecommendedVersion, "", false, false, cmd.ErrOrStderr())
+		groupWithVersion, err := pluginmanager.InstallPluginsFromGivenPluginGroup(pluginName, groupIDAndVersion, pg)
+		if err != nil {
+			return err
+		}
+		log.Successf("successfully installed all plugins from group '%s'", groupWithVersion)
+	} else {
+		groupWithVersion, err := pluginmanager.InstallPluginsFromGroup(pluginName, group)
+		if err != nil {
+			return err
+		}
+		log.Successf("successfully installed '%s' from group '%s'", pluginName, groupWithVersion)
+	}
+	return nil
 }
 
 func newUpgradePluginCmd() *cobra.Command {

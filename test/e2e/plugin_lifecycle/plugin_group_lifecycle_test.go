@@ -5,11 +5,22 @@
 package pluginlifecyclee2e
 
 import (
+	"fmt"
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/util"
+)
+
+const (
+	PluginGroupInstallation           = "The following plugins will be installed from plugin group '%s"
+	PluginGroupTableHeaderRegExp      = "NAME\\s+TARGET\\s+VERSION"
+	PluginGroupTableRowPluginRegExp   = "%s\\s+%s\\s+%s"
+	PluginGroupPluginInstallingRegExp = "Installing plugin '%s:.+' with target '%s'|Plugin '%s:.+' with target '%s'"
+	PluginGroupPluginInstalledRegExp  = "Installing plugin '%s:.+' with target '%s'"
 )
 
 // This test suite covers plugin group life cycle use cases for central repository
@@ -64,7 +75,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("install a plugin from each plugin group and validate the plugin installation by 'plugin describe'", func() {
 			for pg := range pluginGroupToPluginListMap {
 				plugins := pluginGroupToPluginListMap[pg]
-				err := tf.PluginCmd.InstallPluginsFromGroup(plugins[0].Name, pg)
+				_, _, err := tf.PluginCmd.InstallPluginsFromGroup(plugins[0].Name, pg)
 				Expect(err).To(BeNil(), "should not get any error for plugin install from plugin group")
 
 				pd, err := tf.PluginCmd.DescribePlugin(plugins[0].Name, plugins[0].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
@@ -77,7 +88,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		// Test case: install a plugin from each plugin group and validate the installation with plugin describe
 		It("install all plugins in each group", func() {
 			for pg := range pluginGroupToPluginListMap {
-				err := tf.PluginCmd.InstallPluginsFromGroup("all", pg)
+				_, _, err := tf.PluginCmd.InstallPluginsFromGroup("all", pg)
 				Expect(err).To(BeNil(), "should not get any error for plugin install from plugin group")
 				plugins := pluginGroupToPluginListMap[pg]
 				for i := range plugins {
@@ -105,10 +116,15 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		// Test case: a. with command 'tanzu plugin install all --group group_name': when no plugins in a group has installed already: install a plugin from each plugin group and validate the installation with plugin describe
 		It("install all plugins in each group", func() {
 			for pg := range pluginGroupToPluginListMap {
-				err := tf.PluginCmd.InstallPluginsFromGroup("all", pg)
+				_, stdErr, err := tf.PluginCmd.InstallPluginsFromGroup("all", pg)
 				Expect(err).To(BeNil(), "should not get any error for plugin install from plugin group")
+				parts := strings.Split(pg, ":")
+				Expect(stdErr).To(ContainSubstring(fmt.Sprintf(PluginGroupInstallation, parts[0])))
+				Expect(stdErr).To(MatchRegexp(PluginGroupTableHeaderRegExp))
 				plugins := pluginGroupToPluginListMap[pg]
 				for i := range plugins {
+					Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginGroupTableRowPluginRegExp, plugins[i].Name, plugins[i].Target, plugins[i].Version)))
+					Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginGroupPluginInstallingRegExp, plugins[i].Name, plugins[i].Target, plugins[i].Name, plugins[i].Target)))
 					pd, err := tf.PluginCmd.DescribePlugin(plugins[i].Name, plugins[i].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
 					Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
 					Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
@@ -128,7 +144,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		// Test case: b. with command 'tanzu plugin install --group group_name': when no plugins in a group has installed already: install a plugin from each plugin group and validate the installation with plugin describe
 		It("install all plugins in each group", func() {
 			for pg := range pluginGroupToPluginListMap {
-				err := tf.PluginCmd.InstallPluginsFromGroup("", pg)
+				_, _, err := tf.PluginCmd.InstallPluginsFromGroup("", pg)
 				Expect(err).To(BeNil(), "should not get any error for plugin install from plugin group")
 				plugins := pluginGroupToPluginListMap[pg]
 				for i := range plugins {
@@ -156,7 +172,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		It("install a plugin with incorrect plugin group name", func() {
 			for pg := range pluginGroupToPluginListMap {
 				plugins := pluginGroupToPluginListMap[pg]
-				err := tf.PluginCmd.InstallPluginsFromGroup(plugins[0].Name, framework.RandomString(5))
+				_, _, err := tf.PluginCmd.InstallPluginsFromGroup(plugins[0].Name, framework.RandomString(5))
 				Expect(err).NotTo(BeNil(), "plugin installation should fail as plugin group name is incorrect")
 				break
 			}
@@ -164,7 +180,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 		// Test case: b. install a plugin with incorrect plugin name (which is not exists in given plugin group) and correct group name
 		It("install a plugin with incorrect plugin name (which does not exist in given group) and correct group name", func() {
 			for pg := range pluginGroupToPluginListMap {
-				err := tf.PluginCmd.InstallPluginsFromGroup(framework.RandomString(5), pg)
+				_, _, err := tf.PluginCmd.InstallPluginsFromGroup(framework.RandomString(5), pg)
 				Expect(err).NotTo(BeNil(), "plugin installation should fail as plugin name is not exists in plugin group")
 				break
 			}

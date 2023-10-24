@@ -575,67 +575,29 @@ func UpgradePlugin(pluginName, version string, target configtypes.Target) error 
 // InstallPluginsFromGroup installs either the specified plugin or all plugins from the specified group version.
 // If the group version is not specified, the latest available version will be used.
 // The group identifier including the version used is returned.
-func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...PluginManagerOptions) (string, error) { //nolint:gocyclo,funlen
-	// Initialize plugin manager options and enable logs by default
-	opts := NewPluginManagerOpts()
-	for _, option := range options {
-		option(opts)
-	}
-
-	// Enable or Disable logs
-	opts.SetLogMode()
-	defer opts.ResetLogMode()
-
-	discoveries, err := getPluginDiscoveries()
+func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...PluginManagerOptions) (string, error) {
+	// get plugins from the specific plugin group
+	pg, err := GetPluginGroup(groupIDAndVersion, options...)
 	if err != nil {
 		return "", err
 	}
-	if len(discoveries) == 0 {
-		return "", errors.New(errorNoDiscoverySourcesFound)
-	}
-
-	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupIDAndVersion)
-	if groupIdentifier == nil {
-		return "", fmt.Errorf("could not find group '%s'", groupIDAndVersion)
-	}
-	if groupIdentifier.Version == "" {
-		// If the version is not specified to install from, we use the latest
-		groupIdentifier.Version = cli.VersionLatest
-	}
-	criteria := &discovery.GroupDiscoveryCriteria{
-		Vendor:    groupIdentifier.Vendor,
-		Publisher: groupIdentifier.Publisher,
-		Name:      groupIdentifier.Name,
-		Version:   groupIdentifier.Version,
-	}
-
-	groups, err := discoverSpecificPluginGroups(discoveries, discovery.WithGroupDiscoveryCriteria(criteria))
-	if err != nil {
-		return "", err
-	}
-
-	if len(groups) == 0 {
-		return "", errors.Errorf("unable to find plugin group with name '%s-%s/%s' matching version '%s'", groupIdentifier.Vendor, groupIdentifier.Publisher, groupIdentifier.Name, groupIdentifier.Version)
-	}
-
-	if len(groups) > 1 {
-		log.Warningf("unexpected: group '%s' was found more than once.  Using the first one.", groupIDAndVersion)
-	}
-
-	pg := groups[0]
 
 	// It is possible that user has provided plugin group version in form of vMAJOR or vMAJOR.MINOR
 	// So always update the groupIdentifier and groupIDAndVersion to the recommendedVersion we got
 	// from the database
-	groupIdentifier.Version = pg.RecommendedVersion
-	groupIDAndVersion = fmt.Sprintf("%s-%s/%s:%s", groupIdentifier.Vendor, groupIdentifier.Publisher, groupIdentifier.Name, groupIdentifier.Version)
+	groupIDAndVersion = fmt.Sprintf("%s-%s/%s:%s", pg.Vendor, pg.Publisher, pg.Name, pg.RecommendedVersion)
 	log.Infof("Installing plugins from plugin group '%s'", groupIDAndVersion)
 
+	return InstallPluginsFromGivenPluginGroup(pluginName, groupIDAndVersion, pg)
+}
+
+// InstallPluginsFromGivenPluginGroup installs either the specified plugin or all plugins from given plugin group plugins.
+func InstallPluginsFromGivenPluginGroup(pluginName, groupIDAndVersion string, pg *plugininventory.PluginGroup) (string, error) {
 	numErrors := 0
 	numInstalled := 0
 	mandatoryPluginsExist := false
 	pluginExist := false
-	for _, plugin := range pg.Versions[groupIdentifier.Version] {
+	for _, plugin := range pg.Versions[pg.RecommendedVersion] {
 		if pluginName == cli.AllPlugins || pluginName == plugin.Name {
 			pluginExist = true
 			if plugin.Mandatory {
@@ -671,6 +633,59 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 	}
 
 	return groupIDAndVersion, nil
+}
+
+// GetPluginGroup returns the plugin group for the specified groupIDAndVersion.
+func GetPluginGroup(groupIDAndVersion string, options ...PluginManagerOptions) (*plugininventory.PluginGroup, error) {
+	// Initialize plugin manager options and enable logs by default
+	opts := NewPluginManagerOpts()
+	for _, option := range options {
+		option(opts)
+	}
+
+	// Enable or Disable logs
+	opts.SetLogMode()
+	defer opts.ResetLogMode()
+
+	discoveries, err := getPluginDiscoveries()
+	if err != nil {
+		return nil, err
+	}
+	if len(discoveries) == 0 {
+		return nil, errors.New(errorNoDiscoverySourcesFound)
+	}
+
+	groupIdentifier := plugininventory.PluginGroupIdentifierFromID(groupIDAndVersion)
+	if groupIdentifier == nil {
+		return nil, fmt.Errorf("could not find group '%s'", groupIDAndVersion)
+	}
+	if groupIdentifier.Version == "" {
+		// If the version is not specified to install from, we use the latest
+		groupIdentifier.Version = cli.VersionLatest
+	}
+	criteria := &discovery.GroupDiscoveryCriteria{
+		Vendor:    groupIdentifier.Vendor,
+		Publisher: groupIdentifier.Publisher,
+		Name:      groupIdentifier.Name,
+		Version:   groupIdentifier.Version,
+	}
+
+	groups, err := discoverSpecificPluginGroups(discoveries, discovery.WithGroupDiscoveryCriteria(criteria))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(groups) == 0 {
+		return nil, errors.Errorf("unable to find plugin group with name '%s-%s/%s' matching version '%s'", groupIdentifier.Vendor, groupIdentifier.Publisher, groupIdentifier.Name, groupIdentifier.Version)
+	}
+
+	if len(groups) > 1 {
+		log.Warningf("unexpected: group '%s' was found more than once.  Using the first one.", groupIDAndVersion)
+	}
+
+	pg := groups[0]
+
+	return pg, nil
 }
 
 func logPluginInstallationMessage(p *discovery.Discovered, version string, isPluginInCache, isPluginAlreadyInstalled bool) {
@@ -746,7 +761,7 @@ func getPluginFromCache(p *discovery.Discovered, version string) *cli.PluginInfo
 	if cli.BuildArch().IsWindows() {
 		pluginPath += exe
 	}
-	if _, err := os.Stat(pluginPath); err != nil {
+	if _, err = os.Stat(pluginPath); err != nil {
 		return nil
 	}
 
