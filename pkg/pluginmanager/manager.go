@@ -1061,45 +1061,38 @@ func SyncPlugins() error {
 	if err != nil {
 		errList = append(errList, err)
 	}
-	err = installDiscoveredContextPlugins(plugins)
+	err = InstallDiscoveredContextPlugins(plugins)
 	if err != nil {
 		errList = append(errList, err)
 	}
 	return kerrors.NewAggregate(errList)
 }
 
-// SyncPluginsForContextType installs the plugins for given ContextType
-func SyncPluginsForContextType(contextType configtypes.ContextType) error {
+func DiscoverPluginsForContextType(contextType configtypes.ContextType) ([]discovery.Discovered, error) {
 	ctx, err := configlib.GetActiveContext(contextType)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if ctx == nil {
-		return fmt.Errorf(errorNoActiveContexForGivenContextType, contextType)
+		return nil, fmt.Errorf(errorNoActiveContexForGivenContextType, contextType)
 	}
-	log.Infof("Checking for required plugins for context %s...", ctx.Name)
-	errList := make([]error, 0)
-	plugins, err := DiscoverServerPluginsForGivenContexts([]*configtypes.Context{ctx})
-	if err != nil {
-		errList = append(errList, err)
-	}
-	err = installDiscoveredContextPlugins(plugins)
-	if err != nil {
-		errList = append(errList, err)
-	}
-	return kerrors.NewAggregate(errList)
+	log.Infof("Checking for required plugins for context '%s'...", ctx.Name)
+	return DiscoverServerPluginsForGivenContexts([]*configtypes.Context{ctx})
 }
 
-// installDiscoveredContextPlugins installs the given context scope plugins
-func installDiscoveredContextPlugins(plugins []discovery.Discovered) error {
-	var errList []error
-	var err error
-	var installedPlugins []cli.PluginInfo
-	if installedPlugins, err = pluginsupplier.GetInstalledServerPlugins(); err == nil {
+// UpdatePluginsInstallationStatus updates the installation status of the given plugins
+func UpdatePluginsInstallationStatus(plugins []discovery.Discovered) {
+	if installedPlugins, err := pluginsupplier.GetInstalledServerPlugins(); err == nil {
 		setAvailablePluginsStatus(plugins, installedPlugins)
 	}
+}
 
+// InstallDiscoveredContextPlugins installs the given context scope plugins
+func InstallDiscoveredContextPlugins(plugins []discovery.Discovered) error {
+	var errList []error
+	var err error
 	installed := false
+	UpdatePluginsInstallationStatus(plugins)
 	for idx := range plugins {
 		if plugins[idx].Status == common.PluginStatusNotInstalled || plugins[idx].Status == common.PluginStatusUpdateAvailable {
 			installed = true
