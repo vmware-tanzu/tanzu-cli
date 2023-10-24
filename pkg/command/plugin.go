@@ -26,6 +26,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -425,7 +426,7 @@ func newSyncPluginCmd() *cobra.Command {
 Plugins installed with this command will only be available while the context remains active.`,
 		ValidArgsFunction: noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-			err = pluginmanager.SyncPlugins()
+			err = syncPlugins(cmd)
 			if err != nil {
 				return err
 			}
@@ -434,6 +435,39 @@ Plugins installed with this command will only be available while the context rem
 		},
 	}
 	return syncCmd
+}
+
+// syncPlugins installs all plugins recommended by the active contexts and lists the plugins it's going to install
+func syncPlugins(cmd *cobra.Command) error {
+	contextMap, err := config.GetAllActiveContextsMap()
+	if err != nil {
+		return err
+	}
+	errList := make([]error, 0)
+	contextNames := ""
+	count := 0
+	for _, context := range contextMap {
+		if contextNames != "" {
+			contextNames += ", "
+		}
+		contextNames += fmt.Sprintf("'%s'", context.Name)
+		count++
+	}
+	if count == 0 {
+		log.Warning("No active contexts available to perform plugin sync")
+		return nil
+	} else if count == 1 {
+		log.Infof("Plugin sync will be performed for context: %s", contextNames)
+	} else if count > 1 {
+		log.Infof("Plugin sync will be performed for contexts: %s", contextNames)
+	}
+	for contextType, context := range contextMap {
+		err = syncContextPlugins(cmd, contextType, context.Name, true)
+		if err != nil {
+			errList = append(errList, err)
+		}
+	}
+	return kerrors.NewAggregate(errList)
 }
 
 // getInstalledAndMissingContextPlugins returns any context plugins that are not installed
