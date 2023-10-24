@@ -28,7 +28,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Catalog-Update]", func() 
 
 			// Install "vmware-tkg/default" plugin group because it contains
 			// telemetry plugin with kubernetes target
-			err = tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/default")
+			_, _, err = tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/default")
 			Expect(err).To(BeNil(), "should not get any error for installing all plugins from plugin group")
 
 			pluginsList, err = framework.GetPluginsList(tf, true)

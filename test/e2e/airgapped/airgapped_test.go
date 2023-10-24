@@ -86,7 +86,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		// Test case: Validate that the plugins can be installed from the plugin-group
 		It("validate that plugins can be installed from group 'vmware-tkg/default:v0.0.1'", func() {
 			// All plugins should get installed from the group
-			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/default:v0.0.1")
+			_, _, err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/default:v0.0.1")
 			Expect(err).To(BeNil())
 
 			// Verify all plugins got installed with `tanzu plugin list`
@@ -141,7 +141,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 		It("validate that plugins can be installed from group 'vmware-tmc/tmc-user:v9.9.9'", func() {
 			// All plugins should get installed from the group
-			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tmc/tmc-user:v9.9.9")
+			_, _, err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tmc/tmc-user:v9.9.9")
 			Expect(err).To(BeNil())
 
 			// Verify all plugins got installed with `tanzu plugin list`
@@ -188,7 +188,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 		It("validate that plugins can be installed from group 'vmware-tmc/tmc-user:v0.0.1'", func() {
 			// All plugins should get installed from the group
-			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tmc/tmc-user:v0.0.1")
+			_, _, err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tmc/tmc-user:v0.0.1")
 			Expect(err).To(BeNil())
 
 			// Verify all plugins got installed with `tanzu plugin list`
@@ -239,7 +239,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		// Test case: validate that plugins can be installed from group newly added plugin-group 'vmware-tkg/default:v9.9.9'
 		It("validate that plugins can be installed from group newly added plugin-group 'vmware-tkg/default:v9.9.9'", func() {
 			// All plugins should get installed from the group
-			err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/default:v9.9.9")
+			_, _, err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/default:v9.9.9")
 			Expect(err).To(BeNil())
 
 			// Verify all plugins got installed with `tanzu plugin list`

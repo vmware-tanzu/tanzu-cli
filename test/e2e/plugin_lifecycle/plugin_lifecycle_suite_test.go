@@ -117,7 +117,7 @@ func testWithoutPluginDiscoverySources(tf *framework.Framework) {
 	err = tf.PluginCmd.InstallPlugin("unknowPlugin", "", "")
 	Expect(err.Error()).To(ContainSubstring(errorNoDiscoverySourcesFound))
 
-	err = tf.PluginCmd.InstallPluginsFromGroup("", "unknowGroup")
+	_, _, err = tf.PluginCmd.InstallPluginsFromGroup("", "unknowGroup")
 	Expect(err.Error()).To(ContainSubstring(errorNoDiscoverySourcesFound))
 
 	_, err = tf.PluginCmd.SearchPluginGroups("")
