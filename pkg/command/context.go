@@ -253,14 +253,14 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	// Sync all required plugins
-	_ = syncContextPlugins(cmd, ctx.ContextType, true)
+	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
 
 	return nil
 }
 
 // syncContextPlugins syncs the plugins for the given context type
 // if listPlugins is true, it will list the plugins that will be installed for the given context type
-func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType, listPlugins bool) error {
+func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType, ctxName string, listPlugins bool) error {
 	plugins, err := pluginmanager.DiscoverPluginsForContextType(contextType)
 	errList := make([]error, 0)
 	if err != nil {
@@ -279,7 +279,7 @@ func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType,
 			}
 		}
 		if pluginsNeedstoBeInstalled > 0 {
-			log.Infof("The following plugins will be installed for context '%s': ", ctxName)
+			log.Infof("The following plugins will be installed for context '%s' of contextType '%s': ", ctxName, contextType)
 			displayUninstalledPluginsContentAsTable(plugins, cmd.ErrOrStderr())
 		}
 	}
@@ -1059,7 +1059,7 @@ func useCtx(cmd *cobra.Command, args []string) error {
 	log.Infof("Successfully activated context '%s'", ctxName)
 
 	// Sync all required plugins
-	_ = syncContextPlugins(cmd, ctx.ContextType, true)
+	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
 
 	return nil
 }
