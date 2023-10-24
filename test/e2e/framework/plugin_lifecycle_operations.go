@@ -68,7 +68,7 @@ type PluginGroupOps interface {
 	GetPluginGroup(groupName string, flagsWithValues string, opts ...E2EOption) ([]*PluginGroupGet, error)
 
 	// InstallPluginsFromGroup a plugin or all plugins from the given plugin group
-	InstallPluginsFromGroup(pluginNameORAll, groupName string, opts ...E2EOption) error
+	InstallPluginsFromGroup(pluginNameORAll, groupName string, opts ...E2EOption) (stdout string, stdErr string, err error)
 }
 
 type PluginDownloadAndUploadOps interface {
@@ -134,7 +134,7 @@ func (po *pluginCmdOps) InitPluginDiscoverySource(opts ...E2EOption) (string, er
 	return out.String(), err
 }
 
-func (po *pluginCmdOps) ListPlugins(opts ...E2EOption) ([]*PluginInfo, string, string, error) {
+func (po *pluginCmdOps) ListPlugins(opts ...E2EOption) (output []*PluginInfo, stdout string, stdErr string, err error) {
 	output, stdOut, stdErr, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
 	return output, stdOut, stdErr, err
 }
@@ -230,18 +230,18 @@ func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string, opts 
 	return err
 }
 
-func (po *pluginCmdOps) InstallPluginsFromGroup(pluginNameORAll, groupName string, opts ...E2EOption) error {
+func (po *pluginCmdOps) InstallPluginsFromGroup(pluginNameORAll, groupName string, opts ...E2EOption) (stdout string, stdErr string, err error) {
 	var installPluginCmd string
 	if len(pluginNameORAll) > 0 {
 		installPluginCmd = fmt.Sprintf(InstallPluginFromGroupCmd, "%s", pluginNameORAll, groupName)
 	} else {
 		installPluginCmd = fmt.Sprintf(InstallAllPluginsFromGroupCmd, "%s", groupName)
 	}
-	out, stdErr, err := po.cmdExe.TanzuCmdExec(installPluginCmd, opts...)
+	out, stdErrBuffer, err := po.cmdExe.TanzuCmdExec(installPluginCmd, opts...)
 	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), out.String())
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErrBuffer.String(), out.String())
 	}
-	return err
+	return out.String(), stdErrBuffer.String(), err
 }
 
 func (po *pluginCmdOps) DescribePlugin(pluginName, target string, opts ...E2EOption) ([]*PluginDescribe, error) {
