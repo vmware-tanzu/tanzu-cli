@@ -1,6 +1,10 @@
 ## tanzu plugin list
 
-List available plugins
+List installed plugins
+
+### Synopsis
+
+List installed standalone plugins or plugins recommended by the contexts being used
 
 ```
 tanzu plugin list [flags]

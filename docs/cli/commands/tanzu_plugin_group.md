@@ -1,10 +1,10 @@
 ## tanzu plugin group
 
-Manage plugin groups
+Manage plugin-groups
 
 ### Synopsis
 
-Manage plugin groups. A plugin group provides a list of plugins name/version combinations which can be installed in one step.
+Manage plugin-groups. A plugin-group provides a list of plugins name/version combinations which can be installed in one step.
 
 ### Options
 
@@ -15,5 +15,6 @@ Manage plugin groups. A plugin group provides a list of plugins name/version com
 ### SEE ALSO
 
 * [tanzu plugin](tanzu_plugin.md)	 - Manage CLI plugins
-* [tanzu plugin group search](tanzu_plugin_group_search.md)	 - Search for available plugin groups
+* [tanzu plugin group get](tanzu_plugin_group_get.md)	 - Get the content of the specified plugin-group
+* [tanzu plugin group search](tanzu_plugin_group_search.md)	 - Search for available plugin-groups
 

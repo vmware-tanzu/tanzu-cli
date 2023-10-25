@@ -1,13 +1,13 @@
 ## tanzu config unset
 
-Unset config values at the given path
+Unset config values at the given PATH
 
 ### Synopsis
 
-Unset config values at the given path. path values: [features.global.<feature>, features.<plugin>.<feature>, env.global.<variable>, env.<plugin>.<variable>]
+Unset config values at the given PATH. Supported PATH values: [features.global.<feature>, features.<plugin>.<feature>, env.<variable>]
 
 ```
-tanzu config unset <path> [flags]
+tanzu config unset PATH [flags]
 ```
 
 ### Options
