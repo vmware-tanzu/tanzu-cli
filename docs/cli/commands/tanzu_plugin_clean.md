@@ -2,6 +2,10 @@
 
 Clean the plugins
 
+### Synopsis
+
+Remove all installed plugins from the system
+
 ```
 tanzu plugin clean [flags]
 ```
