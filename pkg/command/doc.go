@@ -71,12 +71,6 @@ func newGenAllDocsCmd() *cobra.Command {
 }
 
 func genCoreCMD(cmd *cobra.Command) error {
-	tanzuMD := fmt.Sprintf("%s/%s", docsDir, "tanzu.md")
-	t, err := os.OpenFile(tanzuMD, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return fmt.Errorf("error opening tanzu.md %q", err)
-	}
-	defer t.Close()
 	if err := doc.GenMarkdownTree(cmd.Root(), docsDir); err != nil {
 		return fmt.Errorf("error generating markdown %q", err)
 	}
