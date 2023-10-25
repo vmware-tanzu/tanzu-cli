@@ -2,15 +2,20 @@
 
 Describe a plugin
 
+### Synopsis
+
+Displays detailed information for a plugin
+
 ```
-tanzu plugin describe [name] [flags]
+tanzu plugin describe PLUGIN_NAME [flags]
 ```
 
 ### Options
 
 ```
   -h, --help            help for describe
-  -t, --target string   target of the plugin (kubernetes[k8s]/mission-control[tmc])
+  -o, --output string   Output format (yaml|json|table)
+  -t, --target string   target of the plugin (kubernetes[k8s]/mission-control[tmc]/global)
 ```
 
 ### SEE ALSO
