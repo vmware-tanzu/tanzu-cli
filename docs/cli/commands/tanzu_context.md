@@ -15,5 +15,6 @@ Configure and manage contexts for the Tanzu CLI
 * [tanzu context delete](tanzu_context_delete.md)	 - Delete a context from the config
 * [tanzu context get](tanzu_context_get.md)	 - Display a context from the config
 * [tanzu context list](tanzu_context_list.md)	 - List contexts
+* [tanzu context unset](tanzu_context_unset.md)	 - Unset the active context so that it is not used by default.
 * [tanzu context use](tanzu_context_use.md)	 - Set the context to be used by default
 

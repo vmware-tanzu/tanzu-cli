@@ -1,6 +1,11 @@
 ## tanzu plugin sync
 
-Sync the plugins
+Installs all plugins recommended by the active contexts
+
+### Synopsis
+
+Installs all plugins recommended by the active contexts.
+Plugins installed with this command will only be available while the context remains active.
 
 ```
 tanzu plugin sync [flags]

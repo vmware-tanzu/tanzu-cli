@@ -3,27 +3,22 @@
 Update a discovery source configuration
 
 ```
-tanzu plugin source update [name] [flags]
+tanzu plugin source update SOURCE_NAME --uri <URI>
 ```
 
 ### Examples
 
 ```
 
-    # Update a local discovery source. If URI is relative path, 
-    # $HOME/.config/tanzu-plugins will be considered base path
-    tanzu plugin source update standalone-local --type local --uri new/path/to/local/discovery
-
-    # Update an OCI discovery source. URI should be an OCI image.
-    tanzu plugin source update standalone-oci --type oci --uri projects.registry.vmware.com/tkg/tanzu-plugins/standalone:v1.0
+    # Update the discovery source for an air-gapped scenario. The URI must be an OCI image.
+    tanzu plugin source update default --uri registry.example.com/tanzu/plugin-inventory:latest
 ```
 
 ### Options
 
 ```
-  -h, --help          help for update
-  -t, --type string   type of discovery source
-  -u, --uri string    URI for discovery source. URI format might be different based on the type of discovery source
+  -h, --help         help for update
+  -u, --uri string   URI for discovery source. The URI must be of an OCI image
 ```
 
 ### SEE ALSO
