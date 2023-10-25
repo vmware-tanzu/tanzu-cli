@@ -66,7 +66,7 @@ code. Use one of the following method to install the builder plugin.
 tanzu plugin install builder
 ```
 
-For more details on the builder plugin, see the [command reference](../cli/commands/tanzu_builder.md)
+For more details on the builder plugin, run `tanzu builder --help`.
 
 ### Bootstrapping a plugin project
 

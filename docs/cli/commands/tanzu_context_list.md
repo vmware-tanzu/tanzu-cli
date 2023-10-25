@@ -12,7 +12,7 @@ tanzu context list [flags]
       --current         list only current active contexts
   -h, --help            help for list
   -o, --output string   output format: table|yaml|json (default "table")
-  -t, --target string   list only contexts associated with the specified target (kubernetes[k8s]|mission-control[tmc])
+  -t, --type string     list only contexts associated with the specified context-type (kubernetes[k8s]/mission-control[tmc]/tanzu)
 ```
 
 ### SEE ALSO

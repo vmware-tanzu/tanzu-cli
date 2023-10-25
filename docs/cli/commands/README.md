@@ -9,5 +9,3 @@ The [root command](tanzu.md) is a good place to begin discovering the CLI comman
 ## Core Plugins
 
 
-- [builder](tanzu_builder.md)
-- [test](tanzu_test.md)
