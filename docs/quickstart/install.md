@@ -476,10 +476,10 @@ the registry host.
 ```shell
 
     # If the registry host is self-signed add CA certificate for the registry
-    tanzu config cert add --host test.registry.com --ca-certificate path/to/ca/cert
+    tanzu config cert add --host test.registry.com --ca-cert path/to/ca/cert
 
     # If the registry is self-signed and is serving on non-default port add CA certificate for the registry
-    tanzu config cert add --host test.registry.com:8443 --ca-certificate path/to/ca/cert
+    tanzu config cert add --host test.registry.com:8443 --ca-cert path/to/ca/cert
 
     # If the registry is self-signed or CA cert is expired, add cert configuration for the registry host with
     # skip-cert-verify option
