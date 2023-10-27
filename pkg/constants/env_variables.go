@@ -38,4 +38,7 @@ const (
 	// Suppress updating the current context of the kubeconfig referenced in
 	// the CLI Context being activated.
 	SkipUpdateKubeconfigOnContextUse = "TANZU_CLI_SKIP_UPDATE_KUBECONFIG_ON_CONTEXT_USE"
+
+	// Control the different ActiveHelp options
+	ConfigVariableActiveHelp = "TANZU_ACTIVE_HELP"
 )
