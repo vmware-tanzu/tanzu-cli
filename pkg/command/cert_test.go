@@ -60,7 +60,7 @@ var _ = Describe("config cert command tests", func() {
 			It("should be success and cert list should return the cert successfully", func() {
 				certCmd := newCertCmd()
 				certCmd.SetArgs([]string{
-					"add", "--host", testHost, "--ca-certificate", caCertFile.Name(),
+					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
 					"--skip-cert-verify", "true", "--insecure", "true"})
 				err = certCmd.Execute()
 				Expect(err).To(BeNil())
@@ -76,13 +76,13 @@ var _ = Describe("config cert command tests", func() {
 			It("should return error if the cert for a host already exists", func() {
 				certCmd := newCertCmd()
 				certCmd.SetArgs([]string{
-					"add", "--host", testHost, "--ca-certificate", caCertFile.Name(),
+					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
 					"--skip-cert-verify", "true", "--insecure", "true"})
 				err = certCmd.Execute()
 				Expect(err).To(BeNil())
 
 				certCmd.SetArgs([]string{
-					"add", "--host", testHost, "--ca-certificate", caCertFile.Name(),
+					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
 					"--skip-cert-verify", "true", "--insecure", "false"})
 				err = certCmd.Execute()
 				Expect(err).ToNot(BeNil())
@@ -93,14 +93,14 @@ var _ = Describe("config cert command tests", func() {
 			It("should return error if the arguments for 'skip-cert-verify' and 'insecure' are not boolean", func() {
 				certCmd := newCertCmd()
 				certCmd.SetArgs([]string{
-					"add", "--host", testHost, "--ca-certificate", caCertFile.Name(),
+					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
 					"--skip-cert-verify", "true", "--insecure", "fakeint"})
 				err = certCmd.Execute()
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal(`incorrect boolean argument for '--insecure' option : "fakeint"`))
 
 				certCmd.SetArgs([]string{
-					"add", "--host", testHost, "--ca-certificate", caCertFile.Name(),
+					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
 					"--skip-cert-verify", "fakebool", "--insecure", "false"})
 				err = certCmd.Execute()
 				Expect(err).ToNot(BeNil())
@@ -112,7 +112,7 @@ var _ = Describe("config cert command tests", func() {
 			It("should return success and cert list should return the cert successfully", func() {
 				certCmd := newCertCmd()
 				certCmd.SetArgs([]string{
-					"add", "--host", testHost, "--ca-certificate", caCertFile.Name()})
+					"add", "--host", testHost, "--ca-cert", caCertFile.Name()})
 				err = certCmd.Execute()
 				Expect(err).To(BeNil())
 
@@ -129,7 +129,7 @@ var _ = Describe("config cert command tests", func() {
 			It("should update the host CA cert successfully", func() {
 				certCmd := newCertCmd()
 				certCmd.SetArgs([]string{
-					"add", "--host", testHost, "--ca-certificate", caCertFile.Name()})
+					"add", "--host", testHost, "--ca-cert", caCertFile.Name()})
 				err = certCmd.Execute()
 				Expect(err).To(BeNil())
 
@@ -140,7 +140,7 @@ var _ = Describe("config cert command tests", func() {
 				err = os.WriteFile(caCertFile.Name(), []byte(fakeCACertDataUpdated), 0600)
 				Expect(err).To(BeNil())
 				certCmd.SetArgs([]string{
-					"update", testHost, "--ca-certificate", caCertFile.Name()})
+					"update", testHost, "--ca-cert", caCertFile.Name()})
 				err = certCmd.Execute()
 				Expect(err).To(BeNil())
 
@@ -151,7 +151,7 @@ var _ = Describe("config cert command tests", func() {
 			It("should update the 'skipCertVerify' and 'insecure' config data successfully", func() {
 				certCmd := newCertCmd()
 				certCmd.SetArgs([]string{
-					"add", "--host", testHost, "--ca-certificate", caCertFile.Name(),
+					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
 					"--skip-cert-verify", "false", "--insecure", "false"})
 				err = certCmd.Execute()
 				Expect(err).To(BeNil())
@@ -181,7 +181,7 @@ var _ = Describe("config cert command tests", func() {
 			It("should delete the cert config successfully if configuration for host exists", func() {
 				certCmd := newCertCmd()
 				certCmd.SetArgs([]string{
-					"add", "--host", testHost, "--ca-certificate", caCertFile.Name(),
+					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
 					"--skip-cert-verify", "true", "--insecure", "true"})
 				err = certCmd.Execute()
 				Expect(err).To(BeNil())
@@ -318,8 +318,8 @@ func TestCompletionCert(t *testing.T) {
 			expected: "_activeHelp_ Please provide 'host' or 'host:port'\n:4\n",
 		},
 		{
-			test: "completion for the --ca-certificate flag value of the cert add command",
-			args: []string{"__complete", "config", "cert", "add", "--ca-certificate", ""},
+			test: "completion for the --ca-cert flag value of the cert add command",
+			args: []string{"__complete", "config", "cert", "add", "--ca-cert", ""},
 			// ":0" is the value of the ShellCompDirectiveDefault
 			expected: ":0\n",
 		},
@@ -357,8 +357,8 @@ func TestCompletionCert(t *testing.T) {
 			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
-			test: "completion for the --ca-certificate flag value of the cert update command",
-			args: []string{"__complete", "config", "cert", "update", "--ca-certificate", ""},
+			test: "completion for the --ca-cert flag value of the cert update command",
+			args: []string{"__complete", "config", "cert", "update", "--ca-cert", ""},
 			// ":0" is the value of the ShellCompDirectiveDefault
 			expected: ":0\n",
 		},
