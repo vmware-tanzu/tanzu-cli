@@ -15,10 +15,10 @@ tanzu config cert add [flags]
 ```
 
     # Add CA certificate for a host
-    tanzu config cert add --host test.vmware.com --ca-certificate path/to/ca/ert
+    tanzu config cert add --host test.vmware.com --ca-cert path/to/ca/ert
 
     # Add CA certificate for a host:port
-    tanzu config cert add --host test.vmware.com:8443 --ca-certificate path/to/ca/ert
+    tanzu config cert add --host test.vmware.com:8443 --ca-cert path/to/ca/ert
 
     # Set to skip verifying the certificate while interacting with host
     tanzu config cert add --host test.vmware.com  --skip-cert-verify true
@@ -30,7 +30,7 @@ tanzu config cert add [flags]
 ### Options
 
 ```
-      --ca-certificate string     path to the public certificate
+      --ca-cert string            path to the public certificate
   -h, --help                      help for add
       --host string               host or host:port
       --insecure string           allow the use of http when interacting with the host (default "false")
