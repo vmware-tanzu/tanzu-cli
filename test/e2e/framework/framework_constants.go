@@ -28,7 +28,7 @@ const (
 	ConfigInit         = "%s config init"
 	ConfigServerList   = "%s config server list"
 	ConfigServerDelete = "%s config server delete %s -y"
-	ConfigCertAdd      = "%s config cert add --host %s --ca-certificate %s --skip-cert-verify %s --insecure %s"
+	ConfigCertAdd      = "%s config cert add --host %s --ca-cert %s --skip-cert-verify %s --insecure %s"
 	ConfigCertDelete   = "%s config cert delete %s"
 	ConfigCertList     = "%s config cert list -o json"
 

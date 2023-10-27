@@ -11,10 +11,10 @@ tanzu config cert update HOST [flags]
 ```
 
     # Update CA certificate for a host,
-    tanzu config cert update test.vmware.com --ca-certificate path/to/ca/ert
+    tanzu config cert update test.vmware.com --ca-cert path/to/ca/ert
 
     # Update CA certificate for a host:port,
-    tanzu config cert update test.vmware.com:5443 --ca-certificate path/to/ca/ert
+    tanzu config cert update test.vmware.com:5443 --ca-cert path/to/ca/ert
 
     # Update whether to skip verifying the certificate while interacting with host
     tanzu config cert update test.vmware.com  --skip-cert-verify true
@@ -26,7 +26,7 @@ tanzu config cert update HOST [flags]
 ### Options
 
 ```
-      --ca-certificate string     path to the public certificate
+      --ca-cert string            path to the public certificate
   -h, --help                      help for update
       --insecure string           allow the use of http when interacting with the host (true|false)
       --skip-cert-verify string   skip server's TLS certificate verification (true|false)

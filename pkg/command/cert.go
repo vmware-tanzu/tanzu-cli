@@ -59,8 +59,13 @@ func newCertCmd() *cobra.Command {
 		return cobra.AppendActiveHelp(nil, "Please provide 'host' or 'host:port'"), cobra.ShellCompDirectiveNoFileComp
 	}))
 
-	// The completion for this flag is simple file completion, which is configured by default
+	// --ca-certificate is renamed to --ca-cert
 	addCertCmd.Flags().StringVarP(&caCertPathForAdd, "ca-certificate", "", "", "path to the public certificate")
+	caCertificateDeprecationMsg := "this was done in the v1.1.0 release, it will be removed following the deprecation policy (6 months). Use the --ca-cert flag instead.\n"
+	utils.PanicOnErr(addCertCmd.Flags().MarkDeprecated("ca-certificate", caCertificateDeprecationMsg))
+	// The completion for this flag is simple file completion, which is configured by default
+	addCertCmd.Flags().StringVarP(&caCertPathForAdd, "ca-cert", "", "", "path to the public certificate")
+
 	addCertCmd.Flags().StringVarP(&skipCertVerifyForAdd, "skip-cert-verify", "", "false", "skip server's TLS certificate verification")
 	utils.PanicOnErr(addCertCmd.RegisterFlagCompletionFunc("skip-cert-verify", compSkipFlag))
 
@@ -69,8 +74,12 @@ func newCertCmd() *cobra.Command {
 
 	utils.PanicOnErr(cobra.MarkFlagRequired(addCertCmd.Flags(), "host"))
 
-	// The completion for this flag is simple file completion, which is configured by default
+	// --ca-certificate is renamed to --ca-cert
 	updateCertCmd.Flags().StringVarP(&caCertPathForUpdate, "ca-certificate", "", "", "path to the public certificate")
+	utils.PanicOnErr(updateCertCmd.Flags().MarkDeprecated("ca-certificate", caCertificateDeprecationMsg))
+	// The completion for this flag is simple file completion, which is configured by default
+	updateCertCmd.Flags().StringVarP(&caCertPathForUpdate, "ca-cert", "", "", "path to the public certificate")
+
 	updateCertCmd.Flags().StringVarP(&skipCertVerifyForUpdate, "skip-cert-verify", "", "", "skip server's TLS certificate verification (true|false)")
 	utils.PanicOnErr(updateCertCmd.RegisterFlagCompletionFunc("skip-cert-verify", compSkipFlag))
 
@@ -127,10 +136,10 @@ func newAddCertCmd() *cobra.Command {
 		Long:  "Add a certificate configuration for a host",
 		Example: `
     # Add CA certificate for a host
-    tanzu config cert add --host test.vmware.com --ca-certificate path/to/ca/ert
+    tanzu config cert add --host test.vmware.com --ca-cert path/to/ca/ert
 
     # Add CA certificate for a host:port
-    tanzu config cert add --host test.vmware.com:8443 --ca-certificate path/to/ca/ert
+    tanzu config cert add --host test.vmware.com:8443 --ca-cert path/to/ca/ert
 
     # Set to skip verifying the certificate while interacting with host
     tanzu config cert add --host test.vmware.com  --skip-cert-verify true
@@ -182,10 +191,10 @@ func newUpdateCertCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Example: `
     # Update CA certificate for a host,
-    tanzu config cert update test.vmware.com --ca-certificate path/to/ca/ert
+    tanzu config cert update test.vmware.com --ca-cert path/to/ca/ert
 
     # Update CA certificate for a host:port,
-    tanzu config cert update test.vmware.com:5443 --ca-certificate path/to/ca/ert
+    tanzu config cert update test.vmware.com:5443 --ca-cert path/to/ca/ert
 
     # Update whether to skip verifying the certificate while interacting with host
     tanzu config cert update test.vmware.com  --skip-cert-verify true
