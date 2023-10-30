@@ -164,6 +164,9 @@ var createCtxCmd = &cobra.Command{
     # Create a TKG management cluster context using default kubeconfig path and a kubeconfig context
     tanzu context create mgmt-cluster --kubecontext kubecontext
 
+    # Create a TMC(mission-control) context using endpoint and type 
+    tanzu context create mytmc --endpoint tmc.example.com:443 --type tmc
+
     # Create an Tanzu context with the default endpoint (--type is not necessary for the default endpoint)
     tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com
 
