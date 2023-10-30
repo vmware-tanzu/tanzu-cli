@@ -714,7 +714,7 @@ var _ = Describe("create new context", func() {
 		testKubeContext    = "test-k8s-context"
 		testKubeConfigPath = "/fake/path/kubeconfig"
 		testContextName    = "fake-context-name"
-		fakeTMCEndpoint    = "https://cloud.vmware.com/auth"
+		fakeTMCEndpoint    = "tmc.cloud.vmware.com:443"
 		fakeTanzuEndpoint  = "https://fake.api.tanzu.cloud.vmware.com"
 	)
 	var (
@@ -797,6 +797,22 @@ var _ = Describe("create new context", func() {
 				Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
 				Expect(string(ctx.ContextType)).To(ContainSubstring(contextTypeMissionControl))
 				Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
+			})
+		})
+		Context("with endpoint URL having https/http scheme", func() {
+			It("should return error", func() {
+				endpoint = "https://cloud.vmware.com"
+				ctxName = testContextName
+				ctx, err = createNewContext()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("TMC endpoint URL https://cloud.vmware.com should not contain http or https scheme. It should be of the format host[:port]"))
+
+				endpoint = "http://cloud.vmware.com"
+				ctxName = testContextName
+				ctx, err = createNewContext()
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("TMC endpoint URL http://cloud.vmware.com should not contain http or https scheme. It should be of the format host[:port]"))
+
 			})
 		})
 		Context("context name already exists", func() {
