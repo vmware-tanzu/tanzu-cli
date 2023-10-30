@@ -139,13 +139,13 @@ func TestPluginGroupGet(t *testing.T) {
 			test:            "get a plugin group with --all with no context-scoped",
 			args:            []string{"plugin", "group", "get", "vmware-tkg/default", "--all"},
 			expectedFailure: false,
-			expected:        "Plugins in Group: vmware-tkg/default:v2.2.2 Standalone Plugins NAME TARGET VERSION isolated-cluster global v1.3 [i] The standalone plugins in this plugin group are installed when the 'tanzu plugin install --group vmware-tkg/default' command is invoked. Contextual Plugins NAME TARGET VERSION [i] The contextual plugins in this plugin group are automatically installed, and only available for use, when a Tanzu context which supports them is created or activated/used.",
+			expected:        "Plugins in Group: vmware-tkg/default:v2.2.2 Standalone Plugins NAME TARGET VERSION isolated-cluster global v1.3 Note: The standalone plugins in this plugin group are installed when the 'tanzu plugin install --group vmware-tkg/default' command is invoked. Contextual Plugins NAME TARGET VERSION Note: The contextual plugins in this plugin group are automatically installed, and only available for use, when a Tanzu context which supports them is created or activated/used.",
 		},
 		{
 			test:            "get a plugin group with --all with context-scoped",
 			args:            []string{"plugin", "group", "get", "vmware-tkg/default:v1.1.1", "--all"},
 			expectedFailure: false,
-			expected:        "Plugins in Group: vmware-tkg/default:v1.1.1 Standalone Plugins NAME TARGET VERSION isolated-cluster global v1.2.3 login global v1.2.0 management-cluster kubernetes v0.1.0 package kubernetes v0.2.0 secret kubernetes v0.3.0 [i] The standalone plugins in this plugin group are installed when the 'tanzu plugin install --group vmware-tkg/default:v1.1.1' command is invoked. Contextual Plugins NAME TARGET VERSION cluster kubernetes v1.1.1 [i] The contextual plugins in this plugin group are automatically installed, and only available for use, when a Tanzu context which supports them is created or activated/used.",
+			expected:        "Plugins in Group: vmware-tkg/default:v1.1.1 Standalone Plugins NAME TARGET VERSION isolated-cluster global v1.2.3 login global v1.2.0 management-cluster kubernetes v0.1.0 package kubernetes v0.2.0 secret kubernetes v0.3.0 Note: The standalone plugins in this plugin group are installed when the 'tanzu plugin install --group vmware-tkg/default:v1.1.1' command is invoked. Contextual Plugins NAME TARGET VERSION cluster kubernetes v1.1.1 Note: The contextual plugins in this plugin group are automatically installed, and only available for use, when a Tanzu context which supports them is created or activated/used.",
 		},
 		{
 			test:            "get a plugin group in json with --all with no context-scoped",

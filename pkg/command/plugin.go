@@ -577,7 +577,7 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 	if pluginSyncRequired {
 		// Print a warning to the user that some context plugins are not installed or outdated and plugin sync is required to install them
 		fmt.Println("")
-		log.Warningf("As shown above, some recommended plugins have not been installed or are outdated. To install them please run 'tanzu plugin sync'.")
+		fmt.Println("Note: As shown above, some recommended plugins have not been installed or are outdated. To install them please run 'tanzu plugin sync'.")
 	}
 }
 
