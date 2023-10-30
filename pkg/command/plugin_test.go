@@ -811,40 +811,40 @@ func TestCompletionPlugin(t *testing.T) {
 				":36\n",
 		},
 		{
-			test: "completion for the plugin delete command when the specified plugin name is not unique",
-			args: []string{"__complete", "plugin", "delete", "cluster", ""},
+			test: "completion for the plugin uninstall command when the specified plugin name is not unique",
+			args: []string{"__complete", "plugin", "uninstall", "cluster", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: "--target\n" +
 				":4\n",
 		},
 		{
-			test: "no more completions for the plugin delete command when the specified plugin name is not unique and --target is specified",
-			args: []string{"__complete", "plugin", "delete", "cluster", "--target", "k8s", ""},
+			test: "no more completions for the plugin uninstall command when the specified plugin name is not unique and --target is specified",
+			args: []string{"__complete", "plugin", "uninstall", "cluster", "--target", "k8s", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
-			test: "no more completions after the first arg for the plugin delete command",
-			args: []string{"__complete", "plugin", "delete", "feature", ""},
+			test: "no more completions after the first arg for the plugin uninstall command",
+			args: []string{"__complete", "plugin", "uninstall", "feature", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
 			test: "completion of the --target flag if 'all' is specified",
-			args: []string{"__complete", "plugin", "delete", "all", ""},
+			args: []string{"__complete", "plugin", "uninstall", "all", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: "--target\n" +
 				":4\n",
 		},
 		{
 			test: "no more completions after 'all' if --target is specified",
-			args: []string{"__complete", "plugin", "delete", "--target", "k8s", "all", ""},
+			args: []string{"__complete", "plugin", "uninstall", "--target", "k8s", "all", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
 		},
 		{
-			test: "completion for the --target flag value for the plugin delete command with no plugin name",
-			args: []string{"__complete", "plugin", "delete", "--target", ""},
+			test: "completion for the --target flag value for the plugin uninstall command with no plugin name",
+			args: []string{"__complete", "plugin", "uninstall", "--target", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
@@ -852,16 +852,16 @@ func TestCompletionPlugin(t *testing.T) {
 				":4\n",
 		},
 		{
-			test: "completion for the --target flag value for the plugin delete command with a plugin name",
-			args: []string{"__complete", "plugin", "delete", "cluster", "--target", ""},
+			test: "completion for the --target flag value for the plugin uninstall command with a plugin name",
+			args: []string{"__complete", "plugin", "uninstall", "cluster", "--target", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: compK8sTarget + "\n" +
 				compTMCTarget + "\n" +
 				":4\n",
 		},
 		{
-			test: "completion for the --target flag value for the plugin delete command with 'all'",
-			args: []string{"__complete", "plugin", "delete", "all", "--target", ""},
+			test: "completion for the --target flag value for the plugin uninstall command with 'all'",
+			args: []string{"__complete", "plugin", "uninstall", "all", "--target", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
@@ -869,8 +869,8 @@ func TestCompletionPlugin(t *testing.T) {
 				":4\n",
 		},
 		{
-			test: "completion for the --target flag value for the plugin delete command with an invalid plugin",
-			args: []string{"__complete", "plugin", "delete", "invalid", "--target", ""},
+			test: "completion for the --target flag value for the plugin uninstall command with an invalid plugin",
+			args: []string{"__complete", "plugin", "uninstall", "invalid", "--target", ""},
 			// ":4" is the value of the ShellCompDirectiveNoFileComp
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +

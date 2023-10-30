@@ -45,7 +45,7 @@ const (
 	InstallPluginFromGroupCmd           = "%s plugin install %s --group %s"
 	InstallAllPluginsFromGroupCmd       = "%s plugin install --group %s"
 	DescribePluginCmd                   = "%s plugin describe %s"
-	UninstallPLuginCmd                  = "%s plugin delete %s --yes"
+	UninstallPLuginCmd                  = "%s plugin uninstall %s --yes"
 	CleanPluginsCmd                     = "%s plugin clean"
 	pluginSyncCmd                       = "%s plugin sync"
 	PluginDownloadBundleCmd             = "%s plugin download-bundle"
