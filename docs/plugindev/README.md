@@ -44,10 +44,6 @@ The minimum supported Go version is 1.18.
 
 You will need Docker to be installed on your development system.
 
-Note for Mac developers on Apple Silicon machines: Tanzu CLI does not yet
-officially support arm64-based binaries. To develop on these machines ensure
-that the amd64 version of the Go toolchain is installed.
-
 ------------------------------
 
 ### Starting a plugin project
