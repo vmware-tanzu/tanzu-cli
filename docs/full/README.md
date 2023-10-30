@@ -206,3 +206,45 @@ Signature verification could fail in the scenarios below:
    that signature verification is skipped for the repository. Users can choose to
    suppress this warning by setting the environment variable `TANZU_CLI_SUPPRESS_SKIP_SIGNATURE_VERIFICATION_WARNING`
    to `true`.
+
+## Autocompletion support
+
+The Tanzu CLI supports shell autocompletion for the `bash`, `zsh`, `fish` and `powershell` shells.
+Please refer to the [autocompletion quickstart section](../quickstart/quickstart.md#install-autocompletion-scripts-for-your-shell)
+to setup autocompletion for your shell.
+
+### ActiveHelp Support
+
+ActiveHelp are messages printed through autocompletions as the program is being used.  Once autocompletion has been set up,
+the Tanzu CLI automatically provides ActiveHelp messages to improve the user-experience when the user presses `TAB`.
+An example of ActiveHelp messages can be seen below:
+
+```console
+bash-5.1$ tanzu context create [tab]
+Command help: Create a Tanzu CLI context
+Please specify a name for the context
+```
+
+To deactivate all ActiveHelp messages you can set the `TANZU_ACTIVE_HELP` environment variable to `0`.
+
+**Note: ActiveHelp messages will only be shown when using the `bash` or `zsh` shells.**
+
+#### Known Issues
+
+When using the `bash` shell, if the `tanzu` command is preceded by some input such as setting a variable, there is an issue
+re-printing that extra input when ActiveHelp messages are triggered.  For example:
+
+```bash
+bash-5.1$ TANZU_API_TOKEN=12345 tanzu context <TAB>
+Command help: Configure and manage contexts for the Tanzu CLI
+
+bash-5.1$ tanzu context
+```
+
+Notice that the input `TANZU_API_TOKEN=12345` preceding the `tanzu` command is not re-printed, however
+it is still present and will take effect if the command is executed.  Pressing `<TAB>` again will often
+correct the situation but when it does not, you can simply refresh your shell display (e.g., `^L`).
+
+```bash
+export TANZU_ACTIVE_HELP=0
+```

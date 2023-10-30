@@ -19,6 +19,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/telemetry"
@@ -417,7 +418,7 @@ func setupActiveHelp(cmd *cobra.Command, args []string) {
 // this function will add a ValidArgsFunction for the "context list"
 // command to print its short text as activeHelp.
 func printShortDescOfCmdInActiveHelp(cmd *cobra.Command, args []string) {
-	activeHelpConfig := os.Getenv("TANZU_ACTIVE_HELP")
+	activeHelpConfig := os.Getenv(constants.ConfigVariableActiveHelp)
 	if strings.Contains(activeHelpConfig, "no_short_help") {
 		return
 	}
