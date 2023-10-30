@@ -43,6 +43,19 @@ Command completion support is built into the CLI, but it requires an initial
 setup for the command shell in use. The shells with autocompletion support are
 `bash`, `zsh`, `fish` and `powershell`.
 
+If not already done, you must enable autocompletion for your shell environment.
+This is independent of the Tanzu CLI autocompletion and relevant instructions
+can be found on the internet.
+
+Once general autocompletion is setup and if you have installed the Tanzu CLI
+using a package manager, you have nothing more to do: autocompletion will
+automatically work for the Tanzu CLI.
+
+If you have not used a package manager to install the CLI, you can find out more
+about how to set up autocompletion for your specific shell, by running:
+
+`tanzu completion --help`
+
 For instance, to enable autocompletion for the Tanzu CLI for all new sessions of
 zsh:
 
@@ -51,10 +64,6 @@ zsh:
   echo "autoload -U compinit; compinit" >> ~/.zshrc
   tanzu completion zsh > "${fpath[1]}/_tanzu"
 ```
-
-To find out more about how to set up autocompletion for your specific shell, run:
-
-`tanzu completion --help`
 
 ### List plugin groups found in the configured central repository
 

@@ -68,3 +68,27 @@ Any changes aimed to remove functionality in the CLI (e.g. commands, command
 flags) have to follow the deprecation policy, For more details on the
 deprecation policy and process please refer to the [Deprecation
 document](deprecation.md).
+
+## Shell Completion Support
+
+The Tanzu CLI supports shell completion for a series of shells as provided by
+the [Cobra project](https://github.com/spf13/cobra).  Shell completion for commands and
+flag names is automatically handled by Cobra.  However, shell completion for
+arguments and flag values must be coded in the Tanzu CLI itself.
+
+All core CLI command and flags should provide proper shell completion for the
+arguments and flag values they accept.  Whenever a new command or flag is added
+the appropriate shell completion code must also be added.  For examples, please
+refer to existing `ValidArgsFunction` function implementations and calls to
+`RegisterFlagCompletionFunc()`.
+
+### ActiveHelp Support
+
+ActiveHelp are messages printed through shell completion as the program is being used.
+The Tanzu CLI provides ActiveHelp in certain situations which should be maintained.
+For examples, please refer to calls to `cobra.AppendActiveHelp()`.
+The following simple guidelines should be respected:
+
+1. when all arguments for a command have been provided on the command line, the functions `noMoreCompletions` or `activeHelpNoMoreArgs` should be used to provide ActiveHelp to indicate to the user no more arguments are accepted,
+1. whenever a command accepts an argument or a flag accepts a value, but that the shell completion code is unable to provide suggestions, an ActiveHelp message should be provided to guide the user,
+1. when the shell completion code is unable to provide suggestions due to an error with user input (e.g, an invalid plugin name), an ActiveHelp message should be added to guide the user in realizing what the problem is.
