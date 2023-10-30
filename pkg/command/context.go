@@ -176,6 +176,10 @@ var createCtxCmd = &cobra.Command{
     # Create an Tanzu context but skipping TLS verification (this is insecure):
     tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com --insecure-skip-tls-verify
 
+    Note: The "tanzu" context type is being released to provide advance support for the development
+    and release of new services (and CLI plugins) which extend and combine features provided by
+    individual tanzu components.
+
     [*] : Users have two options to create a kubernetes cluster context. They can choose the control
     plane option by providing 'endpoint', or use the kubeconfig for the cluster by providing
     'kubeconfig' and 'context'. If only '--context' is set and '--kubeconfig' is not, the
@@ -654,6 +658,14 @@ func doCSPAuthAndUpdateContext(c *configtypes.Context, endpointType string) (cla
 func promptContextType() (ctxCreationType ContextCreationType, err error) {
 	ctxCreationTypeStr := ""
 	promptOpts := getPromptOpts()
+
+	fmt.Print(`
+Note: The "tanzu" context type is being released to provide advance support for the development
+and release of new services (and CLI plugins) which extend and combine features provided by
+individual tanzu components.
+
+`)
+
 	err = component.Prompt(
 		&component.PromptConfig{
 			Message: "Select context creation type",
