@@ -5,6 +5,7 @@ package pluginmanager
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/essentials"
@@ -37,11 +38,11 @@ func InstallPluginsFromEssentialPluginGroup() (string, error) {
 
 	log.Info(actionMessage)
 
-	// Print an empty line
-	fmt.Println()
-
 	// Attempt to install or upgrade the essential plugin group.
 	_, err = installPluginsFromEssentialPluginGroup(name, version)
+
+	// Print an empty line to delimit the essential plugins output with any actual command output
+	fmt.Fprintln(os.Stderr)
 
 	// If there's an error during installation or upgrade, return it with additional context.
 	if err != nil {

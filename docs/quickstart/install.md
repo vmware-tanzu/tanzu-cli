@@ -287,6 +287,8 @@ Do you agree to the VMware General Terms?
  > Yes
 
 [i] The tanzu cli essential plugins have not been installed and are being installed now. The install may take a few seconds.
+[i] Installing plugins from plugin group 'vmware-tanzucli/essentials:v1.0.0'
+[i] Installing plugin 'telemetry:v1.1.0' with target 'global'
 
 Standalone Plugins
   NAME       DESCRIPTION              TARGET  VERSION  STATUS
@@ -303,6 +305,8 @@ Essentials plugins being updated when a new version of plugin is available
 
 > tanzu plugin list
 [i] The tanzu cli essential plugins are outdated and are being updated now. The update may take a few seconds.
+[i] Installing plugins from plugin group 'vmware-tanzucli/essentials:v1.0.0'
+[i] Installing plugin 'telemetry:v1.1.0' with target 'global'
 
 Standalone Plugins
   NAME       DESCRIPTION              TARGET  VERSION  STATUS
