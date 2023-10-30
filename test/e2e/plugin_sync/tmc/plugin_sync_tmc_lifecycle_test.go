@@ -965,7 +965,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 	// Test case: h. TMC: list plugins and validate plugins info, make sure all plugins are installed as per mock response
 	// Test case: i. plugin search should work fine even though k8s context has issues
 	// Test case: j. plugin install should work fine even though k8s context has issues
-	// Test case: k. validate plugin has installed after above plugin delete and install operations
+	// Test case: k. validate plugin has installed after above plugin uninstall and install operations
 	// Test case: l. plugin sync should work fine even though k8s context has issues
 	// Test case: m. validate the plugin list after above plugin sync operation
 	// Test case: n. plugin group search and plugin group install when active context has issues
@@ -1086,8 +1086,8 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), noErrorForPluginInstall)
 		})
 
-		// Test case: k. validate plugin has installed after above plugin delete and install operations
-		It("plugin list validation after specific plugin delete and install", func() {
+		// Test case: k. validate plugin has installed after above plugin uninstall and install operations
+		It("plugin list validation after specific plugin uninstall and install", func() {
 			pluginList, err := tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
 			Expect(err).NotTo(BeNil(), "there should be an error for plugin list as one of the active context has issues")
 			Expect(len(pluginList)).Should(Equal(len(installedPluginsListTMC[1:])), "recently installed plugin should be installed as standalone")
