@@ -15,13 +15,12 @@ make all
 
 ### Default Directory Locations
 
-The names of the directories for the plugins, catalog cache, and local
-plugin discovery (`<XDG_DATA_HOME>/_tanzu-cli, $HOME/.cache/_tanzu,$HOME/.config/_tanzu-plugins`)
-are all directories prefixed with '_' for now, so as not to conflict with their nonprefixed counterparts.
+The location of the directories used by the CLI are:
 
-This setup is temporary. We intend to unify the locations of various
-directories with those used by existing CLI installations once the new CLI
-releases can serve as drop-in replacements for the existing ones.
+1. to store plugin binaries: `<XDG_DATA_HOME>/tanzu-cli`
+1. to store the plugin catalog as well as the plugin inventory DB cache: `$HOME/.cache/tanzu`
+1. to store configuration files: `$HOME/.config/tanzu`
+1. to store the telemetry DB: `$HOME/.config/tanzu-cli-telemetry`
 
 ## Source Code Structure
 
