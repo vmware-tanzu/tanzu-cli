@@ -47,6 +47,22 @@ func topLevelHelp(docsDir string) string {
 func TestGenDocs(t *testing.T) {
 	assert := assert.New(t)
 
+	// Setup a temporary configuration
+	configFile, err := os.CreateTemp("", "config")
+	assert.Nil(err)
+	os.Setenv("TANZU_CONFIG", configFile.Name())
+	configFileNG, err := os.CreateTemp("", "config_ng")
+	assert.Nil(err)
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+
+	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
+
+	dir, err := os.MkdirTemp("", "tanzu-cli-plugin-dir")
+	assert.Nil(err)
+	defer os.RemoveAll(dir)
+	os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
+
 	docsDir, err := os.MkdirTemp("", "tanzu-cli-gendocs")
 	assert.Nil(err)
 	defer os.RemoveAll(docsDir)
@@ -70,6 +86,14 @@ func TestGenDocs(t *testing.T) {
 	assert.Contains(topLevelHelpText, "tanzu_context.md")
 	assert.Contains(topLevelHelpText, "[tanzu version]")
 	assert.NotContains(topLevelHelpText, "tanzu_generate")
+
+	os.RemoveAll(configFile.Name())
+	os.RemoveAll(configFileNG.Name())
+	os.Unsetenv("TANZU_CONFIG")
+	os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+	os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
+	os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+	os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 }
 
 func TestCompletionGenerateDocs(t *testing.T) {
