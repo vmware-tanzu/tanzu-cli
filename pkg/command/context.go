@@ -482,6 +482,10 @@ func createContextWithTMCEndpoint() (context *configtypes.Context, err error) {
 		return
 	}
 
+	if strings.HasPrefix(endpoint, "https:") || strings.HasPrefix(endpoint, "http:") {
+		return nil, errors.Errorf("TMC endpoint URL %s should not contain http or https scheme. It should be of the format host[:port]", endpoint)
+	}
+
 	context = &configtypes.Context{
 		Name:        ctxName,
 		ContextType: configtypes.ContextTypeTMC,
