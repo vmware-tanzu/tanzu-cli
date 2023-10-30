@@ -459,9 +459,33 @@ for your plugin. To make the completions richer, a plugin can add logic to
 also provide shell completion for its arguments and flag values; these are
 referred to as "custom completions".
 
-Please refer to the Cobra project's documentation on
-[Customizing completions](https://github.com/spf13/cobra/blob/main/site/content/completions/_index.md#customizing-completions)
+The Tanzu CLI provides such custom completions for all its core command arguments
+and flag values. To allow for the best user-experience, it is valuable for each
+plugin to also provide similar completions for its own command arguments and flag values.
+
+To find examples of custom completions, please refer to implementations of `ValidArgsFunction`
+and calls to `RegisterFlagCompletionFunc()` in the
+[Tanzu CLI repository](https://github.com/vmware-tanzu/tanzu-cli).
+
+For detailed documentation including troubleshooting and debugging, please refer to the
+Cobra project's documentation on
+[customizing completions](https://github.com/spf13/cobra/blob/main/site/content/completions/_index.md#customizing-completions)
 to learn how to make your plugin more user-friendly using shell completion.
+
+#### ActiveHelp as part of Shell Completion
+
+ActiveHelp are messages printed through shell completion as the program is being used.
+The Tanzu CLI provides ActiveHelp in different situations to improve the user-experience.
+Plugins are encouraged to make use of ActiveHelp to enhance their own user-experience.
+
+To better understand how ActiveHelp can be used, please refer to calls to
+`cobra.AppendActiveHelp()` in the
+[Tanzu CLI repository](https://github.com/vmware-tanzu/tanzu-cli).
+
+For detailed documentation including troubleshooting and debugging, as well as configuration,
+please refer to the Cobra project's documentation on
+[ActiveHelp](https://github.com/spf13/cobra/blob/main/site/content/active_help.md)
+to learn how to make your plugin more user-friendly using ActiveHelp.
 
 ### Configuration file
 
