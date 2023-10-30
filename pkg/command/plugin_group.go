@@ -234,11 +234,8 @@ func displayGroupContentAsTable(group *plugininventory.PluginGroup, specifiedVer
 	outputStandalone.Render()
 
 	if showNonMandatory {
-		log.SetStdout(writer)
-		log.SetStderr(writer)
-
 		fmt.Fprintln(writer)
-		log.Infof("The standalone plugins in this plugin group are installed when the 'tanzu plugin install --group %s%s' command is invoked.\n", gID, specifiedVersion)
+		fmt.Fprintf(writer, "Note: The standalone plugins in this plugin group are installed when the 'tanzu plugin install --group %s%s' command is invoked.\n", gID, specifiedVersion)
 
 		fmt.Fprintln(writer)
 		outputContext := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
@@ -251,7 +248,7 @@ func displayGroupContentAsTable(group *plugininventory.PluginGroup, specifiedVer
 		outputContext.Render()
 
 		fmt.Fprintln(writer)
-		log.Info("The contextual plugins in this plugin group are automatically installed, and only available for use, when a Tanzu context which supports them is created or activated/used.\n")
+		fmt.Fprintln(writer, "Note: The contextual plugins in this plugin group are automatically installed, and only available for use, when a Tanzu context which supports them is created or activated/used.")
 	}
 }
 
