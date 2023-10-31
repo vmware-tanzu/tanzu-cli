@@ -800,19 +800,33 @@ var _ = Describe("create new context", func() {
 			})
 		})
 		Context("with endpoint URL having https/http scheme", func() {
+			const httpsURL = "https://cloud.vmware.com"
+			const httpURL = "http://cloud.vmware.com"
 			It("should return error", func() {
-				endpoint = "https://cloud.vmware.com"
+				endpoint = httpsURL
 				ctxName = testContextName
 				ctx, err = createNewContext()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("TMC endpoint URL https://cloud.vmware.com should not contain http or https scheme. It should be of the format host[:port]"))
 
-				endpoint = "http://cloud.vmware.com"
+				endpoint = httpURL
 				ctxName = testContextName
 				ctx, err = createNewContext()
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("TMC endpoint URL http://cloud.vmware.com should not contain http or https scheme. It should be of the format host[:port]"))
+			})
+			It("should not return error when E2E test environment variable is set true", func() {
+				endpoint = httpsURL
+				os.Setenv(constants.E2ETestEnvironment, "true")
+				defer os.Unsetenv(constants.E2ETestEnvironment)
+				ctxName = testContextName
+				ctx, err = createNewContext()
+				Expect(err).ToNot(HaveOccurred())
 
+				endpoint = httpURL
+				ctxName = testContextName
+				ctx, err = createNewContext()
+				Expect(err).ToNot(HaveOccurred())
 			})
 		})
 		Context("context name already exists", func() {
