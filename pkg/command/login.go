@@ -142,6 +142,9 @@ func getServerTarget(cfg *configtypes.ClientConfig, newServerSelector string) (*
 	promptOpts := getPromptOpts()
 	servers := map[string]*configtypes.Server{} //nolint:staticcheck // Deprecated
 	for _, server := range cfg.KnownServers {   //nolint:staticcheck // Deprecated
+		if server.Type != configtypes.GlobalServerType && server.Type != configtypes.ManagementClusterServerType { //nolint:staticcheck // Deprecated
+			continue
+		}
 		ep, err := config.EndpointFromServer(server) //nolint:staticcheck // Deprecated
 		if err != nil {
 			return nil, err
