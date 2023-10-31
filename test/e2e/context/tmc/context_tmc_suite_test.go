@@ -29,7 +29,7 @@ var (
 
 const prefix = "ctx-tmc-"
 const prefixK8s = "ctx-k8s-"
-const maxCtx = 25
+const maxCtx = 5 // setting few number of context's as TMC context creation is slow and takes time because its dependent on TMC API's
 const ContextShouldNotExists = "the context %s should not exists"
 const ContextShouldExistsAsCreated = "the context %s should exists as its been created"
 

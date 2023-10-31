@@ -12,9 +12,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
+
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	types "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 // This test suite includes tests for the TMC context,
@@ -158,6 +159,14 @@ func tmcAndK8sContextTests() bool {
 			var k8sCtx, tmcCtx string
 			k8sCtxs := make([]string, 0)
 			tmcCtxs := make([]string, 0)
+			// Test case: validate help message for --help flag
+			It("validate help message note related to TANZU_API_TOKEN", func() {
+				tmcCtx = prefix + framework.RandomString(4)
+				stdOut, stdErr, err := tf.ContextCmd.CreateContextWithEndPointStaging(tmcCtx, tmcClusterInfo.EndPoint, framework.AddAdditionalFlagAndValue("--help"))
+				Expect(stdErr).To(BeEmpty(), "stdErr should be empty")
+				Expect(err).To(BeNil(), "context should create without any error")
+				Expect(stdOut).To(ContainSubstring("Note: To create Mission Control (TMC) or Tanzu contexts, an API Key is required."))
+			})
 			// Test case: a. create tmc context
 			It("create tmc context with endpoint and check active context", func() {
 				for i := 0; i < 5; i++ {
