@@ -183,6 +183,10 @@ var createCtxCmd = &cobra.Command{
     and release of new services (and CLI plugins) which extend and combine features provided by
     individual tanzu components.
 
+    Note: To create Mission Control (TMC) or Tanzu contexts, an API Key is required. The API Key
+    value can be provided with the environment variable TANZU_API_TOKEN or can be entered as input
+    while creating the context.
+
     [*] : Users have two options to create a kubernetes cluster context. They can choose the control
     plane option by providing 'endpoint', or use the kubeconfig for the cluster by providing
     'kubeconfig' and 'context'. If only '--context' is set and '--kubeconfig' is not, the
@@ -632,6 +636,8 @@ func doCSPAuthAndUpdateContext(c *configtypes.Context, endpointType string) (cla
 	if apiTokenExists {
 		log.Info("API token env var is set")
 	} else {
+		fmt.Fprintln(os.Stderr)
+		log.Info("The API key can be provided by setting the TANZU_API_TOKEN environment variable")
 		apiTokenValue, err = promptAPIToken(endpointType)
 		if err != nil {
 			return nil, err

@@ -20,9 +20,10 @@ const (
 	SuppressSkipSignatureVerificationWarning          = "TANZU_CLI_SUPPRESS_SKIP_SIGNATURE_VERIFICATION_WARNING"
 	CEIPOptInUserPromptAnswer                         = "TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER"
 	EULAPromptAnswer                                  = "TANZU_CLI_EULA_PROMPT_ANSWER"
-	E2ETestEnvironment                                = "TANZU_CLI_E2E_TEST_ENVIRONMENT" // environment variable to indicate that the CLI is running in E2E test environment
-	ShowTelemetryConsoleLogs                          = "TANZU_CLI_SHOW_TELEMETRY_CONSOLE_LOGS"
-	TelemetrySuperColliderEnvironment                 = "TANZU_CLI_SUPERCOLLIDER_ENVIRONMENT"
+	// Environment variable to indicate that the CLI is running in E2E test environment
+	E2ETestEnvironment                = "TANZU_CLI_E2E_TEST_ENVIRONMENT"
+	ShowTelemetryConsoleLogs          = "TANZU_CLI_SHOW_TELEMETRY_CONSOLE_LOGS"
+	TelemetrySuperColliderEnvironment = "TANZU_CLI_SUPERCOLLIDER_ENVIRONMENT"
 
 	// TanzuCLIEssentialsPluginGroupName is used to override and customize the default essentials plugin group name
 	TanzuCLIEssentialsPluginGroupName = "TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_NAME"
