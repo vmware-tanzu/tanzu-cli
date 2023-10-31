@@ -81,6 +81,10 @@ func init() {
     # Login to an existing server
     tanzu login --server mgmt-cluster
 
+    Note: To create Mission Control (TMC) contexts, an API Key is required. The API Key value can
+    be provided with the environment variable TANZU_API_TOKEN or can be entered as input while
+    creating the context.
+
     [*] : Users have two options to login to TKG. They can choose the login endpoint option
     by providing 'endpoint', or can choose to use the kubeconfig for the management cluster by
     providing 'kubeconfig' and 'context'. If only '--context' is set and '--kubeconfig' is not,
@@ -367,6 +371,8 @@ func globalLoginUsingServer(s *configtypes.Server) (err error) { //nolint:static
 	if apiTokenExists {
 		log.Info("API token env var is set")
 	} else {
+		fmt.Fprintln(os.Stderr)
+		log.Info("The API key can be provided by setting the TANZU_API_TOKEN environment variable")
 		apiTokenValue, err = promptAPIToken("TMC")
 		if err != nil {
 			return err
