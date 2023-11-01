@@ -1,0 +1,58 @@
+name: MSYS2###Tanzu CLI Core E2E Tests on Windows
+
+on:
+  pull_request:
+    branches: [main, release-*]
+  push:
+    branches: [ main, test*, release-*]
+
+jobs:
+  build:
+    name: MSYS2###Tanzu CLI Core E2E Tests on Windows
+    runs-on: windows-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.21
+        id: go
+
+      - name: go cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install MSYS2
+        run: |
+          choco install msys2
+        shell: powershell
+  
+      - name: Initialize MSYS2
+        run: |
+          C:\tools\msys64\usr\bin\bash -lc "echo 'Hello from MSYS2'"
+        shell: powershell
+  
+      - name: Install Make in MSYS2
+        run: |
+          C:\tools\msys64\usr\bin/pacman -S --noconfirm make
+        shell: powershell
+
+      - name: Run Unix Commands in MSYS2
+        run: |
+          C:\tools\msys64\usr\bin\bash -lc "ls"
+          C:\tools\msys64\usr\bin\bash -lc "pwd"
+        shell: powershell
+
+      - name: Setup dependencies
+        run: |
+          make tools
+          echo "${PWD}/hack/tools/bin" >> $GITHUB_PATH
+          echo "${PWD}/bin" >> $GITHUB_PATH

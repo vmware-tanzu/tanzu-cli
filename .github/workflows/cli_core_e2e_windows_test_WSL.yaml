@@ -1,0 +1,45 @@
+name: WSL#Tanzu CLI Core E2E Tests on Windows
+
+on:
+  pull_request:
+    branches: [main, release-*]
+  push:
+    branches: [ main, test*, release-*]
+
+jobs:
+  build:
+    name: WSL#Tanzu CLI Core E2E Tests on Windows
+    runs-on: windows-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.21
+        id: go
+
+      - name: go cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Set up WSL
+        run: |
+          wsl --install -d Ubuntu-20.04
+          wsl --set-default-version 2
+        shell: bash
+
+      - name: Run Make Targets in WSL
+        run: |
+          wsl -d Ubuntu-20.04 make tools
+        shell: bash
+
+
+

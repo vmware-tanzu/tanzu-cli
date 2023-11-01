@@ -1,0 +1,56 @@
+name: Cygwin###Tanzu CLI Core E2E Tests on Windows
+
+on:
+  pull_request:
+    branches: [main, release-*]
+  push:
+    branches: [ main, test*, release-*]
+
+jobs:
+  build:
+    name: Cygwin###Tanzu CLI Core E2E Tests on Windows
+    runs-on: windows-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
+
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.21
+        id: go
+
+      - name: go cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run Unit Test
+        shell: pwsh
+        run: |
+          pwd
+          dir
+
+      - name: Install Cygwin
+        run: |
+          # Download and install Cygwin
+          choco install cygwin
+
+      - name: Run Cygwin Commands
+        shell: bash
+        run: |
+          # Run Linux commands using Cygwin
+          echo "Hello from Cygwin"
+          ls -l
+          # Add more Linux commands as needed
+          make tools
+          echo "${PWD}/hack/tools/bin" >> $GITHUB_PATH
+          echo "${PWD}/bin" >> $GITHUB_PATH
+          make test | tee ./make_test.output
+
+
