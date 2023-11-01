@@ -47,6 +47,10 @@ GINKGO             := $(BIN_DIR)/ginkgo
 COSIGN             := $(BIN_DIR)/cosign
 GOJUNITREPORT		   := $(BIN_DIR)/go-junit-report
 
+VAL_URL := https://github.com/errata-ai/vale/releases/download/v$(VALE_VERSION)/vale_$(VALE_VERSION)_$(shell echo $(HOST_OS) | \
+		sed 's,darwin,macOS,g'| sed 's,linux,Linux,g'| sed 's,windows,Windows,g')_$(shell echo $(HOST_ARCH) | sed 's,amd64,64-bit,g')$(shell echo $(HOST_OS) | \
+		sed 's,darwin,.tar.gz,g'| sed 's,linux,.tar.gz,g'| sed 's,windows,.zip,g')
+
 ## --------------------------------------
 ## Help
 ## --------------------------------------
@@ -61,7 +65,9 @@ help: ## Display this help
 goimports: $(GOIMPORTS) ## Install goimports
 $(GOIMPORTS):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install golang.org/x/tools/cmd/goimports@v$(GOIMPORTS_VERSION)
+	GO111MODULE=on go get -u -v golang.org/x/tools/cmd/goimports@v$(GOIMPORTS_VERSION)
+#mv $(GOPATH)/bin/goimports $(GOIMPORTS)
+#GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install golang.org/x/tools/cmd/goimports@v$(GOIMPORTS_VERSION)
 
 golangci-lint: $(GOLANGCI_LINT) ## Install golangci-lint
 $(GOLANGCI_LINT):
@@ -73,10 +79,17 @@ $(VALE):
 	mkdir -p $(BIN_DIR)
 	# vale uses 'macOS' for darwin, 'Linux' for linux, '64-bit' for amd64 (yet arm64 remains unchanged)
 	# for its release asset naming, so manually map them
-	curl -sfL https://github.com/errata-ai/vale/releases/download/v$(VALE_VERSION)/vale_$(VALE_VERSION)_$(shell echo $(HOST_OS) | \
-		sed 's,darwin,macOS,g'| sed 's,linux,Linux,g')_$(shell echo $(HOST_ARCH) | sed 's,amd64,64-bit,g').tar.gz | tar -xz -C /tmp/
-	mv /tmp/vale $(@)
-	chmod a+x $(@)
+	@echo "Download URL: $(VAL_URL)"
+	curl -sLf $(VAL_URL) -o /tmp/vale.zip && \
+	if [ "$(HOST_OS)" = "windows" ]; then \
+		unzip -o -d /tmp/ /tmp/vale.zip; \
+		mv /tmp/vale.exe $(@); \
+		chmod a+x $(@); \
+	else \
+		tar -xzf /tmp/vale.zip -C /tmp/; \
+		mv /tmp/vale $(@); \
+		chmod a+x $(@); \
+	fi
 
 controller-gen: $(CONTROLLER_GEN) ## Build controller-gen
 $(CONTROLLER_GEN):
