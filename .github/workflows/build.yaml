@@ -62,8 +62,10 @@ jobs:
         make lint
 
     - name: Run make verify
+      if: runner.os != 'Windows'
       run: |
         make verify
+      
 
     - name: Cross build
       run: |

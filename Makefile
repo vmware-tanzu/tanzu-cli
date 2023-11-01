@@ -30,8 +30,10 @@ GO := go
 GOTEST_VERBOSE ?= -v
 
 # Directories
+BIN_DIR := $(shell echo "bin")
 TOOLS_DIR := $(abspath $(ROOT_DIR)/hack/tools)
-TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
+#TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
+TOOLS_BIN_DIR := $(TOOLS_DIR)/$(BIN_DIR)
 
 # Add tooling binaries here and in hack/tools/Makefile
 GOIMPORTS          := $(TOOLS_BIN_DIR)/goimports
@@ -51,7 +53,8 @@ GOJUNITREPORT      := $(TOOLS_BIN_DIR)/go-junit-report
 VENDIR             := $(TOOLS_BIN_DIR)/vendir
 YQ                 := $(TOOLS_BIN_DIR)/yq
 
-TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT) $(KCTRL) $(YTT) $(KBLD) $(VENDIR) $(YQ)
+#TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
+TOOLING_BINARIES   :=  $(VALE)  $(GOLANGCI_LINT)
 
 # Build and version information
 
@@ -102,6 +105,11 @@ CLI_TARGETS := $(addprefix build-cli-,${ENVS})
 
 help: ## Display this help (default)
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-28s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m\033[32m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+tools: $(TOOLING_BINARIES) ## Build tooling binaries
+.PHONY: $(TOOLING_BINARIES)
+$(TOOLING_BINARIES):
+	make -C $(TOOLS_DIR) $(@F)
 
 ## --------------------------------------
 ## All
@@ -363,10 +371,7 @@ generate: generate-controller-code generate-manifests 	## Generate controller co
 ## Tooling Binaries
 ## --------------------------------------
 
-tools: $(TOOLING_BINARIES) ## Build tooling binaries
-.PHONY: $(TOOLING_BINARIES)
-$(TOOLING_BINARIES):
-	make -C $(TOOLS_DIR) $(@F)
+
 
 .PHONY: clean-tools
 clean-tools:
