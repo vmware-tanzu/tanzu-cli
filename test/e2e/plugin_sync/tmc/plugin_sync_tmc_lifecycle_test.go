@@ -663,7 +663,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameK8s)
 			Expect(err).To(BeNil(), "context should be deleted without error")
-			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
+			_, _, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
 		})
 	})
@@ -940,7 +940,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 			_, _, err = tf.ContextCmd.DeleteContext(contextNameK8s)
 			Expect(err).To(BeNil(), "context should be deleted without error")
-			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
+			_, _, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
 		})
 	})
@@ -1020,7 +1020,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		})
 		// Test case: e. k8s: delete the kind cluster
 		It("delete kind cluster associated with k8s context", func() {
-			_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
+			_, _, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
 			list, out, se, err := tf.PluginCmd.ListPlugins()
 			fmt.Println(list, out, se, err)

@@ -6,19 +6,19 @@ package framework
 // ClusterOps has helper operations to perform on cluster
 type ClusterOps interface {
 	// CreateCluster creates the cluster with given name
-	CreateCluster(clusterName string) (output string, err error)
+	CreateCluster(clusterName string) (stdOut, stdErr string, err error)
 	// DeleteCluster deletes the cluster with given name
-	DeleteCluster(clusterName string) (output string, err error)
+	DeleteCluster(clusterName string) (stdOut, stdErr string, err error)
 	// ClusterStatus checks the status of the cluster for given cluster name
-	ClusterStatus(clusterName string) (output string, err error)
+	ClusterStatus(clusterName string) (stdOut, stdErr string, err error)
 	// GetClusterEndpoint returns the cluster endpoint for the given cluster name
-	GetClusterEndpoint(clusterName string) (endpoint string, err error)
+	GetClusterEndpoint(clusterName string) (endpoint, stdOut, stdErr string, err error)
 	// GetClusterContext returns the given cluster kubeconfig context
 	GetClusterContext(clusterName string) string
 	// GetKubeconfigPath returns the default kubeconfig path
 	GetKubeconfigPath() string
 	// ApplyConfig applies the given configFilePath on to the given contextName cluster context
-	ApplyConfig(contextName, configFilePath string) error
+	ApplyConfig(contextName, configFilePath string) (stdOut, stdErr string, err error)
 }
 
 // ClusterInfo holds the general cluster details

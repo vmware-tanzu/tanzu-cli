@@ -128,6 +128,18 @@ func RandomNumber(length int) string {
 	return string(b)
 }
 
+func GetE2EHomeDir() string {
+	if TestHomeDir == "" {
+		currentHomeDir := GetHomeDir()
+		if strings.HasSuffix(currentHomeDir, TestDir) {
+			return currentHomeDir
+		}
+		TestHomeDir = filepath.Join(TestHomeDir, TestDir)
+		return TestHomeDir
+	}
+	return TestHomeDir
+}
+
 func GetHomeDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -181,12 +193,14 @@ func GetMapKeys[K string, V *PluginInfo](m map[K][]V) []*K {
 // CreateKindCluster create the k8s KIND cluster in the local Docker environment
 func CreateKindCluster(tf *Framework, name string) (*ClusterInfo, error) {
 	ci := &ClusterInfo{Name: name}
-	_, err := tf.KindCluster.CreateCluster(name)
+	stdOut, stdErr, err := tf.KindCluster.CreateCluster(name)
 	if err != nil {
+		log.Errorf("kind cluster creation failed, stdOut:%s, stdErr:%s", stdOut, stdErr)
 		return nil, errors.Wrapf(err, "error while creating kind cluster: %s", name)
 	}
-	endpoint, err := tf.KindCluster.GetClusterEndpoint(name)
+	endpoint, stdOut, stdErr, err := tf.KindCluster.GetClusterEndpoint(name)
 	if err != nil {
+		log.Errorf("error while getting kind cluster status stdOut:%s, stdErr:%s", stdOut, stdErr)
 		return nil, errors.Wrapf(err, "error while getting kind cluster %s endpoint", name)
 	}
 	ci.EndPoint = endpoint
@@ -505,7 +519,7 @@ func UpdatePluginDiscoverySource(tf *Framework, repoURL string) error {
 // ApplyConfigOnKindCluster applies the config files on kind cluster
 func ApplyConfigOnKindCluster(tf *Framework, clusterInfo *ClusterInfo, confFilePaths []string) error {
 	for _, pluginCRFilePaths := range confFilePaths {
-		err := tf.KindCluster.ApplyConfig(clusterInfo.ClusterKubeContext, pluginCRFilePaths)
+		_, _, err := tf.KindCluster.ApplyConfig(clusterInfo.ClusterKubeContext, pluginCRFilePaths)
 		if err != nil {
 			return err
 		}

@@ -67,7 +67,7 @@ var _ = framework.CLICoreDescribe("[Tests:Sample-Plugin-E2E][Feature:plugin-spec
 			_, _, err := tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), "context should be deleted without any error")
 
-			_, err = tf.KindCluster.DeleteCluster(clusterInfo.Name)
+			_, _, err = tf.KindCluster.DeleteCluster(clusterInfo.Name)
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
 		})
 	})

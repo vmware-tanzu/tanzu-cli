@@ -53,8 +53,8 @@ func NewLocalOCIRegistry(registryName, port string) PluginRegistry {
 }
 
 func (rep *localOCIRegistry) StartRegistry() (url string, err error) {
-	if _, err := rep.docker.ContainerRuntimeStatus(); err != nil {
-		out, err := rep.docker.StartContainerRuntime()
+	if _, _, err := rep.docker.ContainerRuntimeStatus(); err != nil {
+		out, _, err := rep.docker.StartContainerRuntime()
 		if err != nil {
 			return out, err
 		}

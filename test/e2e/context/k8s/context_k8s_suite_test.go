@@ -47,6 +47,6 @@ var _ = BeforeSuite(func() {
 // AfterSuite deletes the KIND cluster created in BeforeSuite
 var _ = AfterSuite(func() {
 	// delete the KIND cluster which was created in the suite setup
-	_, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
+	_, _, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
 	Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
 })

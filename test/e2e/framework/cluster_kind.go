@@ -6,10 +6,9 @@ package framework
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
-
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"gopkg.in/yaml.v3"
 	configapi "k8s.io/client-go/tools/clientcmd/api/v1"
@@ -33,85 +32,69 @@ func NewKindCluster(docker Docker) KindCluster {
 	}
 }
 
-// CreateCluster creates kind cluster with given name and returns stdout info
-// if container runtime not running or any error then returns stdout and error info
-func (kc *kindCluster) CreateCluster(kindClusterName string) (output string, err error) {
-	stdOut, err := kc.ContainerRuntimeStatus()
+// CreateCluster creates kind cluster with given cluster name
+func (kc *kindCluster) CreateCluster(kindClusterName string) (stdOut, stdErr string, err error) {
+	stdOut, stdErr, err = kc.ContainerRuntimeStatus()
 	if err != nil {
-		return stdOut, err
+		return stdOut, stdErr, err
 	}
 	createCmd := fmt.Sprintf(KindClusterCreate, kindClusterName)
 	stdOutBuffer, stdErrBuffer, err := kc.Exec(createCmd)
-	if err != nil {
-		return stdOutBuffer.String(), fmt.Errorf(stdErrBuffer.String(), err)
-	}
-	return stdOutBuffer.String(), err
+	return stdOutBuffer.String(), stdErrBuffer.String(), err
 }
 
-// DeleteCluster creates kind cluster with given name and returns stdout info
-// if container runtime not running or any error then returns stdout and error info
-func (kc *kindCluster) DeleteCluster(kindClusterName string) (output string, err error) {
-	stdOut, err := kc.ContainerRuntimeStatus()
+// DeleteCluster deletes given kind cluster
+func (kc *kindCluster) DeleteCluster(kindClusterName string) (stdOut, stdErr string, err error) {
+	stdOut, stdErr, err = kc.ContainerRuntimeStatus()
 	if err != nil {
-		return stdOut, err
+		return stdOut, stdErr, err
 	}
 	delCmd := fmt.Sprintf(KindClusterDelete, kindClusterName)
 	stdOutBuffer, stdErrBuffer, err := kc.Exec(delCmd)
-	if err != nil {
-		return stdOutBuffer.String(), fmt.Errorf(stdErrBuffer.String(), err)
-	}
-	return stdOutBuffer.String(), err
+	return stdOutBuffer.String(), stdErrBuffer.String(), err
 }
 
-// ClusterStatus checks given kind cluster status and returns stdout info
-// if container runtime not running or any error then returns stdout and error info
-func (kc *kindCluster) ClusterStatus(kindClusterName string) (output string, err error) {
-	stdOut, err := kc.ContainerRuntimeStatus()
+// ClusterStatus checks given kind cluster status
+func (kc *kindCluster) ClusterStatus(kindClusterName string) (stdOut, stdErr string, err error) {
+	stdOut, stdErr, err = kc.ContainerRuntimeStatus()
 	if err != nil {
-		return stdOut, err
+		return stdOut, stdErr, err
 	}
 	statusCmd := fmt.Sprintf(KindClusterStatus, kc.GetClusterContext(kindClusterName))
 	stdOutBuffer, stdErrBuffer, err := kc.Exec(statusCmd)
-	if err != nil {
-		return stdOutBuffer.String(), fmt.Errorf(stdErrBuffer.String(), err)
-	}
-	return stdOutBuffer.String(), err
+	return stdOutBuffer.String(), stdErrBuffer.String(), err
 }
 
-func (kc *kindCluster) ApplyConfig(contextName, configFilePath string) error {
+// ApplyConfig applies given config file on to the given kind cluster context
+func (kc *kindCluster) ApplyConfig(contextName, configFilePath string) (stdOut, stdErr string, err error) {
 	applyCmd := fmt.Sprintf(KubectlApply, contextName, configFilePath)
-	stdOut, stdErr, err := kc.CmdOps.Exec(applyCmd)
-	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, applyCmd, err.Error(), stdErr.String(), stdOut.String())
-		return err
-	}
-	log.Infof("the config:%s applied successfully to context:%s", configFilePath, contextName)
-	return err
+	stdOutBuff, stdErrBuff, err := kc.CmdOps.Exec(applyCmd)
+	return stdOutBuff.String(), stdErrBuff.String(), err
 }
 
 // GetClusterEndpoint returns given kind cluster control plane endpoint
-func (kc *kindCluster) GetClusterEndpoint(kindClusterName string) (endpoint string, err error) {
-	stdOut, err := kc.ContainerRuntimeStatus()
+func (kc *kindCluster) GetClusterEndpoint(kindClusterName string) (endpoint, stdOut, stdErr string, err error) {
+	stdOut, stdErr, err = kc.ContainerRuntimeStatus()
 	if err != nil {
-		return stdOut, err
+		return "", stdOut, stdErr, err
 	}
 	path := kc.GetKubeconfigPath()
 	file, err := os.ReadFile(path)
 	if err != nil {
-		return "", err
+		return "", "", "", err
 	}
 	var conf *configapi.Config
 	err = yaml.Unmarshal(file, &conf)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to construct yaml node from kubeconfig file")
+		return "", "", "", errors.Wrap(err, "failed to construct yaml node from kubeconfig file")
 	}
 	ctx := kc.GetClusterContext(kindClusterName)
 	for i := range conf.Clusters {
 		if conf.Clusters[i].Name == ctx {
-			return conf.Clusters[i].Cluster.Server, nil
+			return conf.Clusters[i].Cluster.Server, "", "", nil
 		}
 	}
-	return "", errors.Errorf("the '%s' kubeconfig file does not have context '%s' details", path, ctx)
+	return "", "", "", errors.Errorf("the '%s' kubeconfig file does not have context '%s' details", path, ctx)
 }
 
 func (kc *kindCluster) GetClusterContext(kindClusterName string) string {
@@ -119,5 +102,5 @@ func (kc *kindCluster) GetClusterContext(kindClusterName string) string {
 }
 
 func (kc *kindCluster) GetKubeconfigPath() string {
-	return GetHomeDir() + "/.kube/config"
+	return filepath.Join(GetE2EHomeDir(), ".kube", "config")
 }
