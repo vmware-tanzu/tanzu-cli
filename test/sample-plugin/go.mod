@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/onsi/ginkgo/v2 v2.12.0
 	github.com/onsi/gomega v1.27.10
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/vmware-tanzu/tanzu-cli/test/e2e/framework v1.0.0-dev
 	github.com/vmware-tanzu/tanzu-plugin-runtime v1.0.2
 )
@@ -13,7 +13,7 @@ require (
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6 // indirect
 	github.com/briandowns/spinner v1.19.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
