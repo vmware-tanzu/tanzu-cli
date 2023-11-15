@@ -61,6 +61,14 @@ jobs:
       run: |
         make verify
 
+    - name: Install and run Spectral CI
+      env:
+        SPECTRAL_DSN: ${{ secrets.SPECTRAL_DSN }}
+      uses: spectralops/spectral-github-action@v3
+      with:
+        spectral-dsn: ${{ env.SPECTRAL_DSN }}
+        spectral-args: scan --ok  --include-tags base,audit
+
     - name: Cross build
       run: |
         make cross-build
