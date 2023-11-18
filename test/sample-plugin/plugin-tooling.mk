@@ -10,9 +10,9 @@ ifeq ($(GOHOSTOS),windows)
 endif
 
 # Build and version information
-PLUGIN_BUILD_SHA ?= $(shell git describe --match=$(git rev-parse --short HEAD) --always --dirty)
+PLUGIN_BUILD_SHA ?= $(shell git describe --match=$(git rev-parse --short HEAD) --exclude "test/e2e/framework/*" --always --dirty)
 PLUGIN_BUILD_DATE ?= $(shell date -u +"%Y-%m-%d")
-PLUGIN_BUILD_VERSION ?= $(shell git describe --tags --abbrev=0 2>$(NUL))
+PLUGIN_BUILD_VERSION ?= $(shell git describe --tags --exclude "test/e2e/framework/*" --abbrev=0 2>$(NUL))
 
 ifeq ($(strip $(PLUGIN_BUILD_VERSION)),)
 PLUGIN_BUILD_VERSION = v0.0.0

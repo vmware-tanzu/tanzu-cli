@@ -54,9 +54,9 @@ NUL = /dev/null
 ifeq ($(GOHOSTOS),windows)
 	NUL = NUL
 endif
-BUILD_SHA ?= $(shell git describe --match=$(git rev-parse --short HEAD) --always --dirty)
+BUILD_SHA ?= $(shell git describe --match=$(git rev-parse --short HEAD) --exclude "test/e2e/framework/*" --always --dirty)
 BUILD_DATE ?= $(shell date -u +"%Y-%m-%d")
-BUILD_VERSION ?= $(shell git describe --tags --abbrev=0 2>$(NUL))
+BUILD_VERSION ?= $(shell git describe --tags --exclude "test/e2e/framework/*" --abbrev=0 2>$(NUL))
 
 ifeq ($(strip $(BUILD_VERSION)),)
 BUILD_VERSION = dev
