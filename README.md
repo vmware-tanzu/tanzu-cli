@@ -3,11 +3,6 @@
 [![Tanzu CLI Core Tests](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml/badge.svg?branch=main&event=push)](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli_core_e2e_test.yaml?query=event:push+branch:main)
 [![Tanzu CLI Coexistence Tests](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli-coexistence_tests.yaml/badge.svg?event=push)](https://github.com/vmware-tanzu/tanzu-cli/actions/workflows/cli-coexistence_tests.yaml)
 
-_NOTE: The first alpha release is available for evaluation, but it still needs
-to be complemented by a plugin repository accessible to the CLI. Please watch
-this page for further updates as we work towards our first official release in
-the second quarter of 2023._
-
 ## Overview
 
 The Tanzu CLI provides integrated and unified command-line access to a broad
