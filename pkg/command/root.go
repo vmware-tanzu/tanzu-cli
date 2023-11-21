@@ -136,8 +136,6 @@ func newRootCmd() *cobra.Command {
 		SilenceErrors: true,
 		// silencing usage for now as we are getting double usage from plugins on errors
 		SilenceUsage: true,
-		// Flag parsing must be deactivated because the root plugin won't know about all flags.
-		DisableFlagParsing: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			// Ensure mutual exclusion in current contexts just in case if any plugins with old
 			// plugin-runtime sets k8s context as current when tanzu context is already set as current
