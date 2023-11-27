@@ -1113,7 +1113,7 @@ func syncCurrentKubeContext(ctx *configtypes.Context) error {
 
 var unsetCtxCmd = &cobra.Command{
 	Use:               "unset CONTEXT_NAME",
-	Short:             "Unset the active context so that it is not used by default.",
+	Short:             "Unset the active context so that it is not used by default",
 	Args:              cobra.MaximumNArgs(1),
 	ValidArgsFunction: completeActiveContexts,
 	RunE:              unsetCtx,
@@ -1315,7 +1315,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 
 var getCtxTokenCmd = &cobra.Command{
 	Use:               "get-token CONTEXT_NAME",
-	Short:             "Get the valid CSP token for the given tanzu context.",
+	Short:             "Get the valid CSP token for the given tanzu context",
 	Args:              cobra.ExactArgs(1),
 	Hidden:            true,
 	ValidArgsFunction: completeTanzuContexts,
@@ -1384,7 +1384,7 @@ func newUpdateCtxCmd() *cobra.Command {
 // NOTE!!: This command is EXPERIMENTAL and subject to change in future
 var tanzuActiveResourceCmd = &cobra.Command{
 	Use:               "tanzu-active-resource CONTEXT_NAME",
-	Short:             "Updates the tanzu active resource for the given context of type tanzu (subject to change).",
+	Short:             "Updates the tanzu active resource for the given context of type tanzu (subject to change)",
 	Hidden:            true,
 	Args:              cobra.ExactArgs(1),
 	ValidArgsFunction: completeTanzuContexts,
