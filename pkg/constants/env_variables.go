@@ -42,4 +42,7 @@ const (
 
 	// Control the different ActiveHelp options
 	ConfigVariableActiveHelp = "TANZU_ACTIVE_HELP"
+
+	// Change the default value of the plugin inventory cache TTL
+	ConfigVariablePluginDBDigestTTL = "TANZU_CLI_PLUGIN_DB_DIGEST_TTL_SECONDS"
 )

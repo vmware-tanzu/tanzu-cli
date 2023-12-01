@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -70,7 +71,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(matches[0]).To(Equal(e2eDigestFileName), "digest file should not have changed")
 		})
 		// Test case: (negative test) delete plugin source which is not exists
-		It("negative test case: delete plugin source which is not exists", func() {
+		It("negative test case: delete plugin source which does not exists", func() {
 			wrongName := framework.RandomString(5)
 			_, err := tf.PluginCmd.DeletePluginDiscoverySource(wrongName)
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.DiscoverySourceNotFound, wrongName)))
@@ -101,6 +102,24 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			matches, _ := filepath.Glob(filepath.Join(pluginDataDir, "digest.*"))
 			Expect(len(matches)).To(Equal(1), "should have found exactly one digest file")
 			Expect(matches[0]).NotTo(Equal(e2eDigestFileName), "digest file should have changed")
+
+			// Set the original signature public key path back
+			os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, originalSignaturePublicKeyPath)
+		})
+		It("try to set the plugin source to an unsigned one and make sure it does not get changed", func() {
+			// To make the plugin source unsigned, we remove the signature public key path
+			originalSignaturePublicKeyPath := os.Getenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath)
+			// Unset the signature public key path to get the default one
+			os.Unsetenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath)
+
+			_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: pluginSourceName, SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
+			Expect(err).ToNot(BeNil(), "should get an error for plugin source update to unsigned image")
+
+			// Check the plugin source was not updated
+			list, err := tf.PluginCmd.ListPluginSources()
+			Expect(err).To(BeNil(), "should not get any error for plugin source list")
+			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeTrue())
+			Expect(list[0].Image).To(Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage))
 
 			// Set the original signature public key path back
 			os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, originalSignaturePublicKeyPath)
@@ -336,6 +355,106 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			}
 		})
 		// Test case: run clean plugin command and validate with list plugin command
+		It("clean plugins and verify with plugin list", func() {
+			err := tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin clean")
+			pluginsList, err := framework.GetPluginsList(tf, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
+		})
+	})
+
+	// use case: Plugin inventory DB digest check is only done once its TTL has expired
+	// a. run a "tanzu plugin source update" to do a digest check
+	// b. remove the metadata.digest.none file. This will cause a printout when the digest is checked after the cache TTL has expired
+	// c. set the TTL to 10 seconds and sleep for 11 seconds and check that a "tanzu plugin search" does a digest check
+	// d. repeatedly sleep a few seconds, then run a "tanzu plugin search" and make sure no digest check is done (no printout)
+	// e. sleep a few seconds passed the TTL, then run a "tanzu plugin search" and make sure the digest check is done (printout)
+	// f. unset the TTL override
+	// g. clean plugins (which will also remove the DB file) and make sure a "tanzu plugin search" immediately does a digest check
+	// h. cleanup
+	Context("plugin inventory DB digest check is only done once its TTL has expired", func() {
+		const (
+			pluginSourceName     = "default"
+			refreshingDBPrintout = "Reading plugin inventory for"
+		)
+		pluginDataDir := filepath.Join(framework.TestHomeDir, ".cache", "tanzu", common.PluginInventoryDirName, pluginSourceName)
+		metadataDigest := filepath.Join(pluginDataDir, "metadata.digest.none")
+
+		It("update plugin source to force a refresh of the digest", func() {
+			err := framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
+			Expect(err).To(BeNil(), "should not get any error for plugin source update")
+
+			// Do a plugin list to get the essential plugins installed, so that
+			// it does not happen when we are running the digest test below
+			pluginsList, err := framework.GetPluginsList(tf, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(len(pluginsList)).Should(Equal(1), "the essential plugin should be installed")
+		})
+		// Test case: verify that a plugin search does not check the digest until the TTL has expired
+		It("plugin search uses the existing DB until TTL expires", func() {
+			// Use this function to remove the metadata digest file so that we can expect the
+			// refreshingDBPrintout printout defined above when the digest is checked
+			// after its TTL has expired
+			removeDigestFile := func() {
+				// Remove the metadata digest file
+				err := os.Remove(metadataDigest)
+				Expect(err).To(BeNil(), "unable to remove metadata digest file")
+			}
+
+			// Set the TTL to something small: 12 seconds
+			os.Setenv(constants.ConfigVariablePluginDBDigestTTL, "12")
+
+			// Now wait for the TTL to expire so we can start fresh
+			removeDigestFile()
+			time.Sleep(time.Second * 14) // Sleep for 14 seconds
+			_, errStream, err := tf.PluginCmd.RunPluginCmd("search --name plugin_first")
+			Expect(err).To(BeNil())
+			Expect(errStream).To(ContainSubstring(refreshingDBPrintout))
+
+			// For the first 9 seconds, we should not see any printouts about refreshing the DB
+			removeDigestFile()
+			for i := 0; i < 3; i++ {
+				time.Sleep(time.Second * 3) // Sleep for 3 seconds
+
+				_, errStream, err = tf.PluginCmd.RunPluginCmd(fmt.Sprintf("search --name plugin_%d", i))
+				Expect(err).To(BeNil())
+				// No printouts on the error stream about refreshing the DB
+				Expect(errStream).ToNot(ContainSubstring(refreshingDBPrintout))
+
+				// No digest file created
+				_, err := os.Stat(metadataDigest)
+				Expect(err).ToNot(BeNil(), "should not have found a digest file")
+			}
+
+			// Once the TTL of 12 seconds has expired, we should see a printout about refreshing the DB
+			time.Sleep(time.Second * 5) // Sleep for a final 5 seconds
+
+			_, errStream, err = tf.PluginCmd.RunPluginCmd("search --name plugin_last")
+			Expect(err).To(BeNil())
+			// Now we expect printouts on the error stream about refreshing the DB
+			Expect(errStream).To(ContainSubstring(refreshingDBPrintout))
+
+			// Also, the digest file should have been created
+			_, err = os.Stat(metadataDigest)
+			Expect(err).To(BeNil(), "metadata digest file should have been created")
+
+			// Unset the TTL override
+			os.Unsetenv(constants.ConfigVariablePluginDBDigestTTL)
+		})
+		// Run "plugin clean" which also removes the plugin DB and make sure a "plugin search" immediately does a digest check
+		It("clean DB and do a plugin search", func() {
+			err := tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin clean")
+
+			// Make sure a "plugin search" immediately does a digest check
+			_, errPrintout, err := tf.PluginCmd.RunPluginCmd("search --name plugin_after_clean")
+			Expect(err).To(BeNil())
+			// Now we expect printouts on the error stream about refreshing the DB
+			Expect(errPrintout).To(ContainSubstring(refreshingDBPrintout))
+
+		})
+		// Clean up at the end.
 		It("clean plugins and verify with plugin list", func() {
 			err := tf.PluginCmd.CleanPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")

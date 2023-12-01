@@ -10,12 +10,14 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -29,13 +31,69 @@ func Test_createDiscoverySource(t *testing.T) {
 	assert.NotNil(err)
 	assert.Equal(err.Error(), "discovery source name cannot be empty")
 
-	// With an invalid image
+	// With an invalid image, no error are thrown, as there is no verification in createDiscoverySource()
 	pd, err := createDiscoverySource("fake-oci-discovery-name", "test.registry.com/test-image:v1.0.0")
-	assert.NotNil(err)
-	assert.Contains(err.Error(), "unable to fetch the inventory of discovery 'fake-oci-discovery-name' for plugins")
+	assert.Nil(err)
 	assert.NotNil(pd.OCI)
 	assert.Equal(pd.OCI.Name, "fake-oci-discovery-name")
 	assert.Equal(pd.OCI.Image, "test.registry.com/test-image:v1.0.0")
+
+	// With a valid image
+	pd, err = createDiscoverySource(config.DefaultStandaloneDiscoveryName, constants.TanzuCLIDefaultCentralPluginDiscoveryImage)
+	assert.Nil(err)
+	assert.NotNil(pd.OCI)
+	assert.Equal(pd.OCI.Name, config.DefaultStandaloneDiscoveryName)
+	assert.Equal(pd.OCI.Image, constants.TanzuCLIDefaultCentralPluginDiscoveryImage)
+}
+
+// test that checkDiscoverySource() will download the DB and digest file
+// and that the digest file is updated even though the TTL has not expired.
+func Test_checkDiscoverySource(t *testing.T) {
+	assert := assert.New(t)
+
+	dir, err := os.MkdirTemp("", "test-source")
+	assert.Nil(err)
+	defer os.RemoveAll(dir)
+
+	common.DefaultCacheDir = dir
+
+	// Setup a valid image
+	pd, err := createDiscoverySource(config.DefaultStandaloneDiscoveryName, constants.TanzuCLIDefaultCentralPluginDiscoveryImage)
+	assert.Nil(err)
+	assert.NotNil(pd.OCI)
+	assert.Equal(pd.OCI.Name, config.DefaultStandaloneDiscoveryName)
+	assert.Equal(pd.OCI.Image, constants.TanzuCLIDefaultCentralPluginDiscoveryImage)
+
+	// Test that when we check the discovery image, the DB gets filled
+	err = checkDiscoverySource(pd)
+	assert.Nil(err)
+
+	// Check that the digest file was immediately created
+	pluginDataDir := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, config.DefaultStandaloneDiscoveryName)
+	matches, _ := filepath.Glob(filepath.Join(pluginDataDir, "digest.*"))
+	assert.Equal(1, len(matches))
+
+	// Get the timestamp of the digest file
+	digestFile := matches[0]
+	originalDigestFileStat, err := os.Stat(digestFile)
+	assert.Nil(err)
+
+	// Check that the DB was downloaded
+	dbFile := filepath.Join(pluginDataDir, plugininventory.SQliteDBFileName)
+	_, err = os.Stat(dbFile)
+	assert.Nil(err)
+
+	// check the discovery source again and make sure the digest file is immediately updated
+	// even though the TTL has not expired.
+	// sleep for 1 seconds to make sure the timestamp of the digest file is different
+	time.Sleep(1 * time.Second)
+	err = checkDiscoverySource(pd)
+	assert.Nil(err)
+	newDigestFileStat, err := os.Stat(digestFile)
+	assert.Nil(err)
+
+	// Check that the digest file was updated
+	assert.True(newDigestFileStat.ModTime().After(originalDigestFileStat.ModTime()))
 }
 
 // Test_createAndListDiscoverySources test 'tanzu plugin source list' when TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY has set test only discovery sources
@@ -294,6 +352,16 @@ func Test_updateDiscoverySources(t *testing.T) {
 				if spec.expectedFailure {
 					// Check we got the correct error
 					assert.Contains(err.Error(), spec.expected)
+
+					// Check the original discovery source was not updated
+					discoverySources, err := configlib.GetCLIDiscoverySources()
+					assert.Nil(err)
+					assert.Equal(1, len(discoverySources))
+
+					ds := discoverySources[0]
+					assert.NotNil(ds.OCI)
+					assert.Equal(config.DefaultStandaloneDiscoveryName, ds.OCI.Name)
+					assert.Equal("test/uri", ds.OCI.Image)
 				} else {
 					got, err := io.ReadAll(b)
 					assert.Nil(err)

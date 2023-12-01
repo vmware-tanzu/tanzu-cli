@@ -34,6 +34,22 @@ The CLI then uses SQLite queries to obtain the desired information about one
 or more plugins. Using that information, the CLI can either list plugins to the
 user, or proceed to install plugins.
 
+### Plugin Inventory Cache
+
+Pulling the plugin inventory OCI image takes a noticeable amount of time for the
+CLI.  Therefore, to keep the CLI quick and responsive, the plugin inventory DB is
+cached under `$HOME/.cache/tanzu/plugin_inventory/default` and the CLI uses this
+cache whenever it needs to query the DB.  This cache has a time-to-live of 30 minutes,
+which means that a CLI could at most require 30 minutes to become aware of new
+plugins published to the central repository of plugins.
+
+If for some reason a user wants to force an immediate refresh of the plugin
+inventory cache, they can run the `tanzu plugin source init` command.
+To refresh the plugin inventory DB, the CLI first compares the digest of the
+remote OCI image with the digest stored in the cache; if the digests match,
+the DB need not be downloaded and is considered to have been refreshed, which
+resets the TTL.
+
 ### Plugin Groups
 
 Plugin groups define a list of plugin/version combinations that are applicable

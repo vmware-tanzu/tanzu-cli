@@ -28,6 +28,8 @@ func NewOCIDiscovery(name, image string, options ...DiscoveryOptions) Discovery 
 	if useCacheOnlyForTesting, _ := strconv.ParseBool(os.Getenv("TEST_TANZU_CLI_USE_DB_CACHE_ONLY")); useCacheOnlyForTesting {
 		discovery.useLocalCacheOnly = true
 	}
+	discovery.forceRefresh = opts.ForceRefresh
+
 	return discovery
 }
 
@@ -46,6 +48,7 @@ func NewOCIGroupDiscovery(name, image string, options ...DiscoveryOptions) Group
 	if useCacheOnlyForTesting, _ := strconv.ParseBool(os.Getenv("TEST_TANZU_CLI_USE_DB_CACHE_ONLY")); useCacheOnlyForTesting {
 		discovery.useLocalCacheOnly = true
 	}
+	discovery.forceRefresh = opts.ForceRefresh
 
 	return discovery
 }
