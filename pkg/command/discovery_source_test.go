@@ -7,11 +7,13 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -139,6 +141,12 @@ func Test_initDiscoverySources(t *testing.T) {
 	os.Setenv(configlib.EnvConfigNextGenKey, configFileNG.Name())
 	defer os.RemoveAll(configFileNG.Name())
 
+	dir, err := os.MkdirTemp("", "test-source")
+	assert.Nil(t, err)
+	defer os.RemoveAll(dir)
+
+	common.DefaultCacheDir = dir
+
 	os.Setenv(constants.CEIPOptInUserPromptAnswer, "No")
 	os.Setenv(constants.EULAPromptAnswer, "Yes")
 
@@ -182,11 +190,15 @@ func Test_initDiscoverySources(t *testing.T) {
 					assert.Nil(err)
 					assert.Equal(1, len(discoverySources))
 
-					for _, ds := range discoverySources {
-						assert.NotNil(ds.OCI)
-						assert.Equal(config.DefaultStandaloneDiscoveryName, ds.OCI.Name)
-						assert.Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage, ds.OCI.Image)
-					}
+					ds := discoverySources[0]
+					assert.NotNil(ds.OCI)
+					assert.Equal(config.DefaultStandaloneDiscoveryName, ds.OCI.Name)
+					assert.Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage, ds.OCI.Image)
+
+					// Check that the digest file was immediately created
+					pluginDataDir := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, ds.OCI.Name)
+					matches, _ := filepath.Glob(filepath.Join(pluginDataDir, "digest.*"))
+					assert.Equal(1, len(matches))
 				}
 			}
 		})
@@ -244,6 +256,12 @@ func Test_updateDiscoverySources(t *testing.T) {
 	os.Setenv(configlib.EnvConfigNextGenKey, configFileNG.Name())
 	defer os.RemoveAll(configFileNG.Name())
 
+	dir, err := os.MkdirTemp("", "test-source")
+	assert.Nil(t, err)
+	defer os.RemoveAll(dir)
+
+	common.DefaultCacheDir = dir
+
 	os.Setenv(constants.CEIPOptInUserPromptAnswer, "No")
 	os.Setenv(constants.EULAPromptAnswer, "Yes")
 
@@ -287,11 +305,15 @@ func Test_updateDiscoverySources(t *testing.T) {
 					assert.Nil(err)
 					assert.Equal(1, len(discoverySources))
 
-					for _, ds := range discoverySources {
-						assert.NotNil(ds.OCI)
-						assert.Equal(config.DefaultStandaloneDiscoveryName, ds.OCI.Name)
-						assert.Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage, ds.OCI.Image)
-					}
+					ds := discoverySources[0]
+					assert.NotNil(ds.OCI)
+					assert.Equal(config.DefaultStandaloneDiscoveryName, ds.OCI.Name)
+					assert.Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage, ds.OCI.Image)
+
+					// Check that the digest file was immediately created
+					pluginDataDir := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, ds.OCI.Name)
+					matches, _ := filepath.Glob(filepath.Join(pluginDataDir, "digest.*"))
+					assert.Equal(1, len(matches))
 				}
 			}
 		})

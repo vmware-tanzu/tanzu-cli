@@ -6,11 +6,14 @@ package pluginlifecyclee2e
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/util"
@@ -35,12 +38,21 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 	// e. initialize the default plugin source
 	Context("plugin source use cases: tanzu plugin source list, update, delete, init", func() {
 		const pluginSourceName = "default"
+		var e2eDigestFileName string
+
+		pluginDataDir := filepath.Join(framework.TestHomeDir, ".cache", "tanzu", common.PluginInventoryDirName, pluginSourceName)
+
 		// Test case: list plugin sources and validate plugin source created in previous step
 		It("list plugin source and validate previously created plugin source available", func() {
 			list, err := tf.PluginCmd.ListPluginSources()
 			Expect(err).To(BeNil(), "should not get any error for plugin source list")
 			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeTrue())
 			Expect(list[0].Image).To(Equal(e2eTestLocalCentralRepoURL))
+
+			// Get the digest file name to compare it later
+			matches, _ := filepath.Glob(filepath.Join(pluginDataDir, "digest.*"))
+			Expect(len(matches)).To(Equal(1), "should have found exactly one digest file")
+			e2eDigestFileName = matches[0]
 		})
 		// Test case: update plugin source URL
 		It("update previously created plugin source URL", func() {
@@ -52,6 +64,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeTrue())
 			// The plugin source should note have changed
 			Expect(list[0].Image).To(Equal(e2eTestLocalCentralRepoURL))
+			// Digest should not have changed
+			matches, _ := filepath.Glob(filepath.Join(pluginDataDir, "digest.*"))
+			Expect(len(matches)).To(Equal(1), "should have found exactly one digest file")
+			Expect(matches[0]).To(Equal(e2eDigestFileName), "digest file should not have changed")
 		})
 		// Test case: (negative test) delete plugin source which is not exists
 		It("negative test case: delete plugin source which is not exists", func() {
@@ -69,16 +85,34 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		})
 		// Test case: delete plugin source which was created in previous test case
 		It("initialize the default plugin source and validate with plugin source list", func() {
+			// Save the original signature public key path
+			originalSignaturePublicKeyPath := os.Getenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath)
+			// Unset the signature public key path to get the default one
+			os.Unsetenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath)
+
 			_, err := tf.PluginCmd.InitPluginDiscoverySource()
 			Expect(err).To(BeNil(), "should not get any error for plugin source init")
 			list, err := tf.PluginCmd.ListPluginSources()
 			Expect(err).To(BeNil(), "should not get any error for plugin source list")
 			Expect(framework.IsPluginSourceExists(list, pluginSourceName)).To(BeTrue())
 			Expect(list[0].Image).To(Equal(constants.TanzuCLIDefaultCentralPluginDiscoveryImage))
+
+			// Digest SHOULD have changed
+			matches, _ := filepath.Glob(filepath.Join(pluginDataDir, "digest.*"))
+			Expect(len(matches)).To(Equal(1), "should have found exactly one digest file")
+			Expect(matches[0]).NotTo(Equal(e2eDigestFileName), "digest file should have changed")
+
+			// Set the original signature public key path back
+			os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, originalSignaturePublicKeyPath)
 		})
 		It("put back the E2E plugin repository", func() {
 			_, err := tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: pluginSourceName, SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
 			Expect(err).To(BeNil(), "should not get any error for plugin source update")
+
+			// Digest should be back to its original value
+			matches, _ := filepath.Glob(filepath.Join(pluginDataDir, "digest.*"))
+			Expect(len(matches)).To(Equal(1), "should have found exactly one digest file")
+			Expect(matches[0]).To(Equal(e2eDigestFileName), "digest file should have changed back")
 		})
 	})
 	// use case: tanzu plugin clean, install and describe, list, delete
