@@ -65,6 +65,12 @@ LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Date=$(BUILD_DAT
 LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.SHA=$(BUILD_SHA)'
 LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo.Version=$(BUILD_VERSION)'
 
+# Remove debug symbols to reduce binary size
+# To build with debug symbols: TANZU_CLI_ENABLE_DEBUG=1
+ifneq ($(strip $(TANZU_CLI_ENABLE_DEBUG)),1)
+LD_FLAGS += -w -s
+endif
+
 APT_IMAGE=ubuntu
 ifdef APT_BUILDER_IMAGE
 APT_IMAGE=$(APT_BUILDER_IMAGE)
@@ -133,9 +139,9 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 	fi
 
 	@if [ "$(OS)" = "windows" ]; then \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build --ldflags "$(LD_FLAGS)"  -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
+		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
 	else \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build --ldflags "$(LD_FLAGS)"  -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
+		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
 	fi
 
 ## --------------------------------------

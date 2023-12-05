@@ -231,6 +231,30 @@ well.
 
 Edit the file as appropriate.
 
+#### Optimizations, debugging and build flags
+
+By default the `builder` plugin `v1.2.0` or later optimizes build flags to
+reduce the binary size of the plugin being built.  Two optimizations are done:
+building without debug symbols (which reduces the binary size by up to 30%),
+and deactivating function inlining (which reduces the binary size by about 6%).
+
+Building without debug symbols has the side-effect of preventing the use of a
+debugger towards the built binary.  However, when using an IDE, a different
+binary is used, one built by the IDE, and therefore the debugger can be used
+directly from the IDE.
+
+If you require using a debugger directly on a plugin binary, you have to build
+a binary that includes the debug symbols.  You can build such a binary by using
+`PLUGIN_ENABLE_DEBUG=1` along with your `make` command.
+
+The `builder` plugin deactivates function inlining by implicitly injecting
+the `-gcflags=all=-l` go flags.  Be aware that if you use the `PLUGIN_GO_FLAGS`
+variable to inject other `-gcflags`, you should pay attention to also include
+the `all=-l` to keep the optimization. If for some reason you need to activate
+function inlining (at the cost of a larger binary), you can do so by
+using `PLUGIN_GO_FLAGS=-gcflags=all=` (without the `-l` specified), which will
+have the effect of replacing the go flags specified by the `builder` plugin.
+
 ### Publishing a plugin
 
 To publish one or more built plugins to a target repository, one would need to

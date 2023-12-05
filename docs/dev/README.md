@@ -54,6 +54,17 @@ To run e2e tests for the repository:
 make e2e-cli-core
 ```
 
+### Debugging
+
+By default the CLI is built without debug symbols to reduce its binary size;
+this has the side-effect of preventing the use of a debugger towards the built
+binary.  However, when using an IDE, a different binary is used, one built by
+the IDE, and therefore the debugger can be used directly from the IDE.
+
+If you require using a debugger directly on a CLI binary, you have to build
+a binary that includes the debug symbols.  You can build such a binary by using
+`TANZU_CLI_ENABLE_DEBUG=1` along with your build command.
+
 ## Centralized Discovery of Plugins
 
 The Tanzu CLI uses a system of plugins to provide functionality to interact

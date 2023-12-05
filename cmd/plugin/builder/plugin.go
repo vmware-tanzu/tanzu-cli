@@ -39,6 +39,7 @@ type pluginBuildFlags struct {
 	Match                      string
 	PluginScopeAssociationFile string
 	GoFlags                    string
+	DebugSymbols               bool
 }
 
 type pluginBuildPackageFlags struct {
@@ -82,6 +83,7 @@ func newPluginBuildCmd() *cobra.Command {
 				PluginScopeAssociationFile: pbFlags.PluginScopeAssociationFile,
 				GroupByOSArch:              true,
 				GoFlags:                    pbFlags.GoFlags,
+				DebugSymbols:               pbFlags.DebugSymbols,
 			}
 
 			return command.Compile(compileArgs)
@@ -96,6 +98,7 @@ func newPluginBuildCmd() *cobra.Command {
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.Match, "match", "", "*", "match a plugin name to build, supports globbing")
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.PluginScopeAssociationFile, "plugin-scope-association-file", "", "", "file specifying plugin scope association")
 	pluginBuildCmd.Flags().StringVarP(&pbFlags.GoFlags, "goflags", "", "", "goflags to set on build")
+	pluginBuildCmd.Flags().BoolVarP(&pbFlags.DebugSymbols, "debug-symbols", "", false, "include debug symbols in the build")
 
 	_ = pluginBuildCmd.MarkFlagRequired("version")
 
