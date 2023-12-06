@@ -38,8 +38,9 @@ through the following package managers:
 ### Homebrew (MacOS)
 
 ```console
-brew update
-brew install vmware-tanzu/tanzu/tanzu-cli
+brew tap vmware-tanzu/tanzu  # Only needs to be done once for the machine
+
+brew install tanzu-cli
 ```
 
 To uninstall: `brew uninstall tanzu-cli`
@@ -69,8 +70,9 @@ using a different package name: `tanzu-cli-unstable`.
 replace the `tanzu` binary of any previous installation.
 
 ```console
-brew update
-brew install vmware-tanzu/tanzu/tanzu-cli-unstable --overwrite
+brew tap vmware-tanzu/tanzu  # If not already done on this machine
+
+brew install tanzu-cli-unstable --overwrite
 
 # To uninstall such an installation
 brew uninstall tanzu-cli-unstable
