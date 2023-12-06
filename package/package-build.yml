@@ -1,0 +1,25 @@
+apiVersion: kctrl.carvel.dev/v1alpha1
+kind: PackageBuild
+metadata:
+  creationTimestamp: null
+  name: cliplugin.cli.tanzu.vmware.com
+spec:
+  release:
+  - resource: {}
+  template:
+    spec:
+      app:
+        spec:
+          deploy:
+          - kapp: {}
+          template:
+          - ytt:
+              paths:
+              - cli.tanzu.vmware.com_cliplugins.yaml
+          - kbld: {}
+      export:
+      - imgpkgBundle:
+          image: localhost:6001/tanzu_cli/lever-v2/cliplugin
+        includePaths:
+        - cli.tanzu.vmware.com_cliplugins.yaml
+        - .imgpkg/images.yml
