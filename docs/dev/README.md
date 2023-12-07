@@ -5,10 +5,20 @@ tanzu-cli project.
 
 ## Building
 
-default target to update dependencies, build test, and lint the CLI:
+The default make target to update dependencies, build, test, and lint the CLI:
 
 ```sh
 make all
+```
+
+However, for day-to-day development, the following individual make targets provide
+more flexibility:
+
+```sh
+make build
+make test
+make lint
+make gomod
 ```
 
 ## Source Code Changes
@@ -26,19 +36,10 @@ The location of the directories used by the CLI are:
 
 `cmd/plugin/`: code location for various plugins
 
-Run the `make build-all` will build the CLI and any plugins in this directory
-unlike `make build` which only builds the CLI
+Running `make build-all` will build the CLI and any plugins in this repository
+unlike `make build` which only builds the CLI.
 
 `cmd/plugin/builder`: code location for the builder plugin
-
-Note on `builder init`:
-The generated project's Makefile expects the TZBIN to be set to the name
-of the CLI binary located in the user's path. Its default value is
-currently set to 'tz'. This convention will allow the CLI under
-development to coexist with the released tanzu CLI typically named 'tanzu'.
-We should continue to adopt said convention until the CLI under
-development is released as a backward-compatible replacement of the
-existing CLI.
 
 ### Tests
 
@@ -65,7 +66,7 @@ implementation details of the OCI discovery solution, please refer to the
 ## Deprecation of existing functionality
 
 Any changes aimed to remove functionality in the CLI (e.g. commands, command
-flags) have to follow the deprecation policy, For more details on the
+flags) have to follow the deprecation policy. For more details on the
 deprecation policy and process please refer to the [Deprecation
 document](deprecation.md).
 
