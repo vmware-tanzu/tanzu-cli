@@ -24,7 +24,20 @@ endif
 PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Date=$(PLUGIN_BUILD_DATE)'
 PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.SHA=$(PLUGIN_BUILD_SHA)'
 PLUGIN_LD_FLAGS += -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Version=$(PLUGIN_BUILD_VERSION)'
+
+# This variable can be used to pass additional go flags to the build command.
+# Note that the builder plugin already implicitly sets the go flags "-gcflags=all=-l"
+# which disable function inlining to reduce binary size.  If you want to prevent the
+# use of this flag, you can set PLUGIN_GO_FLAGS to "-gcflags=all=" which will replace
+# the default value.
 PLUGIN_GO_FLAGS ?=
+
+# To build with debug symbols use PLUGIN_ENABLE_DEBUG=1
+ifeq ($(strip $(PLUGIN_ENABLE_DEBUG)),1)
+PLUGIN_DEBUG=true
+else
+PLUGIN_DEBUG=false
+endif
 
 # Add supported OS-ARCHITECTURE combinations here
 PLUGIN_BUILD_OS_ARCH ?= linux-amd64 windows-amd64 darwin-amd64 darwin-arm64 linux-arm64
@@ -106,7 +119,8 @@ plugin-build-%:
 		--goflags "$(PLUGIN_GO_FLAGS)" \
 		--os-arch $(OS)_$(ARCH) \
 		--match "$(PLUGIN_NAME)" \
-		--plugin-scope-association-file $(PLUGIN_SCOPE_ASSOCIATION_FILE)
+		--plugin-scope-association-file $(PLUGIN_SCOPE_ASSOCIATION_FILE) \
+		--debug-symbols=$(PLUGIN_DEBUG)
 
 .PHONY: plugin-build-packages
 plugin-build-packages:  ## Build plugin packages

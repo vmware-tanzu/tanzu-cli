@@ -69,6 +69,7 @@ type PluginCompileArgs struct {
 	PluginScopeAssociationFile string
 	TargetArch                 []string
 	GroupByOSArch              bool
+	DebugSymbols               bool
 }
 
 const local = "local"
@@ -103,6 +104,20 @@ func setGlobals(compileArgs *PluginCompileArgs) {
 
 	// Append version specific ldflag by default so that user doesn't need to pass this ldflag always.
 	ldflags = fmt.Sprintf("%s -X 'github.com/vmware-tanzu/tanzu-plugin-runtime/plugin/buildinfo.Version=%s'", ldflags, version)
+
+	// Remove debug symbols to reduce binary size
+	if !compileArgs.DebugSymbols {
+		ldflags = fmt.Sprintf("%s -w -s", ldflags)
+	}
+
+	// Disable function inlining to reduce binary size
+	disableInlining := "-gcflags=all=-l"
+	if len(goflags) > 0 {
+		// Append the user-defined goflags so they can override the default if needed
+		goflags = fmt.Sprintf("%s %s", disableInlining, goflags)
+	} else {
+		goflags = disableInlining
+	}
 }
 
 func Compile(compileArgs *PluginCompileArgs) error {

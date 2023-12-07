@@ -37,9 +37,11 @@ $(GOLANGCI_LINT): $(TOOLS_BIN_DIR) ## Install golangci-lint
 
 .PHONY: install-builder
 install-builder: ## Install builder
+	$(MAKE) -C $(ROOT_DIR_RELATIVE)/../.. prepare-builder
+	unset BUILDER_PLUGIN ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	tanzu plugin install builder
+	$(MAKE) -C $(ROOT_DIR_RELATIVE)/../.. plugin-build-install-local PLUGIN_NAME=builder
 
 .PHONEY: e2e-tests-simple-plugin ## Run all e2e tests for simple plugin
 e2e-tests-simple-plugin: install-builder plugin-build-local plugin-install-local e2e-tests-sample-plugin-functionality e2e-tests-sample-plugin-e2e-api
