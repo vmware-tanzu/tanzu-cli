@@ -43,6 +43,8 @@ brew tap vmware-tanzu/tanzu  # Only needs to be done once for the machine
 brew install tanzu-cli
 ```
 
+To upgrade to a new release: `brew update && brew upgrade tanzu-cli`
+
 To uninstall: `brew uninstall tanzu-cli`
 
 #### Installing a Specific Version
@@ -53,11 +55,11 @@ a specific version by first extracting it to a local tap:
 
 ```console
 brew tap-new local/tap
-brew extract --version=0.90.1 vmware-tanzu/tanzu/tanzu-cli local/tap
-brew install tanzu-cli@0.90.1
+brew extract --version=1.0.0 vmware-tanzu/tanzu/tanzu-cli local/tap
+brew install tanzu-cli@1.0.0
 
 # To uninstall such an installation
-brew uninstall tanzu-cli@0.90.1
+brew uninstall tanzu-cli@1.0.0
 ```
 
 #### Installing a Pre-Release
@@ -93,8 +95,10 @@ you can explicitly specify the version you want to install using the `--version`
 
 ```console
 choco install tanzu-cli --version <version>
-# example: choco install tanzu-cli --version 0.90.0
+# example: choco install tanzu-cli --version 1.0.0
 ```
+
+To upgrade to a new release: `choco upgrade tanzu-cli`
 
 To uninstall: `choco uninstall tanzu-cli`
 
@@ -135,6 +139,8 @@ echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storag
 sudo apt update
 sudo apt install -y tanzu-cli
 ```
+
+To upgrade to a new release: `sudo apt update && sudo apt upgrade -y tanzu-cli`
 
 To uninstall: `sudo apt remove tanzu-cli`
 
@@ -187,6 +193,8 @@ EOF
 
 sudo yum install -y tanzu-cli # dnf install can also be used
 ```
+
+To upgrade to a new release: `sudo yum update -y tanzu-cli`
 
 To uninstall: `sudo yum remove tanzu-cli`
 
