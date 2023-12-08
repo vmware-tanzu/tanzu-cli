@@ -40,13 +40,17 @@ VALE               := $(TOOLS_BIN_DIR)/vale
 MISSPELL           := $(TOOLS_BIN_DIR)/misspell
 CONTROLLER_GEN     := $(TOOLS_BIN_DIR)/controller-gen
 IMGPKG             := $(TOOLS_BIN_DIR)/imgpkg
+KCTRL              := $(TOOLS_BIN_DIR)/kctrl
+KBLD               := $(TOOLS_BIN_DIR)/kbld
+YTT                := $(TOOLS_BIN_DIR)/ytt
 KUBECTL            := $(TOOLS_BIN_DIR)/kubectl
 KIND               := $(TOOLS_BIN_DIR)/kind
 GINKGO             := $(TOOLS_BIN_DIR)/ginkgo
 COSIGN             := $(TOOLS_BIN_DIR)/cosign
 GOJUNITREPORT      := $(TOOLS_BIN_DIR)/go-junit-report
+VENDIR             := $(TOOLS_BIN_DIR)/vendir
 
-TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
+TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT) $(KCTRL) $(YTT) $(KBLD) $(VENDIR)
 
 # Build and version information
 
@@ -210,6 +214,14 @@ choco-package: ## Build a Chocolatey package
 	docker run --rm -e VERSION=$(BUILD_VERSION) -e SHA_FOR_CHOCO=$(SHA_FOR_CHOCO) -v $(ROOT_DIR):$(ROOT_DIR) $(CHOCO_IMAGE) $(ROOT_DIR)/hack/choco/build_package.sh
 
 ## --------------------------------------
+## Carvel Package
+## --------------------------------------
+.PHONY: crd-package-for-test
+crd-package-for-test: tools ## Build and release crd carvel package for testing
+	$(ROOT_DIR)/hack/scripts/build-crd-package.sh
+
+
+## --------------------------------------
 ## Testing
 ## --------------------------------------
 
@@ -227,7 +239,7 @@ test-with-summary-report: tools
 	rm ./make_test.output ./test_suite_output.json ./CLI-ginkgo-tests-summary.txt ./CLI-junit-report.xml
 
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
-e2e-cli-core: start-test-central-repo start-airgapped-local-registry e2e-cli-core-all ## Execute all CLI Core E2E Tests
+e2e-cli-core: crd-package-for-test start-test-central-repo start-airgapped-local-registry e2e-cli-core-all ## Execute all CLI Core E2E Tests
 
 .PHONY: setup-custom-cert-for-test-central-repo
 setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test-central-repo in the config file

@@ -19,33 +19,42 @@ export GOPROXY
 ROOT_DIR:=$(shell git rev-parse --show-toplevel)
 BIN_DIR := bin
 
-GOIMPORTS_VERSION=0.13.0
-VALE_VERSION=2.20.1
-GOLANGCI_LINT_VERSION=1.54.2
-MISSPELL_VERSION=0.3.4
-CONTROLLER_TOOLS_VERSION=0.9.2
-IMGPKG_VERSION=v0.35.0
-KUBECTL_VERSION=v1.26.0
-KIND_VERSION=v0.17.0
-GINKGO_VERSION=v2.12.0
-COSIGN_VERSION=2.0.3-0.20230519173114-f21081a18209
-
 # Host information.
 HOST_OS=$(shell go env GOOS)
 HOST_ARCH=$(shell go env GOARCH)
 
 # Binaries.
-GOIMPORTS      	   := $(BIN_DIR)/goimports
-VALE               := $(BIN_DIR)/vale
-GOLANGCI_LINT      := $(BIN_DIR)/golangci-lint
-MISSPELL           := $(BIN_DIR)/misspell
+
+CONTROLLER_TOOLS_VERSION=0.9.2
+COSIGN_VERSION=2.0.3-0.20230519173114-f21081a18209
+GINKGO_VERSION=v2.12.0
+GOIMPORTS_VERSION=0.13.0
+GOLANGCI_LINT_VERSION=1.54.2
+IMGPKG_VERSION=v0.35.0
+KBLD_VERSION=v0.38.1
+KCTRL_VERSION=v0.48.0
+KIND_VERSION=v0.17.0
+KUBECTL_VERSION=v1.26.0
+MISSPELL_VERSION=0.3.4
+VALE_VERSION=2.20.1
+VENDIR_VERSION=v0.39.0
+YTT_VERSION=v0.46.2
+
 CONTROLLER_GEN     := $(BIN_DIR)/controller-gen
-IMGPKG             := $(BIN_DIR)/imgpkg
-KUBECTL            := $(BIN_DIR)/kubectl
-KIND               := $(BIN_DIR)/kind
-GINKGO             := $(BIN_DIR)/ginkgo
 COSIGN             := $(BIN_DIR)/cosign
-GOJUNITREPORT		   := $(BIN_DIR)/go-junit-report
+GINKGO             := $(BIN_DIR)/ginkgo
+GOIMPORTS      	   := $(BIN_DIR)/goimports
+GOJUNITREPORT	   := $(BIN_DIR)/go-junit-report
+GOLANGCI_LINT      := $(BIN_DIR)/golangci-lint
+IMGPKG             := $(BIN_DIR)/imgpkg
+KBLD               := $(BIN_DIR)/kbld
+KCTRL              := $(BIN_DIR)/kctrl
+KIND               := $(BIN_DIR)/kind
+KUBECTL            := $(BIN_DIR)/kubectl
+MISSPELL           := $(BIN_DIR)/misspell
+VALE               := $(BIN_DIR)/vale
+VENDIR             := $(BIN_DIR)/vendir
+YTT                := $(BIN_DIR)/ytt
 
 ## --------------------------------------
 ## Help
@@ -99,6 +108,34 @@ $(IMGPKG):
 	mkdir -p $(BIN_DIR)
 	curl -LO https://github.com/vmware-tanzu/carvel-imgpkg/releases/download/$(IMGPKG_VERSION)/imgpkg-$(HOST_OS)-$(HOST_ARCH)
 	mv imgpkg-$(HOST_OS)-$(HOST_ARCH) $(@)
+	chmod a+x $(@)
+
+kctrl: $(KCTRL) ## Install kctrl
+$(KCTRL):
+	mkdir -p $(BIN_DIR)
+	curl -LO https://github.com/carvel-dev/kapp-controller/releases/download/$(KCTRL_VERSION)/kctrl-$(HOST_OS)-$(HOST_ARCH)
+	mv kctrl-$(HOST_OS)-$(HOST_ARCH) $(@)
+	chmod a+x $(@)
+
+ytt: $(YTT) ## Install ytt
+$(YTT):
+	mkdir -p $(BIN_DIR)
+	curl -LO https://github.com/carvel-dev/ytt/releases/download/$(YTT_VERSION)/ytt-$(HOST_OS)-$(HOST_ARCH)
+	mv ytt-$(HOST_OS)-$(HOST_ARCH) $(@)
+	chmod a+x $(@)
+
+kbld: $(KBLD) ## Install kbld
+$(KBLD):
+	mkdir -p $(BIN_DIR)
+	curl -LO https://github.com/carvel-dev/kbld/releases/download/$(KBLD_VERSION)/kbld-$(HOST_OS)-$(HOST_ARCH)
+	mv kbld-$(HOST_OS)-$(HOST_ARCH) $(@)
+	chmod a+x $(@)
+
+vendir: $(VENDIR) ## Install kbld
+$(VENDIR):
+	mkdir -p $(BIN_DIR)
+	curl -LO https://github.com/carvel-dev/vendir/releases/download/$(VENDIR_VERSION)/vendir-$(HOST_OS)-$(HOST_ARCH)
+	mv vendir-$(HOST_OS)-$(HOST_ARCH) $(@)
 	chmod a+x $(@)
 
 kubectl: $(KUBECTL)
