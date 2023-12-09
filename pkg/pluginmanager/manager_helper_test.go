@@ -33,7 +33,7 @@ var testPlugins = []plugininventory.PluginIdentifier{
 	{Name: "cluster", Target: configtypes.TargetK8s, Version: "v1.6.0"},
 	{Name: "myplugin", Target: configtypes.TargetK8s, Version: "v1.6.0"},
 	{Name: "feature", Target: configtypes.TargetK8s, Version: "v0.2.0"},
-	{Name: "pluginwitharm", Target: configtypes.TargetK8s, Version: "v2.0.0"},
+	{Name: "pluginwitharmdarwin", Target: configtypes.TargetK8s, Version: "v2.0.0"},
 
 	{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.2.3"},
 	{Name: "isolated-cluster", Target: configtypes.TargetGlobal, Version: "v1.3.0"},
@@ -47,10 +47,12 @@ var testPlugins = []plugininventory.PluginIdentifier{
 	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.2.0"},
 	{Name: "cluster", Target: configtypes.TargetTMC, Version: "v0.2.0"},
 	{Name: "myplugin", Target: configtypes.TargetTMC, Version: "v0.2.0"},
+	{Name: "pluginwitharmwindows", Target: configtypes.TargetTMC, Version: "v4.0.0"},
 }
 
 var testPluginsNoARM64 = []plugininventory.PluginIdentifier{
-	{Name: "pluginnoarm", Target: configtypes.TargetK8s, Version: "v1.0.0"},
+	{Name: "pluginnoarmdarwin", Target: configtypes.TargetK8s, Version: "v1.0.0"},
+	{Name: "pluginnoarmwindows", Target: configtypes.TargetTMC, Version: "v3.0.0"},
 }
 
 var installedStandalonePlugins = []plugininventory.PluginIdentifier{
@@ -199,7 +201,7 @@ func findGroupVersion(allGroups []*plugininventory.PluginGroup, id string) bool 
 	return false
 }
 
-func setupPluginBinaryInCache(name, version string, target configtypes.Target, digest string) {
+func setupPluginBinaryInCache(name, version string, target configtypes.Target, arch cli.Arch, digest string) {
 	dir := filepath.Join(common.DefaultPluginRoot, name)
 	err := os.MkdirAll(dir, 0755)
 	if err != nil {
@@ -207,6 +209,10 @@ func setupPluginBinaryInCache(name, version string, target configtypes.Target, d
 	}
 
 	pluginBinary := filepath.Join(dir, fmt.Sprintf("%s_%s_%s", version, digest, target))
+	if arch.IsWindows() {
+		pluginBinary += exe
+	}
+
 	f, err := os.OpenFile(pluginBinary, os.O_CREATE|os.O_WRONLY, 0755)
 	if err != nil {
 		log.Fatal(err, "unable to create temporary plugin binary")
@@ -254,7 +260,7 @@ func setupPluginEntriesAndBinaries(db *sql.DB) {
 				digest = digestForARM64
 			}
 			createPluginEntry(db, plugin, osArch, digest)
-			setupPluginBinaryInCache(plugin.Name, plugin.Version, plugin.Target, digest)
+			setupPluginBinaryInCache(plugin.Name, plugin.Version, plugin.Target, osArch, digest)
 		}
 	}
 
@@ -264,7 +270,7 @@ func setupPluginEntriesAndBinaries(db *sql.DB) {
 		for _, osArch := range cli.AllOSArch {
 			if osArch.Arch() != cli.DarwinARM64.Arch() {
 				createPluginEntry(db, plugin, osArch, digest)
-				setupPluginBinaryInCache(plugin.Name, plugin.Version, plugin.Target, digest)
+				setupPluginBinaryInCache(plugin.Name, plugin.Version, plugin.Target, osArch, digest)
 			}
 		}
 	}
