@@ -47,6 +47,9 @@ To upgrade to a new release: `brew update && brew upgrade tanzu-cli`
 
 To uninstall: `brew uninstall tanzu-cli`
 
+Installing with Homebrew will automatically setup shell completion for
+`bash`, `zsh` and `fish`.
+
 #### Installing a Specific Version
 
 At the time of writing, Homebrew only officially supported installing the
@@ -102,6 +105,8 @@ To upgrade to a new release: `choco upgrade tanzu-cli`
 
 To uninstall: `choco uninstall tanzu-cli`
 
+Installing with Chocolatey will automatically setup shell completion for `powershell`.
+
 #### Installing a Specific Version
 
 You can also use the `--version` flag to install any specific version of the Tanzu CLI.
@@ -143,6 +148,9 @@ sudo apt install -y tanzu-cli
 To upgrade to a new release: `sudo apt update && sudo apt upgrade -y tanzu-cli`
 
 To uninstall: `sudo apt remove tanzu-cli`
+
+Installing with `apt` will automatically setup shell completion for
+`bash`, `zsh` and `fish`.
 
 #### Installing a Specific Version
 
@@ -197,6 +205,9 @@ sudo yum install -y tanzu-cli # dnf install can also be used
 To upgrade to a new release: `sudo yum update -y tanzu-cli`
 
 To uninstall: `sudo yum remove tanzu-cli`
+
+Installing with `yum` or `dnf` will automatically setup shell completion for
+`bash`, `zsh` and `fish`.
 
 #### Installing a Specific Version
 
