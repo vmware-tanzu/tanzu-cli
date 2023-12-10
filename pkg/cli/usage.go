@@ -66,7 +66,10 @@ func (u *MainUsage) GenerateDescriptor(c *cobra.Command, w io.Writer) error {
 	return nil
 }
 
-// Template returns the template for the main usage.
+// Template returns the template for the root cmd help as well
+// as for the two target commands ('kubernetes' and 'mission-control').
+// Those three commands use this template because they use command groups
+// for their help text.
 func (u *MainUsage) Template() string {
 	return `{{ bold "Usage:" }}
   {{.Command.CommandPath}} [command]{{if gt (len .Aliases) 0}}
@@ -90,7 +93,7 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.
 `
 }
 
-// SubCmdUsageFunc is the usage func for a plugin.
+// SubCmdUsageFunc is the usage func for all core sub-commands.
 var SubCmdUsageFunc = func(c *cobra.Command) error {
 	t, err := template.New("usage").Funcs(TemplateFuncs).Parse(SubCmdTemplate)
 	if err != nil {
@@ -99,9 +102,9 @@ var SubCmdUsageFunc = func(c *cobra.Command) error {
 	return t.Execute(os.Stdout, c)
 }
 
-// SubCmdTemplate is the template for plugin commands.
+// SubCmdTemplate is the template for all core sub-commands.
 const SubCmdTemplate = `{{ bold "Usage:" }}{{if .Runnable}}
-{{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
   {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
 
 {{ bold "Aliases:" }}
