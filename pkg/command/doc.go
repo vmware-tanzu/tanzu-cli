@@ -67,6 +67,8 @@ func newGenAllDocsCmd() *cobra.Command {
 	// Shell completion for this flag is file completion which is enabled by default
 	genAllDocsCmd.Flags().StringVarP(&docsDir, "docs-dir", "d", DefaultDocsDir, "destination for docs output")
 
+	genAllDocsCmd.SetUsageFunc(cli.SubCmdUsageFunc)
+
 	return genAllDocsCmd
 }
 

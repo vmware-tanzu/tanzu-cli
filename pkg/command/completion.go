@@ -13,8 +13,13 @@ import (
 	"github.com/lithammer/dedent"
 	"github.com/spf13/cobra"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
+
+func init() {
+	completionCmd.SetUsageFunc(cli.SubCmdUsageFunc)
+}
 
 const compNoMoreArgsMsg = "This command does not take any more arguments (but may accept flags)."
 
@@ -26,13 +31,12 @@ var (
 		"powershell",
 	}
 
-	completionLongDesc = dedent.Dedent(`
-		Output shell completion code for the specified shell %v.
+	completionLongDesc = `Output shell completion code for the specified shell (%v).
 
-		The shell completion code must be evaluated to provide completion. See Examples
-		for how to perform this for your given shell.
+The shell completion code must be evaluated to provide completion. See Examples
+for how to perform this for your given shell.
 
-		Note for bash users: make sure the bash-completions package has been installed.`)
+Note for bash users: make sure the bash-completions package has been installed.`
 
 	completionExamples = dedent.Dedent(`
 		# Bash instructions:
@@ -91,9 +95,9 @@ var (
 
 // completionCmd represents the completion command
 var completionCmd = &cobra.Command{
-	Use:                   fmt.Sprintf("completion %v", completionShells),
+	Use:                   fmt.Sprintf("completion [%v]", strings.Join(completionShells, "|")),
 	Short:                 "Output shell completion code",
-	Long:                  fmt.Sprintf(completionLongDesc, completionShells),
+	Long:                  fmt.Sprintf(completionLongDesc, strings.Join(completionShells, ", ")),
 	Example:               completionExamples,
 	DisableFlagsInUseLine: true,
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -112,7 +116,7 @@ var completionCmd = &cobra.Command{
 
 func runCompletion(out io.Writer, cmd *cobra.Command, args []string) error {
 	if length := len(args); length == 0 {
-		return fmt.Errorf("shell not specified, choose one of: %v", completionShells)
+		return fmt.Errorf("shell not specified, choose one of: %v", strings.Join(completionShells, ", "))
 	} else if length > 1 {
 		return errors.New("too many arguments, expected only the shell type")
 	}
