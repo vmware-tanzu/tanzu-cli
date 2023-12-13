@@ -4,6 +4,7 @@
 package discovery
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,7 +20,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -225,14 +225,25 @@ func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 	// Now that the new DB has been downloaded, we can save the new refresh time
 	od.resetCacheTTL()
 
-	// Now that everything is ready, create the digest hash file
+	// Now that everything is ready, create the digest hash file.
+	// Both the name of the file and its content are important.
 	if newCacheHashFileForInventoryImage != "" {
-		_, _ = os.Create(newCacheHashFileForInventoryImage)
+		if file, err := os.Create(newCacheHashFileForInventoryImage); err == nil {
+			// We also store the URI of the image in the digest file so that we can
+			// know in the future if the URI has changed.  This has particular value
+			// for images added using TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY
+			// since they are not stored in the config file and therefore we cannot associate
+			// their a discovery name with a URI in this case.
+			_, _ = file.WriteString(od.image)
+			file.Close()
+		}
 	}
 
 	// Also create digest hash file for inventory metadata image if not empty
 	if newCacheHashFileForMetadataImage != "" {
-		_, _ = os.Create(newCacheHashFileForMetadataImage)
+		if file, err := os.Create(newCacheHashFileForMetadataImage); err == nil {
+			file.Close()
+		}
 	}
 
 	return nil
@@ -294,6 +305,7 @@ func (od *DBBackedOCIDiscovery) checkImageCache() (string, string, error) {
 	// Get the latest digest of the discovery image.
 	// If the cache already contains the image with this digest
 	// we do not need to verify its signature nor to download it again.
+	log.Infof("Refreshing plugin inventory cache for %q, this will take a few seconds.", od.image)
 	_, hashHexValInventoryImage, err := carvelhelpers.GetImageDigest(od.image)
 	if err != nil {
 		// This will happen when the user has configured an invalid image discovery URI
@@ -345,7 +357,21 @@ func (od *DBBackedOCIDiscovery) checkDigestFileExistence(hashHexVal, digestPrefi
 		}
 	} else if len(matches) == 1 {
 		if matches[0] == correctHashFile {
-			// The hash file exists which means the DB is up-to-date.  We are done.
+			if digestPrefix == "" {
+				// If the main digest has not changed it means we have the DB for this OCI image URI.
+				// Normally that implies the URI stored in the main digest file has not changed either.
+				// However, there are corner cases where the URI of the image could still have
+				// changed but the digest has not. For example, the URI in the digest
+				// file can be "example.com/image:latest" and the discovery image has changed
+				// to "example.com/image"; both URIs are actually the same image with the
+				// same digest.  In such cases, the digest file will be retained since the image
+				// does not need to be re-downloaded.  To deal with such cases, we set the
+				// (possibly new) URI in the digest file each time the digest is not changed.
+				if file, err := os.Create(matches[0]); err == nil {
+					_, _ = file.WriteString(od.image)
+					file.Close()
+				}
+			}
 			return ""
 		}
 		// The hash file indicates a different digest hash. Remove this old hash file
@@ -355,17 +381,7 @@ func (od *DBBackedOCIDiscovery) checkDigestFileExistence(hashHexVal, digestPrefi
 	return correctHashFile
 }
 
-// cacheTTLExpired checks if the last time the cache was refreshed has passed its TTL.
-func (od *DBBackedOCIDiscovery) cacheTTLExpired() bool {
-	// Check that the discovery is present in the config file.
-	// If not, we are dealing with a test discovery and we can't know if
-	// the digest file applies to the current URI, so we must alway check the digest.
-	discovery, err := config.GetCLIDiscoverySource(od.name)
-	if err != nil || discovery == nil {
-		return true
-	}
-
-	// Check if the digest TTL has been overridden
+func getCacheTTLValue() int {
 	digestTTL := inventoryRefreshTTLInSecs
 	digestTTLOverride := os.Getenv(constants.ConfigVariablePluginDBDigestTTL)
 	if digestTTLOverride != "" {
@@ -374,13 +390,36 @@ func (od *DBBackedOCIDiscovery) cacheTTLExpired() bool {
 			digestTTL = digestTTLOverrideValue
 		}
 	}
+	return digestTTL
+}
 
+// cacheTTLExpired checks if the last time the cache was refreshed has passed its TTL.
+func (od *DBBackedOCIDiscovery) cacheTTLExpired() bool {
 	matches, _ := filepath.Glob(filepath.Join(od.pluginDataDir, "digest.*"))
 	if len(matches) == 1 {
-		if stat, err := os.Stat(matches[0]); err == nil {
-			return time.Since(stat.ModTime()) > time.Duration(digestTTL)*time.Second
+		file, err := os.Open(matches[0])
+		if err != nil {
+			return true
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+		if scanner.Scan() {
+			// Check that the discovery image URI matches what is in the digest file.
+			// This is important for test discoveries which can be changed by setting
+			// the TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY variable.
+			// If the image URI is not correct then the cache must be refreshed.
+			firstLine := scanner.Text()
+			if firstLine == od.image {
+				// The URI matches.  Now check the modification time of the digest file to see
+				// if the TTL is expired.
+				if stat, err := os.Stat(matches[0]); err == nil {
+					return time.Since(stat.ModTime()) > time.Duration(getCacheTTLValue())*time.Second
+				}
+			}
 		}
 	}
+
 	return true
 }
 

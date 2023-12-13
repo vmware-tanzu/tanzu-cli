@@ -4,8 +4,10 @@
 package discovery
 
 import (
+	"bufio"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -356,6 +358,81 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				Expect(err.Error()).To(ContainSubstring(`plugins discovery image resolution failed. Please check that the repository image URL "test-image:latest" is correct: error getting the image digest: GET https://index.docker.io/v2/library/test-image/manifests/latest`))
 			})
 		})
+
+		Context("checkDigestFileExistence function", func() {
+			const (
+				validDigest   = "1234567890"
+				discoveryName = "test-discovery"
+				imageURI      = "test-image:latest"
+			)
+			var dbDir, digestFile string
+			var err error
+			BeforeEach(func() {
+				// Create a fake db file
+				dbDir, err = os.MkdirTemp("", "test-cache-dir")
+				Expect(err).To(BeNil())
+
+				common.DefaultCacheDir = dbDir
+
+				// Create the directory for the DB file
+				pluginDBdir := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, discoveryName)
+				err := os.MkdirAll(pluginDBdir, 0755)
+				Expect(err).To(BeNil())
+				// Create the DB file
+				pluginDBFile := filepath.Join(pluginDBdir, plugininventory.SQliteDBFileName)
+				file, err := os.Create(pluginDBFile)
+				Expect(err).To(BeNil())
+				file.Close()
+
+				// Create a the digest file with the URI of the image as its content
+				digestFile = filepath.Join(pluginDBdir, "digest."+validDigest)
+				file, err = os.Create(digestFile)
+				Expect(err).To(BeNil())
+				_, err = file.WriteString(imageURI)
+				Expect(err).To(BeNil())
+				file.Close()
+			})
+			AfterEach(func() {
+				os.RemoveAll(dbDir)
+			})
+
+			It("should return empty if the digest matches", func() {
+				discovery := NewOCIDiscovery(discoveryName, imageURI)
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+				digestFileName := dbDiscovery.checkDigestFileExistence(validDigest, "")
+				Expect(digestFileName).To(BeEmpty(), "expected an empty digest filename")
+
+				Expect(checkFileContentIsEqual(digestFile, imageURI)).To(BeTrue(), "expected the digest file to have the same content as the image URI")
+			})
+			It("should have update the URI in the digest file if the digest matches but the URI has changed", func() {
+				newImageURI := "test-image"
+				discovery := NewOCIDiscovery(discoveryName, newImageURI)
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+				digestFileName := dbDiscovery.checkDigestFileExistence(validDigest, "")
+				Expect(digestFileName).To(BeEmpty(), "expected an empty digest filename")
+
+				Expect(checkFileContentIsEqual(digestFile, newImageURI)).To(BeTrue(), "expected the digest file to have the same content as the image URI")
+			})
+			It("should return a new digest file name if the digest does not match", func() {
+				discovery := NewOCIDiscovery(discoveryName, imageURI)
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+				newdigest := "0987654321"
+				expectedDigestFileName := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, discoveryName, "digest."+newdigest)
+				digestFileName := dbDiscovery.checkDigestFileExistence(newdigest, "")
+				Expect(digestFileName).To(Equal(expectedDigestFileName), "expected a new digest filename")
+
+				// Check that the existing digest file was removed
+				_, err := os.Stat(digestFile)
+				Expect(os.IsNotExist(err)).To(BeTrue(), "expected the old digest file to be removed")
+			})
+		})
+
 		Context("cacheTTLExpired and resetCacheTTL functions", func() {
 			var dbDir, expiredDigest, nonExpiredDigest string
 			var err error
@@ -368,12 +445,13 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 
 				// Create an expired and an non-expired discovery in the cache directory
 				for _, discoveryName := range []string{"test-expired", "test-notexpired"} {
+					imageURI := discoveryName + "-image:latest"
 
-					// Create the discovery in the config file
+					// Create the discovery in the config file but not for the "test additional" ones
 					discovery := configtypes.PluginDiscovery{
 						OCI: &configtypes.OCIDiscovery{
 							Name:  discoveryName,
-							Image: "test-image:latest",
+							Image: imageURI,
 						}}
 					err = configlib.SetCLIDiscoverySource(discovery)
 					Expect(err).To(BeNil())
@@ -388,22 +466,25 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 					Expect(err).To(BeNil())
 					file.Close()
 
-					// Create a the digest file
+					// Create a the digest file with the URI of the image as its content
 					digestFile := filepath.Join(pluginDBdir, "digest.1234567890")
 					file, err = os.Create(digestFile)
 					Expect(err).To(BeNil())
+					_, err = file.WriteString(imageURI)
+					Expect(err).To(BeNil())
 					file.Close()
+
 					// Set an expired timestamp for the digest file and a non-expired timestamp for the other
-					if discoveryName == "test-expired" {
-						// Set an expired time of 30 hours ago so the TTL is expired
-						err = os.Chtimes(digestFile, time.Now(), time.Now().Add(-30*time.Hour))
-						Expect(err).To(BeNil())
-						expiredDigest = digestFile
-					} else {
+					if strings.Contains(discoveryName, "notexpired") {
 						// Set an non-expired time of 2 seconds ago so the TTL is not expired
 						err = os.Chtimes(digestFile, time.Now(), time.Now().Add(-2*time.Second))
 						Expect(err).To(BeNil())
 						nonExpiredDigest = digestFile
+					} else {
+						// Set an expired time of 30 hours ago so the TTL is expired
+						err = os.Chtimes(digestFile, time.Now(), time.Now().Add(-30*time.Hour))
+						Expect(err).To(BeNil())
+						expiredDigest = digestFile
 					}
 				}
 			})
@@ -412,21 +493,28 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				os.Unsetenv(constants.ConfigVariablePluginDBDigestTTL)
 			})
 			It("cacheTTLExpired should return true when TTL is expired", func() {
-				discovery := NewOCIDiscovery("test-expired", "test-image:latest")
+				discovery := NewOCIDiscovery("test-expired", "test-expired-image:latest")
 				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
 				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
 
 				Expect(dbDiscovery.cacheTTLExpired()).To(BeTrue())
 			})
 			It("cacheTTLExpired should return false when TTL is not expired", func() {
-				discovery := NewOCIDiscovery("test-notexpired", "test-image:latest")
+				discovery := NewOCIDiscovery("test-notexpired", "test-notexpired-image:latest")
 				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
 				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
 
 				Expect(dbDiscovery.cacheTTLExpired()).To(BeFalse())
 			})
+			It("cacheTTLExpired should return true when URI changed", func() {
+				discovery := NewOCIDiscovery("test-notexpired", "changedURI:latest")
+				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+				Expect(dbDiscovery.cacheTTLExpired()).To(BeTrue())
+			})
 			It("cacheTTLExpired should return true when we shorten the TTL to an expired value", func() {
-				discovery := NewOCIDiscovery("test-notexpired", "test-image:latest")
+				discovery := NewOCIDiscovery("test-notexpired", "test-notexpired-image:latest")
 				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
 				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
 
@@ -435,7 +523,7 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				Expect(dbDiscovery.cacheTTLExpired()).To(BeTrue())
 			})
 			It("cacheTTLExpired should return true when there is no DB, even if the TTL has not expired", func() {
-				discovery := NewOCIDiscovery("test-notexpired", "test-image:latest")
+				discovery := NewOCIDiscovery("test-notexpired", "test-notexpired-image:latest")
 				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
 				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
 
@@ -445,7 +533,8 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				// Make sure the cache is considered expired
 				Expect(dbDiscovery.cacheTTLExpired()).To(BeTrue())
 			})
-			It("resetCacheTTL should reset the digest file to time.Now() for a non-expired TTL", func() {
+
+			It("resetCacheTTL should reset the digest file to time.Now()", func() {
 				discovery := NewOCIDiscovery("test-notexpired", "test-image:latest")
 				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
 				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
@@ -465,3 +554,18 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 		})
 	})
 })
+
+func checkFileContentIsEqual(filename, content string) bool {
+	file, err := os.Open(filename)
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	if scanner.Scan() {
+		firstLine := scanner.Text()
+		return firstLine == content
+	}
+	return false
+}
