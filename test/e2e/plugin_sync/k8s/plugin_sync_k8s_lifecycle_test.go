@@ -6,15 +6,27 @@ package pluginsynce2ek8s
 
 import (
 	"fmt"
+	"os"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/util/retry"
 
 	f "github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 var stdOut string
+
+var backOff = wait.Backoff{
+	Steps:    10,
+	Duration: 5 * time.Second,
+	Factor:   1.0,
+	Jitter:   0.1,
+}
 
 // Below Use cases executed in this test suite
 // cleanup and initialize the config files
@@ -88,7 +100,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 	// Use case 2: Create kind cluster, apply CRD and CRs, create context, should install all plugins, uninstall the specific plugin, and perform plugin sync:
 	// Steps:
 	// a. create KIND cluster, apply CRD
-	// b. apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins
+	// b. apply CRD and CRs for few plugins
 	// c. create context and make sure context has created
 	// d. list plugins and validate plugins info, make sure all plugins installed for which CR's has applied to KIND cluster
 	// e. simulate context-scoped plugin upgrade by applying updated CRs again (with updated plugin versions) to KIND cluster to validate sync (BugFix: https://github.com/vmware-tanzu/tanzu-cli/issues/358)
@@ -108,7 +120,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			clusterInfo, err = f.CreateKindCluster(tf, f.ContextPrefixK8s+f.RandomNumber(4))
 			Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
 		})
-		// Test case: b. apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins
+		// Test case: b. apply CRD and CRs for few plugins
 		It("apply CRD and CRs to KIND cluster", func() {
 			err = f.ApplyConfigOnKindCluster(tf, clusterInfo, append(make([]string, 0), f.K8SCRDFilePath))
 			Expect(err).To(BeNil(), "should not get any error for config apply")
@@ -218,10 +230,11 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
 		})
 	})
+
 	// Use case 3: Test plugin sync when central repo does not have all plugin CRs being applied in KIND cluster
 	// Steps:
 	// a. create KIND cluster
-	// b. apply CRD (cluster resource definition) and CRs (cluster resource) for a few plugins which are available in the central repo and CRs for plugins which are not available in the central repo
+	// b. apply CRD and CRs for a few plugins which are available in the central repo and CRs for plugins which are not available in the central repo
 	// c. create context and make sure context has been created
 	// d. list plugins and validate plugins info, make sure all plugins installed for which CRs have applied to the KIND cluster and are available in the central repo
 	// e. run plugin sync and validate the plugin list
@@ -238,7 +251,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			clusterInfo, err = f.CreateKindCluster(tf, f.ContextPrefixK8s+f.RandomNumber(4))
 			Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
 		})
-		// Test case: b. apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins which are available in centra repo
+		// Test case: b. apply CRD and CRs for few plugins which are available in centra repo
 		// and CR's for plugins which are not available in central repo
 		It("apply CRD and CRs to KIND cluster", func() {
 			err = f.ApplyConfigOnKindCluster(tf, clusterInfo, append(make([]string, 0), f.K8SCRDFilePath))
@@ -331,7 +344,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 	// Use case 4: test delete context use case, it should uninstall plugins installed for the context
 	// Steps:
 	// a. create KIND cluster
-	// b. apply CRD (cluster resource definition) and CRs (cluster resource) for few plugins
+	// b. apply CRD and CRs for few plugins
 	// c. create context and make sure context gets created, list plugins, make sure all
 	//    plugins installed for which CRs are applied in KIND cluster
 	// d. delete the context, make sure all context specific plugins are uninstalled
@@ -348,7 +361,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			clusterInfo, err = f.CreateKindCluster(tf, f.ContextPrefixK8s+f.RandomNumber(4))
 			Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
 		})
-		// Test case: b. apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins which are available in centra repo
+		// Test case: b. apply CRD and CRs for few plugins which are available in centra repo
 		// and CR's for plugins which are not available in central repo
 		It("apply CRD and CRs to KIND cluster", func() {
 			err = f.ApplyConfigOnKindCluster(tf, clusterInfo, append(make([]string, 0), f.K8SCRDFilePath))
@@ -394,7 +407,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 	// Use case 5: test switch context use case, make installed plugins should be updated as per the context
 	// Steps:
 	// a. create KIND clusters
-	// b. for both clusters, apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins
+	// b. for both clusters, apply CRD and CRs for few plugins
 	// c. for cluster one, create random context and validate the plugin list should show all plugins for which CRs are applied
 	// d. for cluster two, create random context and validate the plugin list should show all plugins for which CRs are applied
 	// e. switch context's, make sure installed plugins also updated
@@ -416,7 +429,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
 		})
 
-		// Test case: b. for both clusters, apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins
+		// Test case: b. for both clusters, apply CRD and CRs for few plugins
 		It("apply CRD and CRs to KIND cluster", func() {
 			err = f.ApplyConfigOnKindCluster(tf, clusterOne, append(make([]string, 0), f.K8SCRDFilePath))
 			pluginsToGenerateCRs, ok := pluginGroupToPluginListMap[usePluginsFromPluginGroup]
@@ -493,7 +506,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 	// Use case 6: Test plugin sync when discovered plugin versions are of format vMAJOR or vMAJOR.MINOR
 	// Steps:
 	// a. create KIND cluster
-	// b. apply CRD (cluster resource definition)
+	// b. apply CRD
 	// c. create context and make sure context has created
 	// d. apply CRs with different plugin versions and validate plugins being installed after context being created
 	// e. delete the KIND cluster
@@ -509,7 +522,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			clusterInfo, err = f.CreateKindCluster(tf, f.ContextPrefixK8s+f.RandomNumber(4))
 			Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
 		})
-		// Test case: b. apply CRD (cluster resource definition)
+		// Test case: b. apply CRD
 		It("apply CRD to KIND cluster", func() {
 			err = f.ApplyConfigOnKindCluster(tf, clusterInfo, append(make([]string, 0), f.K8SCRDFilePath))
 			Expect(err).To(BeNil(), "should not get any error for config apply")
@@ -555,6 +568,116 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		})
 
 		// Test case: e. delete the KIND cluster
+		It("delete the KIND cluster", func() {
+			_, _, err = tf.ContextCmd.DeleteContext(contextName)
+			Expect(err).To(BeNil(), "context should be deleted without error")
+			_, _, err := tf.KindCluster.DeleteCluster(clusterInfo.Name)
+			Expect(err).To(BeNil(), "kind cluster should be deleted without any error")
+		})
+	})
+
+	// Perform plugin sync tests by deploying the cliplugins CRD through a package via kapp-controller
+	// Requirements:
+	// - CRD_PACKAGE_IMAGE is set (otherwise the test is skipped)
+	// - the test has permissions to publish the crd package to set CRD_PACKAGE_IMAGE location
+	Context("Deploy CRD via package", func() {
+		var clusterInfo *f.ClusterInfo
+		var pluginCRFilePaths []string
+		var pluginsList []*f.PluginInfo
+		var contextName string
+		var err error
+
+		BeforeEach(func() {
+			if os.Getenv("CRD_PACKAGE_IMAGE") == "" {
+				Skip("Skipping test because CRD_PACKAGE_IMAGE is not set")
+			}
+		})
+
+		It("create KIND cluster, deploying kapp-controller and crd package", func() {
+			const (
+				kappYAML           = "../../../../package/cliplugin.cli.tanzu.vmware.com/test/kapp-controller.yaml"
+				packageYAML        = "../../../../package/cliplugin.cli.tanzu.vmware.com/carvel-artifacts/packages/cliplugin.cli.tanzu.vmware.com/package.yml"
+				packageinstallYAML = "../../../../package/cliplugin.cli.tanzu.vmware.com/test/package-pi.yaml"
+			)
+
+			// Create KIND cluster, which is used in test cases to create context's
+			clusterInfo, err = f.CreateKindCluster(tf, f.ContextPrefixK8s+f.RandomNumber(4))
+			Expect(err).To(BeNil(), "should not get any error for KIND cluster creation")
+
+			yamlPaths := []string{kappYAML}
+			yamlPaths2 := []string{packageYAML, packageinstallYAML}
+
+			err = f.ApplyConfigOnKindCluster(tf, clusterInfo, yamlPaths)
+			Expect(err).To(BeNil(), "should not get any error for apply kapp-controller config")
+
+			var waitArgs []string
+			waitArgs = []string{"--for=condition=Ready", "pod", "-l", "app=kapp-controller", "-A"}
+			err = retry.OnError(
+				backOff,
+				func(e error) bool { return e != nil },
+				func() error {
+					return tf.KindCluster.WaitForCondition(clusterInfo.ClusterKubeContext, waitArgs)
+				},
+			)
+			Expect(err).To(BeNil(), "kapp controller should be available")
+
+			err = retry.OnError(
+				backOff,
+				func(e error) bool { return e != nil },
+				func() error {
+					return f.ApplyConfigOnKindCluster(tf, clusterInfo, yamlPaths2)
+				},
+			)
+			Expect(err).To(BeNil(), "should not get any error for config apply")
+
+			waitArgs = []string{"--for=condition=established", "crd", "cliplugins.cli.tanzu.vmware.com"}
+			err = retry.OnError(
+				backOff,
+				func(e error) bool { return e != nil },
+				func() error {
+					return tf.KindCluster.WaitForCondition(clusterInfo.ClusterKubeContext, waitArgs)
+				},
+			)
+			Expect(err).To(BeNil(), "should not get any error waiting for cli plugins crd")
+		})
+
+		It("create context with kubeconfig and context", func() {
+			contextName = f.ContextPrefixK8s + f.RandomString(4)
+			_, _, err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			Expect(err).To(BeNil(), "context should create without any error")
+			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
+			Expect(err).To(BeNil(), "there should be a active context")
+			Expect(active).To(Equal(contextName), "the active context should be recently added context")
+		})
+
+		// apply CRs with different plugin versions and validate plugins being installed after context being created
+		It("apply CRs with different plugin versions and validate plugins being installed after context being created", func() {
+			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(len(pluginsList)).Should(Equal(0), "no plugins should be available at this time")
+
+			for _, testcase := range PluginsMultiVersionInstallTests {
+				pluginInfo := testcase.pluginInfo
+				_, pluginCRFilePaths, err = f.CreateTemporaryCRsFromPluginInfos([]*f.PluginInfo{&pluginInfo})
+				Expect(err).To(BeNil(), "should not get any error while generating CR files")
+				err = f.ApplyConfigOnKindCluster(tf, clusterInfo, pluginCRFilePaths)
+				Expect(err).To(BeNil(), "should not get any error for config apply")
+
+				_, _, err = tf.PluginCmd.Sync()
+				if testcase.err != "" {
+					Expect(err.Error()).To(ContainSubstring(testcase.err))
+				} else {
+					Expect(err).To(BeNil(), "should not get any error for syncing plugins")
+					var pd []*f.PluginDescribe
+					pd, err = tf.PluginCmd.DescribePlugin(testcase.pluginInfo.Name, testcase.pluginInfo.Target, f.GetJsonOutputFormatAdditionalFlagFunction())
+					Expect(err).To(BeNil(), f.PluginDescribeShouldNotThrowErr)
+					Expect(len(pd)).To(Equal(1), f.PluginDescShouldExist)
+					Expect(pd[0].Name).To(Equal(testcase.pluginInfo.Name), f.PluginNameShouldMatch)
+					Expect(pd[0].Version).To(Equal(testcase.expectedInstalledVersion), f.PluginNameShouldMatch)
+				}
+			}
+		})
+
 		It("delete the KIND cluster", func() {
 			_, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), "context should be deleted without error")
