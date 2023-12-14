@@ -19,6 +19,8 @@ type ClusterOps interface {
 	GetKubeconfigPath() string
 	// ApplyConfig applies the given configFilePath on to the given contextName cluster context
 	ApplyConfig(contextName, configFilePath string) (stdOut, stdErr string, err error)
+	// WaitForCondition
+	WaitForCondition(contextName string, waitArgs []string) (err error)
 }
 
 // ClusterInfo holds the general cluster details

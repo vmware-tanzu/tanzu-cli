@@ -19,7 +19,7 @@ spec:
           - kbld: {}
       export:
       - imgpkgBundle:
-          image: localhost:6001/tanzu_cli/lever-v2/cliplugin
+          image: localhost:6001/tanzu_cli/cliplugin
         includePaths:
         - cli.tanzu.vmware.com_cliplugins.yaml
         - .imgpkg/images.yml

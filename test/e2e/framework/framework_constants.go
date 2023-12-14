@@ -116,6 +116,7 @@ const (
 	KindClusterGet    = "kind get clusters "
 	KindClusterInfo   = "kubectl cluster-info --context %s"
 	KubectlApply      = "kubectl --context %s apply -f %s"
+	KubectlWait       = "kubectl --context %s wait %s"
 
 	// specific plugin custom resource file name cr_<pluginName>_<target>_<versions>.yaml to apply on kind cluster
 	PluginCRFileName = "cr_%s_%s_%s.yaml"

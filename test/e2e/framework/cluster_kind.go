@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -70,6 +71,15 @@ func (kc *kindCluster) ApplyConfig(contextName, configFilePath string) (stdOut, 
 	applyCmd := fmt.Sprintf(KubectlApply, contextName, configFilePath)
 	stdOutBuff, stdErrBuff, err := kc.CmdOps.Exec(applyCmd)
 	return stdOutBuff.String(), stdErrBuff.String(), err
+}
+
+// WaitForCondition waits for certain condition on cluster to be true,
+// or returns error otherwise (including after a timeout period of 30s has elapsed)
+func (kc *kindCluster) WaitForCondition(contextName string, waitArgs []string) error {
+	waitString := strings.Join(waitArgs, " ")
+	waitCmd := fmt.Sprintf(KubectlWait, contextName, waitString)
+	_, _, err := kc.CmdOps.Exec(waitCmd)
+	return err
 }
 
 // GetClusterEndpoint returns given kind cluster control plane endpoint

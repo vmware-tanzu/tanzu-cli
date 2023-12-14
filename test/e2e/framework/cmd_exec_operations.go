@@ -78,8 +78,9 @@ func (co *cmdOps) Exec(command string, opts ...E2EOption) (stdOut, stdErr *bytes
 	cmd.Stderr = &stderr
 	err = cmd.Run()
 	if err != nil {
-		return &stdout, &stderr, fmt.Errorf("error while running '%s' (detailed arguments: %q), stdOut: %s, stdErr: %s, err: %s", command, cmdArgs, stdout.String(), stderr.String(), err.Error())
+		return &stdout, &stderr, fmt.Errorf("x error while running '%s' (detailed arguments: %q), stdOut: %s, stdErr: %s, err: %s", command, cmdArgs, stdout.String(), stderr.String(), err.Error())
 	}
+	fmt.Printf("running '%s' (detailed arguments: %q), stdOut: %s, stdErr: %s", command, cmdArgs, stdout.String(), stderr.String())
 	return &stdout, &stderr, err
 }
 
