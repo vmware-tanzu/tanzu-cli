@@ -1,0 +1,178 @@
+apiVersion: packaging.carvel.dev/v1alpha1
+kind: PackageInstall
+metadata:
+  annotations:
+    kctrl.carvel.dev/local-fetch-0: .
+  creationTimestamp: null
+  name: cliplugin
+spec:
+  packageRef:
+    refName: cliplugin.cli.tanzu.vmware.com
+    versionSelection:
+      # XXX sufficient to pick up any version of package deployed during test
+      constraints: "<1.0.0"
+  serviceAccountName: tanzu-cliplugins-package-sa
+status:
+  conditions: null
+  friendlyDescription: ""
+  observedGeneration: 0
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tanzu-cliplugins-package-sa
+  namespace: default
+  annotations:
+    kapp.k14s.io/change-group: "cliplugins-packageinstall/serviceaccount-0"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tanzu-cliplugins-package-cluster-role
+  annotations:
+    kapp.k14s.io/change-group: "cliplugins-packageinstall/serviceaccount-0"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - secrets
+      - serviceaccounts
+      - services
+      - namespaces
+    verbs:
+      - create
+      - update
+      - get
+      - list
+      - delete
+      - watch
+      - patch
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - create
+      - update
+      - get
+      - list
+      - delete
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - create
+      - update
+      - get
+      - list
+      - delete
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+      - clusterrolebindings
+    verbs:
+      - create
+      - update
+      - get
+      - list
+      - delete
+  - apiGroups:
+      - cli.tanzu.vmware.com
+    resources:
+      - cliplugins
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - delete
+  - apiGroups:
+      - cli.tanzu.vmware.com
+    resources:
+      - cliplugins/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - cli.tanzu.vmware.com
+    resources:
+      - cliplugins/status
+    verbs:
+      - get
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - data.packaging.carvel.dev
+    resources:
+      - packages
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - data.packaging.carvel.dev
+    resources:
+      - packages/status
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - packaging.carvel.dev
+    resources:
+      - packageinstalls
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - packaging.carvel.dev
+    resources:
+      - packageinstalls/status
+    verbs:
+      - get
+  - apiGroups:
+      - "admissionregistration.k8s.io"
+    resources:
+      - mutatingwebhookconfigurations
+      - validatingwebhookconfigurations
+    verbs:
+      - create
+      - get
+      - list
+      - patch
+      - update
+      - watch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tanzu-cliplugins-package-cluster-rolebinding
+  annotations:
+    kapp.k14s.io/change-group: "cliplugins-packageinstall/serviceaccount"
+    kapp.k14s.io/change-rule.0: "upsert after upserting cliplugins-packageinstall/serviceaccount-0"
+    kapp.k14s.io/change-rule.1: "delete before deleting cliplugins-packageinstall/serviceaccount-0"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tanzu-cliplugins-package-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: tanzu-cliplugins-package-sa
+    namespace: default
