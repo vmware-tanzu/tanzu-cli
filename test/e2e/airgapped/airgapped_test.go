@@ -145,11 +145,11 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		})
 
 		It("validate the plugins from group 'vmware-tmc/tmc-user:v9.9.9' exists", func() {
+			// Temporarily set the TTL to something small
+			os.Setenv(constants.ConfigVariablePluginDBCacheTTL, "3")
+
 			// Wait for the digest TTL to expire so that the DB is refreshed.
 			time.Sleep(time.Second * 5) // Sleep for 5 seconds
-
-			// Temporarily set the TTL to something smaller than the time we jus slept
-			os.Setenv(constants.ConfigVariablePluginDBDigestTTL, "3")
 
 			// search plugin groups and make sure there plugin groups available
 			// This command will force a refresh of the DB since the TTL has been set to a smaller value
@@ -157,7 +157,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
 
 			// Unset the TTL override now that the DB has been refreshed
-			os.Unsetenv(constants.ConfigVariablePluginDBDigestTTL)
+			os.Unsetenv(constants.ConfigVariablePluginDBCacheTTL)
 
 			// check all expected plugin groups are available in plugin group search output
 			expectedPluginGroups := []*framework.PluginGroup{

@@ -490,7 +490,7 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 			})
 			AfterEach(func() {
 				os.RemoveAll(dbDir)
-				os.Unsetenv(constants.ConfigVariablePluginDBDigestTTL)
+				os.Unsetenv(constants.ConfigVariablePluginDBCacheTTL)
 			})
 			It("cacheTTLExpired should return true when TTL is expired", func() {
 				discovery := NewOCIDiscovery("test-expired", "test-expired-image:latest")
@@ -519,7 +519,7 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
 
 				// Set the TTL to 1 second, which should expire this digest
-				os.Setenv(constants.ConfigVariablePluginDBDigestTTL, "1")
+				os.Setenv(constants.ConfigVariablePluginDBCacheTTL, "1")
 				Expect(dbDiscovery.cacheTTLExpired()).To(BeTrue())
 			})
 			It("cacheTTLExpired should return true when there is no DB, even if the TTL has not expired", func() {

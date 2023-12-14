@@ -80,6 +80,7 @@ func newUpdateDiscoverySourceCmd() *cobra.Command {
 	var updateDiscoverySourceCmd = &cobra.Command{
 		Use:   "update SOURCE_NAME --uri <URI>",
 		Short: "Update a discovery source configuration",
+		Long:  "Update a discovery source configuration and refresh the plugin inventory local cache",
 		// We already include the only flag in the use text,
 		// we therefore don't show '[flags]' in the usage text.
 		DisableFlagsInUseLine: true,
@@ -167,6 +168,7 @@ func newInitDiscoverySourceCmd() *cobra.Command {
 	var initDiscoverySourceCmd = &cobra.Command{
 		Use:   "init",
 		Short: "Initialize the discovery source to its default value",
+		Long:  "Initialize the discovery source to its default value and refresh the plugin inventory local cache",
 		Args:  cobra.MaximumNArgs(0),
 		// There are no flags
 		DisableFlagsInUseLine: true,

@@ -403,7 +403,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			}
 
 			// Set the TTL to something small: 12 seconds
-			os.Setenv(constants.ConfigVariablePluginDBDigestTTL, "12")
+			os.Setenv(constants.ConfigVariablePluginDBCacheTTL, "12")
 
 			// Now wait for the TTL to expire so we can start fresh
 			removeDigestFile()
@@ -440,7 +440,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "metadata digest file should have been created")
 
 			// Unset the TTL override
-			os.Unsetenv(constants.ConfigVariablePluginDBDigestTTL)
+			os.Unsetenv(constants.ConfigVariablePluginDBCacheTTL)
 		})
 		// Run "plugin clean" which also removes the plugin DB and make sure a "plugin search" immediately does a digest check
 		It("clean DB and do a plugin search", func() {
@@ -510,7 +510,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			}
 
 			// Set the TTL to something small: 12 seconds
-			os.Setenv(constants.ConfigVariablePluginDBDigestTTL, "12")
+			os.Setenv(constants.ConfigVariablePluginDBCacheTTL, "12")
 
 			// Now wait for the TTL to expire so we can start fresh
 			removeDigestFile()
@@ -547,7 +547,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "metadata digest file should have been created")
 
 			// Unset the TTL override
-			os.Unsetenv(constants.ConfigVariablePluginDBDigestTTL)
+			os.Unsetenv(constants.ConfigVariablePluginDBCacheTTL)
 		})
 		// Change the TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY value and make sure
 		// the digest check is done immediately

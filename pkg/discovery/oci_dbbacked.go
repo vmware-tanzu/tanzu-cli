@@ -23,8 +23,8 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
-// inventoryDigestTTLDefaultInSeconds is the interval in seconds between two checks of the inventory digest.
-// For testing, it can be overridden using the environment variable TANZU_CLI_PLUGIN_DB_DIGEST_TTL_SECONDS.
+// inventoryRefreshTTLInSecs is the interval in seconds between two checks of the inventory digest.
+// For testing, it can be overridden using the environment variable TANZU_CLI_PLUGIN_DB_CACHE_TTL_SECONDS.
 const inventoryRefreshTTLInSecs = 30 * 60 // 30 minutes
 
 // DBBackedOCIDiscovery is an artifact discovery utilizing an OCI image
@@ -222,7 +222,9 @@ func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 		return err
 	}
 
-	// Now that the new DB has been downloaded, we can save the new refresh time
+	// Now that the new DB has been downloaded, we can reset the TTL.
+	// We do this because it is possible that only the metadata digest has changed,
+	// so we must reset the TTL on the main digest file.
 	od.resetCacheTTL()
 
 	// Now that everything is ready, create the digest hash file.
@@ -233,7 +235,7 @@ func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 			// know in the future if the URI has changed.  This has particular value
 			// for images added using TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY
 			// since they are not stored in the config file and therefore we cannot associate
-			// their a discovery name with a URI in this case.
+			// a discovery name with a URI such discoveries.
 			_, _ = file.WriteString(od.image)
 			file.Close()
 		}
@@ -382,15 +384,15 @@ func (od *DBBackedOCIDiscovery) checkDigestFileExistence(hashHexVal, digestPrefi
 }
 
 func getCacheTTLValue() int {
-	digestTTL := inventoryRefreshTTLInSecs
-	digestTTLOverride := os.Getenv(constants.ConfigVariablePluginDBDigestTTL)
-	if digestTTLOverride != "" {
-		digestTTLOverrideValue, err := strconv.Atoi(digestTTLOverride)
-		if err == nil && digestTTLOverrideValue >= 0 {
-			digestTTL = digestTTLOverrideValue
+	cacheTTL := inventoryRefreshTTLInSecs
+	cacheTTLOverride := os.Getenv(constants.ConfigVariablePluginDBCacheTTL)
+	if cacheTTLOverride != "" {
+		cacheTTLOverrideValue, err := strconv.Atoi(cacheTTLOverride)
+		if err == nil && cacheTTLOverrideValue >= 0 {
+			cacheTTL = cacheTTLOverrideValue
 		}
 	}
-	return digestTTL
+	return cacheTTL
 }
 
 // cacheTTLExpired checks if the last time the cache was refreshed has passed its TTL.
@@ -409,8 +411,8 @@ func (od *DBBackedOCIDiscovery) cacheTTLExpired() bool {
 			// This is important for test discoveries which can be changed by setting
 			// the TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY variable.
 			// If the image URI is not correct then the cache must be refreshed.
-			firstLine := scanner.Text()
-			if firstLine == od.image {
+			cachedURI := scanner.Text()
+			if cachedURI == od.image {
 				// The URI matches.  Now check the modification time of the digest file to see
 				// if the TTL is expired.
 				if stat, err := os.Stat(matches[0]); err == nil {
@@ -420,6 +422,7 @@ func (od *DBBackedOCIDiscovery) cacheTTLExpired() bool {
 		}
 	}
 
+	// We need to refresh the cache.
 	return true
 }
 
