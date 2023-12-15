@@ -157,7 +157,7 @@ const (
 	PluginDescShouldExist                         = "there should be one plugin description"
 	PluginNameShouldMatch                         = "plugin name should be same as input value"
 
-	CompletionWithoutShell        = "shell not specified, choose one of: [bash zsh fish powershell]"
+	CompletionWithoutShell        = "shell not specified, choose one of: bash, zsh, fish, powershell"
 	CompletionOutputForBash       = "bash completion V2 for tanzu"
 	CompletionOutputForZsh        = "zsh completion for tanzu"
 	CompletionOutputForFish       = "fish completion for tanzu"
