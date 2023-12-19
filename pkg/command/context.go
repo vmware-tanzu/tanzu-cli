@@ -50,8 +50,8 @@ var (
 	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify                              bool
 	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath string
 
-	projectStr, spaceStr string
-	contextTypeStr       string
+	projectStr, spaceStr, clustergroupStr string
+	contextTypeStr                        string
 )
 
 const (
@@ -1372,6 +1372,7 @@ func newUpdateCtxCmd() *cobra.Command {
 	}
 	tanzuActiveResourceCmd.Flags().StringVarP(&projectStr, "project", "", "", "project name to be set as active")
 	tanzuActiveResourceCmd.Flags().StringVarP(&spaceStr, "space", "", "", "space name to be set as active")
+	tanzuActiveResourceCmd.Flags().StringVarP(&clustergroupStr, "clustergroup", "", "", "clustergroup name to be set as active")
 
 	updateCtxCmd.AddCommand(
 		tanzuActiveResourceCmd,
@@ -1393,9 +1394,17 @@ var tanzuActiveResourceCmd = &cobra.Command{
 
 func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	name := args[0]
+
+	if spaceStr != "" && clustergroupStr != "" {
+		return errors.Errorf("either space or clustergroup can be set as active resource. Please provide either --space or --clustergroup option")
+	}
 	if projectStr == "" && spaceStr != "" {
 		return errors.Errorf("space cannot be set without project name. Please provide project name also using --project option")
 	}
+	if projectStr == "" && clustergroupStr != "" {
+		return errors.Errorf("clustergroup cannot be set without project name. Please provide project name also using --project option")
+	}
+
 	ctx, err := config.GetContext(name)
 	if err != nil {
 		return err
@@ -1408,6 +1417,7 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	}
 	ctx.AdditionalMetadata[config.ProjectNameKey] = projectStr
 	ctx.AdditionalMetadata[config.SpaceNameKey] = spaceStr
+	ctx.AdditionalMetadata[config.ClusterGroupNameKey] = clustergroupStr
 	err = config.SetContext(ctx, false)
 	if err != nil {
 		return errors.Wrap(err, "failed updating the context %q with the active tanzu resource")
