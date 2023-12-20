@@ -1260,6 +1260,7 @@ type ContextListOutputRow struct {
 	KubeContext    string
 	Project        string
 	Space          string
+	ClusterGroup   string
 }
 
 func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, writer io.Writer) {
@@ -1274,6 +1275,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 		context := NA
 		project := NA
 		space := NA
+		clustergroup := NA
 
 		isCurrent := ctx.Name == cfg.CurrentContext[ctx.ContextType]
 
@@ -1285,6 +1287,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 		case configtypes.ContextTypeTanzu:
 			project = ""
 			space = ""
+			clustergroup = ""
 			ep = ""
 			path = ""
 			context = ""
@@ -1299,6 +1302,9 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 			if ctx.AdditionalMetadata[config.SpaceNameKey] != nil {
 				space = ctx.AdditionalMetadata[config.SpaceNameKey].(string)
 			}
+			if ctx.AdditionalMetadata[config.ClusterGroupNameKey] != nil {
+				clustergroup = ctx.AdditionalMetadata[config.ClusterGroupNameKey].(string)
+			}
 		default:
 			if ctx.ClusterOpts != nil {
 				ep = ctx.ClusterOpts.Endpoint
@@ -1306,7 +1312,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 				context = ctx.ClusterOpts.Context
 			}
 		}
-		row := ContextListOutputRow{ctx.Name, strconv.FormatBool(isCurrent), string(ctx.ContextType), ep, path, context, project, space}
+		row := ContextListOutputRow{ctx.Name, strconv.FormatBool(isCurrent), string(ctx.ContextType), ep, path, context, project, space, clustergroup}
 		rows = append(rows, row)
 	}
 
