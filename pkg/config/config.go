@@ -76,7 +76,7 @@ func ConfigureEnvVariables() {
 	for variable, value := range envMap {
 		// If environment variable is not already set
 		// set the environment variable
-		if os.Getenv(variable) == "" {
+		if _, isSet := os.LookupEnv(variable); !isSet {
 			os.Setenv(variable, value)
 		}
 	}

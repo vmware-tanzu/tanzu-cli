@@ -32,6 +32,20 @@ var _ = Describe("config env variables", func() {
 			Expect(os.Getenv(envVar)).To(Equal(envVar))
 			os.Setenv(envVar, prevValue)
 		})
+		It("env variable should not be changed if it already exists", func() {
+			existingVal := "existing"
+			os.Setenv(envVar, existingVal)
+			ConfigureEnvVariables()
+			Expect(os.Getenv(envVar)).To(Equal(existingVal))
+			os.Setenv(envVar, prevValue)
+		})
+		It("env variable should not be changed if it already exists even if it is set to an empty value", func() {
+			emptyVal := ""
+			os.Setenv(envVar, emptyVal)
+			ConfigureEnvVariables()
+			Expect(os.Getenv(envVar)).To(Equal(emptyVal))
+			os.Setenv(envVar, prevValue)
+		})
 	})
 	Context("config return nil map", func() {
 		BeforeEach(func() {
