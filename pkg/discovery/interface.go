@@ -41,24 +41,37 @@ type GroupDiscovery interface {
 // DiscoveryOpts used to customize the plugin discovery process or mechanism
 type DiscoveryOpts struct {
 	UseLocalCacheOnly       bool // UseLocalCacheOnly used to pull the plugin data from the cache
+	ForceRefresh            bool // ForceRefresh used to force a refresh of the plugin data
 	PluginDiscoveryCriteria *PluginDiscoveryCriteria
 	GroupDiscoveryCriteria  *GroupDiscoveryCriteria
 }
 
 type DiscoveryOptions func(options *DiscoveryOpts)
 
+// WithUseLocalCacheOnly used to get the plugin inventory data without first refreshing the cache
+// even if the cache's TTL has expired
 func WithUseLocalCacheOnly() DiscoveryOptions {
 	return func(o *DiscoveryOpts) {
 		o.UseLocalCacheOnly = true
 	}
 }
 
+// WithForceRefresh used to force a refresh of the plugin inventory data
+// even when the cache's TTL has not expired
+func WithForceRefresh() DiscoveryOptions {
+	return func(o *DiscoveryOpts) {
+		o.ForceRefresh = true
+	}
+}
+
+// WithPluginDiscoveryCriteria used to specify the plugin discovery criteria
 func WithPluginDiscoveryCriteria(criteria *PluginDiscoveryCriteria) DiscoveryOptions {
 	return func(o *DiscoveryOpts) {
 		o.PluginDiscoveryCriteria = criteria
 	}
 }
 
+// WithGroupDiscoveryCriteria used to specify the group discovery criteria
 func WithGroupDiscoveryCriteria(criteria *GroupDiscoveryCriteria) DiscoveryOptions {
 	return func(o *DiscoveryOpts) {
 		o.GroupDiscoveryCriteria = criteria

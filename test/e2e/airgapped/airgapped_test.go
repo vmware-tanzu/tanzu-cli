@@ -8,10 +8,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	pluginlifecyclee2e "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugin_lifecycle"
 )
@@ -114,14 +116,49 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 		// Test case: upload plugin bundle downloaded using vmware-tmc/tmc-user:v9.9.9 plugin-group to the airgapped repository
 		It("upload plugin bundle downloaded using vmware-tmc/tmc-user:v9.9.9 plugin-group to the airgapped repository", func() {
-			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-default-v9.9.9.tar.gz"))
+			// First update the plugin source just to force a reset of the digest TTL.
+			err := framework.UpdatePluginDiscoverySource(tf, e2eAirgappedCentralRepoImage)
+			Expect(err).To(BeNil(), "should not get any error for plugin source update")
+
+			// Now, upload more plugins to the same URI as the one used for the previous test case.
+			// This means we are modifying the plugin source and the CLI will need to download the new DB.
+			// However, the CLI will only refresh the DB after the cache TTL has expired.
+			err = tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-default-v9.9.9.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while uploading plugin bundle with specific group")
 		})
 
-		It("validate the plugins from group 'vmware-tmc/tmc-user:v9.9.9' exists", func() {
-			// search plugin groups and make sure there plugin groups available
+		It("validate that ONLY the plugins from group 'vmware-tkg/default:v0.0.1' exists because the digest TTL has not expired so the DB has not been refreshed", func() {
 			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
 			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
+			// check all expected plugin groups are available in the `plugin group search` output from the airgapped repository
+			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/default", Latest: "v0.0.1", Description: "Desc for vmware-tkg/default:v0.0.1"}}
+			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
+
+			// search plugins and make sure correct number of plugins available
+			// check expected plugins are available in the `plugin search` output from the airgapped repository
+			expectedPlugins := pluginsForPGTKG001
+			expectedPlugins = append(expectedPlugins, essentialPlugins...) // Essential plugin will be always installed
+			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
+			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
+			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
+		})
+
+		It("validate the plugins from group 'vmware-tmc/tmc-user:v9.9.9' exists", func() {
+			// Temporarily set the TTL to something small
+			os.Setenv(constants.ConfigVariablePluginDBCacheTTL, "3")
+
+			// Wait for the digest TTL to expire so that the DB is refreshed.
+			time.Sleep(time.Second * 5) // Sleep for 5 seconds
+
+			// search plugin groups and make sure there plugin groups available
+			// This command will force a refresh of the DB since the TTL has been set to a smaller value
+			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
+
+			// Unset the TTL override now that the DB has been refreshed
+			os.Unsetenv(constants.ConfigVariablePluginDBCacheTTL)
+
 			// check all expected plugin groups are available in plugin group search output
 			expectedPluginGroups := []*framework.PluginGroup{
 				{Group: "vmware-tkg/default", Latest: "v0.0.1", Description: "Desc for vmware-tkg/default:v0.0.1"},
@@ -161,8 +198,14 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 		// Test case: upload plugin bundle downloaded using vmware-tmc/tmc-user:v0.0.1 plugin-group to the airgapped repository
 		It("upload plugin bundle downloaded using vmware-tmc/tmc-user:v0.0.1 plugin-group to the airgapped repository", func() {
+			// We are modifying the plugin source and the CLI will need to download the new DB.
+			// However, the CLI will only refresh the DB after the cache TTL has expired.
 			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
+
+			// Force a DB refresh by updating the plugin source
+			err = framework.UpdatePluginDiscoverySource(tf, e2eAirgappedCentralRepoImage)
+			Expect(err).To(BeNil(), "should not get any error for plugin source update")
 		})
 
 		It("validate the plugins from group 'vmware-tmc/tmc-user:v0.0.1' exists", func() {
@@ -208,8 +251,14 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 		// Test case: upload plugin bundle downloaded without specifying plugin-group to the airgapped repository
 		It("upload plugin bundle downloaded without specifying plugin-group to the airgapped repository", func() {
+			// Again we are modifying the plugin source and the CLI will need to download the new DB.
+			// However, the CLI will only refresh the DB after the cache TTL has expired.
 			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_complete.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while uploading plugin bundle without specifying group")
+
+			// Force a DB refresh by updating the plugin source
+			err = framework.UpdatePluginDiscoverySource(tf, e2eAirgappedCentralRepoImage)
+			Expect(err).To(BeNil(), "should not get any error for plugin source update")
 		})
 
 		// Test case: validate that all plugins and plugin groups exists

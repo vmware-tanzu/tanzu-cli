@@ -80,6 +80,7 @@ func newUpdateDiscoverySourceCmd() *cobra.Command {
 	var updateDiscoverySourceCmd = &cobra.Command{
 		Use:   "update SOURCE_NAME --uri <URI>",
 		Short: "Update a discovery source configuration",
+		Long:  "Update a discovery source configuration and refresh the plugin inventory local cache",
 		// We already include the only flag in the use text,
 		// we therefore don't show '[flags]' in the usage text.
 		DisableFlagsInUseLine: true,
@@ -97,6 +98,18 @@ func newUpdateDiscoverySourceCmd() *cobra.Command {
 			}
 
 			newDiscoverySource, err := createDiscoverySource(discoveryName, uri)
+			if err != nil {
+				return err
+			}
+
+			// Check the discovery source *before* we save it in the configuration
+			// file. This way, if the discovery source is invalid, we don't save it.
+			// NOTE: We cannot first save and then revert the change if the discovery
+			// source is invalid because it is possible that the check of the discovery
+			// will fail with a call to log.Fatal(), which will exit the program before
+			// we can revert the change; this happens when the discovery source is
+			// not properly signed.
+			err = checkDiscoverySource(newDiscoverySource)
 			if err != nil {
 				return err
 			}
@@ -155,6 +168,7 @@ func newInitDiscoverySourceCmd() *cobra.Command {
 	var initDiscoverySourceCmd = &cobra.Command{
 		Use:   "init",
 		Short: "Initialize the discovery source to its default value",
+		Long:  "Initialize the discovery source to its default value and refresh the plugin inventory local cache",
 		Args:  cobra.MaximumNArgs(0),
 		// There are no flags
 		DisableFlagsInUseLine: true,
@@ -165,7 +179,10 @@ func newInitDiscoverySourceCmd() *cobra.Command {
 				return err
 			}
 
-			// Refresh the inventory DB
+			// Refresh the inventory DB as the URI may have changed.
+			// It is also useful to refresh the DB even if the URI has not changed;
+			// this way, a user can force a refresh of the DB by running this command
+			// without waiting for the TTL to expire.
 			if discoverySource, err := configlib.GetCLIDiscoverySource(config.DefaultStandaloneDiscoveryName); err == nil {
 				// Ignore any failures since the real operation
 				// the user is trying to do is set the config
@@ -192,14 +209,18 @@ func createDiscoverySource(dsName, uri string) (configtypes.PluginDiscovery, err
 			Name:  dsName,
 			Image: uri,
 		}}
-	err := checkDiscoverySource(pluginDiscoverySource)
-	return pluginDiscoverySource, err
+	return pluginDiscoverySource, nil
 }
 
 // checkDiscoverySource attempts to access the content of the discovery to
-// confirm it is valid
+// confirm it is valid; this implies refreshing the DB.
 func checkDiscoverySource(source configtypes.PluginDiscovery) error {
-	discObject, err := discovery.CreateDiscoveryFromV1alpha1(source)
+	// If the URI has changed, the cache will be refreshed automatically.  However, if the URI has not changed,
+	// normally the TTL would be respected and the cache would not be refreshed.  However, we choose to pass
+	// the WithForceRefresh() option to ensure we refresh the DB no matter if the TTL has expired or not.
+	// This provides a way for the user to force a refresh of the DB by running "tanzu plugin source init/update"
+	// without waiting for the TTL to expire.
+	discObject, err := discovery.CreateDiscoveryFromV1alpha1(source, discovery.WithForceRefresh())
 	if err != nil {
 		return err
 	}
