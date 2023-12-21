@@ -207,7 +207,12 @@ choco-package: ## Build a Chocolatey package
 	fi
 	@# The nuspec file uses a variable but variables don't seem to work anymore
 	@# with chocolatey 2.0.0 so we continue using version 1.4.0
-	docker run --rm -e VERSION=$(BUILD_VERSION) -e SHA_FOR_CHOCO=$(SHA_FOR_CHOCO) -v $(ROOT_DIR):$(ROOT_DIR) $(CHOCO_IMAGE) $(ROOT_DIR)/hack/choco/build_package.sh
+	docker run --rm \
+		-e VERSION=$(BUILD_VERSION) \
+		-e SHA_FOR_CHOCO_AMD64=$(SHA_FOR_CHOCO_AMD64) \
+		-e SHA_FOR_CHOCO_ARM64=$(SHA_FOR_CHOCO_ARM64) \
+		-v $(ROOT_DIR):$(ROOT_DIR) \
+		$(CHOCO_IMAGE) $(ROOT_DIR)/hack/choco/build_package.sh
 
 ## --------------------------------------
 ## Testing

@@ -6,9 +6,17 @@ $releaseVersion = '__CLI_VERSION__'
 $packageName = 'tanzu-cli'
 $packagePath = "${releaseVersion}"
 $scriptsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
-$url64 = "https://github.com/vmware-tanzu/tanzu-cli/releases/download/${releaseVersion}/tanzu-cli-windows-amd64.zip"
-$checksum64 = '__CLI_SHA__'
 $checksumType64 = 'sha256'
+
+# Check if we are dealing with an ARM64 architecture
+$os = Get-WmiObject -Class Win32_OperatingSystem
+if ($os.OSArchitecture -like "*ARM*") {
+    $url64 = "https://github.com/vmware-tanzu/tanzu-cli/releases/download/${releaseVersion}/tanzu-cli-windows-arm64-windows11.zip"
+    $checksum64 = '__CLI_SHA_ARM64__'
+} else {
+    $url64 = "https://github.com/vmware-tanzu/tanzu-cli/releases/download/${releaseVersion}/tanzu-cli-windows-amd64.zip"
+    $checksum64 = '__CLI_SHA_AMD64__'
+}
 
 $packageArgs = @{
     packageName    = $packageName
@@ -26,7 +34,8 @@ function Install-TanzuEnvironment {
     # Note that we use the scriptsDir path because chocolatey doesn't put
     # binaries on the $PATH until _after_ the install script runs.
     $tanzuExe = "${scriptsDir}\${packagePath}\tanzu.exe"
-    Move-Item "${scriptsDir}\${packagePath}\tanzu-cli-windows_amd64.exe" "${tanzuExe}"
+    # Use a glob pattern since the binary could be for arm64 or amd64
+    Move-Item "${scriptsDir}\${packagePath}\tanzu-cli-windows_*.exe" "${tanzuExe}"
 
     # Setup shell completion
     if (Test-Path -Path $PROFILE) {

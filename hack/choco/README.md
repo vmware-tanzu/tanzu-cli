@@ -13,20 +13,24 @@ used; a version with a `-` in it is considered a pre-release and will use the
 `tanzu-cli-unstable` package name, while other versions will use the
 official `tanzu-cli` package name.
 
+The package built will automatically handle the installation of either
+`amd64` or `arm64` Windows versions of the CLI based on the architecture
+of the machine on which the package is run.
+
 ## Building the Chocolatey package
 
 Executing the `hack/choco/build_package.sh` script will build the Chocolatey
 package under `hack/choco/_output/choco`.
 
 The `hack/choco/build_package.sh` script is meant to be run on a Linux machine
-that has `choco` installed.  This is most easily done using docker. Note that
-currently, the docker images for Chocolatey only support an `amd64`
-architecture. To facilitate building the package, the new `choco-package`
+that has `choco` installed.  This is most easily done using docker.
+To facilitate building the package, the new `choco-package`
 Makefile target has been added; this Makefile target will first start a docker
 container and then run the `hack/choco/build_package.sh` script.
 
-NOTE: This docker image can ONLY be run on an AMD64 machine (chocolatey crashes
-when running an AMD64 image on an ARM64 arch).
+NOTE: This docker image can ONLY be run on an AMD64 machine (even with emulation
+of AMD64 on Mac, the chocolatey binary crashes when running an AMD64 docker image
+on an ARM64 Mac).
 
 ```bash
 cd tanzu-cli
@@ -34,13 +38,14 @@ make choco-package
 ```
 
 Note that the `hack/choco/build_package.sh` script automatically fetches the
-required SHA for the CLI binary from the appropriate Github release.  If the
+required SHAs for the CLI binaries from the appropriate Github release.  If the
 Github release is not public yet, it is possible to provide the SHA manually
-through the environment variable `SHA_FOR_CHOCO` as shown below:
+through the environment variables `SHA_FOR_CHOCO_AMD64` and `SHA_FOR_CHOCO_ARM64`
+as shown below:
 
 ```bash
 cd tanzu-cli
-SHA_FOR_CHOCO=12345678901234567 make choco-package
+SHA_FOR_CHOCO_AMD64=1234567890 SHA_FOR_CHOCO_ARM64=0987654321 make choco-package
 ```
 
 Note: It is not possible to publish the Chocolatey package before the release

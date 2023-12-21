@@ -26,19 +26,28 @@ mkdir -p ${OUTPUT_DIR}/
 # Remove the nupkg file made by `choco pack` in the working dir
 rm -f ${OUTPUT_DIR}/*.nupkg
 
-# Obtain SHA if it is not already specified in the variable SHA_FOR_CHOCO
-if [ -z "$SHA_FOR_CHOCO" ]; then
-   SHA_FOR_CHOCO=$(curl -sL https://github.com/vmware-tanzu/tanzu-cli/releases/download/v${VERSION}/tanzu-cli-binaries-checksums.txt | grep tanzu-cli-windows-amd64 |cut -f1 -d" ")
-   if [ -z "$SHA_FOR_CHOCO" ]; then
-      echo "Unable to determine SHA for package of version $VERSION"
+# Obtain SHA if it is not already specified in the variable SHA_FOR_CHOCO_AMD64
+if [ -z "$SHA_FOR_CHOCO_AMD64" ]; then
+   SHA_FOR_CHOCO_AMD64=$(curl -sL https://github.com/vmware-tanzu/tanzu-cli/releases/download/v${VERSION}/tanzu-cli-binaries-checksums.txt | grep tanzu-cli-windows-amd64 |cut -f1 -d" ")
+   if [ -z "$SHA_FOR_CHOCO_AMD64" ]; then
+      echo "Unable to determine SHA_AMD64 for package of version $VERSION"
       exit 1
    fi
 fi
+echo "Using SHA_AMD64: ${SHA_FOR_CHOCO_AMD64}"
 
-echo "Using SHA: ${SHA_FOR_CHOCO}"
+# Obtain SHA if it is not already specified in the variable SHA_FOR_CHOCO_ARM64
+if [ -z "$SHA_FOR_CHOCO_ARM64" ]; then
+   SHA_FOR_CHOCO_ARM64=$(curl -sL https://github.com/vmware-tanzu/tanzu-cli/releases/download/v${VERSION}/tanzu-cli-binaries-checksums.txt | grep tanzu-cli-windows-arm64 |cut -f1 -d" ")
+   if [ -z "$SHA_FOR_CHOCO_ARM64" ]; then
+      echo "Unable to determine SHA_ARM64 for package of version $VERSION"
+      exit 1
+   fi
+fi
+echo "Using SHA_ARM64: ${SHA_FOR_CHOCO_ARM64}"
 
 # Prepare install script
-sed -e s,__CLI_VERSION__,v${VERSION}, -e s,__CLI_SHA__,${SHA_FOR_CHOCO}, \
+sed -e s,__CLI_VERSION__,v${VERSION}, -e s,__CLI_SHA_AMD64__,${SHA_FOR_CHOCO_AMD64}, -e s,__CLI_SHA_ARM64__,${SHA_FOR_CHOCO_ARM64}, \
    ${BASE_DIR}/chocolateyInstall.ps1.tmpl > ${OUTPUT_DIR}/chocolateyInstall.ps1
 chmod a+x ${OUTPUT_DIR}/chocolateyInstall.ps1
 
