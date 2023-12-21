@@ -10,13 +10,18 @@ import (
 )
 
 var (
-	// MinOSArch defines minimum OS/ARCH combination for which plugin needs to be built
+	// MinOSArch defines the minimum OS/ARCH combinations for which plugins need to be built
 	MinOSArch = []Arch{LinuxAMD64, DarwinAMD64, WinAMD64}
 
-	// AllOSArch defines all OS/ARCH combination for which plugin can be built
-	AllOSArch = []Arch{LinuxAMD64, DarwinAMD64, WinAMD64, DarwinARM64, LinuxARM64}
+	// AllOSArch defines all OS/ARCH combinations for which plugins can be built
+	AllOSArch = []Arch{LinuxAMD64, DarwinAMD64, WinAMD64, LinuxARM64, DarwinARM64, WinARM64}
 
-	GOOS   = runtime.GOOS
+	// GOOS is the current go os.  Defaults to runtime.GOOS but could be overridden.
+	// The CLI code should always this variable instead of runtime.GOOS.
+	GOOS = runtime.GOOS
+	// GOARCH is the current go architecture.  Defaults to runtime.GOARCH but is overridden
+	// for scenarios like installing AMD64 plugins on an ARM64 machine using emulation.
+	// The CLI code should always this variable instead of runtime.GOARCH.
 	GOARCH = runtime.GOARCH
 )
 
@@ -35,7 +40,7 @@ func SetArch(a Arch) {
 
 // IsWindows tells if an arch is windows.
 func (a Arch) IsWindows() bool {
-	if a == Win386 || a == WinAMD64 {
+	if a == Win386 || a == WinAMD64 || a == WinARM64 {
 		return true
 	}
 	return false
@@ -79,4 +84,6 @@ const (
 	Win386 Arch = "windows_386"
 	// WinAMD64 arch.
 	WinAMD64 Arch = "windows_amd64"
+	// WinARM64 arch.
+	WinARM64 Arch = "windows_arm64"
 )

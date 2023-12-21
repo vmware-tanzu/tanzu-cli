@@ -427,6 +427,17 @@ var archMap = map[cli.Arch]targetBuilder{
 			},
 		}
 	},
+	cli.WinARM64: func(pluginName, outPath string) target {
+		return target{
+			env: []string{
+				"GOARCH=arm64",
+				"GOOS=windows",
+			},
+			args: []string{
+				"-o", filepath.Join(outPath, cli.MakeArtifactName(pluginName, cli.WinARM64)),
+			},
+		}
+	},
 }
 
 func (p *plugin) compile() error {
