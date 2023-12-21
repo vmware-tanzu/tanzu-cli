@@ -27,6 +27,23 @@ function Install-TanzuEnvironment {
     # binaries on the $PATH until _after_ the install script runs.
     $tanzuExe = "${scriptsDir}\${packagePath}\tanzu.exe"
     Move-Item "${scriptsDir}\${packagePath}\tanzu-cli-windows_amd64.exe" "${tanzuExe}"
+
+    # Setup shell completion
+    if (Test-Path -Path $PROFILE) {
+        if (-not (Select-String -Path $PROFILE -Pattern "tanzu completion powershell" -Quiet)) {
+            Add-Content $PROFILE ""
+            Add-Content $PROFILE "# Tanzu shell completion"
+            Add-Content $PROFILE "if (Get-Command 'tanzu' -ErrorAction SilentlyContinue) {"
+            Add-Content $PROFILE "   tanzu completion powershell | Out-String | Invoke-Expression"
+            Add-Content $PROFILE "}"
+
+            Write-Host -ForegroundColor Green "Enabled shell completion for 'tanzu' in $PROFILE."
+            Write-Host -ForegroundColor Green "You will need to restart your shell for this to take effect."
+        }
+    } else {
+        Write-Warning "Unable to setup shell completion for future sessions for the Tanzu CLI because $PROFILE does not exist."
+        Write-Warning "Please follow the instructions of 'tanzu completion -h' to know how to enable shell completion."
+    }
 }
 
 # this is a built-in function, read https://docs.chocolatey.org/en-us/create/functions/install-chocolateyzippackage
