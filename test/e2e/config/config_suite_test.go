@@ -30,7 +30,7 @@ const (
 	featureFlagPrefix          = "features.global.e2e-test-"
 	numberOfFlagsForStressTest = 100
 	noErrorForFeatureFlagSet   = "there should not be any error for global feature flag set operation"
-	noErrorForFeatureFlagGet   = "there should not be any error for global feature flag set operation"
+	noErrorForFeatureFlagGet   = "there should not be any error for global feature flag get operation"
 	noErrorForConfigInit       = "there should not be any error for config init operation"
 )
 

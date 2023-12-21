@@ -11,7 +11,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
@@ -121,7 +123,7 @@ func TestConfigSetUnsetEnv(t *testing.T) {
 	err = unsetConfiguration("env.foo")
 	assert.Nil(t, err)
 
-	cfg, err = config.GetClientConfigNoLock()
+	cfg, err = configlib.GetClientConfigNoLock()
 	assert.NoError(t, err)
 	assert.Equal(t, cfg.ClientOptions.Env["foo"], "")
 }
@@ -183,6 +185,160 @@ func TestConfigEditionInvalid(t *testing.T) {
 	}
 }
 
+func TestGetConfig(t *testing.T) {
+	// Setup a temporary configuration
+	configFile, err := os.CreateTemp("", "config")
+	assert.Nil(t, err)
+	os.Setenv("TANZU_CONFIG", configFile.Name())
+	configFileNG, err := os.CreateTemp("", "config_ng")
+	assert.Nil(t, err)
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+
+	err = os.Setenv(constants.EULAPromptAnswer, "yes")
+	assert.Nil(t, err)
+	err = os.Setenv(constants.CEIPOptInUserPromptAnswer, "No")
+	assert.Nil(t, err)
+
+	// Set some env vars
+	_ = configlib.SetEnv("VAR1", "value1")
+	_ = configlib.SetEnv("VAR2", "value2")
+	_ = configlib.SetEnv("MYVAR", "myvalue")
+	_ = configlib.SetEnv("EMPTYVAR", "")
+
+	// Set some features
+	_ = configlib.SetFeature("global", "feat1", "val1")
+	_ = configlib.SetFeature("plugin2", "feat2", "val2")
+
+	// Add a discovery source
+	_ = configlib.SetCLIDiscoverySource(configtypes.PluginDiscovery{
+		OCI: &configtypes.OCIDiscovery{
+			Name:  config.DefaultStandaloneDiscoveryName,
+			Image: constants.TanzuCLIDefaultCentralPluginDiscoveryImage,
+		}})
+
+	tests := []struct {
+		test           string
+		shellVars      map[string]string
+		containsStdout []string
+		containsStderr []string
+	}{
+		{
+			test: "config get",
+			containsStdout: []string{`cli:
+    ceipOptIn: "false"
+    eulaStatus: accepted
+    discoverySources:
+        - oci:
+            name: default
+            image: projects.registry.vmware.com/tanzu_cli/plugins/plugin-inventory:latest
+    cliId:`},
+		},
+		{
+			test: "config get features section",
+			containsStdout: []string{`    features:
+        global:
+            feat1: val1
+        plugin2:
+            feat2: val2
+`},
+		},
+		{
+			test: "config get env section with no shadowing",
+			containsStdout: []string{`        EMPTYVAR: ""
+        MYVAR: myvalue
+        VAR1: value1
+        VAR2: value2
+`},
+		},
+		{
+			test: "config get env section with shadowing",
+			shellVars: map[string]string{
+				"VAR1":  "newvalue1",
+				"MYVAR": "mynewvalue",
+			},
+			containsStdout: []string{`        EMPTYVAR: ""
+        MYVAR: myvalue
+        VAR1: value1
+        VAR2: value2
+`},
+			containsStderr: []string{`The following variables set in the current shell take precedence over the ones of the same name set in the tanzu config:
+    - MYVAR: mynewvalue
+    - VAR1: newvalue1
+`},
+		},
+		{
+			test: "config get env section with shadowing of empty vars",
+			shellVars: map[string]string{
+				"VAR1":     "",
+				"MYVAR":    "mynewvalue",
+				"EMPTYVAR": "notempty",
+			},
+			containsStdout: []string{`        EMPTYVAR: ""
+        MYVAR: myvalue
+        VAR1: value1
+        VAR2: value2
+`},
+			containsStderr: []string{`The following variables set in the current shell take precedence over the ones of the same name set in the tanzu config:
+    - EMPTYVAR: notempty
+    - MYVAR: mynewvalue
+    - VAR1: ''
+`},
+		},
+	}
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Set any shell environment variables
+			for k, v := range spec.shellVars {
+				err := os.Setenv(k, v)
+				assert.Nil(err)
+			}
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var outStream, errStream bytes.Buffer
+			rootCmd.SetOut(&outStream)
+			rootCmd.SetErr(&errStream)
+			rootCmd.SetArgs([]string{"config", "get"})
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			if spec.containsStdout != nil {
+				for _, c := range spec.containsStdout {
+					assert.Contains(outStream.String(), c)
+				}
+			} else {
+				assert.Empty(outStream.String())
+			}
+
+			if spec.containsStderr != nil {
+				for _, c := range spec.containsStderr {
+					assert.Contains(errStream.String(), c)
+				}
+			} else {
+				assert.Empty(errStream.String())
+			}
+
+			// Reset the environment
+			for k := range spec.shellVars {
+				err := os.Unsetenv(k)
+				assert.Nil(err)
+			}
+		})
+	}
+
+	os.RemoveAll(configFile.Name())
+	os.RemoveAll(configFileNG.Name())
+	os.Unsetenv("TANZU_CONFIG")
+	os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+	os.Unsetenv(constants.EULAPromptAnswer)
+	os.Unsetenv(constants.CEIPOptInUserPromptAnswer)
+}
+
 func TestCompletionConfig(t *testing.T) {
 	// Setup a temporary configuration
 	configFile, err := os.CreateTemp("", "config")
@@ -197,12 +353,12 @@ func TestCompletionConfig(t *testing.T) {
 	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
 
 	// Set some env vars
-	_ = config.SetEnv("VAR1", "value1")
-	_ = config.SetEnv("VAR2", "value2")
+	_ = configlib.SetEnv("VAR1", "value1")
+	_ = configlib.SetEnv("VAR2", "value2")
 
 	// Set some features
-	_ = config.SetFeature("global", "feat1", "val1")
-	_ = config.SetFeature("plugin2", "feat2", "val2")
+	_ = configlib.SetFeature("global", "feat1", "val1")
+	_ = configlib.SetFeature("plugin2", "feat2", "val2")
 
 	tests := []struct {
 		test     string
@@ -289,8 +445,6 @@ func TestCompletionConfig(t *testing.T) {
 			assert.Nil(err)
 
 			assert.Equal(spec.expected, out.String())
-
-			resetCertCommandFlags()
 		})
 	}
 
