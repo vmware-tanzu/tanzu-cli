@@ -199,7 +199,7 @@ var _ = Describe("Test tanzu context command", func() {
 			columnsString := strings.Join(strings.Fields(lines[0]), " ")
 
 			Expect(err).To(BeNil())
-			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE"))
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE CLUSTERGROUP"))
 		})
 
 		It("should return with tanzu related columns when listing all contexts", func() {
@@ -210,7 +210,7 @@ var _ = Describe("Test tanzu context command", func() {
 			columnsString := strings.Join(strings.Fields(lines[0]), " ")
 
 			Expect(err).To(BeNil())
-			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE"))
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE CLUSTERGROUP"))
 		})
 
 		It("should not return tanzu related columns when not listing tanzu contexts", func() {
