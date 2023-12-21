@@ -505,15 +505,24 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 		errorList = append(errorList, err)
 	}
 
-	// If we cannot find the plugin for DarwinARM64, let's fallback to DarwinAMD64.
-	// This leverages Apples Rosetta emulator and helps until plugins are all available
-	// for ARM64.  Note that this cannot be used on Linux since there is no such emulator.
-	if len(availablePlugins) == 0 && cli.BuildArch() == cli.DarwinARM64 {
-		// Pretend we are on a AMD64 machine
-		cli.SetArch(cli.DarwinAMD64)
-		defer cli.SetArch(cli.DarwinARM64) // Go back to ARM64 once the plugin is installed
+	// If we cannot find the plugin for ARM64, let's fallback to AMD64 for Darwin and Windows.
+	// This leverages Apples Rosetta emulator and Windows 11 emulator until plugins
+	// are all available for ARM64.  Note that this approach cannot be used on Linux since there
+	// is no such emulator.
+	if len(availablePlugins) == 0 &&
+		(cli.BuildArch() == cli.DarwinARM64 || cli.BuildArch() == cli.WinARM64) {
+		// Pretend we are on a AMD64 machine so that we can find the plugin.
+		switch cli.BuildArch() {
+		case cli.DarwinARM64:
+			cli.SetArch(cli.DarwinAMD64)
+			criteria.Arch = cli.DarwinAMD64.Arch()
+			defer cli.SetArch(cli.DarwinARM64) // Go back to ARM64 once the plugin is installed
+		case cli.WinARM64:
+			cli.SetArch(cli.WinAMD64)
+			criteria.Arch = cli.WinAMD64.Arch()
+			defer cli.SetArch(cli.WinARM64) // Go back to ARM64 once the plugin is installed
+		}
 
-		criteria.Arch = cli.DarwinAMD64.Arch()
 		availablePlugins, err = discoverSpecificPlugins(discoveries, discovery.WithPluginDiscoveryCriteria(criteria))
 		if err != nil {
 			errorList = append(errorList, err)
