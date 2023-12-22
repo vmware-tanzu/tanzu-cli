@@ -254,7 +254,7 @@ func TestGetToken_Expired(t *testing.T) {
 		IDToken:      "xxyyzz",
 		RefreshToken: "sprite",
 		Expiration:   expireTime,
-		Type:         "client",
+		Type:         APITokenType,
 	}
 
 	fakeHTTPClient := &fakes.FakeHTTPClient{}

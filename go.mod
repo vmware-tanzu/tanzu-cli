@@ -27,6 +27,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.12.0
 	github.com/onsi/gomega v1.27.10
 	github.com/otiai10/copy v1.6.0
+	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/errors v0.9.1
 	github.com/rogpeppe/go-internal v1.10.0
 	github.com/sigstore/cosign/v2 v2.0.3-0.20230519173114-f21081a18209

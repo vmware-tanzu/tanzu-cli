@@ -45,4 +45,9 @@ const (
 
 	// Change the default value of the plugin inventory cache TTL
 	ConfigVariablePluginDBCacheTTL = "TANZU_CLI_PLUGIN_DB_CACHE_TTL_SECONDS"
+
+	// CSPLoginOrgID overrides the CSP default OrgID to which the user logs into, using CLI interactive login flow
+	// Note: More information regarding the CSP organizations can be found at
+	// https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html
+	CSPLoginOrgID = "TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID"
 )

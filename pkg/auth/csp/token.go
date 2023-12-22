@@ -41,6 +41,14 @@ const (
 	APITokenKey = "CSP_API_TOKEN"
 )
 
+// Token types
+const (
+	// APITokenType Token type to denote the token obtained using API token
+	APITokenType = "api-token"
+	// IDTokenType Token type to denote the token obtained using interactive login flow
+	IDTokenType = "id-token"
+)
+
 var (
 	// KnownIssuers are known OAuth2 endpoints in each CSP environment.
 	KnownIssuers = map[string]oauth2.Endpoint{
@@ -183,6 +191,9 @@ type Claims struct {
 
 // GetToken fetches a token for the current auth context.
 func GetToken(g *configapi.GlobalServerAuth) (*oauth2.Token, error) {
+	var token *Token
+	var err error
+	var orgID string
 	if !IsExpired(g.Expiration) {
 		tok := &oauth2.Token{
 			AccessToken: g.AccessToken,
@@ -192,14 +203,22 @@ func GetToken(g *configapi.GlobalServerAuth) (*oauth2.Token, error) {
 			"id_token": g.IDToken,
 		}), nil
 	}
-
-	// TODO (pbarker): support more issuers.
-	token, err := GetAccessTokenFromAPIToken(g.RefreshToken, g.Issuer)
-	if err != nil {
-		return nil, err
+	if g.Type == APITokenType {
+		token, err = GetAccessTokenFromAPIToken(g.RefreshToken, g.Issuer)
+		if err != nil {
+			return nil, err
+		}
+	} else if g.Type == IDTokenType {
+		orgID, err = getOrgIDFromAccessToken(g)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get the CSP OrgID from the existing access token")
+		}
+		token, err = TanzuLogin(g.Issuer, WithRefreshToken(g.RefreshToken), WithOrgID(orgID))
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	g.Type = "api-token"
 	expiration := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
 	g.Expiration = expiration
 	g.RefreshToken = token.RefreshToken
@@ -214,4 +233,13 @@ func GetToken(g *configapi.GlobalServerAuth) (*oauth2.Token, error) {
 	return tok.WithExtra(map[string]interface{}{
 		"id_token": token.IDToken,
 	}), nil
+}
+
+// getOrgIDFromAccessToken fetches the OrgID from the access token which is available in context's auth information
+func getOrgIDFromAccessToken(g *configapi.GlobalServerAuth) (string, error) {
+	token, err := ParseToken(&oauth2.Token{AccessToken: g.AccessToken})
+	if err != nil {
+		return "", err
+	}
+	return token.OrgID, nil
 }
