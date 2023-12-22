@@ -56,7 +56,6 @@ var (
 
 const (
 	knownGlobalHost      = "cloud.vmware.com"
-	apiTokenType         = "api-token"
 	defaultTanzuEndpoint = "https://api.tanzu.cloud.vmware.com"
 	isPinnipedEndpoint   = "isPinnipedEndpoint"
 
@@ -578,7 +577,18 @@ func createContextWithTanzuEndpoint() (context *configtypes.Context, err error) 
 	return context, err
 }
 func globalLogin(c *configtypes.Context) (err error) {
-	_, err = doCSPAuthAndUpdateContext(c, "TMC")
+	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
+	if apiTokenExists {
+		log.Info("API token env var is set")
+	} else {
+		fmt.Fprintln(os.Stderr)
+		log.Info("The API key can be provided by setting the TANZU_API_TOKEN environment variable")
+		apiTokenValue, err = promptAPIToken("TMC")
+		if err != nil {
+			return err
+		}
+	}
+	_, err = doCSPAPITokenAuthAndUpdateContext(c, apiTokenValue)
 	if err != nil {
 		return err
 	}
@@ -595,7 +605,16 @@ func globalLogin(c *configtypes.Context) (err error) {
 }
 
 func globalTanzuLogin(c *configtypes.Context) error {
-	claims, err := doCSPAuthAndUpdateContext(c, "tanzu")
+	var claims *csp.Claims
+	var err error
+	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
+	// Use API Token login flow if TANZU_API_TOKEN environment variable is set, else fall back to default interactive login flow
+	if apiTokenExists {
+		log.Info("API token env var is set")
+		claims, err = doCSPAPITokenAuthAndUpdateContext(c, apiTokenValue)
+	} else {
+		claims, err = doCSPInteractiveLoginAndUpdateContext(c)
+	}
 	if err != nil {
 		return err
 	}
@@ -622,30 +641,73 @@ func globalTanzuLogin(c *configtypes.Context) error {
 
 	// format
 	fmt.Println()
-	log.Success("successfully created a tanzu context")
+	orgName := getCSPOrgName(c, claims)
+	// If the orgName fetching API fails(corner case), we only print the tanzu context creation success message
+	msg := "Successfully created a tanzu context"
+	if orgName != "" {
+		msg = fmt.Sprintf("Successfully logged into '%s' organization and created a tanzu context", orgName)
+	}
+	log.Success(msg)
 	return nil
 }
 
-func doCSPAuthAndUpdateContext(c *configtypes.Context, endpointType string) (claims *csp.Claims, err error) {
-	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
-
+// getCSPOrgName returns the CSP Org name using the orgID from the claims.
+// It will return empty string if API fails
+func getCSPOrgName(c *configtypes.Context, claims *csp.Claims) string {
 	issuer := csp.ProdIssuer
 	if staging {
 		issuer = csp.StgIssuer
 	}
-	if apiTokenExists {
-		log.Info("API token env var is set")
-	} else {
-		fmt.Fprintln(os.Stderr)
-		log.Info("The API key can be provided by setting the TANZU_API_TOKEN environment variable")
-		apiTokenValue, err = promptAPIToken(endpointType)
-		if err != nil {
-			return nil, err
-		}
+	orgName, err := csp.GetOrgNameFromOrgID(claims.OrgID, c.GlobalOpts.Auth.AccessToken, issuer)
+	if err != nil {
+		return ""
+	}
+	return orgName
+}
+
+func doCSPInteractiveLoginAndUpdateContext(c *configtypes.Context) (claims *csp.Claims, err error) {
+	issuer := csp.ProdIssuer
+	if staging {
+		issuer = csp.StgIssuer
+	}
+	cspOrgIDValue, cspOrgIDExists := os.LookupEnv(constants.CSPLoginOrgID)
+	var options []csp.LoginOption
+	if cspOrgIDExists && cspOrgIDValue != "" {
+		options = append(options, csp.WithOrgID(cspOrgIDValue))
+	}
+	token, err := csp.TanzuLogin(issuer, options...)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get the token from CSP")
+	}
+	claims, err = csp.ParseToken(&oauth2.Token{AccessToken: token.AccessToken})
+	if err != nil {
+		return nil, err
+	}
+
+	a := configtypes.GlobalServerAuth{}
+	a.Issuer = issuer
+	a.UserName = claims.Username
+	a.Permissions = claims.Permissions
+	a.AccessToken = token.AccessToken
+	a.IDToken = token.IDToken
+	a.RefreshToken = token.RefreshToken
+	a.Type = token.TokenType
+	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
+	a.Expiration = expiresAt
+	c.GlobalOpts.Auth = a
+	c.AdditionalMetadata = make(map[string]interface{})
+
+	return claims, nil
+}
+
+func doCSPAPITokenAuthAndUpdateContext(c *configtypes.Context, apiTokenValue string) (claims *csp.Claims, err error) {
+	issuer := csp.ProdIssuer
+	if staging {
+		issuer = csp.StgIssuer
 	}
 	token, err := csp.GetAccessTokenFromAPIToken(apiTokenValue, issuer)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get token from CSP for %s", endpointType)
+		return nil, errors.Wrap(err, "failed to get the token from CSP")
 	}
 	claims, err = csp.ParseToken(&oauth2.Token{AccessToken: token.AccessToken})
 	if err != nil {
@@ -659,7 +721,7 @@ func doCSPAuthAndUpdateContext(c *configtypes.Context, endpointType string) (cla
 	a.AccessToken = token.AccessToken
 	a.IDToken = token.IDToken
 	a.RefreshToken = apiTokenValue
-	a.Type = apiTokenType
+	a.Type = csp.APITokenType
 	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
 	a.Expiration = expiresAt
 	c.GlobalOpts.Auth = a
@@ -775,12 +837,6 @@ func promptAPIToken(endpointType string) (apiToken string, err error) {
 	// The below message is applicable for TMC
 	msg := fmt.Sprintf("If you don't have an API token, visit the VMware Cloud Services console, select your organization, and create an API token with the %s service roles:\n  %s\n",
 		endpointType, consoleURL.String())
-	// TODO: Update this message to mention that type of service roles instead of generic term 'appropriate'
-	if endpointType == "tanzu" {
-		msg = fmt.Sprintf("If you don't have an API token, visit the VMware Cloud Services console, select your organization, and create an API token with appropriate service roles:\n  %s\n",
-			consoleURL.String())
-	}
-
 	// format
 	fmt.Println()
 	log.Infof(msg)
