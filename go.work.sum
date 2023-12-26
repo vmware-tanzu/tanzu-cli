@@ -301,8 +301,6 @@ github.com/aliyun/credentials-go v1.2.3/go.mod h1:/KowD1cfGSLrLsH28Jr8W+xwoId0yw
 github.com/antihax/optional v1.0.0 h1:xK2lYat7ZLaVVcIuj82J8kIro4V6kDe0AUDFboUCwcg=
 github.com/antlr/antlr4/runtime/Go/antlr v1.4.10 h1:yL7+Jz0jTC6yykIK/Wh74gnTJnrGr5AyrNMXuA0gves=
 github.com/antlr/antlr4/runtime/Go/antlr v1.4.10/go.mod h1:F7bn7fEU90QkQ3tnmaTx3LTKLEDqnwWODIYppRQ5hnY=
-github.com/anujc25/tanzu-plugin-runtime v0.0.0-20231226212532-363c7ea75e7b h1:/n/Uzfs1xUrF9kvV09twRqhWMpYt5onmaMHi+bJuSaw=
-github.com/anujc25/tanzu-plugin-runtime v0.0.0-20231226212532-363c7ea75e7b/go.mod h1:M7WVZoItdyQp53tEprQIa6PZmhbrLe3CzuyQphWuRyI=
 github.com/apache/beam/sdks/v2 v2.47.0-RC3 h1:Y/FmwSp2FfVwbfM81Ix+LPENDurLIbIwkz35tXu8CIQ=
 github.com/apache/beam/sdks/v2 v2.47.0-RC3/go.mod h1:n8ybxT4OltLeoykTV8CGg/xQ1yrUJw13aJRkQY36lE8=
 github.com/armon/go-metrics v0.4.0 h1:yCQqn7dwca4ITXb+CbubHmedzaQYHhNhrEXLYUeEe8Q=
