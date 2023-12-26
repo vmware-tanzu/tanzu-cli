@@ -1428,7 +1428,7 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed updating the context %q with the active tanzu resource")
 	}
-	err = updateTanzuContextKubeconfig(ctx, projectStr, spaceStr)
+	err = updateTanzuContextKubeconfig(ctx, projectStr, spaceStr, clustergroupStr)
 	if err != nil {
 		return errors.Wrap(err, "failed to update the tanzu context kubeconfig")
 	}
@@ -1436,7 +1436,7 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	return nil
 }
 
-func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, spaceName string) error {
+func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, spaceName, clustergroupName string) error {
 	kcfg, err := clientcmd.LoadFromFile(cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "unable to load kubeconfig")
@@ -1447,7 +1447,7 @@ func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, 
 		return errors.Errorf("kubecontext %q doesn't exist", cliContext.ClusterOpts.Context)
 	}
 	cluster := kcfg.Clusters[kubeContext.Cluster]
-	cluster.Server = prepareClusterServerURL(cliContext, projectName, spaceName)
+	cluster.Server = prepareClusterServerURL(cliContext, projectName, spaceName, clustergroupName)
 	err = clientcmd.WriteToFile(*kcfg, cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "failed to update the context kubeconfig file")
@@ -1455,17 +1455,20 @@ func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, 
 	return nil
 }
 
-func prepareClusterServerURL(context *configtypes.Context, projectName, spaceName string) string {
+func prepareClusterServerURL(context *configtypes.Context, projectName, spaceName, clustergroupName string) string {
 	serverURL := context.ClusterOpts.Endpoint
 	if projectName == "" {
 		return serverURL
 	}
 	serverURL = serverURL + "/project/" + projectName
 
-	if spaceName == "" {
-		return serverURL
+	if spaceName != "" {
+		return serverURL + "/space/" + spaceName
 	}
-	return serverURL + "/space/" + spaceName
+	if clustergroupName != "" {
+		return serverURL + "/clustergroup/" + clustergroupName
+	}
+	return serverURL
 }
 
 func getContextType() configtypes.ContextType {
