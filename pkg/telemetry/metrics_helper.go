@@ -62,7 +62,8 @@ func computeEndpointSHAForTanzuContext(ctx *configtypes.Context) string {
 	return hashString(ctx.GlobalOpts.Endpoint +
 		stringValue(ctx.AdditionalMetadata[configlib.OrgIDKey]) +
 		stringValue(ctx.AdditionalMetadata[configlib.ProjectNameKey]) +
-		stringValue(ctx.AdditionalMetadata[configlib.SpaceNameKey]))
+		stringValue(ctx.AdditionalMetadata[configlib.SpaceNameKey]) +
+		stringValue(ctx.AdditionalMetadata[configlib.ClusterGroupNameKey]))
 }
 
 func computeEndpointSHAForTMCContext(ctx *configtypes.Context) string {

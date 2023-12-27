@@ -50,8 +50,8 @@ var (
 	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify                              bool
 	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath string
 
-	projectStr, spaceStr string
-	contextTypeStr       string
+	projectStr, spaceStr, clustergroupStr string
+	contextTypeStr                        string
 )
 
 const (
@@ -1260,6 +1260,7 @@ type ContextListOutputRow struct {
 	KubeContext    string
 	Project        string
 	Space          string
+	ClusterGroup   string
 }
 
 func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, writer io.Writer) {
@@ -1274,6 +1275,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 		context := NA
 		project := NA
 		space := NA
+		clustergroup := NA
 
 		isCurrent := ctx.Name == cfg.CurrentContext[ctx.ContextType]
 
@@ -1285,6 +1287,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 		case configtypes.ContextTypeTanzu:
 			project = ""
 			space = ""
+			clustergroup = ""
 			ep = ""
 			path = ""
 			context = ""
@@ -1299,6 +1302,9 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 			if ctx.AdditionalMetadata[config.SpaceNameKey] != nil {
 				space = ctx.AdditionalMetadata[config.SpaceNameKey].(string)
 			}
+			if ctx.AdditionalMetadata[config.ClusterGroupNameKey] != nil {
+				clustergroup = ctx.AdditionalMetadata[config.ClusterGroupNameKey].(string)
+			}
 		default:
 			if ctx.ClusterOpts != nil {
 				ep = ctx.ClusterOpts.Endpoint
@@ -1306,7 +1312,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 				context = ctx.ClusterOpts.Context
 			}
 		}
-		row := ContextListOutputRow{ctx.Name, strconv.FormatBool(isCurrent), string(ctx.ContextType), ep, path, context, project, space}
+		row := ContextListOutputRow{ctx.Name, strconv.FormatBool(isCurrent), string(ctx.ContextType), ep, path, context, project, space, clustergroup}
 		rows = append(rows, row)
 	}
 
@@ -1372,6 +1378,7 @@ func newUpdateCtxCmd() *cobra.Command {
 	}
 	tanzuActiveResourceCmd.Flags().StringVarP(&projectStr, "project", "", "", "project name to be set as active")
 	tanzuActiveResourceCmd.Flags().StringVarP(&spaceStr, "space", "", "", "space name to be set as active")
+	tanzuActiveResourceCmd.Flags().StringVarP(&clustergroupStr, "clustergroup", "", "", "clustergroup name to be set as active")
 
 	updateCtxCmd.AddCommand(
 		tanzuActiveResourceCmd,
@@ -1393,9 +1400,17 @@ var tanzuActiveResourceCmd = &cobra.Command{
 
 func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	name := args[0]
+
+	if spaceStr != "" && clustergroupStr != "" {
+		return errors.Errorf("either space or clustergroup can be set as active resource. Please provide either --space or --clustergroup option")
+	}
 	if projectStr == "" && spaceStr != "" {
 		return errors.Errorf("space cannot be set without project name. Please provide project name also using --project option")
 	}
+	if projectStr == "" && clustergroupStr != "" {
+		return errors.Errorf("clustergroup cannot be set without project name. Please provide project name also using --project option")
+	}
+
 	ctx, err := config.GetContext(name)
 	if err != nil {
 		return err
@@ -1408,11 +1423,12 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	}
 	ctx.AdditionalMetadata[config.ProjectNameKey] = projectStr
 	ctx.AdditionalMetadata[config.SpaceNameKey] = spaceStr
+	ctx.AdditionalMetadata[config.ClusterGroupNameKey] = clustergroupStr
 	err = config.SetContext(ctx, false)
 	if err != nil {
 		return errors.Wrap(err, "failed updating the context %q with the active tanzu resource")
 	}
-	err = updateTanzuContextKubeconfig(ctx, projectStr, spaceStr)
+	err = updateTanzuContextKubeconfig(ctx, projectStr, spaceStr, clustergroupStr)
 	if err != nil {
 		return errors.Wrap(err, "failed to update the tanzu context kubeconfig")
 	}
@@ -1420,7 +1436,7 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	return nil
 }
 
-func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, spaceName string) error {
+func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, spaceName, clustergroupName string) error {
 	kcfg, err := clientcmd.LoadFromFile(cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "unable to load kubeconfig")
@@ -1431,7 +1447,7 @@ func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, 
 		return errors.Errorf("kubecontext %q doesn't exist", cliContext.ClusterOpts.Context)
 	}
 	cluster := kcfg.Clusters[kubeContext.Cluster]
-	cluster.Server = prepareClusterServerURL(cliContext, projectName, spaceName)
+	cluster.Server = prepareClusterServerURL(cliContext, projectName, spaceName, clustergroupName)
 	err = clientcmd.WriteToFile(*kcfg, cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "failed to update the context kubeconfig file")
@@ -1439,17 +1455,20 @@ func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, 
 	return nil
 }
 
-func prepareClusterServerURL(context *configtypes.Context, projectName, spaceName string) string {
+func prepareClusterServerURL(context *configtypes.Context, projectName, spaceName, clustergroupName string) string {
 	serverURL := context.ClusterOpts.Endpoint
 	if projectName == "" {
 		return serverURL
 	}
 	serverURL = serverURL + "/project/" + projectName
 
-	if spaceName == "" {
-		return serverURL
+	if spaceName != "" {
+		return serverURL + "/space/" + spaceName
 	}
-	return serverURL + "/space/" + spaceName
+	if clustergroupName != "" {
+		return serverURL + "/clustergroup/" + clustergroupName
+	}
+	return serverURL
 }
 
 func getContextType() configtypes.ContextType {

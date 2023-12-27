@@ -24,8 +24,9 @@ var _ = Describe("metrics helper tests", func() {
 		err          error
 	)
 	const (
-		testProjectName = "project-A"
-		testSpaceName   = "space-A"
+		testProjectName      = "project-A"
+		testSpaceName        = "space-A"
+		testClusterGroupName = "clustergroup-A"
 	)
 	BeforeEach(func() {
 		configFile, err = os.CreateTemp("", "config")
@@ -74,6 +75,7 @@ var _ = Describe("metrics helper tests", func() {
 			Expect(err).ToNot(HaveOccurred())
 			ctx.AdditionalMetadata[configlib.ProjectNameKey] = ""
 			ctx.AdditionalMetadata[configlib.SpaceNameKey] = ""
+			// Also when the ClusterGroupNameKey is not configured under AdditionalMetadata
 			err = configlib.SetContext(ctx, true)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -84,6 +86,7 @@ var _ = Describe("metrics helper tests", func() {
 			// when tanzu context has active project
 			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
 			ctx.AdditionalMetadata[configlib.SpaceNameKey] = ""
+			ctx.AdditionalMetadata[configlib.ClusterGroupNameKey] = ""
 			err = configlib.SetContext(ctx, true)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -94,6 +97,14 @@ var _ = Describe("metrics helper tests", func() {
 			// when tanzu context has active space
 			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
 			ctx.AdditionalMetadata[configlib.SpaceNameKey] = testSpaceName
+			ctx.AdditionalMetadata[configlib.ClusterGroupNameKey] = ""
+			err = configlib.SetContext(ctx, true)
+			Expect(err).ToNot(HaveOccurred())
+
+			// when tanzu context has active clustergroup
+			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
+			ctx.AdditionalMetadata[configlib.SpaceNameKey] = ""
+			ctx.AdditionalMetadata[configlib.ClusterGroupNameKey] = testClusterGroupName
 			err = configlib.SetContext(ctx, true)
 			Expect(err).ToNot(HaveOccurred())
 

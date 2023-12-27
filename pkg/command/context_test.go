@@ -48,6 +48,7 @@ const (
 	testEndpoint                         = "test.tanzu.cloud.vmware.com"
 	testProject                          = "test-project"
 	testSpace                            = "test-space"
+	testClustergroup                     = "test-clustergroup"
 )
 
 const kubeconfigContent1 = `apiVersion: v1
@@ -199,7 +200,7 @@ var _ = Describe("Test tanzu context command", func() {
 			columnsString := strings.Join(strings.Fields(lines[0]), " ")
 
 			Expect(err).To(BeNil())
-			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE"))
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE CLUSTERGROUP"))
 		})
 
 		It("should return with tanzu related columns when listing all contexts", func() {
@@ -210,7 +211,7 @@ var _ = Describe("Test tanzu context command", func() {
 			columnsString := strings.Join(strings.Fields(lines[0]), " ")
 
 			Expect(err).To(BeNil())
-			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE"))
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE CLUSTERGROUP"))
 		})
 
 		It("should not return tanzu related columns when not listing tanzu contexts", func() {
@@ -587,6 +588,36 @@ clusterOpts:
 			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
 			Expect(err).To(BeNil())
 			Expect(kubeconfig.Clusters["tanzu-cli-mytanzu/current"].Server).To(Equal(tanzuContext.ClusterOpts.Endpoint + "/project/" + testProject + "/space/" + testSpace))
+		})
+		It("should update the tanzu context active resource to clustergroup given project and clustergroup names and also update the kubeconfig cluster URL accordingly", func() {
+			err = config.SetContext(tanzuContext, false)
+			Expect(err).To(BeNil())
+
+			projectStr = testProject
+			spaceStr = ""
+			clustergroupStr = testClustergroup
+			err = setTanzuCtxActiveResource(cmd, []string{testContextName})
+			Expect(err).To(BeNil())
+
+			ctx, err := config.GetContext(testContextName)
+			Expect(err).To(BeNil())
+			Expect(ctx.AdditionalMetadata[config.ProjectNameKey]).To(Equal(testProject))
+			Expect(ctx.AdditionalMetadata[config.SpaceNameKey]).To(Equal(""))
+			Expect(ctx.AdditionalMetadata[config.ClusterGroupNameKey]).To(Equal(testClustergroup))
+			kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath.Name())
+			Expect(err).To(BeNil())
+			Expect(kubeconfig.Clusters["tanzu-cli-mytanzu/current"].Server).To(Equal(tanzuContext.ClusterOpts.Endpoint + "/project/" + testProject + "/clustergroup/" + testClustergroup))
+		})
+		It("should throw an error if the clustergroup and space both are provided by the user when setting active resource", func() {
+			err = config.SetContext(tanzuContext, false)
+			Expect(err).To(BeNil())
+
+			projectStr = testProject
+			spaceStr = testSpace
+			clustergroupStr = testClustergroup
+			err = setTanzuCtxActiveResource(cmd, []string{testContextName})
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("either space or clustergroup can be set as active resource. Please provide either --space or --clustergroup option"))
 		})
 	})
 
