@@ -1097,7 +1097,23 @@ func useCtx(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	log.Infof("Successfully activated context '%s'", ctxName)
+	suffixString := ""
+	if ctx.ContextType == configtypes.ContextTypeTanzu {
+		if ctx.AdditionalMetadata[config.ProjectNameKey] != "" {
+			suffixString += fmt.Sprintf("Project: %s", ctx.AdditionalMetadata[config.ProjectNameKey])
+		}
+		if ctx.AdditionalMetadata[config.SpaceNameKey] != "" {
+			suffixString += fmt.Sprintf(", Space: %s", ctx.AdditionalMetadata[config.SpaceNameKey])
+		}
+		if ctx.AdditionalMetadata[config.ClusterGroupNameKey] != "" {
+			suffixString += fmt.Sprintf(", ClusterGroup: %s", ctx.AdditionalMetadata[config.ClusterGroupNameKey])
+		}
+	}
+	if suffixString != "" {
+		suffixString = " (" + suffixString + ")"
+	}
+
+	log.Infof("Successfully activated context '%s' of type '%s'%s.", ctxName, ctx.ContextType, suffixString)
 
 	// Sync all required plugins
 	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
@@ -1264,7 +1280,7 @@ type ContextListOutputRow struct {
 	KubeContext    string
 }
 
-func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, writer io.Writer, showAllColumns bool) {
+func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, writer io.Writer, showAllColumns bool) { //nolint:funlen
 	ct := getContextType()
 	ctxs, _ := getContextsToDisplay(cfg, ct, onlyCurrent)
 
