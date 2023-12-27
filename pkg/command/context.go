@@ -1347,7 +1347,12 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 		requiredColumns = append(requiredColumns, "Endpoint", "KubeconfigPath", "KubeContext")
 		requiredColumns = append(requiredColumns, dynamicColumns...)
 	}
-	dynamicTableWriter(rows, component.NewOutputWriterWithOptions(writer, outputFormat, opts), requiredColumns, dynamicColumns)
+	dynamicTableWriter(rows, component.NewOutputWriterWithOptions(writer, outputFormat, opts, "NAME", "ISACTIVE", "TYPE"), requiredColumns, dynamicColumns)
+
+	if !showAllColumns {
+		fmt.Println()
+		log.Info("Use '--wide' flag to view additional columns.")
+	}
 }
 
 var getCtxTokenCmd = &cobra.Command{

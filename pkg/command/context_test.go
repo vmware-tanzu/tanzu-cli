@@ -167,9 +167,18 @@ var _ = Describe("Test tanzu context command", func() {
 			contextTypeStr = contextTypeK8s
 			err = listCtx(cmd, nil)
 			Expect(err).To(BeNil())
-			Expect(buf.String()).To(ContainSubstring("test-mc  true      kubernetes  test-endpoint  test-path       test-mc-context"))
+			Expect(buf.String()).To(ContainSubstring("NAME     ISACTIVE  TYPE"))
+			Expect(buf.String()).To(ContainSubstring("test-mc  true      kubernetes"))
 			Expect(buf.String()).ToNot(ContainSubstring("test-tmc-context"))
 			Expect(buf.String()).ToNot(ContainSubstring(testUseContext))
+
+			buf.Reset()
+			contextTypeStr = contextTypeK8s
+			showAllColumns = true
+			err = listCtx(cmd, nil)
+			Expect(err).To(BeNil())
+			Expect(buf.String()).To(ContainSubstring("NAME     ISACTIVE  TYPE        ENDPOINT       KUBECONFIGPATH  KUBECONTEXT"))
+			Expect(buf.String()).To(ContainSubstring("test-mc  true      kubernetes  test-endpoint  test-path       test-mc-context "))
 
 		})
 		It("should return contexts in yaml format if tanzu config file has contexts available", func() {
@@ -192,7 +201,7 @@ var _ = Describe("Test tanzu context command", func() {
 			Expect(buf.String()).ToNot(ContainSubstring(testUseContext))
 		})
 
-		It("should return with tanzu related columns", func() {
+		It("should return with tanzu related columns without --wide", func() {
 			buf.Reset()
 			contextTypeStr = contextTypeTanzu
 			err = listCtx(cmd, nil)
@@ -200,10 +209,10 @@ var _ = Describe("Test tanzu context command", func() {
 			columnsString := strings.Join(strings.Fields(lines[0]), " ")
 
 			Expect(err).To(BeNil())
-			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE CLUSTERGROUP"))
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE PROJECT SPACE"))
 		})
 
-		It("should return with tanzu related columns when listing all contexts", func() {
+		It("should return with tanzu related columns when listing all contexts without --wide", func() {
 			buf.Reset()
 			contextTypeStr = ""
 			err = listCtx(cmd, nil)
@@ -211,12 +220,34 @@ var _ = Describe("Test tanzu context command", func() {
 			columnsString := strings.Join(strings.Fields(lines[0]), " ")
 
 			Expect(err).To(BeNil())
-			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE ENDPOINT KUBECONFIGPATH KUBECONTEXT PROJECT SPACE CLUSTERGROUP"))
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE PROJECT SPACE"))
+		})
+		It("should return with tanzu related columns when listing all contexts with --wide", func() {
+			buf.Reset()
+			contextTypeStr = ""
+			showAllColumns = true
+			err = listCtx(cmd, nil)
+			lines := strings.Split(buf.String(), "\n")
+			columnsString := strings.Join(strings.Fields(lines[0]), " ")
+
+			Expect(err).To(BeNil())
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE PROJECT SPACE CLUSTERGROUP ENDPOINT KUBECONFIGPATH KUBECONTEXT"))
 		})
 
-		It("should not return tanzu related columns when not listing tanzu contexts", func() {
+		It("should not return tanzu related columns when not listing tanzu contexts without --wide", func() {
 			buf.Reset()
 			contextTypeStr = contextTypeK8s
+			err = listCtx(cmd, nil)
+			lines := strings.Split(buf.String(), "\n")
+			columnsString := strings.Join(strings.Fields(lines[0]), " ")
+
+			Expect(err).To(BeNil())
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE"))
+		})
+		It("should not return tanzu related columns when not listing tanzu contexts with --wide", func() {
+			buf.Reset()
+			contextTypeStr = contextTypeK8s
+			showAllColumns = true
 			err = listCtx(cmd, nil)
 			lines := strings.Split(buf.String(), "\n")
 			columnsString := strings.Join(strings.Fields(lines[0]), " ")
@@ -1368,6 +1399,7 @@ func resetContextCommandFlags() {
 	kubeConfig = ""
 	kubeContext = ""
 	skipTLSVerify = false
+	showAllColumns = false
 	endpointCACertPath = ""
 	projectStr = ""
 	spaceStr = ""
