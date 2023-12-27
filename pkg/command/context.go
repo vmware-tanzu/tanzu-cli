@@ -47,7 +47,7 @@ import (
 )
 
 var (
-	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify                              bool
+	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify, showAllColumns              bool
 	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath string
 
 	projectStr, spaceStr, clustergroupStr string
@@ -117,6 +117,7 @@ func init() {
 	}))
 
 	listCtxCmd.Flags().BoolVar(&onlyCurrent, "current", false, "list only current active contexts")
+	listCtxCmd.Flags().BoolVar(&showAllColumns, "wide", false, "display additional columns for the contexts")
 	listCtxCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "output format: table|yaml|json")
 	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
 
@@ -877,7 +878,7 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 	}
 
 	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
-		displayContextListOutputWithDynamicColumns(cfg, cmd.OutOrStdout())
+		displayContextListOutputWithDynamicColumns(cfg, cmd.OutOrStdout(), showAllColumns)
 	} else {
 		displayContextListOutputListView(cfg, cmd.OutOrStdout())
 	}
@@ -1255,20 +1256,23 @@ type ContextListOutputRow struct {
 	Name           string
 	IsActive       string
 	Type           string
-	Endpoint       string
-	KubeconfigPath string
-	KubeContext    string
 	Project        string
 	Space          string
 	ClusterGroup   string
+	Endpoint       string
+	KubeconfigPath string
+	KubeContext    string
 }
 
-func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, writer io.Writer) {
+func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, writer io.Writer, showAllColumns bool) {
 	ct := getContextType()
 	ctxs, _ := getContextsToDisplay(cfg, ct, onlyCurrent)
 
 	opts := []component.OutputWriterOption{}
 	rows := []ContextListOutputRow{}
+
+	tanzuContextExists := false
+
 	for _, ctx := range ctxs {
 		ep := NA
 		path := NA
@@ -1285,6 +1289,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 				ep = ctx.GlobalOpts.Endpoint
 			}
 		case configtypes.ContextTypeTanzu:
+			tanzuContextExists = true
 			project = ""
 			space = ""
 			clustergroup = ""
@@ -1312,11 +1317,21 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 				context = ctx.ClusterOpts.Context
 			}
 		}
-		row := ContextListOutputRow{ctx.Name, strconv.FormatBool(isCurrent), string(ctx.ContextType), ep, path, context, project, space, clustergroup}
+		row := ContextListOutputRow{ctx.Name, strconv.FormatBool(isCurrent), string(ctx.ContextType), project, space, clustergroup, ep, path, context}
 		rows = append(rows, row)
 	}
 
-	dynamicTableWriter(rows, component.NewOutputWriterWithOptions(writer, outputFormat, opts, "NAME", "ISACTIVE", "TYPE"))
+	requiredColumns := []string{"Name", "IsActive", "Type"}
+	dynamicColumns := []string{}
+	if tanzuContextExists {
+		requiredColumns = append(requiredColumns, "Project", "Space")
+		dynamicColumns = append(dynamicColumns, "ClusterGroup")
+	}
+	if showAllColumns {
+		requiredColumns = append(requiredColumns, "Endpoint", "KubeconfigPath", "KubeContext")
+		requiredColumns = append(requiredColumns, dynamicColumns...)
+	}
+	dynamicTableWriter(rows, component.NewOutputWriterWithOptions(writer, outputFormat, opts), requiredColumns, dynamicColumns)
 }
 
 var getCtxTokenCmd = &cobra.Command{
@@ -1603,14 +1618,17 @@ func completionFormatCtxs(ctxs []*configtypes.Context) []string {
 	return comps
 }
 
-// dynamicTableWriter writes the data in table format dynamically by hiding column if all related rows for a column is `n/a`
-func dynamicTableWriter(slices interface{}, tableWriter component.OutputWriter) {
+// dynamicTableWriter writes the data in table format dynamically by
+// - showing all required columns
+// - optionally showing the dynamic columns if the data exists
+func dynamicTableWriter(slices interface{}, tableWriter component.OutputWriter, requiredColumns, dynamicColumns []string) {
 	// Check if the input is a slice
 	valueOf := reflect.ValueOf(slices)
 	if valueOf.Kind() == reflect.Slice && valueOf.Len() > 0 {
 		// Collect header and column data
 		header := []string{}
 		isColumnFilled := make(map[int]bool)
+		showColumn := make(map[int]bool)
 
 		for i := 0; i < valueOf.Len(); i++ {
 			elem := valueOf.Index(i)
@@ -1621,7 +1639,8 @@ func dynamicTableWriter(slices interface{}, tableWriter component.OutputWriter) 
 				field := elemValue.Field(j)
 				fieldValue := field.Interface()
 				isNA := reflect.DeepEqual(fieldValue, NA)
-				if !isNA {
+				isEmpty := reflect.DeepEqual(fieldValue, "")
+				if !isNA && !isEmpty {
 					isColumnFilled[j] = true
 				}
 			}
@@ -1631,7 +1650,13 @@ func dynamicTableWriter(slices interface{}, tableWriter component.OutputWriter) 
 		elem := valueOf.Index(0)
 		elemValue := reflect.ValueOf(elem.Interface())
 		for j := 0; j < elemValue.NumField(); j++ {
-			if _, exists := isColumnFilled[j]; exists {
+			isRequiredColumn := utils.ContainsString(requiredColumns, elemValue.Type().Field(j).Name)
+			isFilledDynamicColumn := utils.ContainsString(dynamicColumns, elemValue.Type().Field(j).Name) && isColumnFilled[j]
+			showColumn[j] = isRequiredColumn || isFilledDynamicColumn
+		}
+
+		for j := 0; j < elemValue.NumField(); j++ {
+			if showColumn[j] {
 				fieldName := elemValue.Type().Field(j).Name
 				header = append(header, fieldName)
 			}
@@ -1645,7 +1670,7 @@ func dynamicTableWriter(slices interface{}, tableWriter component.OutputWriter) 
 			elemValue := reflect.ValueOf(elem.Interface())
 			dataRow := []interface{}{}
 			for j := 0; j < elemValue.NumField(); j++ {
-				if _, exists := isColumnFilled[j]; exists {
+				if showColumn[j] {
 					field := elemValue.Field(j)
 					fieldValue := field.Interface()
 					dataRow = append(dataRow, fmt.Sprintf("%v", fieldValue))
