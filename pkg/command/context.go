@@ -68,6 +68,8 @@ const (
 
 	invalidTargetErrorForContextCommands = "invalid target specified. Please specify a correct value for the `--target` flag from 'kubernetes[k8s]/mission-control[tmc]'"
 	invalidContextType                   = "invalid context type specified. Please specify a correct value for the `--type/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/tanzu'"
+
+	contexActivated = "Setting context '%v' of type '%v' to active"
 )
 
 // constants that define context creation types
@@ -265,14 +267,19 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	// Sync all required plugins
-	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
+	_, err = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
+	if err == nil {
+		log.Infof("Successfully activated context '%s' and required plugins are up-to-date", ctxName)
+	} else {
+		log.Warningf("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
+	}
 
-	return nil
+	return err
 }
 
 // syncContextPlugins syncs the plugins for the given context type
-// if listPlugins is true, it will list the plugins that will be installed for the given context type
-func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType, ctxName string, listPlugins bool) error {
+// if listPlugins is true, it will list the plugins that will be installed for the given context type and return the count of plugins updated
+func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType, ctxName string, listPlugins bool) (pluginsUpdatedCount int, err error) {
 	plugins, err := pluginmanager.DiscoverPluginsForContextType(contextType)
 	errList := make([]error, 0)
 	if err != nil {
@@ -291,28 +298,23 @@ func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType,
 			}
 		}
 		if pluginsNeedstoBeInstalled > 0 {
-			log.Infof("The following plugins will be installed for context '%s' of contextType '%s': ", ctxName, contextType)
 			displayUninstalledPluginsContentAsTable(plugins, cmd.ErrOrStderr())
 		}
 	}
 
-	err = pluginmanager.InstallDiscoveredContextPlugins(plugins)
+	pluginsUpdatedCount, err = pluginmanager.InstallDiscoveredContextPlugins(plugins)
 	if err != nil {
 		errList = append(errList, err)
 	}
-	err = kerrors.NewAggregate(errList)
-	if err != nil {
-		log.Warningf("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
-	}
-	return err
+	return pluginsUpdatedCount, kerrors.NewAggregate(errList)
 }
 
 // displayUninstalledPluginsContentAsTable takes a list of plugins and writes the uninstalled plugins as a table
 func displayUninstalledPluginsContentAsTable(plugins []discovery.Discovered, writer io.Writer) {
-	outputUninstalledPlugins := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
+	outputUninstalledPlugins := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Plugin update diff:")
 	for i := range plugins {
 		if plugins[i].Status == common.PluginStatusNotInstalled || plugins[i].Status == common.PluginStatusUpdateAvailable {
-			outputUninstalledPlugins.AddRow(plugins[i].Name, plugins[i].Target, plugins[i].RecommendedVersion)
+			outputUninstalledPlugins.AddRow(fmt.Sprintf("+ %s:%s", plugins[i].Name, plugins[i].RecommendedVersion))
 		}
 	}
 	outputUninstalledPlugins.Render()
@@ -1096,12 +1098,16 @@ func useCtx(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	log.Infof("Successfully activated context '%s'", ctxName)
+	log.Infof(contexActivated, ctxName, ctx.ContextType)
 
 	// Sync all required plugins
-	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
-
-	return nil
+	_, err = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
+	if err == nil {
+		log.Infof("Successfully activated context '%s' and required plugins are up-to-date", ctxName)
+	} else {
+		log.Warningf("Successfully activated context '%s' but unable to sync the plugins. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", ctxName, err.Error())
+	}
+	return err
 }
 
 func syncCurrentKubeContext(ctx *configtypes.Context) error {
