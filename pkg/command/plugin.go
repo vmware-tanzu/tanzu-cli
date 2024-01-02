@@ -462,7 +462,7 @@ func syncPlugins(cmd *cobra.Command) error {
 		log.Infof("Plugin sync will be performed for contexts: %s", contextNames)
 	}
 	for contextType, context := range contextMap {
-		err = syncContextPlugins(cmd, contextType, context.Name, true)
+		_, err = syncContextPlugins(cmd, contextType, context.Name, true)
 		if err != nil {
 			errList = append(errList, err)
 		}
