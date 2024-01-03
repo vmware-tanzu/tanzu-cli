@@ -182,9 +182,15 @@ var createCtxCmd = &cobra.Command{
     and release of new services (and CLI plugins) which extend and combine features provided by
     individual tanzu components.
 
-    Note: To create Mission Control (TMC) or Tanzu contexts, an API Key is required. The API Key
-    value can be provided with the environment variable TANZU_API_TOKEN or can be entered as input
-    while creating the context.
+    Notes: 
+    1. TMC context: To create Mission Control (TMC) context an API Key is required. It can be provided using the 
+       TANZU_API_TOKEN environment variable or entered during context creation.
+    2. Tanzu context: To create Tanzu context an API Key is optional. If provided using the TANZU_API_TOKEN environment
+       variable, it will be used. Otherwise, the CLI will attempt to log in interactively to the user's default Cloud Services
+       organization. You can override or choose a custom organization by setting the TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID 
+       environment variable with the custom organization ID value. More information regarding organizations in Cloud Services
+       and how to obtain the organization ID can be found at
+       https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html
 
     [*] : Users have two options to create a kubernetes cluster context. They can choose the control
     plane option by providing 'endpoint', or use the kubeconfig for the cluster by providing
