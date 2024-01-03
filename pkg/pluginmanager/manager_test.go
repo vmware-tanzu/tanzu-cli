@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -1778,4 +1779,59 @@ func TestClean(t *testing.T) {
 	assertions.True(errors.Is(err, os.ErrNotExist))
 	_, err = os.Stat(common.DefaultPluginRoot)
 	assertions.True(errors.Is(err, os.ErrNotExist))
+}
+
+func TestRemoveOldPluginsWhenDuplicates(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  []discovery.Discovered
+		output []discovery.Discovered
+	}{
+		{
+			name: "Test1",
+			input: []discovery.Discovered{
+				{Name: "foo", Target: configtypes.TargetK8s, RecommendedVersion: "v1.1.0"},
+				{Name: "bar", Target: configtypes.TargetK8s, RecommendedVersion: "v1.1.0"},
+				{Name: "baz", Target: configtypes.TargetK8s, RecommendedVersion: "v1.2.0"},
+			},
+			output: []discovery.Discovered{
+				{Name: "foo", Target: configtypes.TargetK8s, RecommendedVersion: "v1.1.0"},
+				{Name: "bar", Target: configtypes.TargetK8s, RecommendedVersion: "v1.1.0"},
+				{Name: "baz", Target: configtypes.TargetK8s, RecommendedVersion: "v1.2.0"},
+			},
+		},
+		{
+			name: "Test2",
+			input: []discovery.Discovered{
+				{Name: "foo", Target: configtypes.TargetK8s, RecommendedVersion: "v1.1.0"},
+				{Name: "foo", Target: configtypes.TargetK8s, RecommendedVersion: "v1.1.0"},
+				{Name: "foo", Target: configtypes.TargetK8s, RecommendedVersion: "v1.2.0"},
+			},
+			output: []discovery.Discovered{
+				{Name: "foo", Target: configtypes.TargetK8s, RecommendedVersion: "v1.2.0"},
+			},
+		},
+		{
+			name: "Test3",
+			input: []discovery.Discovered{
+				{Name: "foo", Target: configtypes.TargetK8s, RecommendedVersion: "v1.1.0"},
+				{Name: "bar", Target: configtypes.TargetTMC, RecommendedVersion: "v1.1.0"},
+				{Name: "foo", Target: configtypes.TargetK8s, RecommendedVersion: "v1.2.0"},
+				{Name: "foo", Target: configtypes.TargetK8s, RecommendedVersion: "v1.2.0"},
+			},
+			output: []discovery.Discovered{
+				{Name: "bar", Target: configtypes.TargetTMC, RecommendedVersion: "v1.1.0"},
+				{Name: "foo", Target: configtypes.TargetK8s, RecommendedVersion: "v1.2.0"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := removeOldPluginsWhenDuplicates(tt.input)
+			if !reflect.DeepEqual(got, tt.output) {
+				t.Errorf("Testcase: %v, RemoveOldPluginsWhenDuplicates() = %v, want %v", tt.name, got, tt.output)
+			}
+		})
+	}
 }
