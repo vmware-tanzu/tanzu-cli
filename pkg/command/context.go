@@ -1347,7 +1347,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 		requiredColumns = append(requiredColumns, "Endpoint", "KubeconfigPath", "KubeContext")
 		requiredColumns = append(requiredColumns, dynamicColumns...)
 	}
-	dynamicTableWriter(rows, component.NewOutputWriterWithOptions(writer, outputFormat, opts, "NAME", "ISACTIVE", "TYPE"), requiredColumns, dynamicColumns)
+	renderDynamicTable(rows, component.NewOutputWriterWithOptions(writer, outputFormat, opts, "NAME", "ISACTIVE", "TYPE"), requiredColumns, dynamicColumns)
 
 	if !showAllColumns {
 		fmt.Println()
@@ -1639,10 +1639,10 @@ func completionFormatCtxs(ctxs []*configtypes.Context) []string {
 	return comps
 }
 
-// dynamicTableWriter writes the data in table format dynamically by
+// renderDynamicTable writes the data in table format dynamically by
 // - showing all required columns
 // - optionally showing the dynamic columns if the data exists
-func dynamicTableWriter(slices interface{}, tableWriter component.OutputWriter, requiredColumns, dynamicColumns []string) {
+func renderDynamicTable(slices interface{}, tableWriter component.OutputWriter, requiredColumns, dynamicColumns []string) {
 	// Check if the input is a slice
 	valueOf := reflect.ValueOf(slices)
 	if valueOf.Kind() == reflect.Slice && valueOf.Len() > 0 {
