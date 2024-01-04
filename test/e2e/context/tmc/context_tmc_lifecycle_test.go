@@ -165,7 +165,8 @@ func tmcAndK8sContextTests() bool {
 				stdOut, stdErr, err := tf.ContextCmd.CreateContextWithEndPointStaging(tmcCtx, tmcClusterInfo.EndPoint, framework.AddAdditionalFlagAndValue("--help"))
 				Expect(stdErr).To(BeEmpty(), "stdErr should be empty")
 				Expect(err).To(BeNil(), "context should create without any error")
-				Expect(stdOut).To(ContainSubstring("Note: To create Mission Control (TMC) or Tanzu contexts, an API Key is required."))
+				Expect(stdOut).To(ContainSubstring("To create Mission Control (TMC) context an API Key is required."))
+				Expect(stdOut).To(ContainSubstring("To create Tanzu context an API Key is optional."))
 			})
 			// Test case: a. create tmc context
 			It("create tmc context with endpoint and check active context", func() {
