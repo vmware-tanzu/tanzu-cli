@@ -275,7 +275,7 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 	// Sync all required plugins
 	_, err = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
 	if err == nil {
-		log.Infof("Successfully activated context '%s' and required plugins are up-to-date", ctxName)
+		log.Infof("Successfully created and activated context '%s' and required plugins are up-to-date", ctxName)
 	} else {
 		log.Warningf("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
 	}
@@ -606,10 +606,6 @@ func globalLogin(c *configtypes.Context) (err error) {
 	if err != nil {
 		return err
 	}
-
-	// format
-	fmt.Println()
-	log.Success("successfully created a TMC context")
 	return nil
 }
 
@@ -647,6 +643,7 @@ func globalTanzuLogin(c *configtypes.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to update current kube context")
 	}
+<<<<<<< HEAD
 
 	// format
 	fmt.Println()
@@ -657,6 +654,8 @@ func globalTanzuLogin(c *configtypes.Context) error {
 		msg = fmt.Sprintf("Successfully logged into '%s' organization and created a tanzu context", orgName)
 	}
 	log.Success(msg)
+=======
+>>>>>>> 3c31796b (context create changes)
 	return nil
 }
 
