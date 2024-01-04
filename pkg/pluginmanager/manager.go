@@ -398,18 +398,24 @@ func mergeDuplicateGroups(groups []*plugininventory.PluginGroup) []*plugininvent
 	return mergedGroups
 }
 
+// setAvailablePluginsStatus sets the status of the available plugins based on the installed plugins
 func setAvailablePluginsStatus(availablePlugins []discovery.Discovered, installedPlugins []cli.PluginInfo) {
+	// Create a map of installed plugins for faster lookup
+	installedPluginsMap := make(map[string]cli.PluginInfo)
 	for i := range installedPlugins {
-		for j := range availablePlugins {
-			if installedPlugins[i].Name == availablePlugins[j].Name && installedPlugins[i].Target == availablePlugins[j].Target {
-				// Match found, Check for update available and update status
-				if installedPlugins[i].DiscoveredRecommendedVersion == availablePlugins[j].RecommendedVersion {
-					availablePlugins[j].Status = common.PluginStatusInstalled
-				} else {
-					availablePlugins[j].Status = common.PluginStatusUpdateAvailable
-				}
-				availablePlugins[j].InstalledVersion = installedPlugins[i].Version
+		key := installedPlugins[i].Name + string(installedPlugins[i].Target)
+		installedPluginsMap[key] = installedPlugins[i]
+	}
+	// Set the status of the available plugins based on the installed plugins
+	for i := range availablePlugins {
+		key := availablePlugins[i].Name + string(availablePlugins[i].Target)
+		if installedPlugin, exists := installedPluginsMap[key]; exists {
+			if installedPlugin.DiscoveredRecommendedVersion == availablePlugins[i].RecommendedVersion {
+				availablePlugins[i].Status = common.PluginStatusInstalled
+			} else {
+				availablePlugins[i].Status = common.PluginStatusUpdateAvailable
 			}
+			availablePlugins[i].InstalledVersion = installedPlugin.Version
 		}
 	}
 }
