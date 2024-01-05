@@ -698,19 +698,15 @@ func GetPluginGroup(groupIDAndVersion string, options ...PluginManagerOptions) (
 }
 
 func logPluginInstallationMessage(p *discovery.Discovered, version string, isPluginInCache, isPluginAlreadyInstalled bool) {
-	withTarget := ""
-	if p.Target != configtypes.TargetUnknown {
-		withTarget = fmt.Sprintf("with target '%v' ", p.Target)
-	}
 
 	if isPluginInCache {
 		if !isPluginAlreadyInstalled {
-			log.Infof("Installing plugin '%v:%v' %v(from cache)", p.Name, version, withTarget)
+			log.Infof("Installing plugin '%v:%v' (from cache)", p.Name, version)
 		} else {
-			log.Infof("Plugin '%v:%v' %vis already installed. Reinitializing...", p.Name, version, withTarget)
+			log.Infof("Plugin '%v:%v' is already installed. Reinitializing...", p.Name, version)
 		}
 	} else {
-		log.Infof("Installing plugin '%v:%v' %v", p.Name, version, withTarget)
+		log.Infof("Installing plugin '%v:%v' ", p.Name, version)
 	}
 }
 
@@ -1070,7 +1066,13 @@ func SyncPlugins() error {
 	if err != nil {
 		errList = append(errList, err)
 	}
-	err = InstallDiscoveredContextPlugins(plugins)
+	pluginsUpdatedCount, err := InstallDiscoveredContextPlugins(plugins)
+
+	if pluginsUpdatedCount == 0 {
+		log.Info("All required plugins are already installed and up-to-date")
+	} else {
+		log.Info("Successfully installed all required plugins")
+	}
 	if err != nil {
 		errList = append(errList, err)
 	}
@@ -1085,7 +1087,6 @@ func DiscoverPluginsForContextType(contextType configtypes.ContextType) ([]disco
 	if ctx == nil {
 		return nil, fmt.Errorf(errorNoActiveContexForGivenContextType, contextType)
 	}
-	log.Infof("Checking for required plugins for context '%s'...", ctx.Name)
 	return DiscoverServerPluginsForGivenContexts([]*configtypes.Context{ctx})
 }
 
@@ -1096,15 +1097,14 @@ func UpdatePluginsInstallationStatus(plugins []discovery.Discovered) {
 	}
 }
 
-// InstallDiscoveredContextPlugins installs the given context scope plugins
-func InstallDiscoveredContextPlugins(plugins []discovery.Discovered) error {
+// InstallDiscoveredContextPlugins installs the given context scope plugins and returns the number of plugins updated
+func InstallDiscoveredContextPlugins(plugins []discovery.Discovered) (pluginsUpdated int, err error) {
 	var errList []error
-	var err error
-	installed := false
+	pluginsUpdated = 0
 	UpdatePluginsInstallationStatus(plugins)
 	for idx := range plugins {
 		if plugins[idx].Status == common.PluginStatusNotInstalled || plugins[idx].Status == common.PluginStatusUpdateAvailable {
-			installed = true
+			pluginsUpdated++
 			p := plugins[idx]
 			err = InstallPluginFromContext(p.Name, p.RecommendedVersion, p.Target, p.ContextName)
 			if err != nil {
@@ -1114,15 +1114,9 @@ func InstallDiscoveredContextPlugins(plugins []discovery.Discovered) error {
 	}
 	err = kerrors.NewAggregate(errList)
 	if err != nil {
-		return err
+		return pluginsUpdated, err
 	}
-
-	if !installed {
-		log.Info("All required plugins are already installed and up-to-date")
-	} else {
-		log.Info("Successfully installed all required plugins")
-	}
-	return nil
+	return pluginsUpdated, nil
 }
 
 // InstallPluginsFromLocalSource installs plugin from local source directory
