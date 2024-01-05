@@ -269,7 +269,7 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 	// Sync all required plugins
 	_, err = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
 	if err == nil {
-		log.Infof("Successfully created and activated context '%s' and required plugins are up-to-date", ctxName)
+		log.Infof(component.PrefixEmoji(component.CheckMark, fmt.Sprintf("Successfully created and activated context '%s' and required plugins are up-to-date", ctxName)))
 	} else {
 		log.Warningf("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
 	}
@@ -314,7 +314,8 @@ func displayUninstalledPluginsContentAsTable(plugins []discovery.Discovered, wri
 	outputUninstalledPlugins := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Plugin update diff:")
 	for i := range plugins {
 		if plugins[i].Status == common.PluginStatusNotInstalled || plugins[i].Status == common.PluginStatusUpdateAvailable {
-			outputUninstalledPlugins.AddRow(fmt.Sprintf("+ %s:%s", plugins[i].Name, plugins[i].RecommendedVersion))
+			row := fmt.Sprintf("+%s:%s", plugins[i].Name, plugins[i].RecommendedVersion)
+			outputUninstalledPlugins.AddRow(component.Green(row))
 		}
 	}
 	outputUninstalledPlugins.Render()
