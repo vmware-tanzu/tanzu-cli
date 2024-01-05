@@ -704,7 +704,6 @@ func GetPluginGroup(groupIDAndVersion string, options ...PluginManagerOptions) (
 }
 
 func logPluginInstallationMessage(p *discovery.Discovered, version string, isPluginInCache, isPluginAlreadyInstalled bool) {
-
 	if isPluginInCache {
 		if !isPluginAlreadyInstalled {
 			log.Infof("Installing plugin '%v:%v' (from cache)", p.Name, version)

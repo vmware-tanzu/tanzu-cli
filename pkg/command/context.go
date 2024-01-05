@@ -67,8 +67,6 @@ const (
 
 	invalidTargetErrorForContextCommands = "invalid target specified. Please specify a correct value for the `--target` flag from 'kubernetes[k8s]/mission-control[tmc]'"
 	invalidContextType                   = "invalid context type specified. Please specify a correct value for the `--type/-t` flag from 'kubernetes[k8s]/mission-control[tmc]/tanzu'"
-
-	contexActivated = "Setting context '%v' of type '%v' to active"
 )
 
 // constants that define context creation types
@@ -275,7 +273,7 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 	// Sync all required plugins
 	_, err = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
 	if err == nil {
-		//log.Infof(component.PrefixEmoji(component.CheckMark, fmt.Sprintf("Successfully created and activated context '%s' and required plugins are up-to-date", ctxName)))
+		// log.Infof(component.PrefixEmoji(component.CheckMark, fmt.Sprintf("Successfully created and activated context '%s' and required plugins are up-to-date", ctxName)))
 		log.Infof(fmt.Sprintf("Successfully created and activated context '%s' and required plugins are up-to-date", ctxName))
 	} else {
 		log.Warningf("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
@@ -327,7 +325,7 @@ func displayUninstalledPluginsContentAsTable(plugins []discovery.Discovered, wri
 	for i := range plugins {
 		if plugins[i].Status == common.PluginStatusNotInstalled || plugins[i].Status == common.PluginStatusUpdateAvailable {
 			row := fmt.Sprintf("+%s:%s", plugins[i].Name, plugins[i].RecommendedVersion)
-			//outputUninstalledPlugins.AddRow(component.Green(row))
+			// outputUninstalledPlugins.AddRow(component.Green(row))
 			outputUninstalledPlugins.AddRow(row)
 		}
 	}
@@ -1182,7 +1180,7 @@ func useCtx(cmd *cobra.Command, args []string) error {
 	}
 
 	ctxCreateMsg := fmt.Sprintf("Successfully activated context '%s' of type '%s'%s", ctxName, ctx.ContextType, suffixString)
-	//ctxCreateMsg := component.PrefixEmoji(fmt.Sprintf("Successfully activated context '%s' of type '%s'%s", ctxName, ctx.ContextType, suffixString))
+	// ctxCreateMsg := component.PrefixEmoji(fmt.Sprintf("Successfully activated context '%s' of type '%s'%s", ctxName, ctx.ContextType, suffixString))
 
 	// Sync all required plugins
 	_, err = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
