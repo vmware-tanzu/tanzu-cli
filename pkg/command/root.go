@@ -62,15 +62,14 @@ func NewRootCmd() (*cobra.Command, error) {
 		configtypes.TargetK8s: k8sCmd,
 		configtypes.TargetTMC: tmcCmd,
 	}
-	if err := addPluginsToTarget(mapTargetToCmd); err != nil {
-		return nil, err
-	}
 
-	plugins, err := pluginsupplier.GetInstalledPlugins()
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return nil, err
 	}
-	telemetry.Client().SetInstalledPlugins(plugins)
+	addPluginsToTarget(mapTargetToCmd, installedPlugins)
+
+	telemetry.Client().SetInstalledPlugins(installedPlugins)
 	if err = config.CopyLegacyConfigDir(); err != nil {
 		return nil, fmt.Errorf("failed to copy legacy configuration directory to new location: %w", err)
 	}
@@ -78,16 +77,16 @@ func NewRootCmd() (*cobra.Command, error) {
 	var maskedPluginsWithPluginOverlap []string
 	var maskedPluginsWithCoreCmdOverlap []string
 
-	for i := range plugins {
+	for i := range installedPlugins {
 		// Only add plugins that should be available as root level command
-		if isPluginRootCmdTargeted(&plugins[i]) {
-			cmd := cli.GetCmdForPlugin(&plugins[i])
+		if isPluginRootCmdTargeted(&installedPlugins[i]) {
+			cmd := cli.GetCmdForPlugin(&installedPlugins[i])
 			// check and find if a command/plugin with the same name already exists as part of the root command
 			matchedCmd := findSubCommand(rootCmd, cmd)
 			if matchedCmd == nil { // If the subcommand for the plugin doesn't exist add the command
 				rootCmd.AddCommand(cmd)
-			} else if (plugins[i].Scope == common.PluginScopeContext ||
-				plugins[i].Target == configtypes.TargetGlobal) && isStandalonePluginCommand(matchedCmd) {
+			} else if (installedPlugins[i].Scope == common.PluginScopeContext ||
+				installedPlugins[i].Target == configtypes.TargetGlobal) && isStandalonePluginCommand(matchedCmd) {
 				// If the subcommand already exists because of a standalone plugin but the new plugin
 				// is `Context-Scoped` then the new context-scoped plugin gets higher precedence.
 				// Also, if the subcommand already exists because of a standalone plugin but the new plugin
@@ -100,14 +99,14 @@ func NewRootCmd() (*cobra.Command, error) {
 				maskedPluginsWithPluginOverlap = append(maskedPluginsWithPluginOverlap, matchedCmd.Name())
 				rootCmd.RemoveCommand(matchedCmd)
 				rootCmd.AddCommand(cmd)
-			} else if plugins[i].Name != "login" {
+			} else if installedPlugins[i].Name != "login" {
 				// As the `login` plugin is now part of the core Tanzu CLI command and not a plugin
 				// anymore, skip the `login` plugin from adding it to the maskedPlugins array to avoid
 				// the warning message from getting shown to the user on each command invocation.
 				if isPluginCommand(matchedCmd) {
-					maskedPluginsWithPluginOverlap = append(maskedPluginsWithPluginOverlap, plugins[i].Name)
+					maskedPluginsWithPluginOverlap = append(maskedPluginsWithPluginOverlap, installedPlugins[i].Name)
 				} else {
-					maskedPluginsWithCoreCmdOverlap = append(maskedPluginsWithCoreCmdOverlap, plugins[i].Name)
+					maskedPluginsWithCoreCmdOverlap = append(maskedPluginsWithCoreCmdOverlap, installedPlugins[i].Name)
 				}
 			}
 		}
@@ -238,18 +237,12 @@ var tmcCmd = &cobra.Command{
 	},
 }
 
-func addPluginsToTarget(mapTargetToCmd map[configtypes.Target]*cobra.Command) error {
-	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
-	if err != nil {
-		return fmt.Errorf("unable to find installed plugins: %w", err)
-	}
-
+func addPluginsToTarget(mapTargetToCmd map[configtypes.Target]*cobra.Command, installedPlugins []cli.PluginInfo) {
 	for i := range installedPlugins {
 		if cmd, exists := mapTargetToCmd[installedPlugins[i].Target]; exists {
 			cmd.AddCommand(cli.GetCmdForPlugin(&installedPlugins[i]))
 		}
 	}
-	return nil
 }
 
 func findSubCommand(rootCmd, subCmd *cobra.Command) *cobra.Command {
