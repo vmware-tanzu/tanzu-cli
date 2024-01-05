@@ -275,7 +275,8 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 	// Sync all required plugins
 	_, err = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
 	if err == nil {
-		log.Infof(component.PrefixEmoji(component.CheckMark, fmt.Sprintf("Successfully created and activated context '%s' and required plugins are up-to-date", ctxName)))
+		//log.Infof(component.PrefixEmoji(component.CheckMark, fmt.Sprintf("Successfully created and activated context '%s' and required plugins are up-to-date", ctxName)))
+		log.Infof(fmt.Sprintf("Successfully created and activated context '%s' and required plugins are up-to-date", ctxName))
 	} else {
 		log.Warningf("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
 	}
