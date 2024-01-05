@@ -1161,14 +1161,14 @@ func useCtx(cmd *cobra.Command, args []string) error {
 
 	suffixString := ""
 	if ctx.ContextType == configtypes.ContextTypeTanzu {
-		if ctx.AdditionalMetadata[config.ProjectNameKey] != "" {
-			suffixString += fmt.Sprintf("Project: %s", ctx.AdditionalMetadata[config.ProjectNameKey])
+		if project, exists := ctx.AdditionalMetadata[config.ProjectNameKey]; exists && project != "" {
+			suffixString += fmt.Sprintf("Project: %s", project)
 		}
-		if ctx.AdditionalMetadata[config.SpaceNameKey] != "" {
-			suffixString += fmt.Sprintf(", Space: %s", ctx.AdditionalMetadata[config.SpaceNameKey])
+		if space, exists := ctx.AdditionalMetadata[config.SpaceNameKey]; exists && space != "" {
+			suffixString += fmt.Sprintf(", Space: %s", space)
 		}
-		if ctx.AdditionalMetadata[config.ClusterGroupNameKey] != "" {
-			suffixString += fmt.Sprintf(", ClusterGroup: %s", ctx.AdditionalMetadata[config.ClusterGroupNameKey])
+		if clustergroup, exists := ctx.AdditionalMetadata[config.ClusterGroupNameKey]; exists && clustergroup != "" {
+			suffixString += fmt.Sprintf(", ClusterGroup: %s", clustergroup)
 		}
 	}
 	if suffixString != "" {
