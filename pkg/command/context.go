@@ -327,7 +327,8 @@ func displayUninstalledPluginsContentAsTable(plugins []discovery.Discovered, wri
 	for i := range plugins {
 		if plugins[i].Status == common.PluginStatusNotInstalled || plugins[i].Status == common.PluginStatusUpdateAvailable {
 			row := fmt.Sprintf("+%s:%s", plugins[i].Name, plugins[i].RecommendedVersion)
-			outputUninstalledPlugins.AddRow(component.Green(row))
+			//outputUninstalledPlugins.AddRow(component.Green(row))
+			outputUninstalledPlugins.AddRow(row)
 		}
 	}
 	outputUninstalledPlugins.Render()
@@ -1181,6 +1182,7 @@ func useCtx(cmd *cobra.Command, args []string) error {
 	}
 
 	ctxCreateMsg := fmt.Sprintf("Successfully activated context '%s' of type '%s'%s", ctxName, ctx.ContextType, suffixString)
+	//ctxCreateMsg := component.PrefixEmoji(fmt.Sprintf("Successfully activated context '%s' of type '%s'%s", ctxName, ctx.ContextType, suffixString))
 
 	// Sync all required plugins
 	_, err = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
