@@ -286,6 +286,11 @@ func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType,
 		errList = append(errList, err)
 	}
 
+	// sort the plugins by name
+	sort.Slice(plugins, func(i, j int) bool {
+		return plugins[i].Name < plugins[j].Name
+	})
+
 	// update plugins installation status
 	pluginmanager.UpdatePluginsInstallationStatus(plugins)
 
