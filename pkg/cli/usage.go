@@ -78,13 +78,12 @@ func (u *MainUsage) Template() string {
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
 {{ bold "Examples:" }}
-  {{.Example}}{{end}}
+  {{.Example}}{{end}}{{if gt (len .CmdMap) 0}}
 
 {{ bold "Available command groups:" }}
 {{ range $group, $cmds := .CmdMap}}
   {{ bold $group }}{{ range $cmd := $cmds }}
-    {{rpad $cmd.Name 24}}{{$cmd.Short}} {{end}}
-	{{end}}
+    {{rpad $cmd.Name 24}}{{$cmd.Short}} {{end}}{{end}}{{end}}
 
 {{ bold "Flags:" }}
 {{.LocalFlags.FlagUsages  | trimTrailingWhitespaces}}

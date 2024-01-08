@@ -58,11 +58,8 @@ func NewRootCmd() (*cobra.Command, error) {
 		return nil, errors.Wrap(err, "failed to ensure CLI ID")
 	}
 
-	mapTargetToCmd := map[configtypes.Target]*cobra.Command{
-		configtypes.TargetK8s: k8sCmd,
-		configtypes.TargetTMC: tmcCmd,
-	}
-	if err := addPluginsToTarget(mapTargetToCmd); err != nil {
+	// Setup the commands for the plugins under the k8s and tmc targets
+	if err := setupTargetPlugins(); err != nil {
 		return nil, err
 	}
 
@@ -126,6 +123,34 @@ func NewRootCmd() (*cobra.Command, error) {
 	rootCmd.DisableAutoGenTag = true
 
 	return rootCmd, nil
+}
+
+// setupTargetPlugins sets up the commands for the plugins under the k8s and tmc targets
+func setupTargetPlugins() error {
+	mapTargetToCmd := map[configtypes.Target]*cobra.Command{
+		configtypes.TargetK8s: k8sCmd,
+		configtypes.TargetTMC: tmcCmd,
+	}
+
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+	if err != nil {
+		return fmt.Errorf("unable to find installed plugins: %w", err)
+	}
+
+	// Insert the plugin commands under the appropriate target command
+	for i := range installedPlugins {
+		if cmd, exists := mapTargetToCmd[installedPlugins[i].Target]; exists {
+			cmd.AddCommand(cli.GetCmdForPlugin(&installedPlugins[i]))
+		}
+	}
+
+	// Hide the targets that currently have no plugins installed.
+	for _, targetCmd := range mapTargetToCmd {
+		if len(targetCmd.Commands()) == 0 {
+			targetCmd.Hidden = true
+		}
+	}
+	return nil
 }
 
 func newRootCmd() *cobra.Command {
@@ -220,12 +245,24 @@ func InstallEssentialPlugins(cmd *cobra.Command) {
 	}
 }
 
+func handleTargetHelp(cmd *cobra.Command, args []string) {
+	// If there are no plugins installed for this target, print a message
+	if len(cmd.Commands()) == 0 {
+		fmt.Fprintf(cmd.OutOrStdout(), "Note: No plugins are currently installed for the %[1]q target.\n      Such plugins will be accessible when a %[1]q context is created/activated or a %[1]q plugin is explicitly installed.\n\n", cmd.Name())
+	}
+	// Always print the help for the target command is invoked without any subcommand
+	cmd.HelpFunc()(cmd, args)
+}
+
 var k8sCmd = &cobra.Command{
 	Use:     "kubernetes",
 	Short:   "Tanzu CLI plugins that target a Kubernetes cluster",
 	Aliases: []string{"k8s"},
 	Annotations: map[string]string{
 		"group": string(plugin.TargetCmdGroup),
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		handleTargetHelp(cmd, args)
 	},
 }
 
@@ -236,20 +273,9 @@ var tmcCmd = &cobra.Command{
 	Annotations: map[string]string{
 		"group": string(plugin.TargetCmdGroup),
 	},
-}
-
-func addPluginsToTarget(mapTargetToCmd map[configtypes.Target]*cobra.Command) error {
-	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
-	if err != nil {
-		return fmt.Errorf("unable to find installed plugins: %w", err)
-	}
-
-	for i := range installedPlugins {
-		if cmd, exists := mapTargetToCmd[installedPlugins[i].Target]; exists {
-			cmd.AddCommand(cli.GetCmdForPlugin(&installedPlugins[i]))
-		}
-	}
-	return nil
+	Run: func(cmd *cobra.Command, args []string) {
+		handleTargetHelp(cmd, args)
+	},
 }
 
 func findSubCommand(rootCmd, subCmd *cobra.Command) *cobra.Command {

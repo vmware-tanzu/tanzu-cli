@@ -58,9 +58,9 @@ cluster endpoint type and Tanzu Mission Control endpoint type respectively. A
 context is associated with one of the two supported targets. Plugins are
 generally associated with one of the above mentioned targets but if a plugin
 doesn't fall into any of the above categories a developer can create a plugin
-with the 'global' target. A plugin using the `global` target is available as a
-root Tanzu CLI command. To see plugins that only apply the `kubernetes` Target
-or only to the `mission-control` Target, run the command `tanzu <target>'.
+with the `global` target. A plugin using the `global` target is available as a
+root Tanzu CLI sub-command. To see plugins that only apply to the `kubernetes` target
+or only to the `mission-control` target, run the command `tanzu <target>'.
 
 Similarly, commands from plugins that are associated with a target are
 unambiguously invoked by prefixing the command group with the target, like so:
@@ -72,10 +72,15 @@ tanzu k8s management-cluster ...
 ```
 
 Note that today, the CLI supports omitting the target for historical reasons,
-but this omission only applies to commands for the k8s target.
+but this omission only applies to commands for the `k8s` target.
 (So `tanzu management-cluster ...` is a valid variant of the above example, but not
 `tanzu data-protection ...`). The CLI team is exploring making the 'assumed target'
 configurable.
+
+Note also that until a plugin associated with a target is installed, the target in
+question will be hidden from the user.  For example, if no `tmc`/`mission-control`
+plugins are installed, the `tanzu tmc`/`tanzu mission-control` sub-command will not
+be shown to the user in the help.
 
 ## Interaction between CLI and its plugins
 

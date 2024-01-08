@@ -129,12 +129,30 @@ func TestSubcommands(t *testing.T) {
 			expected: "dummy",
 		},
 		{
-			test:     "k8s target",
+			test:     "k8s plugin at root level",
 			plugin:   "dummy",
 			version:  "v0.1.0",
 			cmdGroup: plugin.SystemCmdGroup,
 			target:   configtypes.TargetK8s,
 			args:     []string{"dummy", "say", "hello"},
+			expected: "hello",
+		},
+		{
+			test:     "k8s target",
+			plugin:   "dummy",
+			version:  "v0.1.0",
+			cmdGroup: plugin.SystemCmdGroup,
+			target:   configtypes.TargetK8s,
+			args:     []string{"k8s", "dummy", "say", "hello"},
+			expected: "hello",
+		},
+		{
+			test:     "kubernetes target",
+			plugin:   "dummy",
+			version:  "v0.1.0",
+			cmdGroup: plugin.SystemCmdGroup,
+			target:   configtypes.TargetK8s,
+			args:     []string{"kubernetes", "dummy", "say", "hello"},
 			expected: "hello",
 		},
 		{
@@ -156,7 +174,25 @@ func TestSubcommands(t *testing.T) {
 			expected: "hello",
 		},
 		{
-			test:            "tmc target",
+			test:     "tmc target",
+			plugin:   "dummy",
+			version:  "v0.1.0",
+			cmdGroup: plugin.SystemCmdGroup,
+			target:   configtypes.TargetTMC,
+			args:     []string{"tmc", "dummy", "say", "hello"},
+			expected: "hello",
+		},
+		{
+			test:     "mission-control target",
+			plugin:   "dummy",
+			version:  "v0.1.0",
+			cmdGroup: plugin.SystemCmdGroup,
+			target:   configtypes.TargetTMC,
+			args:     []string{"mission-control", "dummy", "say", "hello"},
+			expected: "hello",
+		},
+		{
+			test:            "tmc target not at root",
 			plugin:          "dummy",
 			version:         "v0.1.0",
 			cmdGroup:        plugin.SystemCmdGroup,
@@ -321,6 +357,339 @@ func TestSubcommands(t *testing.T) {
 			}
 			if spec.unexpected != "" {
 				assert.NotContains(string(got), spec.unexpected)
+			}
+		})
+		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
+	}
+}
+
+func TestTargetCommands(t *testing.T) {
+	tests := []struct {
+		test                   string
+		installedPluginTargets []configtypes.Target
+		args                   []string
+		expected               []string
+		unexpected             []string
+		expectedFailure        bool
+	}{
+		// ===================================
+		// Tests for the top-level help output
+		// ===================================
+		{
+			test:       "top run for all empty targets",
+			args:       []string{},
+			unexpected: []string{"Target", "kubernetes", "mission-control"},
+		},
+		{
+			test:                   "top run for only k8s empty",
+			args:                   []string{},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
+			expected:               []string{"Target", "mission-control"},
+			unexpected:             []string{"kubernetes"},
+		},
+		{
+			test:                   "top run for only tmc empty",
+			args:                   []string{},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
+			expected:               []string{"Target", "kubernetes"},
+			unexpected:             []string{"mission-control"},
+		},
+		{
+			test:                   "top run for no empty targets",
+			args:                   []string{},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s, configtypes.TargetTMC},
+			expected:               []string{"Target", "kubernetes", "mission-control"},
+		},
+		{
+			test:       "top help for all empty targets",
+			args:       []string{"-h"},
+			unexpected: []string{"Target", "kubernetes", "mission-control"},
+		},
+		{
+			test:                   "top help for only k8s empty",
+			args:                   []string{"-h"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
+			expected:               []string{"Target", "mission-control"},
+			unexpected:             []string{"kubernetes"},
+		},
+		{
+			test:                   "top help for only tmc empty",
+			args:                   []string{"-h"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
+			expected:               []string{"Target", "kubernetes"},
+			unexpected:             []string{"mission-control"},
+		},
+		{
+			test:                   "top help for no empty targets",
+			args:                   []string{"-h"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s, configtypes.TargetTMC},
+			expected:               []string{"Target", "kubernetes", "mission-control"},
+		},
+		// ========================
+		// Tests for the k8s target
+		// ========================
+		{
+			test: "help for k8s target run when empty",
+			args: []string{"k8s"},
+			expected: []string{
+				"Note: No plugins are currently installed for the \"kubernetes\" target",
+				"Tanzu CLI plugins that target a Kubernetes cluster",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test: "help for k8s target help when empty",
+			args: []string{"k8s", "-h"},
+			expected: []string{
+				"Tanzu CLI plugins that target a Kubernetes cluster",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test: "help for k8s target invalid when empty",
+			args: []string{"k8s", "invalid"},
+			expected: []string{
+				"Note: No plugins are currently installed for the \"kubernetes\" target",
+				"Tanzu CLI plugins that target a Kubernetes cluster",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test:                   "help for k8s target run when not empty",
+			args:                   []string{"k8s"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
+			expected: []string{
+				"Tanzu CLI plugins that target a Kubernetes cluster",
+				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
+			},
+			unexpected: []string{
+				"Note: No plugins are currently installed",
+			},
+		},
+		{
+			test:                   "help for k8s target help when not empty",
+			args:                   []string{"k8s", "-h"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
+			expected: []string{
+				"Tanzu CLI plugins that target a Kubernetes cluster",
+				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
+			},
+			unexpected: []string{
+				"Note: No plugins are currently installed",
+			},
+		},
+		{
+			test:                   "help for k8s target run when empty but tmc not empty",
+			args:                   []string{"k8s"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
+			expected: []string{
+				"Tanzu CLI plugins that target a Kubernetes cluster",
+				"Note: No plugins are currently installed for the \"kubernetes\" target",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test:                   "help for k8s target help when empty but tmc not empty",
+			args:                   []string{"k8s", "-h"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
+			expected: []string{
+				"Tanzu CLI plugins that target a Kubernetes cluster",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		// ========================
+		// Tests for the tmc target
+		// ========================
+		{
+			test: "help for tmc target run when empty",
+			args: []string{"tmc"},
+			expected: []string{
+				"Note: No plugins are currently installed for the \"mission-control\" target",
+				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test: "help for tmc target help when empty",
+			args: []string{"tmc", "-h"},
+			expected: []string{
+				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test: "help for tmc target invalid when empty",
+			args: []string{"tmc", "invalid"},
+			expected: []string{
+				"Note: No plugins are currently installed for the \"mission-control\" target",
+				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test:                   "help for tmc target run when not empty",
+			args:                   []string{"tmc"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
+			expected: []string{
+				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
+			},
+			unexpected: []string{
+				"Note: No plugins are currently installed",
+			},
+		},
+		{
+			test:                   "help for tmc target help when not empty",
+			args:                   []string{"tmc", "-h"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
+			expected: []string{
+				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
+			},
+			unexpected: []string{
+				"Note: No plugins are currently installed",
+			},
+		},
+		{
+			test:                   "help for tmc target run when empty but k8s not empty",
+			args:                   []string{"tmc"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
+			expected: []string{
+				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+				"Note: No plugins are currently installed for the \"mission-control\" target",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test:                   "help for tmc target help when empty but k8s not empty",
+			args:                   []string{"tmc", "-h"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
+			expected: []string{
+				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+	}
+
+	for _, spec := range tests {
+		dir, err := os.MkdirTemp("", "tanzu-cli-root-cmd")
+		assert.Nil(t, err)
+		defer os.RemoveAll(dir)
+		os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
+
+		// Setup a temporary configuration.  This means no
+		// plugin source will be available which will prevent
+		// trying to install the essential plugins.
+		// This speeds up the test.
+		configFile, _ := os.CreateTemp("", "config")
+		os.Setenv("TANZU_CONFIG", configFile.Name())
+		defer os.RemoveAll(configFile.Name())
+
+		configFileNG, _ := os.CreateTemp("", "config_ng")
+		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+		defer os.RemoveAll(configFileNG.Name())
+
+		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+		os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
+
+		// Start each test with the defaults of the target commands
+		// and reset the help flag in case it was set
+		tmcCmd.ResetCommands()
+		tmcCmd.Hidden = false
+		helpFlag := tmcCmd.Flags().Lookup("help")
+		if helpFlag != nil {
+			_ = helpFlag.Value.Set("false")
+		}
+		k8sCmd.ResetCommands()
+		k8sCmd.Hidden = false
+		helpFlag = k8sCmd.Flags().Lookup("help")
+		if helpFlag != nil {
+			_ = helpFlag.Value.Set("false")
+		}
+
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			r, w, err := os.Pipe()
+			if err != nil {
+				t.Error(err)
+			}
+			c := make(chan []byte)
+			go readOutput(t, r, c)
+
+			// Set up for our test
+			stdout := os.Stdout
+			stderr := os.Stderr
+			defer func() {
+				os.Stdout = stdout
+				os.Stderr = stderr
+			}()
+			os.Stdout = w
+			os.Stderr = w
+
+			assert.Nil(err)
+
+			for _, target := range spec.installedPluginTargets {
+				pluginName := "dummy"
+				pi := &cli.PluginInfo{
+					Name:             pluginName,
+					Description:      pluginName,
+					Group:            plugin.SystemCmdGroup,
+					Version:          "v0.1.0",
+					Aliases:          []string{},
+					Hidden:           false,
+					InstallationPath: filepath.Join(dir, fmt.Sprintf("%s_%s", pluginName, string(target))),
+					Target:           target,
+				}
+				err = setupFakePlugin(dir, pi.Name, pi.Version, pi.Group, 0, pi.Target, 0, pi.Hidden, pi.Aliases)
+				assert.Nil(err)
+
+				cc, err := catalog.NewContextCatalogUpdater("")
+				assert.Nil(err)
+				err = cc.Upsert(pi)
+				cc.Unlock()
+				assert.Nil(err)
+			}
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+
+			w.Close()
+			got := <-c
+
+			assert.Equal(spec.expectedFailure, err != nil)
+			for _, expected := range spec.expected {
+				assert.Contains(string(got), expected)
+			}
+			for _, unexpected := range spec.unexpected {
+				assert.NotContains(string(got), unexpected)
 			}
 		})
 		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
