@@ -189,10 +189,12 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 	})
 
-	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tmc/tmc-user:v0.0.1'", func() {
-		// Test case: download plugin bundle for plugin-group vmware-tmc/tmc-user:v0.0.1
+	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tmc/tmc-user:v0.0.1' provided 2 times", func() {
+		// Test case: download plugin bundle for plugin-groups vmware-tmc/tmc-user:v0.0.1 and vmware-tmc/tmc-user:v0.0.1
+		// Note: we are passing same plugin group multiple times to make sure we test the conflicts in the plugin groups
+		// as well as plugins itself are handled properly while downloading and uploading bundle
 		It("download plugin bundle for plugin-group vmware-tmc/tmc-user:v0.0.1", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tmc/tmc-user:v0.0.1"}, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-v0.0.1.tar.gz"))
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tmc/tmc-user:v0.0.1", "vmware-tmc/tmc-user:v0.0.1"}, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
 		})
 
