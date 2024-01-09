@@ -170,6 +170,11 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 			selectedPluginEntries = append(selectedPluginEntries, pluginEntries...)
 		}
 	}
+
+	// Remove duplicate PluginInventoryEntries and PluginGroups from the selected list
+	selectedPluginEntries = plugininventory.RemoveDuplicatePluginInventoryEntries(selectedPluginEntries)
+	selectedPluginGroups = plugininventory.RemoveDuplicatePluginGroups(selectedPluginGroups)
+
 	return selectedPluginEntries, selectedPluginGroups, nil
 }
 
