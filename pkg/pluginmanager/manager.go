@@ -732,6 +732,12 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		}
 	}
 
+	// Initialize the spinner
+	spinner, spinnerErr := component.NewOutputWriterSpinnerWithOptions(os.Stdout, "text", "", true, nil)
+	if spinnerErr != nil {
+		log.Warning("Warning: Unable to initialize spinner")
+	}
+
 	// Log message based on different installation conditions
 	logPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
 
@@ -750,6 +756,11 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		if err := doInstallTestPlugin(p, plugin.InstallationPath, version); err != nil {
 			return err
 		}
+	}
+
+	// Stop the spinner before updating the plugin info and initializing the plugin
+	if spinner != nil {
+		spinner.StopSpinner()
 	}
 
 	return updatePluginInfoAndInitializePlugin(p, plugin)
