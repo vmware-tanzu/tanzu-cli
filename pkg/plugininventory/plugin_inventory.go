@@ -214,3 +214,33 @@ func (p PluginGroupSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 func (p PluginGroupSorter) Less(i, j int) bool {
 	return PluginGroupToID(p[i]) < PluginGroupToID(p[j])
 }
+
+// RemoveDuplicatePluginInventoryEntries removes the duplicate PluginInventoryEntries
+// based on Name, Target and RecommendedVersion fields.
+func RemoveDuplicatePluginInventoryEntries(entries []*PluginInventoryEntry) []*PluginInventoryEntry {
+	encountered := make(map[string]bool)
+	result := []*PluginInventoryEntry{}
+	for _, entry := range entries {
+		id := fmt.Sprintf("%s-%s-%s", entry.Name, entry.Target, entry.RecommendedVersion)
+		if !encountered[id] {
+			encountered[id] = true
+			result = append(result, entry)
+		}
+	}
+	return result
+}
+
+// RemoveDuplicatePluginGroups removes the duplicate pluginGroups from the list
+// based on Vendor, Publisher, Name and RecommendedVersion fields.
+func RemoveDuplicatePluginGroups(groups []*PluginGroup) []*PluginGroup {
+	encountered := make(map[string]bool)
+	result := []*PluginGroup{}
+	for _, gp := range groups {
+		id := fmt.Sprintf("%s-%s/%s:%s", gp.Vendor, gp.Publisher, gp.Name, gp.RecommendedVersion)
+		if !encountered[id] {
+			encountered[id] = true
+			result = append(result, gp)
+		}
+	}
+	return result
+}

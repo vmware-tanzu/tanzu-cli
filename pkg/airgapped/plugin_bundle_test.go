@@ -109,6 +109,25 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 			},
 		},
 	}
+	pluginGroupEntry2 := &plugininventory.PluginGroup{
+		Vendor:             "fakevendor",
+		Publisher:          "fakepublisher",
+		Name:               "default2",
+		Description:        "Desc for plugin",
+		Hidden:             false,
+		RecommendedVersion: "v1.0.0",
+		Versions: map[string][]*plugininventory.PluginGroupPluginEntry{
+			"v1.0.0": {
+				&plugininventory.PluginGroupPluginEntry{
+					PluginIdentifier: plugininventory.PluginIdentifier{
+						Name:    "bar",
+						Target:  "kubernetes",
+						Version: "v0.0.1",
+					},
+				},
+			},
+		},
+	}
 
 	// plugin entry bar to be added in the inventory database
 	essentialPluginEntryTelemetry := &plugininventory.PluginInventoryEntry{
@@ -222,6 +241,8 @@ imagesToCopy:
 		err = db.InsertPlugin(pluginEntryBar)
 		Expect(err).ToNot(HaveOccurred())
 		err = db.InsertPluginGroup(pluginGroupEntry, true)
+		Expect(err).ToNot(HaveOccurred())
+		err = db.InsertPluginGroup(pluginGroupEntry2, true)
 		Expect(err).ToNot(HaveOccurred())
 
 		err = db.InsertPlugin(essentialPluginEntryTelemetry)
@@ -361,7 +382,8 @@ imagesToCopy:
 			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
 			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
 
-			dpbo.Groups = []string{"fakevendor-fakepublisher/default:v1.0.0"}
+			// Provide 2 plugingroups with overlapping plugins and verify DownloadPluginBundle does not fail
+			dpbo.Groups = []string{"fakevendor-fakepublisher/default:v1.0.0", "fakevendor-fakepublisher/default2:v1.0.0"}
 			err := dpbo.DownloadPluginBundle()
 			Expect(err).NotTo(HaveOccurred())
 
@@ -382,7 +404,7 @@ imagesToCopy:
 			err = yaml.Unmarshal(bytes, &manifest)
 			Expect(err).NotTo(HaveOccurred())
 
-			// Iterate through all the images in the manifest and verify the all image archive
+			// Iterate through all the images in the manifest and verify that all image archive
 			// files mentioned in the manifest exists in the bundle
 			for _, pi := range manifest.ImagesToCopy {
 				exists := utils.PathExists(filepath.Join(tempDir, PluginBundleDirName, pi.SourceTarFilePath))
