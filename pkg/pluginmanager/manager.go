@@ -10,8 +10,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
@@ -701,7 +703,7 @@ func GetPluginGroup(groupIDAndVersion string, options ...PluginManagerOptions) (
 	return pg, nil
 }
 
-func logPluginInstallationMessage(p *discovery.Discovered, version string, isPluginInCache, isPluginAlreadyInstalled bool) {
+func getPluginInstallationMessage(p *discovery.Discovered, version string, isPluginInCache, isPluginAlreadyInstalled bool) (installingMsg, installedMsg, errorMsg string) {
 	withTarget := ""
 	if p.Target != configtypes.TargetUnknown {
 		withTarget = fmt.Sprintf("with target '%v' ", p.Target)
@@ -709,13 +711,18 @@ func logPluginInstallationMessage(p *discovery.Discovered, version string, isPlu
 
 	if isPluginInCache {
 		if !isPluginAlreadyInstalled {
-			log.Infof("Installing plugin '%v:%v' %v(from cache)", p.Name, version, withTarget)
+			installingMsg = fmt.Sprintf("Installing plugin '%v:%v' %v(from cache)", p.Name, version, withTarget)
+			installedMsg = fmt.Sprintf("Installed plugin '%v:%v' %v(from cache)", p.Name, version, withTarget)
 		} else {
-			log.Infof("Plugin '%v:%v' %vis already installed. Reinitializing...", p.Name, version, withTarget)
+			installingMsg = fmt.Sprintf("Plugin '%v:%v' %vis already installed. Reinitializing...", p.Name, version, withTarget)
+			installedMsg = fmt.Sprintf("Reinitialized plugin '%v:%v' %v", p.Name, version, withTarget)
 		}
 	} else {
-		log.Infof("Installing plugin '%v:%v' %v", p.Name, version, withTarget)
+		installingMsg = fmt.Sprintf("Installing plugin '%v:%v' %v", p.Name, version, withTarget)
+		installedMsg = fmt.Sprintf("Installed plugin '%v:%v' %v", p.Name, version, withTarget)
 	}
+	errorMsg = fmt.Sprintf("Failed to install plugin '%v:%v' %v", p.Name, version, withTarget)
+	return installingMsg, installedMsg, errorMsg
 }
 
 func installOrUpgradePlugin(p *discovery.Discovered, version string, installTestPlugin bool) error {
@@ -737,26 +744,72 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 	}
 
 	// Log message based on different installation conditions
-	logPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
+	installingMsg, installedMsg, errMsg := getPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
 
+	var spinnerErr, pluginErr error
+	var sow component.OutputWriterSpinner
+	var signalChannel chan os.Signal
+
+	// Initialize the spinner if the spinner is allowed
+	if component.IsTTYEnabled() {
+		// Set spinner options
+		spinnerOptions := component.OutputWriterSpinnerOptions{
+			SpinnerOptions: []component.OutputWriterSpinnerOption{
+				component.WithSpinnerFinalText(installedMsg, log.LogTypeINFO),
+			},
+		}
+		// Create a channel to receive OS signals
+		signalChannel = make(chan os.Signal, 1)
+
+		// Register the channel to receive interrupt signals (e.g., Ctrl+C)
+		signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
+
+		// Initialize the spinner
+		sow, spinnerErr = component.NewOutputWriterSpinnerWithSpinnerOptions(os.Stderr, component.TableOutputType, installingMsg, true, spinnerOptions)
+		if spinnerErr != nil {
+			log.V(6).Infof("Unable to initialize spinner: %v", spinnerErr.Error())
+			log.Info(installingMsg)
+		}
+		if sow != nil {
+			defer sow.StopSpinner()
+
+			// Start a goroutine that listens for interrupt signals
+			go func() {
+				// Wait for an interrupt signal
+				<-signalChannel
+
+				// Handle the interrupt signal by setting the final text and stopping the spinner
+				sow.SetFinalText(errMsg, log.LogTypeERROR)
+				sow.StopSpinner()
+
+				// Exit the program with exit code 130 (interrupted)
+				os.Exit(128 + int(syscall.SIGINT))
+			}()
+		}
+	} else {
+		log.Info(installingMsg)
+	}
+
+	var binary []byte
 	if plugin == nil {
-		binary, err := fetchAndVerifyPlugin(p, version)
-		if err != nil {
-			return err
-		}
-
-		plugin, err = installAndDescribePlugin(p, version, binary)
-		if err != nil {
-			return err
+		binary, pluginErr = fetchAndVerifyPlugin(p, version)
+		if pluginErr == nil {
+			plugin, pluginErr = installAndDescribePlugin(p, version, binary)
 		}
 	}
-	if installTestPlugin {
-		if err := doInstallTestPlugin(p, plugin.InstallationPath, version); err != nil {
-			return err
-		}
+	if pluginErr == nil && installTestPlugin {
+		pluginErr = doInstallTestPlugin(p, plugin.InstallationPath, version)
 	}
 
-	return updatePluginInfoAndInitializePlugin(p, plugin)
+	if pluginErr == nil {
+		pluginErr = updatePluginInfoAndInitializePlugin(p, plugin)
+	}
+	if pluginErr != nil {
+		if sow != nil {
+			sow.SetFinalText(errMsg, log.LogTypeERROR)
+		}
+	}
+	return pluginErr
 }
 
 func getPluginFromCache(p *discovery.Discovered, version string) *cli.PluginInfo {
