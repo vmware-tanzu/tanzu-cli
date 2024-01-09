@@ -215,7 +215,7 @@ func (p PluginGroupSorter) Less(i, j int) bool {
 	return PluginGroupToID(p[i]) < PluginGroupToID(p[j])
 }
 
-// RemoveDuplicatePluginInventoryEntries removes the duplicate PluginInventoryEntiries entries
+// RemoveDuplicatePluginInventoryEntries removes the duplicate PluginInventoryEntries
 // based on Name, Target and RecommendedVersion fields.
 func RemoveDuplicatePluginInventoryEntries(entries []*PluginInventoryEntry) []*PluginInventoryEntry {
 	encountered := make(map[string]bool)
