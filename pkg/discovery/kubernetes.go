@@ -61,21 +61,30 @@ func (k *KubernetesDiscovery) Manifest() ([]Discovered, error) {
 func (k *KubernetesDiscovery) GetDiscoveredPlugins(clusterClient cluster.Client) ([]Discovered, error) {
 	plugins := make([]Discovered, 0)
 
-	exists, err := clusterClient.VerifyCLIPluginCRD()
-	if !exists || err != nil {
-		logMsg := "Skipping context-aware plugin discovery because CLIPlugin CRD not present on the logged in cluster. "
-		if err != nil {
-			logMsg += err.Error()
-		}
+	logMsg := "Skipping context-aware plugin discovery because CLIPlugin CRD not present on the logged in cluster. "
+
+	crdExists, errVerifyCRD := clusterClient.VerifyCLIPluginCRD()
+	// If no error and CRD does not exists, return with a log message
+	if errVerifyCRD == nil && !crdExists {
 		log.V(4).Info(logMsg)
 		return nil, nil
 	}
 
-	// get all cliplugins resources available on the cluster
-	cliplugins, err := clusterClient.ListCLIPluginResources()
-	if err != nil {
-		log.V(4).Infof("error while fetching the list of CLIPlugin resources. %v", err.Error())
-		return nil, err
+	// Try to get all cliplugins resources available on the cluster
+	cliplugins, errListCLIPlugins := clusterClient.ListCLIPluginResources()
+	if errListCLIPlugins != nil {
+		// If there was an earlier error while verifying CRD, assuming that it was a legitimate
+		// error and will just log a warning and return without error
+		if errVerifyCRD != nil {
+			logMsg += errVerifyCRD.Error()
+			log.V(4).Info(logMsg)
+			return nil, nil
+		}
+
+		// If the CRD was present and we see error while listing the CLIPlugin resources
+		// log an error message and return an error
+		log.V(4).Infof("error while fetching the list of CLIPlugin resources. %v", errListCLIPlugins.Error())
+		return nil, errListCLIPlugins
 	}
 
 	log.V(4).Infof("found %v CLIPlugin resources.", len(cliplugins))
