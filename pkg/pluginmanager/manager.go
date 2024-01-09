@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -215,6 +216,9 @@ func DiscoverServerPluginsForGivenContexts(contexts []*configtypes.Context) ([]d
 				discoveredPlugins[i].RecommendedVersion = matchedRecommendedVersion
 			}
 		}
+		// Remove older plugins from the discoveredPlugins list when there are duplicates
+		// this can be possible if a same plugin gets discovered from different kubernetes namespaces
+		discoveredPlugins = removeOldPluginsWhenDuplicates(discoveredPlugins)
 		plugins = append(plugins, discoveredPlugins...)
 	}
 	return plugins, kerrors.NewAggregate(errList)
@@ -1614,4 +1618,45 @@ func isNewPluginVersionAvailable(plugins []*plugininventory.PluginGroupPluginEnt
 	}
 
 	return false // No new version available
+}
+
+// removeOldPluginsWhenDuplicates removes older versions of the same plugin based on semver precedence.
+func removeOldPluginsWhenDuplicates(plugins []discovery.Discovered) []discovery.Discovered {
+	// Create a map to store the latest version of each plugin
+	latestVersions := make(map[string]*semver.Version)
+
+	// Iterate through plugins to find the latest version of each plugin
+	for i := range plugins {
+		key := fmt.Sprintf("%s-%s", plugins[i].Name, plugins[i].Target)
+		v, err := semver.NewVersion(plugins[i].RecommendedVersion)
+		if err != nil {
+			// The provided RecommendedVersion does not look like a semver
+			// ignoring the invalid version
+			continue
+		}
+
+		if latest, ok := latestVersions[key]; !ok || v.GreaterThan(latest) {
+			latestVersions[key] = v
+		}
+	}
+
+	// Create a slice to store the final result
+	var result []discovery.Discovered
+
+	// Iterate through plugins again to filter out older versions
+	for i := range plugins {
+		key := fmt.Sprintf("%s-%s", plugins[i].Name, plugins[i].Target)
+		latestVersion, ok := latestVersions[key]
+		if !ok {
+			// Skip the plugin from the list if the plugin is already added to the result
+			continue
+		}
+
+		if v, err := semver.NewVersion(plugins[i].RecommendedVersion); err == nil && v.Equal(latestVersion) {
+			result = append(result, plugins[i])
+			delete(latestVersions, key)
+		}
+	}
+
+	return result
 }
