@@ -23,7 +23,7 @@ const (
 	// Config commands
 	ConfigCmd          = "%s config"
 	ConfigSet          = "%s config set "
-	ConfigGet          = "%s config get "
+	ConfigGet          = "%s config get"
 	ConfigUnset        = "%s config unset "
 	ConfigInit         = "%s config init"
 	ConfigServerList   = "%s config server list"
