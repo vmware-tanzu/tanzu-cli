@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
@@ -38,24 +37,12 @@ func init() {
 		initConfigCmd,
 		setConfigCmd,
 		unsetConfigCmd,
-		serversCmd,
 		newEULACmd(),
 		newCertCmd(),
 	)
-	serversCmd.AddCommand(listServersCmd)
-	addDeleteServersCmd()
-	// TODO: Update the plugin-runtime library with the new format and use the library method
-	msg := fmt.Sprintf("this was done in the %q release, it will be removed following the deprecation policy (6 months). Use the %q command instead.\n", "v0.90.0", "context")
-	serversCmd.Deprecated = msg
 }
 
 var unattended bool
-
-func addDeleteServersCmd() {
-	listServersCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
-	deleteServersCmd.Flags().BoolVarP(&unattended, "yes", "y", false, "Delete the server entry without confirmation")
-	serversCmd.AddCommand(deleteServersCmd)
-}
 
 var configCmd = &cobra.Command{
 	Use:   "config",
@@ -156,16 +143,6 @@ var setConfigCmd = &cobra.Command{
 
 // setConfiguration sets the key-value pair for the given path
 func setConfiguration(cfg *configtypes.ClientConfig, pathParam, value string) error {
-	// special cases:
-	// backward compatibility
-	if pathParam == "unstable-versions" || pathParam == "cli.unstable-versions" {
-		return setUnstableVersions(cfg, value)
-	}
-
-	if pathParam == "cli.edition" {
-		return setEdition(cfg, value)
-	}
-
 	// parse the param
 	paramArray := strings.Split(pathParam, ".")
 	if len(paramArray) < 2 {
@@ -221,35 +198,6 @@ func setEnvs(cfg *configtypes.ClientConfig, paramArray []string, value string) e
 	return nil
 }
 
-// Deprecated: This method is deprecated
-func setUnstableVersions(cfg *configtypes.ClientConfig, value string) error {
-	optionKey := configtypes.VersionSelectorLevel(value)
-
-	switch optionKey {
-	case configtypes.AllUnstableVersions,
-		configtypes.AlphaUnstableVersions,
-		configtypes.ExperimentalUnstableVersions,
-		configtypes.NoUnstableVersions:
-		cfg.SetUnstableVersionSelector(optionKey)
-	default:
-		return fmt.Errorf("unknown unstable-versions setting: %s; should be one of [all, none, alpha, experimental]", optionKey)
-	}
-	return nil
-}
-
-// Deprecated: This method is deprecated
-func setEdition(cfg *configtypes.ClientConfig, edition string) error {
-	editionOption := configtypes.EditionSelector(edition)
-
-	switch editionOption {
-	case configtypes.EditionCommunity, configtypes.EditionStandard:
-		cfg.SetEditionSelector(editionOption)
-	default:
-		return fmt.Errorf("unknown edition: %s; should be one of [%s, %s]", editionOption, configtypes.EditionStandard, configtypes.EditionCommunity)
-	}
-	return nil
-}
-
 var initConfigCmd = &cobra.Command{
 	Use:               "init",
 	Short:             "Initialize config with defaults",
@@ -267,6 +215,8 @@ var initConfigCmd = &cobra.Command{
 		if cfg.ClientOptions == nil {
 			cfg.ClientOptions = &configtypes.ClientOptions{}
 		}
+		//nolint: staticcheck
+		//SA1019: cfg.ClientOptions.CLI is deprecated: CLI has been deprecated and will be removed from future version. use CoreCliOptions (staticcheck)
 		if cfg.ClientOptions.CLI == nil {
 			cfg.ClientOptions.CLI = &configtypes.CLIOptions{}
 		}
@@ -289,75 +239,6 @@ var initConfigCmd = &cobra.Command{
 		}
 
 		log.Success("successfully initialized the config")
-		return nil
-	},
-}
-
-// Note: Shall be deprecated in a future version. Superseded by 'tanzu context' command.
-var serversCmd = &cobra.Command{
-	Use:   "server",
-	Short: "Configured servers",
-}
-
-// Note: Shall be deprecated in a future version. Superseded by 'tanzu context list' command.
-var listServersCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List servers",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := configlib.GetClientConfig()
-		if err != nil {
-			return err
-		}
-
-		output := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "Name", "Type", "Endpoint", "Path", "Context")
-		for _, server := range cfg.KnownServers {
-			var endpoint, path, context string
-			if server.GlobalOpts != nil && server.IsGlobal() {
-				endpoint = server.GlobalOpts.Endpoint
-			} else if server.ManagementClusterOpts != nil {
-				endpoint = server.ManagementClusterOpts.Endpoint
-				path = server.ManagementClusterOpts.Path
-				context = server.ManagementClusterOpts.Context
-			}
-			output.AddRow(server.Name, server.Type, endpoint, path, context)
-		}
-		output.Render()
-		return nil
-	},
-}
-
-// Note: Shall be deprecated in a future version. Superseded by 'tanzu context delete' command.
-var deleteServersCmd = &cobra.Command{
-	Use:   "delete SERVER_NAME",
-	Short: "Delete a server from the config",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			return errors.Errorf("Server name required. Usage: tanzu config server delete server_name")
-		}
-
-		var isAborted error
-		if !unattended {
-			isAborted = component.AskForConfirmation("Deleting the server entry from the config will remove it from the list of tracked servers. " +
-				"You will need to use tanzu login to track this server again. Are you sure you want to continue?")
-		}
-
-		if isAborted == nil {
-			log.Infof("Deleting entry for cluster %s", args[0])
-			serverExists, err := configlib.ServerExists(args[0])
-			if err != nil {
-				return err
-			}
-
-			if serverExists {
-				err := configlib.RemoveServer(args[0])
-				if err != nil {
-					return err
-				}
-			} else {
-				return fmt.Errorf("server %s not found in list of known servers", args[0])
-			}
-		}
-
 		return nil
 	},
 }

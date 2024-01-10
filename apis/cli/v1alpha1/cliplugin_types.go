@@ -20,7 +20,7 @@ type Artifact struct {
 	URI string `json:"uri,omitempty"`
 	// SHA256 hash of the plugin binary.
 	Digest string `json:"digest,omitempty"`
-	// Type of the binary artifact. Valid values are S3, GCP, OCIImage.
+	// Type of the binary artifact. Valid values are S3, OCIImage.
 	Type string `json:"type"`
 	// OS of the plugin binary in `GOOS` format.
 	OS string `json:"os"`

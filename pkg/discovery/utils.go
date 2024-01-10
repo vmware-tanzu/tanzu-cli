@@ -10,8 +10,7 @@ import (
 
 // CheckDiscoveryName returns true if discovery name exists else return false
 func CheckDiscoveryName(ds configtypes.PluginDiscovery, dn string) bool {
-	return (ds.GCP != nil && ds.GCP.Name == dn) || //nolint:staticcheck // Deprecated
-		(ds.Kubernetes != nil && ds.Kubernetes.Name == dn) ||
+	return (ds.Kubernetes != nil && ds.Kubernetes.Name == dn) ||
 		(ds.Local != nil && ds.Local.Name == dn) ||
 		(ds.REST != nil && ds.REST.Name == dn) ||
 		(ds.OCI != nil && ds.OCI.Name == dn)
@@ -29,20 +28,10 @@ func CompareDiscoverySource(ds1, ds2 configtypes.PluginDiscovery, dsType string)
 	case common.DiscoveryTypeKubernetes:
 		return compareK8sDiscoverySources(ds1, ds2)
 
-	case common.DiscoveryTypeGCP:
-		return compareGCPDiscoverySources(ds1, ds2)
-
 	case common.DiscoveryTypeREST:
 		return compareRESTDiscoverySources(ds1, ds2)
 	}
 	return false
-}
-
-func compareGCPDiscoverySources(ds1, ds2 configtypes.PluginDiscovery) bool {
-	return ds1.GCP != nil && ds2.GCP != nil && //nolint:staticcheck // Deprecated
-		ds1.GCP.Name == ds2.GCP.Name && //nolint:staticcheck // Deprecated
-		ds1.GCP.Bucket == ds2.GCP.Bucket && //nolint:staticcheck // Deprecated
-		ds1.GCP.ManifestPath == ds2.GCP.ManifestPath //nolint:staticcheck // Deprecated
 }
 
 func compareLocalDiscoverySources(ds1, ds2 configtypes.PluginDiscovery) bool {

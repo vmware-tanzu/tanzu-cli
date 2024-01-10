@@ -28,7 +28,6 @@ func main() {
 	p.AddCommands(
 		NewCLICmd(),
 		NewInitCmd(),
-		NewPublishCmd(),
 		NewPluginCmd(),
 		newInventoryCmd(),
 	)

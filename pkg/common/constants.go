@@ -17,7 +17,6 @@ const (
 const (
 	DiscoveryTypeOCI        = "oci"
 	DiscoveryTypeLocal      = "local"
-	DiscoveryTypeGCP        = "gcp"
 	DiscoveryTypeKubernetes = "kubernetes"
 	DiscoveryTypeREST       = "rest"
 )

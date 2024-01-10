@@ -22,10 +22,6 @@ func TestConfigFeatures(t *testing.T) {
 	cliFeatureMap[pluginName] = cliFeatureFlags
 	cfg := &configtypes.ClientConfig{
 		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				Repositories:            DefaultRepositories,
-				UnstableVersionSelector: DefaultVersionSelector,
-			},
 			Features: cliFeatureMap,
 		},
 	}
@@ -36,12 +32,7 @@ func TestConfigFeatures(t *testing.T) {
 
 func TestConfigFeaturesDefault(t *testing.T) {
 	cfg := &configtypes.ClientConfig{
-		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				Repositories:            DefaultRepositories,
-				UnstableVersionSelector: DefaultVersionSelector,
-			},
-		},
+		ClientOptions: &configtypes.ClientOptions{},
 	}
 	const featureFoo = "features.management-cluster.foo"
 	activated, err := cfg.IsConfigFeatureActivated(featureFoo)
@@ -70,12 +61,7 @@ func TestConfigFeaturesDefaultInvalid(t *testing.T) {
 		featureFoo: true,
 	}
 	cfg := &configtypes.ClientConfig{
-		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				Repositories:            DefaultRepositories,
-				UnstableVersionSelector: DefaultVersionSelector,
-			},
-		},
+		ClientOptions: &configtypes.ClientOptions{},
 	}
 	err := populateDefaultCliFeatureValues(cfg, cliFeatureFlags)
 	require.Error(t, err, "invalid default feature should generate error")
@@ -84,12 +70,7 @@ func TestConfigFeaturesDefaultInvalid(t *testing.T) {
 func TestConfigFeaturesInvalidName(t *testing.T) {
 	const featureFoo = "invalid.foo"
 	cfg := &configtypes.ClientConfig{
-		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				Repositories:            DefaultRepositories,
-				UnstableVersionSelector: DefaultVersionSelector,
-			},
-		},
+		ClientOptions: &configtypes.ClientOptions{},
 	}
 	result, err := cfg.IsConfigFeatureActivated(featureFoo)
 	require.False(t, result, "invalid feature name '"+featureFoo+"' should generate false return value")
@@ -105,10 +86,6 @@ func TestConfigFeaturesInvalidValue(t *testing.T) {
 	cliFeatureMap["management-cluster"] = cliFeatureFlags
 	cfg := &configtypes.ClientConfig{
 		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				Repositories:            DefaultRepositories,
-				UnstableVersionSelector: DefaultVersionSelector,
-			},
 			Features: cliFeatureMap,
 		},
 	}
@@ -120,12 +97,7 @@ func TestConfigFeaturesInvalidValue(t *testing.T) {
 func TestConfigFeaturesSplitName(t *testing.T) {
 	const featureValid = "features.valid-plugin.foo"
 	cfg := &configtypes.ClientConfig{
-		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				Repositories:            DefaultRepositories,
-				UnstableVersionSelector: DefaultVersionSelector,
-			},
-		},
+		ClientOptions: &configtypes.ClientOptions{},
 	}
 	pluginName, featureName, err := cfg.SplitFeaturePath(featureValid)
 	require.Equal(t, pluginName, "valid-plugin", "failed to parse '"+featureValid+"' correctly")
@@ -136,12 +108,7 @@ func TestConfigFeaturesSplitName(t *testing.T) {
 func TestConfigFeaturesSplitNameInvalid(t *testing.T) {
 	const featureInvalid = "invalid.foo"
 	cfg := &configtypes.ClientConfig{
-		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				Repositories:            DefaultRepositories,
-				UnstableVersionSelector: DefaultVersionSelector,
-			},
-		},
+		ClientOptions: &configtypes.ClientOptions{},
 	}
 	_, _, err := cfg.SplitFeaturePath(featureInvalid)
 	require.Error(t, err, "invalid feature name '"+featureInvalid+"' should generate error")
@@ -163,10 +130,6 @@ func TestConfigFeaturesDefaultsAdded(t *testing.T) {
 	cliFeatureMap["existing"] = cliFeatureFlags
 	cfg := &configtypes.ClientConfig{
 		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				Repositories:            DefaultRepositories,
-				UnstableVersionSelector: DefaultVersionSelector,
-			},
 			Features: cliFeatureMap,
 		},
 	}
@@ -193,10 +156,6 @@ func TestConfigFeaturesDefaultsNoneAdded(t *testing.T) {
 	cliFeatureMap["existing"] = cliFeatureFlags
 	cfg := &configtypes.ClientConfig{
 		ClientOptions: &configtypes.ClientOptions{
-			CLI: &configtypes.CLIOptions{
-				Repositories:            DefaultRepositories,
-				UnstableVersionSelector: DefaultVersionSelector,
-			},
 			Features: cliFeatureMap,
 		},
 	}
