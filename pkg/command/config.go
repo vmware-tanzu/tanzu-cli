@@ -5,6 +5,8 @@ package command
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"sort"
 	"strings"
 
@@ -67,19 +69,51 @@ var getConfigCmd = &cobra.Command{
 	Use:               "get",
 	Short:             "Get the current configuration",
 	ValidArgsFunction: noMoreCompletions,
+	Args:              cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := configlib.GetClientConfig()
 		if err != nil {
 			return err
 		}
 
+		// Print the entire config
 		b, err := yaml.Marshal(&cfg)
 		if err != nil {
 			return err
 		}
-		fmt.Println(string(b))
+		fmt.Fprintln(cmd.OutOrStdout(), strings.TrimSpace(string(b)))
+
+		warningForShadowedEnvVars(cmd.ErrOrStderr())
+
 		return nil
 	},
+}
+
+// Check if any of the variables of the config file are shadowed by
+// a variable defined in the shell.  If so, warn the user.
+func warningForShadowedEnvVars(writer io.Writer) {
+	varsInConfig := configlib.GetEnvConfigurations()
+	varNames := make([]string, 0, len(varsInConfig))
+	for k := range varsInConfig {
+		varNames = append(varNames, k)
+	}
+	sort.Strings(varNames)
+
+	first := true
+	for _, name := range varNames {
+		configValue := varsInConfig[name]
+		envValue := os.Getenv(name)
+		if envValue != configValue {
+			if first {
+				first = false
+				fmt.Fprintln(writer, "\nNote: The following variables set in the current shell take precedence over the ones of the same name set in the tanzu config:")
+			}
+			if envValue == "" {
+				envValue = "''"
+			}
+			fmt.Fprintf(writer, "    - %s: %s\n", name, envValue)
+		}
+	}
 }
 
 var setConfigCmd = &cobra.Command{
