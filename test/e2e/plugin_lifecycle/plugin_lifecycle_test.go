@@ -20,6 +20,8 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/util"
 )
 
+const PluginInstalledRegExp = "Installed plugin '%s:.+' with target '%s'"
+
 // This test suite covers plugin life cycle use cases for central repository
 // it uses local central repo to discovery plugins, for which we need to make sure that
 // docker is running and also local central repo is running, start with 'make start-test-central-repo'
@@ -154,8 +156,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		It("install plugins and describe each installed plugin", func() {
 			for _, plugin := range util.PluginsForLifeCycleTests {
 				target := plugin.Target
-				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
+				_, stdErr, err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				Expect(err).To(BeNil(), "should not get any error for plugin install")
+				Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginInstalledRegExp, plugin.Name, target)))
 
 				pd, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
 				Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
@@ -241,7 +244,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		It("install plugins and describe installed plugins", func() {
 			for _, plugin := range util.PluginsForLifeCycleTests {
 				target := plugin.Target
-				err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
+				_, _, err := tf.PluginCmd.InstallPlugin(plugin.Name, target, plugin.Version)
 				Expect(err).To(BeNil(), "should not get any error for plugin install")
 
 				pd, err := tf.PluginCmd.DescribePlugin(plugin.Name, plugin.Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
@@ -271,13 +274,13 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 	Context("plugin use cases: negative test cases for plugin install", func() {
 		// Test case: a. install plugin with incorrect value target flag
 		It("install plugin with random string for target flag", func() {
-			err := tf.PluginCmd.InstallPlugin(util.PluginsForLifeCycleTests[0].Name, framework.RandomString(5), util.PluginsForLifeCycleTests[0].Version)
+			_, _, err := tf.PluginCmd.InstallPlugin(util.PluginsForLifeCycleTests[0].Name, framework.RandomString(5), util.PluginsForLifeCycleTests[0].Version)
 			Expect(err.Error()).To(ContainSubstring(framework.InvalidTargetSpecified))
 		})
 		// Test case: b. install plugin with incorrect plugin name
 		It("install plugin with random string for target flag", func() {
 			name := framework.RandomString(5)
-			err := tf.PluginCmd.InstallPlugin(name, "", "")
+			_, _, err := tf.PluginCmd.InstallPlugin(name, "", "")
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.UnableToFindPlugin, name)))
 		})
 		// Test case: c. install plugin with incorrect value for flag --version
@@ -285,7 +288,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			for _, plugin := range util.PluginsForLifeCycleTests {
 				if !(plugin.Target == framework.GlobalTarget) {
 					version := plugin.Version + framework.RandomNumber(3)
-					err := tf.PluginCmd.InstallPlugin(plugin.Name, plugin.Target, version)
+					_, _, err := tf.PluginCmd.InstallPlugin(plugin.Name, plugin.Target, version)
 					Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.UnableToFindPluginWithVersionForTarget, plugin.Name, version, plugin.Target)))
 					break
 				}
@@ -341,7 +344,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 		// Test case: install plugins with different shorthand version like vMAJOR, vMAJOR.MINOR
 		It("install plugins and describe installed plugins", func() {
 			for _, testcase := range PluginsMultiVersionInstallTests {
-				err := tf.PluginCmd.InstallPlugin(testcase.plugInfo.Name, testcase.plugInfo.Target, testcase.plugInfo.Version)
+				_, _, err := tf.PluginCmd.InstallPlugin(testcase.plugInfo.Name, testcase.plugInfo.Target, testcase.plugInfo.Version)
 				if testcase.err != "" {
 					Expect(err.Error()).To(ContainSubstring(testcase.err))
 				} else {

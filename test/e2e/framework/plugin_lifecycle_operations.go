@@ -24,7 +24,7 @@ type PluginBasicOps interface {
 	// SearchPlugins searches all plugins for given filter (keyword|regex) by running 'tanzu plugin search' command
 	SearchPlugins(filter string, opts ...E2EOption) ([]*PluginInfo, error)
 	// InstallPlugin installs given plugin and flags
-	InstallPlugin(pluginName, target, versions string, opts ...E2EOption) error
+	InstallPlugin(pluginName, target, versions string, opts ...E2EOption) (stdOut, stdErr string, err error)
 	// Sync performs sync operation and returns stdOut, stdErr and error
 	Sync(opts ...E2EOption) (string, string, error)
 	// DescribePlugin describes given plugin and flags, returns the plugin description as PluginDescribe
@@ -215,7 +215,7 @@ func (po *pluginCmdOps) GetPluginGroup(groupName string, flagsWithValues string,
 	return pluginList, err
 }
 
-func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string, opts ...E2EOption) error {
+func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string, opts ...E2EOption) (stdout, stdErr string, err error) {
 	installPluginCmd := fmt.Sprintf(InstallPluginCmd, "%s", pluginName)
 	if len(strings.TrimSpace(target)) > 0 {
 		installPluginCmd += " --target " + target
@@ -223,11 +223,11 @@ func (po *pluginCmdOps) InstallPlugin(pluginName, target, versions string, opts 
 	if len(strings.TrimSpace(versions)) > 0 {
 		installPluginCmd += " --version " + versions
 	}
-	out, stdErr, err := po.cmdExe.TanzuCmdExec(installPluginCmd, opts...)
+	stdOutBuff, stdErrBuff, err := po.cmdExe.TanzuCmdExec(installPluginCmd, opts...)
 	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdErr.String(), out.String())
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, installPluginCmd, err.Error(), stdOutBuff.String(), stdErrBuff.String())
 	}
-	return err
+	return stdOutBuff.String(), stdErrBuff.String(), err
 }
 
 func (po *pluginCmdOps) InstallPluginsFromGroup(pluginNameORAll, groupName string, opts ...E2EOption) (stdout string, stdErr string, err error) {

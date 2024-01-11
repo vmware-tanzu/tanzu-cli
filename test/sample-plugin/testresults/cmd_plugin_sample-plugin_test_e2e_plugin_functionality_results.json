@@ -1,0 +1,269 @@
+[
+  {
+    "SuitePath": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality",
+    "SuiteDescription": "Config Suite",
+    "SuiteLabels": [],
+    "SuiteSucceeded": true,
+    "SuiteHasProgrammaticFocus": false,
+    "SpecialSuiteFailureReasons": null,
+    "PreRunStats": {
+      "TotalSpecs": 2,
+      "SpecsThatWillRun": 2
+    },
+    "StartTime": "2023-10-05T11:17:55.631449-05:00",
+    "EndTime": "2023-10-05T11:17:56.555544-05:00",
+    "RunTime": 924067505,
+    "SuiteConfig": {
+      "RandomSeed": 1696522671,
+      "RandomizeAllSpecs": false,
+      "FocusStrings": null,
+      "SkipStrings": null,
+      "FocusFiles": null,
+      "SkipFiles": null,
+      "LabelFilter": "",
+      "FailOnPending": false,
+      "FailFast": false,
+      "FlakeAttempts": 0,
+      "MustPassRepeatedly": 0,
+      "DryRun": false,
+      "PollProgressAfter": 0,
+      "PollProgressInterval": 0,
+      "Timeout": 3596647596539,
+      "EmitSpecProgress": false,
+      "OutputInterceptorMode": "",
+      "SourceRoots": null,
+      "GracePeriod": 30000000000,
+      "ParallelProcess": 1,
+      "ParallelTotal": 1,
+      "ParallelHost": ""
+    },
+    "SpecReports": [
+      {
+        "ContainerHierarchyTexts": null,
+        "ContainerHierarchyLocations": null,
+        "ContainerHierarchyLabels": null,
+        "LeafNodeType": "BeforeSuite",
+        "LeafNodeLocation": {
+          "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_suite_test.go",
+          "LineNumber": 27
+        },
+        "LeafNodeLabels": null,
+        "LeafNodeText": "",
+        "State": "passed",
+        "StartTime": "2023-10-05T11:17:55.631943-05:00",
+        "EndTime": "2023-10-05T11:17:55.632169-05:00",
+        "RunTime": 225955,
+        "ParallelProcess": 1,
+        "NumAttempts": 0,
+        "MaxFlakeAttempts": 0,
+        "MaxMustPassRepeatedly": 0,
+        "SpecEvents": [
+          {
+            "SpecEventType": "Node",
+            "CodeLocation": {
+              "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_suite_test.go",
+              "LineNumber": 27
+            },
+            "TimelineLocation": {
+              "Order": 1,
+              "Time": "2023-10-05T11:17:55.63205-05:00"
+            },
+            "Message": "TOP-LEVEL",
+            "NodeType": "BeforeSuite"
+          },
+          {
+            "SpecEventType": "Node (End)",
+            "CodeLocation": {
+              "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_suite_test.go",
+              "LineNumber": 27
+            },
+            "TimelineLocation": {
+              "Order": 3,
+              "Time": "2023-10-05T11:17:55.632162-05:00"
+            },
+            "Message": "TOP-LEVEL",
+            "Duration": 111658,
+            "NodeType": "BeforeSuite"
+          }
+        ]
+      },
+      {
+        "ContainerHierarchyTexts": [
+          "[CLI-Core][Tests:Sample-Plugin-E2E][Feature:Plugin-life-cycle]",
+          "sample-plugin basic functionality"
+        ],
+        "ContainerHierarchyLocations": [
+          {
+            "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/e2e/framework/framework.go",
+            "LineNumber": 41
+          },
+          {
+            "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_test.go",
+            "LineNumber": 15
+          }
+        ],
+        "ContainerHierarchyLabels": [
+          [],
+          []
+        ],
+        "LeafNodeType": "It",
+        "LeafNodeLocation": {
+          "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_test.go",
+          "LineNumber": 17
+        },
+        "LeafNodeLabels": [],
+        "LeafNodeText": "sample-plugin should be installed",
+        "State": "passed",
+        "StartTime": "2023-10-05T11:17:55.632818-05:00",
+        "EndTime": "2023-10-05T11:17:56.424827-05:00",
+        "RunTime": 791984868,
+        "ParallelProcess": 1,
+        "NumAttempts": 1,
+        "MaxFlakeAttempts": 0,
+        "MaxMustPassRepeatedly": 0,
+        "SpecEvents": [
+          {
+            "SpecEventType": "Node",
+            "CodeLocation": {
+              "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_test.go",
+              "LineNumber": 17
+            },
+            "TimelineLocation": {
+              "Order": 4,
+              "Time": "2023-10-05T11:17:55.63283-05:00"
+            },
+            "Message": "sample-plugin should be installed",
+            "NodeType": "It"
+          },
+          {
+            "SpecEventType": "Node (End)",
+            "CodeLocation": {
+              "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_test.go",
+              "LineNumber": 17
+            },
+            "TimelineLocation": {
+              "Order": 6,
+              "Time": "2023-10-05T11:17:56.424784-05:00"
+            },
+            "Message": "sample-plugin should be installed",
+            "Duration": 791930759,
+            "NodeType": "It"
+          }
+        ]
+      },
+      {
+        "ContainerHierarchyTexts": [
+          "[CLI-Core][Tests:Sample-Plugin-E2E][Feature:Plugin-life-cycle]",
+          "sample-plugin basic functionality"
+        ],
+        "ContainerHierarchyLocations": [
+          {
+            "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/e2e/framework/framework.go",
+            "LineNumber": 41
+          },
+          {
+            "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_test.go",
+            "LineNumber": 15
+          }
+        ],
+        "ContainerHierarchyLabels": [
+          [],
+          []
+        ],
+        "LeafNodeType": "It",
+        "LeafNodeLocation": {
+          "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_test.go",
+          "LineNumber": 33
+        },
+        "LeafNodeLabels": [],
+        "LeafNodeText": "sample-plugin sub-command echo should work",
+        "State": "passed",
+        "StartTime": "2023-10-05T11:17:56.42581-05:00",
+        "EndTime": "2023-10-05T11:17:56.554431-05:00",
+        "RunTime": 128616712,
+        "ParallelProcess": 1,
+        "NumAttempts": 1,
+        "MaxFlakeAttempts": 0,
+        "MaxMustPassRepeatedly": 0,
+        "SpecEvents": [
+          {
+            "SpecEventType": "Node",
+            "CodeLocation": {
+              "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_test.go",
+              "LineNumber": 33
+            },
+            "TimelineLocation": {
+              "Order": 7,
+              "Time": "2023-10-05T11:17:56.425825-05:00"
+            },
+            "Message": "sample-plugin sub-command echo should work",
+            "NodeType": "It"
+          },
+          {
+            "SpecEventType": "Node (End)",
+            "CodeLocation": {
+              "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_test.go",
+              "LineNumber": 33
+            },
+            "TimelineLocation": {
+              "Order": 9,
+              "Time": "2023-10-05T11:17:56.554402-05:00"
+            },
+            "Message": "sample-plugin sub-command echo should work",
+            "Duration": 128573232,
+            "NodeType": "It"
+          }
+        ]
+      },
+      {
+        "ContainerHierarchyTexts": null,
+        "ContainerHierarchyLocations": null,
+        "ContainerHierarchyLabels": null,
+        "LeafNodeType": "AfterSuite",
+        "LeafNodeLocation": {
+          "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_suite_test.go",
+          "LineNumber": 34
+        },
+        "LeafNodeLabels": null,
+        "LeafNodeText": "",
+        "State": "passed",
+        "StartTime": "2023-10-05T11:17:56.555199-05:00",
+        "EndTime": "2023-10-05T11:17:56.555301-05:00",
+        "RunTime": 102186,
+        "ParallelProcess": 1,
+        "NumAttempts": 0,
+        "MaxFlakeAttempts": 0,
+        "MaxMustPassRepeatedly": 0,
+        "SpecEvents": [
+          {
+            "SpecEventType": "Node",
+            "CodeLocation": {
+              "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_suite_test.go",
+              "LineNumber": 34
+            },
+            "TimelineLocation": {
+              "Order": 10,
+              "Time": "2023-10-05T11:17:56.555205-05:00"
+            },
+            "Message": "TOP-LEVEL",
+            "NodeType": "AfterSuite"
+          },
+          {
+            "SpecEventType": "Node (End)",
+            "CodeLocation": {
+              "FileName": "/Users/cpamuluri/tkg/tasks/cli_core_main/tanzu-cli/test/sample-plugin/cmd/plugin/sample-plugin/test/e2e/plugin_functionality/plugin_functionality_suite_test.go",
+              "LineNumber": 34
+            },
+            "TimelineLocation": {
+              "Order": 12,
+              "Time": "2023-10-05T11:17:56.555297-05:00"
+            },
+            "Message": "TOP-LEVEL",
+            "Duration": 91912,
+            "NodeType": "AfterSuite"
+          }
+        ]
+      }
+    ]
+  }
+]

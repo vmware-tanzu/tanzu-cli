@@ -1082,7 +1082,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("plugin install when active context has issues", func() {
 			err := tf.PluginCmd.DeletePlugin(installedPluginsListTMC[0].Name, installedPluginsListTMC[0].Target)
 			Expect(err).To(BeNil(), noErrorForPluginDelete)
-			err = tf.PluginCmd.InstallPlugin(installedPluginsListTMC[0].Name, installedPluginsListTMC[0].Target, installedPluginsListTMC[0].Version)
+			_, _, err = tf.PluginCmd.InstallPlugin(installedPluginsListTMC[0].Name, installedPluginsListTMC[0].Target, installedPluginsListTMC[0].Version)
 			Expect(err).To(BeNil(), noErrorForPluginInstall)
 		})
 

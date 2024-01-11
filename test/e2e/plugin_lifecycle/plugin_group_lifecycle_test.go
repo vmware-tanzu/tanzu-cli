@@ -16,11 +16,10 @@ import (
 )
 
 const (
-	PluginGroupInstallation           = "The following plugins will be installed from plugin group '%s"
-	PluginGroupTableHeaderRegExp      = "NAME\\s+TARGET\\s+VERSION"
-	PluginGroupTableRowPluginRegExp   = "%s\\s+%s\\s+%s"
-	PluginGroupPluginInstallingRegExp = "Installing plugin '%s:.+' with target '%s'|Plugin '%s:.+' with target '%s'"
-	PluginGroupPluginInstalledRegExp  = "Installing plugin '%s:.+' with target '%s'"
+	PluginGroupInstallation          = "The following plugins will be installed from plugin group '%s"
+	PluginGroupTableHeaderRegExp     = "NAME\\s+TARGET\\s+VERSION"
+	PluginGroupTableRowPluginRegExp  = "%s\\s+%s\\s+%s"
+	PluginGroupPluginInstalledRegExp = "Installed plugin '%s:.+' with target '%s'|Plugin '%s:.+' with target '%s'"
 )
 
 // This test suite covers plugin group life cycle use cases for central repository
@@ -123,8 +122,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 				Expect(stdErr).To(MatchRegexp(PluginGroupTableHeaderRegExp))
 				plugins := pluginGroupToPluginListMap[pg]
 				for i := range plugins {
+					// Validate the plugin list output
 					Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginGroupTableRowPluginRegExp, plugins[i].Name, plugins[i].Target, plugins[i].Version)))
-					Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginGroupPluginInstallingRegExp, plugins[i].Name, plugins[i].Target, plugins[i].Name, plugins[i].Target)))
+					// Validate the plugin installed output
+					Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginGroupPluginInstalledRegExp, plugins[i].Name, plugins[i].Target, plugins[i].Name, plugins[i].Target)))
 					pd, err := tf.PluginCmd.DescribePlugin(plugins[i].Name, plugins[i].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
 					Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
 					Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
