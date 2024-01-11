@@ -562,12 +562,12 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 	}
 
 	if len(matchedPlugins) == 1 {
-		return installOrUpgradePlugin(&matchedPlugins[0], matchedPlugins[0].RecommendedVersion, false)
+		return installOrUpgradePlugin(&matchedPlugins[0], matchedPlugins[0].RecommendedVersion, false, true)
 	}
 
 	for i := range matchedPlugins {
 		if matchedPlugins[i].Target == target {
-			return installOrUpgradePlugin(&matchedPlugins[i], matchedPlugins[i].RecommendedVersion, false)
+			return installOrUpgradePlugin(&matchedPlugins[i], matchedPlugins[i].RecommendedVersion, false, true)
 		}
 	}
 	errorList = append(errorList, errors.Errorf(missingTargetStr, pluginName))
@@ -697,24 +697,28 @@ func GetPluginGroup(groupIDAndVersion string, options ...PluginManagerOptions) (
 	return pg, nil
 }
 
-func logPluginInstallationMessage(p *discovery.Discovered, version string, isPluginInCache, isPluginAlreadyInstalled bool) {
+func getPluginInstallationMessage(p *discovery.Discovered, version string, isPluginInCache, isPluginAlreadyInstalled bool) (installingMsg, installedMsg string) {
 	withTarget := ""
 	if p.Target != configtypes.TargetUnknown {
-		withTarget = fmt.Sprintf("with target '%v' ", p.Target)
+		withTarget = fmt.Sprintf("with target '%v'", p.Target)
 	}
 
 	if isPluginInCache {
 		if !isPluginAlreadyInstalled {
-			log.Infof("Installing plugin '%v:%v' %v(from cache)", p.Name, version, withTarget)
+			installingMsg = fmt.Sprintf("Installing plugin '%v:%v' %v (from cache)", p.Name, version, withTarget)
+			installedMsg = fmt.Sprintf("Installed plugin '%v:%v' %v (from cache)", p.Name, version, withTarget)
 		} else {
-			log.Infof("Plugin '%v:%v' %vis already installed. Reinitializing...", p.Name, version, withTarget)
+			installingMsg = fmt.Sprintf("Plugin '%v:%v' %v is already installed. Reinitializing...", p.Name, version, withTarget)
+			installedMsg = fmt.Sprintf("Reinitialized plugin '%v:%v' %v", p.Name, version, withTarget)
 		}
 	} else {
-		log.Infof("Installing plugin '%v:%v' %v", p.Name, version, withTarget)
+		installingMsg = fmt.Sprintf("Installing plugin '%v:%v' %v", p.Name, version, withTarget)
+		installedMsg = fmt.Sprintf("Installed plugin '%v:%v' %v", p.Name, version, withTarget)
 	}
+	return installingMsg, installedMsg
 }
 
-func installOrUpgradePlugin(p *discovery.Discovered, version string, installTestPlugin bool) error {
+func installOrUpgradePlugin(p *discovery.Discovered, version string, installTestPlugin, enableSpinner bool) error {
 	// If the version requested was the RecommendedVersion, we should set it explicitly
 	if version == "" || version == cli.VersionLatest {
 		version = p.RecommendedVersion
@@ -732,14 +736,19 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		}
 	}
 
-	// Initialize the spinner
-	spinner, spinnerErr := component.NewOutputWriterSpinnerWithOptions(os.Stdout, "text", "", true, nil)
-	if spinnerErr != nil {
-		log.Warning("Warning: Unable to initialize spinner")
-	}
-
 	// Log message based on different installation conditions
-	logPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
+	installingMsg, installedMsg := getPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
+
+	var spinnerErr error
+	var spinner component.OutputWriterSpinner
+	if enableSpinner {
+		// Initialize the spinner
+		// NewOutputWriterSpinnerWithOptions(output io.Writer, outputFormat, spinnerText string, startSpinner bool, opts []OutputWriterOption, headers ...string) (OutputWriterSpinner, error) {
+		spinner, spinnerErr = component.NewOutputWriterSpinnerWithOptions(os.Stdout, "text", installingMsg, true, nil)
+		if spinnerErr != nil {
+			log.Warning("Unable to initialize spinner")
+		}
+	}
 
 	if plugin == nil {
 		binary, err := fetchAndVerifyPlugin(p, version)
@@ -759,9 +768,11 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 	}
 
 	// Stop the spinner before updating the plugin info and initializing the plugin
-	if spinner != nil {
-		spinner.StopSpinner()
+	if enableSpinner && spinner != nil {
+		spinner.RenderWithSpinner()
 	}
+
+	log.Info(installedMsg)
 
 	return updatePluginInfoAndInitializePlugin(p, plugin)
 }
@@ -1173,13 +1184,13 @@ func InstallPluginsFromLocalSource(pluginName, version string, target configtype
 	}
 
 	if len(matchedPlugins) == 1 {
-		return installOrUpgradePlugin(&matchedPlugins[0], version, installTestPlugin)
+		return installOrUpgradePlugin(&matchedPlugins[0], version, installTestPlugin, true)
 	}
 
 	for i := range matchedPlugins {
 		// Install all plugins otherwise include all matching plugins
 		if pluginName == cli.AllPlugins || matchedPlugins[i].Target == target {
-			err = installOrUpgradePlugin(&matchedPlugins[i], version, installTestPlugin)
+			err = installOrUpgradePlugin(&matchedPlugins[i], version, installTestPlugin, true)
 			if err != nil {
 				errList = append(errList, err)
 			}
