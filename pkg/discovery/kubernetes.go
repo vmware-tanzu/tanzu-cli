@@ -65,6 +65,10 @@ func (k *KubernetesDiscovery) GetDiscoveredPlugins(clusterClient cluster.Client)
 
 	crdExists, errVerifyCRD := clusterClient.VerifyCLIPluginCRD()
 	// If no error and CRD does not exists, return with a log message
+	// If there is an error, wait for the call of ListCLIPluginResources to return
+	// and then decide. As sometimes discovery API can return premature error
+	// if the k8s apiserver is not stable but ListCLIPluginResources might return
+	// correct result. In this case, we will ignore the error we get here.
 	if errVerifyCRD == nil && !crdExists {
 		log.V(4).Info(logMsg)
 		return nil, nil
