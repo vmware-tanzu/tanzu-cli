@@ -167,16 +167,16 @@ var createCtxCmd = &cobra.Command{
     # Create a TMC(mission-control) context using endpoint and type 
     tanzu context create mytmc --endpoint tmc.example.com:443 --type tmc
 
-    # Create an Tanzu context with the default endpoint (--type is not necessary for the default endpoint)
+    # Create a Tanzu context with the default endpoint (--type is not necessary for the default endpoint)
     tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com
 
-    # Create an Tanzu context (--type is needed for a non-default endpoint)
+    # Create a Tanzu context (--type is needed for a non-default endpoint)
     tanzu context create mytanzu --endpoint https://non-default.tanzu.endpoint.com --type tanzu
 
-    # Create an Tanzu context by using the provided CA Bundle for TLS verification:
+    # Create a Tanzu context by using the provided CA Bundle for TLS verification:
     tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com  --endpoint-ca-certificate /path/to/ca/ca-cert
 
-    # Create an Tanzu context but skipping TLS verification (this is insecure):
+    # Create a Tanzu context but skip TLS verification (this is insecure):
     tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com --insecure-skip-tls-verify
 
     Note: The "tanzu" context type is being released to provide advance support for the development
@@ -184,11 +184,11 @@ var createCtxCmd = &cobra.Command{
     individual tanzu components.
 
     Notes: 
-    1. TMC context: To create Mission Control (TMC) context an API Key is required. It can be provided using the 
+    1. TMC context: To create Mission Control (TMC) context an API Key is required. It can be provided using the
        TANZU_API_TOKEN environment variable or entered during context creation.
     2. Tanzu context: To create Tanzu context an API Key is optional. If provided using the TANZU_API_TOKEN environment
        variable, it will be used. Otherwise, the CLI will attempt to log in interactively to the user's default Cloud Services
-       organization. You can override or choose a custom organization by setting the TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID 
+       organization. You can override or choose a custom organization by setting the TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID
        environment variable with the custom organization ID value. More information regarding organizations in Cloud Services
        and how to obtain the organization ID can be found at
        https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html
@@ -678,11 +678,13 @@ func doCSPInteractiveLoginAndUpdateContext(c *configtypes.Context) (claims *csp.
 		issuer = csp.StgIssuer
 	}
 	cspOrgIDValue, cspOrgIDExists := os.LookupEnv(constants.CSPLoginOrgID)
-	var options []csp.LoginOption
+	var loginOptions []csp.LoginOption
 	if cspOrgIDExists && cspOrgIDValue != "" {
-		options = append(options, csp.WithOrgID(cspOrgIDValue))
+		loginOptions = append(loginOptions, csp.WithOrgID(cspOrgIDValue))
 	}
-	token, err := csp.TanzuLogin(issuer, options...)
+	// If user chooses to use a specific local listener port, use it
+	loginOptions = append(loginOptions, csp.WithListenerPortFromEnv(constants.TanzuCLIOAuthLocalListenerPort))
+	token, err := csp.TanzuLogin(issuer, loginOptions...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get the token from CSP")
 	}
