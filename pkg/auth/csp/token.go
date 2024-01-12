@@ -19,6 +19,7 @@ import (
 
 	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/interfaces"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
@@ -213,7 +214,8 @@ func GetToken(g *configapi.GlobalServerAuth) (*oauth2.Token, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get the CSP OrgID from the existing access token")
 		}
-		token, err = TanzuLogin(g.Issuer, WithRefreshToken(g.RefreshToken), WithOrgID(orgID))
+		loginOptions := []LoginOption{WithRefreshToken(g.RefreshToken), WithOrgID(orgID), WithListenerPortFromEnv(constants.TanzuCLIOAuthLocalListenerPort)}
+		token, err = TanzuLogin(g.Issuer, loginOptions...)
 		if err != nil {
 			return nil, err
 		}
