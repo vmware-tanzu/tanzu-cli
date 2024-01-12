@@ -4,6 +4,7 @@
 package csp
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,9 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/browser"
@@ -21,17 +25,21 @@ import (
 	"go.pinniped.dev/pkg/oidcclient/pkce"
 	"go.pinniped.dev/pkg/oidcclient/state"
 	"golang.org/x/oauth2"
+	"golang.org/x/term"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 const (
-	// Tanzu CLI client ID that has http://127.0.0.1:5400/callback as the
+	// Tanzu CLI client ID that has http://127.0.0.1/callback as the
 	// only allowed Redirect URI and does not have an associated client secret.
 	tanzuCLIClientID     = "tanzu-cli-client-id"
 	defaultListenAddress = "127.0.0.1:0"
 	defaultCallbackPath  = "/callback"
 )
+
+// stdin returns the file descriptor for stdin as an int.
+func stdin() int { return int(os.Stdin.Fd()) }
 
 // orgInfo to decode the CSP organization API response
 type orgInfo struct {
@@ -51,6 +59,8 @@ type cspLoginHandler struct {
 	token                 *oauth2.Token
 	refreshToken          string
 	orgID                 string
+	promptForValue        func(ctx context.Context, promptLabel string, out io.Writer) (string, error)
+	isTTY                 func(int) bool
 }
 
 // LoginOption is an optional configuration for Login().
@@ -73,6 +83,38 @@ func WithOrgID(orgID string) LoginOption {
 	}
 }
 
+// WithListenerPort specifies a TCP listener port on localhost, which will be used for the redirect_uri and to handle the
+// authorization code callback. By default, a random high port will be chosen which requires the authorization server
+// to support wildcard port numbers as described by https://tools.ietf.org/html/rfc8252#section-7.3:
+// Being able to designate the listener port might be advantages under some circumstances
+// (e.g. for determining what to port-forward from the host where the web browser is available)
+func WithListenerPort(port uint16) LoginOption {
+	return func(h *cspLoginHandler) error {
+		h.listenAddr = net.JoinHostPort("127.0.0.1", fmt.Sprint(port))
+		return nil
+	}
+}
+
+// WithListenerPortFromEnv sets the TCP listener port on localhost based on the value of the specified environment variable,
+// which will be used for the redirect_uri and to handle the authorization code callback.
+// By default, a random high port will be chosen which requires the authorization server
+// to support wildcard port numbers as described by https://tools.ietf.org/html/rfc8252#section-7.3:
+// Being able to designate the listener port might be advantages under some circumstances
+// (e.g. for determining what to port-forward from the host where the web browser is available)
+func WithListenerPortFromEnv(envVarName string) LoginOption {
+	return func(h *cspLoginHandler) error {
+		portStr := os.Getenv(envVarName)
+		if portStr != "" {
+			port, err := strconv.ParseUint(portStr, 10, 16)
+			if err != nil {
+				return errors.Wrapf(err, "failed to parse %s as uint16", envVarName)
+			}
+			h.listenAddr = net.JoinHostPort("127.0.0.1", fmt.Sprint(port))
+		}
+		return nil
+	}
+}
+
 func (h *cspLoginHandler) handleTokenRefresh() (*Token, error) {
 	refreshedToken, err := h.oauthConfig.TokenSource(context.TODO(), &oauth2.Token{RefreshToken: h.refreshToken}).Token()
 	if err != nil {
@@ -89,10 +131,12 @@ func (h *cspLoginHandler) handleTokenRefresh() (*Token, error) {
 
 func TanzuLogin(issuerURL string, opts ...LoginOption) (*Token, error) {
 	h := &cspLoginHandler{
-		issuer:       issuerURL,
-		clientID:     tanzuCLIClientID,
-		listenAddr:   defaultListenAddress,
-		callbackPath: defaultCallbackPath,
+		issuer:         issuerURL,
+		clientID:       tanzuCLIClientID,
+		listenAddr:     defaultListenAddress,
+		callbackPath:   defaultCallbackPath,
+		promptForValue: promptForValue,
+		isTTY:          term.IsTerminal,
 	}
 	h.oauthConfig = &oauth2.Config{
 		RedirectURL: (&url.URL{Scheme: "http", Host: h.listenAddr, Path: h.callbackPath}).String(),
@@ -130,22 +174,36 @@ func (h *cspLoginHandler) handleBrowserLogin() (*Token, error) {
 		return nil, errors.Wrap(err, "failed to generate state parameter")
 	}
 
-	shutdown, err := h.runLocalListener()
+	listener, err := net.Listen("tcp", h.listenAddr)
 	if err != nil {
-		return nil, err
+		log.Warning(errors.Wrap(err, "could not open callback listener").Error())
 	}
+
+	// If the listener failed to start and stdin is not a TTY, then we have no hope of succeeding,
+	// since we won't be able to receive the web callback, and we can't prompt for the manual auth code, so return error
+	if listener == nil && !h.isTTY(stdin()) {
+		return nil, fmt.Errorf("login failed: must have either a localhost listener or stdin must be a TTY")
+	}
+
+	// update the redirect URL with the random port allocated
+	redirectURI := url.URL{Scheme: "http", Host: listener.Addr().String(), Path: h.callbackPath}
+	h.oauthConfig.RedirectURL = redirectURI.String()
+
+	h.tokenExchange, h.tokenExchangeComplete = context.WithCancel(context.TODO())
+
+	shutdown := h.runLocalListener(listener)
 	defer shutdown()
 
 	authCodeURL := h.getAuthCodeURL()
-	// TODO(prkalle): To update the logic to address the scenario where users attempts to login to tanzu
-	// in a terminal based hosts(no browser support). The plan is to show the auth URL in the terminal and
-	// request user to open the auth URL in the browser and copy the auth Code to CLI terminal and let CLI complete
-	// login flow.
 	log.Info("Opening the browser window to complete the login\n")
 	err = browser.OpenURL(authCodeURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to open the browser for login")
+		log.Warning(fmt.Sprintf("failed to open the browser for login:%v", err.Error()))
 	}
+
+	// Prompt the user to visit the authorize URL, and to paste a manually-copied auth code (if possible).
+	cleanupPrompt := h.promptAndLoginWithAuthCode(h.tokenExchange, authCodeURL)
+	defer cleanupPrompt()
 
 	// wait for the token exchange to be completed
 	<-h.tokenExchange.Done()
@@ -164,19 +222,9 @@ func (h *cspLoginHandler) handleBrowserLogin() (*Token, error) {
 
 // runLocalListener is a blocking function call that starts a local listener
 // to handle auth-code flow callback to perform token exchange.
-func (h *cspLoginHandler) runLocalListener() (func(), error) {
-	listener, err := net.Listen("tcp", h.listenAddr)
-	if err != nil {
-		return func() {}, errors.Wrap(err, "could not open callback listener")
-	}
-	// update the redirect URL with the random port allocated
-	redirectURI := url.URL{Scheme: "http", Host: listener.Addr().String(), Path: h.callbackPath}
-	h.oauthConfig.RedirectURL = redirectURI.String()
-
+func (h *cspLoginHandler) runLocalListener(listener net.Listener) func() {
 	mux := http.NewServeMux()
 	mux.HandleFunc(h.callbackPath, h.callbackHandler)
-
-	h.tokenExchange, h.tokenExchangeComplete = context.WithCancel(context.TODO())
 
 	srv := http.Server{
 		Handler:           mux,
@@ -188,7 +236,7 @@ func (h *cspLoginHandler) runLocalListener() (func(), error) {
 	go func() { _ = srv.Serve(listener) }()
 	return func() {
 		_ = srv.Shutdown(h.tokenExchange)
-	}, nil
+	}
 }
 
 func (h *cspLoginHandler) callbackHandler(w http.ResponseWriter, r *http.Request) {
@@ -209,11 +257,9 @@ func (h *cspLoginHandler) callbackHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	var err error
-	h.token, err = h.oauthConfig.Exchange(h.tokenExchange, code, h.pkceCodePair.Verifier())
+	h.token, err = h.getTokenUsingAuthCode(h.tokenExchange, code)
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to exchange auth code for oauth tokens, err=%v", err)
-		http.Error(w, errMsg, http.StatusInternalServerError)
-		log.Info(errMsg)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	fmt.Fprint(w, "You have successfully logged in! You can now safely close this window")
@@ -238,6 +284,84 @@ func (h *cspLoginHandler) getAuthCodeURL() string {
 	}
 
 	return h.oauthConfig.AuthCodeURL(h.state.String(), opts...)
+}
+
+func (h *cspLoginHandler) promptAndLoginWithAuthCode(ctx context.Context, authorizeURL string) func() {
+	_, _ = fmt.Fprintf(os.Stderr, "Log in by visiting this link:\n\n    %s\n\n", authorizeURL)
+
+	// If stdin is not a TTY, return, as we have no way of reading it.
+	if !h.isTTY(stdin()) {
+		return func() {}
+	}
+
+	// Launch the manual auth code prompt in a background goroutine, which will be canceled
+	// if the parent context is canceled (when the login succeeds or user interrupted).
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer func() {
+			// Always emit a newline so the kubectl output is visually separated from the login prompts.
+			_, _ = fmt.Fprintln(os.Stderr)
+
+			h.tokenExchangeComplete()
+			wg.Done()
+		}()
+		code, err := h.promptForValue(ctx, "    Optionally, paste your authorization code: ", os.Stderr)
+		if err != nil {
+			// Print a visual marker to show the prompt is no longer waiting for user input, plus a trailing
+			// newline that simulates the user having pressed "enter".
+			_, _ = fmt.Fprint(os.Stderr, "[...]\n")
+			if !errors.Is(err, ctx.Err()) {
+				log.Info(fmt.Sprintf("failed to prompt for manual authorization code: %v", err))
+			}
+			return
+		}
+
+		// When a code is pasted, redeem it for a token
+		token, _ := h.getTokenUsingAuthCode(ctx, code)
+		h.token = token
+	}()
+	return wg.Wait
+}
+
+func (h *cspLoginHandler) getTokenUsingAuthCode(ctx context.Context, code string) (*oauth2.Token, error) {
+	token, err := h.oauthConfig.Exchange(ctx, code, h.pkceCodePair.Verifier())
+	if err != nil {
+		errMsg := fmt.Sprintf("failed to exchange auth code for OAuth tokens, err=%v", err)
+		log.Info(errMsg)
+		return nil, errors.New(errMsg)
+	}
+	return token, nil
+}
+
+func promptForValue(ctx context.Context, promptLabel string, out io.Writer) (string, error) {
+	if !term.IsTerminal(stdin()) {
+		return "", errors.New("stdin is not connected to a terminal")
+	}
+	_, err := fmt.Fprint(out, promptLabel)
+	if err != nil {
+		return "", fmt.Errorf("could not print prompt to stderr: %w", err)
+	}
+
+	type readResult struct {
+		text string
+		err  error
+	}
+	readResults := make(chan readResult)
+	go func() {
+		text, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		readResults <- readResult{text, err}
+		close(readResults)
+	}()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case r := <-readResults:
+		return strings.TrimSpace(r.text), r.err
+	}
 }
 
 // GetOrgNameFromOrgID fetches CSP Org Name given the Organization ID.

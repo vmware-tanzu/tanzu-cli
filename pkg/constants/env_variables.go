@@ -50,4 +50,7 @@ const (
 	// Note: More information regarding the CSP organizations can be found at
 	// https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html
 	CSPLoginOrgID = "TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID"
+
+	// TanzuCLIOAuthLocalListenerPort is the port to be used by local listener for OAuth authorization flow
+	TanzuCLIOAuthLocalListenerPort = "TANZU_CLI_OAUTH_LOCAL_LISTENER_PORT"
 )

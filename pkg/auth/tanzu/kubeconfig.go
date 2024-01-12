@@ -82,7 +82,7 @@ func getExecConfig(c *configtypes.Context) *clientcmdapi.ExecConfig {
 		APIVersion:      clientauthenticationv1.SchemeGroupVersion.String(),
 		Args:            []string{},
 		Env:             []clientcmdapi.ExecEnvVar{},
-		InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
+		InteractiveMode: clientcmdapi.IfAvailableExecInteractiveMode,
 	}
 
 	execConfig.Command = "tanzu"
