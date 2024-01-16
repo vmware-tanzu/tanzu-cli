@@ -678,6 +678,16 @@ func savePluginGroupManifest(plugins []cli.Plugin, artifactsDir, pluginScopeAsso
 		pgManifest.Plugins = append(pgManifest.Plugins, pluginNTSV)
 	}
 
+	pluginBundleOverwrite, _ := strconv.ParseBool(os.Getenv("PLUGIN_BUNDLE_OVERWRITE"))
+	existingPluginGroupManifest, err := helpers.ReadPluginGroupManifest(filepath.Join(artifactsDir, cli.PluginGroupManifestFileName))
+	if err == nil && !pluginBundleOverwrite {
+		// Since a plugin-group manifest already exists, merge it with the newly generated plugin-group manifest.
+		// Note that we are appending the existing manifest to the generated one
+		// which gives the generated one priority if there is already an existing plugin with
+		// a different version.
+		pgManifest = mergePluginGroupManifest(pgManifest, *existingPluginGroupManifest)
+	}
+
 	b, err = yaml.Marshal(pgManifest)
 	if err != nil {
 		return err
@@ -689,6 +699,29 @@ func savePluginGroupManifest(plugins []cli.Plugin, artifactsDir, pluginScopeAsso
 		return err
 	}
 
+	return nil
+}
+
+// mergePluginGroupManifest merges 'incomingPluginGroupManifest' into 'basePluginGroupManifest' giving 'basePluginGroupManifest'
+// higher precedence in case of overlaps.
+func mergePluginGroupManifest(basePGManifest, incomingPGManifest cli.PluginGroupManifest) cli.PluginGroupManifest {
+	mergedManifest := basePGManifest
+	for _, p := range incomingPGManifest.Plugins {
+		// if plugin not found in base manifest append
+		if findpluginInPluginGroupManifest(basePGManifest, p) == nil {
+			mergedManifest.Plugins = append(mergedManifest.Plugins, p)
+		}
+	}
+	return mergedManifest
+}
+
+// findpluginInPluginGroupManifest checks if the plugin already specified in the plugin-group manifest or not
+func findpluginInPluginGroupManifest(pgManifest cli.PluginGroupManifest, plugin cli.PluginNameTargetScopeVersion) *cli.PluginNameTargetScopeVersion {
+	for _, p := range pgManifest.Plugins {
+		if p.Name == plugin.Name && p.Target == plugin.Target {
+			return &p
+		}
+	}
 	return nil
 }
 
