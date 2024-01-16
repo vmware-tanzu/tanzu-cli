@@ -96,7 +96,6 @@ linters:
   # - scopelint
   # - wsl
   # - depguard  # This is not being used in the project hence do not enable
-  # - unparam # TODO: Remove all unused params and re enable the linter
   # WARN [runner] The linter 'deadcode' is deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter. Replaced by unused.
   # - deadcode
   # WARN [runner] The linter 'structcheck' is deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter. Replaced by unused.
@@ -116,15 +115,6 @@ issues:
         - dupl
         - gocritic
         - funlen
-
-    - linters:
-        - gosec
-      text: "G602:" # TODO: Fix disable slice out of bounds issue and re enable the linter
-
-    - linters:
-        - gosec
-      text: "G601:" # TODO: Fix Implicit memory aliasing in for loop issue and re enable the linter
-    # https://github.com/go-critic/go-critic/issues/926
     - linters:
         - gocritic
       text: "unnecessaryDefer:"

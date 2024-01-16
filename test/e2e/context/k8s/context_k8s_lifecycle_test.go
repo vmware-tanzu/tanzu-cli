@@ -37,6 +37,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-k8s-tests]", func
 })
 
 // k8sContextLifeCycleTests has test cases for context life cycle use cases for the k8s target
+//
+//nolint:gosec  // G602: Potentially accessing slice out of bounds (gosec) i.e. contextNames
 func k8sContextLifeCycleTests() bool {
 	var active string
 	contextNames := make([]string, 0)

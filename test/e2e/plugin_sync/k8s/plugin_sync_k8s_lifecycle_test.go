@@ -533,7 +533,8 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			Expect(len(pluginsList)).Should(Equal(0), "no plugins should be available at this time")
 
 			for _, testcase := range PluginsMultiVersionInstallTests {
-				_, pluginCRFilePaths, err = f.CreateTemporaryCRsFromPluginInfos([]*f.PluginInfo{&testcase.pluginInfo})
+				pluginInfo := testcase.pluginInfo
+				_, pluginCRFilePaths, err = f.CreateTemporaryCRsFromPluginInfos([]*f.PluginInfo{&pluginInfo})
 				Expect(err).To(BeNil(), "should not get any error while generating CR files")
 				err = f.ApplyConfigOnKindCluster(tf, clusterInfo, pluginCRFilePaths)
 				Expect(err).To(BeNil(), "should not get any error for config apply")
