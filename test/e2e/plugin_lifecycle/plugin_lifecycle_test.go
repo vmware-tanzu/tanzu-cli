@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -251,6 +252,20 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			}
 			// validate installed plugins count same as number of plugins installed
 			pluginsList, err := framework.GetPluginsList(tf, true)
+
+			var previousName, previousTarget string
+			// validate installed plugins list is sorted by name and then target
+			for _, p := range pluginsList {
+				if previousName != "" {
+					if p.Name != previousName {
+						Expect(strings.Compare(previousName, p.Name) <= 0).To(BeTrue(), "plugin list output should be sorted by plugin name and target")
+					} else {
+						Expect(strings.Compare(previousTarget, p.Target) <= 0).To(BeTrue(), "plugin list output should be sorted by plugin name and target")
+					}
+				}
+				previousName = p.Name
+				previousTarget = p.Target
+			}
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(Equal(len(util.PluginsForLifeCycleTests)), "plugins list should return all installed plugins")
 		})
@@ -586,6 +601,21 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			// Now reset it to the e2e test url
 			_, err = tf.PluginCmd.UpdatePluginDiscoverySource(&framework.DiscoveryOptions{Name: defaultPluginSourceName, SourceType: framework.SourceType, URI: e2eTestLocalCentralRepoURL})
 			Expect(err).To(BeNil(), "should not get any error for plugin source update")
+		})
+	})
+
+	Context("plugin search use cases", func() {
+		It("plugin search output should be sorted by plugin name", func() {
+			// search plugins and make sure there are plugins available and sorted by plugin name
+			pluginsSearchList, err := SearchAllPlugins(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
+			previousName := ""
+			for _, plugin := range pluginsSearchList {
+				if previousName != "" {
+					Expect(strings.Compare(previousName, plugin.Name) <= 0).To(BeTrue(), framework.PluginSearchOutputShouldBeSortedByName)
+					previousName = plugin.Name
+				}
+			}
 		})
 	})
 })

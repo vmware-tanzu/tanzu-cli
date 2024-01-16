@@ -111,8 +111,9 @@ func testWithoutPluginDiscoverySources(tf *framework.Framework) {
 	_, err := tf.PluginCmd.DeletePluginDiscoverySource("default")
 	Expect(err).To(BeNil(), "there should not be any error to delete default discovery source")
 
-	_, err = tf.PluginCmd.SearchPlugins("")
+	plugins, _, _, err := tf.PluginCmd.SearchPlugins("")
 	Expect(err.Error()).To(ContainSubstring(errorNoDiscoverySourcesFound))
+	Expect(len(plugins)).Should(BeNumerically("==", 0))
 
 	err = tf.PluginCmd.InstallPlugin("unknowPlugin", "", "")
 	Expect(err.Error()).To(ContainSubstring(errorNoDiscoverySourcesFound))

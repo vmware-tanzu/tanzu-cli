@@ -81,8 +81,8 @@ type PluginInfoSorter []PluginInfo
 func (p PluginInfoSorter) Len() int      { return len(p) }
 func (p PluginInfoSorter) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
 func (p PluginInfoSorter) Less(i, j int) bool {
-	if p[i].Target != p[j].Target {
-		return p[i].Target < p[j].Target
+	if p[i].Name != p[j].Name {
+		return p[i].Name < p[j].Name
 	}
-	return p[i].Name < p[j].Name
+	return string(p[i].Target) < string(p[j].Target)
 }
