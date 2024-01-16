@@ -36,7 +36,8 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 	}
 
 	// pullDBImageStub create new empty database with the table schemas created
-	pullDBImageStub := func(image, path string) error {
+	//nolint:unparam
+	pullDBImageStub := func(_, path string) error {
 		dbFile := filepath.Join(path, plugininventory.SQliteDBFileName)
 		db := plugininventory.NewSQLiteInventory(dbFile, "")
 		err := db.CreateSchema()
@@ -46,7 +47,8 @@ var _ = Describe("Unit tests for inventory plugin add", func() {
 	}
 
 	// pullDBImageStubWithPlugins create new database with the table schemas and foo plugin
-	pullDBImageStubWithPlugins := func(image, path string) error {
+	//nolint:unparam
+	pullDBImageStubWithPlugins := func(_, path string) error {
 		dbFile := filepath.Join(path, plugininventory.SQliteDBFileName)
 		db := plugininventory.NewSQLiteInventory(dbFile, "")
 		err := db.CreateSchema()

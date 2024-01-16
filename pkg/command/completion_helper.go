@@ -37,6 +37,8 @@ func noMoreCompletions(_ *cobra.Command, _ []string, _ string) ([]string, cobra.
 }
 
 // activeHelpNoMoreArgs provides some ActiveHelp to indicate no more arguments are accepted
+//
+//nolint:unparam
 func activeHelpNoMoreArgs(comps []string) []string {
 	return cobra.AppendActiveHelp(comps, "This command does not take any more arguments (but may accept flags).")
 }

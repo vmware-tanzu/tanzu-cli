@@ -1487,6 +1487,8 @@ func verifyPluginPostDownload(p *discovery.Discovered, srcDigest string, b []byt
 }
 
 // getPluginDiscoveries returns the plugin discoveries found in the configuration file.
+//
+//nolint:unparam
 func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
 	// Look for testing discoveries.  Those should be stored and searched AFTER the central repo.
 	testDiscoveries := GetAdditionalTestPluginDiscoveries()

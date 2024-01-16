@@ -293,6 +293,8 @@ func (o *DownloadPluginBundleOptions) downloadImagesAsTarFile(pluginEntries []*p
 
 // downloadImagesAsTarFile downloads plugin inventory image and all plugin images
 // as tar file to the specified directory
+//
+//nolint:unparam
 func (o *DownloadPluginBundleOptions) getListOfImages(pluginEntries []*plugininventory.PluginInventoryEntry) (map[string]interface{}, error) {
 	images := []string{}
 	images = append(images, o.PluginInventoryImage)

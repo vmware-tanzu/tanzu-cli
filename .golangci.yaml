@@ -75,6 +75,9 @@ linters:
     - bodyclose
     - noctx
     - rowserrcheck
+    - nakedret
+    - revive
+    - unparam
 
   # don't enable:
   # - asciicheck
@@ -101,10 +104,6 @@ linters:
   # WARN [runner] The linter 'varcheck' is deprecated (since v1.49.0) due to: The owner seems to have abandoned the linter. Replaced by unused.
   # - varcheck
 
-  # TODO: Fix unused-parameters and enable the linters
-  # - revive
-  # TODO: Fix naked returns and enable the linters
-  # - nakedret
 issues:
   exclude:
     - 'declaration of "(err|ctx)" shadows declaration at'
