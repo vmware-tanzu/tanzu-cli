@@ -16,19 +16,19 @@ func TestMergePluginManifest(t *testing.T) {
 
 	baseManifest := cli.Manifest{
 		Plugins: []cli.Plugin{
-			cli.Plugin{
+			{
 				Name:        "plugin1",
 				Target:      "target-foo",
 				Description: "desc-1-foo",
 				Versions:    []string{"v1.1.1"},
 			},
-			cli.Plugin{
+			{
 				Name:        "plugin2",
 				Target:      "target-foo",
 				Description: "desc-2-foo",
 				Versions:    []string{"v4.0.0"},
 			},
-			cli.Plugin{
+			{
 				Name:        "plugin3",
 				Target:      "target-baz",
 				Description: "desc-3",
@@ -39,13 +39,13 @@ func TestMergePluginManifest(t *testing.T) {
 
 	incomingManifest := cli.Manifest{
 		Plugins: []cli.Plugin{
-			cli.Plugin{
+			{
 				Name:        "plugin1",
 				Target:      "target-foo",
 				Description: "desc-1-foo",
 				Versions:    []string{"v1.0.0"},
 			},
-			cli.Plugin{
+			{
 				Name:        "plugin2",
 				Target:      "target-bar",
 				Description: "desc-2",
@@ -56,25 +56,25 @@ func TestMergePluginManifest(t *testing.T) {
 
 	expectedMergedManifest := cli.Manifest{
 		Plugins: []cli.Plugin{
-			cli.Plugin{
+			{
 				Name:        "plugin1",
 				Target:      "target-foo",
 				Description: "desc-1-foo",
 				Versions:    []string{"v1.1.1"},
 			},
-			cli.Plugin{
+			{
 				Name:        "plugin3",
 				Target:      "target-baz",
 				Description: "desc-3",
 				Versions:    []string{"v3.0.0"},
 			},
-			cli.Plugin{
+			{
 				Name:        "plugin2",
 				Target:      "target-foo",
 				Description: "desc-2-foo",
 				Versions:    []string{"v4.0.0"},
 			},
-			cli.Plugin{
+			{
 				Name:        "plugin2",
 				Target:      "target-bar",
 				Description: "desc-2",
@@ -100,7 +100,7 @@ func TestMergePluginGroupManifest(t *testing.T) {
 
 	basePGManifest := cli.PluginGroupManifest{
 		Plugins: []cli.PluginNameTargetScopeVersion{
-			cli.PluginNameTargetScopeVersion{
+			{
 				PluginNameTargetScope: cli.PluginNameTargetScope{
 					Name:            "plugin1",
 					Target:          "target-foo",
@@ -108,7 +108,7 @@ func TestMergePluginGroupManifest(t *testing.T) {
 				},
 				Version: "v1.1.1",
 			},
-			cli.PluginNameTargetScopeVersion{
+			{
 				PluginNameTargetScope: cli.PluginNameTargetScope{
 					Name:            "plugin2",
 					Target:          "target-foo",
@@ -116,7 +116,7 @@ func TestMergePluginGroupManifest(t *testing.T) {
 				},
 				Version: "v4.0.0",
 			},
-			cli.PluginNameTargetScopeVersion{
+			{
 				PluginNameTargetScope: cli.PluginNameTargetScope{
 					Name:            "plugin3",
 					Target:          "target-baz",
@@ -129,7 +129,7 @@ func TestMergePluginGroupManifest(t *testing.T) {
 
 	incomingPGManifest := cli.PluginGroupManifest{
 		Plugins: []cli.PluginNameTargetScopeVersion{
-			cli.PluginNameTargetScopeVersion{
+			{
 				PluginNameTargetScope: cli.PluginNameTargetScope{
 					Name:            "plugin1",
 					Target:          "target-foo",
@@ -137,7 +137,7 @@ func TestMergePluginGroupManifest(t *testing.T) {
 				},
 				Version: "v1.0.0",
 			},
-			cli.PluginNameTargetScopeVersion{
+			{
 				PluginNameTargetScope: cli.PluginNameTargetScope{
 					Name:            "plugin2",
 					Target:          "target-bar",
@@ -150,7 +150,7 @@ func TestMergePluginGroupManifest(t *testing.T) {
 
 	expectedMergedPGManifest := cli.PluginGroupManifest{
 		Plugins: []cli.PluginNameTargetScopeVersion{
-			cli.PluginNameTargetScopeVersion{
+			{
 				PluginNameTargetScope: cli.PluginNameTargetScope{
 					Name:            "plugin1",
 					Target:          "target-foo",
@@ -158,7 +158,7 @@ func TestMergePluginGroupManifest(t *testing.T) {
 				},
 				Version: "v1.1.1",
 			},
-			cli.PluginNameTargetScopeVersion{
+			{
 				PluginNameTargetScope: cli.PluginNameTargetScope{
 					Name:            "plugin3",
 					Target:          "target-baz",
@@ -166,7 +166,7 @@ func TestMergePluginGroupManifest(t *testing.T) {
 				},
 				Version: "v3.0.0",
 			},
-			cli.PluginNameTargetScopeVersion{
+			{
 				PluginNameTargetScope: cli.PluginNameTargetScope{
 					Name:            "plugin2",
 					Target:          "target-foo",
@@ -174,7 +174,7 @@ func TestMergePluginGroupManifest(t *testing.T) {
 				},
 				Version: "v4.0.0",
 			},
-			cli.PluginNameTargetScopeVersion{
+			{
 				PluginNameTargetScope: cli.PluginNameTargetScope{
 					Name:            "plugin2",
 					Target:          "target-bar",
