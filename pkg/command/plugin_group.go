@@ -274,7 +274,7 @@ func completeGroupGet(cmd *cobra.Command, args []string, toComplete string) ([]s
 	return completeGroupsAndVersion(cmd, args, toComplete)
 }
 
-func completeGroupNames(_ *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func completeGroupNames(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	// We need to complete a group name
 	groups, err := pluginmanager.DiscoverPluginGroups(discovery.WithUseLocalCacheOnly())
 	if err != nil {

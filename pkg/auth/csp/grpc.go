@@ -123,7 +123,7 @@ type TokenSource struct {
 }
 
 // GetRequestMetadata gets the request metadata as a map from a TokenSource.
-func (ts TokenSource) GetRequestMetadata(ctx context.Context, uri ...string) (map[string]string, error) {
+func (ts TokenSource) GetRequestMetadata(_ context.Context, _ ...string) (map[string]string, error) {
 	token, err := ts.Token()
 	if err != nil {
 		return nil, err

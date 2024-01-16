@@ -32,7 +32,7 @@ func completionGetOutputFormats(_ *cobra.Command, _ []string, _ string) ([]strin
 // noMoreCompletions can be used to disable file completion for commands that should
 // not trigger file completions.  It also provides some ActiveHelp to indicate no more
 // arguments are accepted
-func noMoreCompletions(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func noMoreCompletions(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 }
 

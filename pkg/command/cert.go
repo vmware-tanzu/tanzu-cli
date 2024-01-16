@@ -290,7 +290,7 @@ func createCert(host, caCertPath, skipCertVerify, insecure string) (*configtypes
 // ====================================
 // Shell completion functions
 // ====================================
-func completeCertHosts(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func completeCertHosts(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
 		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}

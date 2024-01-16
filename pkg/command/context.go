@@ -8,11 +8,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"reflect"
-
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -414,7 +413,7 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return context, err
 		}
 	} else if kubeConfig == "" {
 		kubeConfig = kubecfg.GetDefaultKubeConfigFile()
@@ -430,7 +429,7 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	kubeContext = strings.TrimSpace(kubeContext)
@@ -444,7 +443,7 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	ctxName = strings.TrimSpace(ctxName)
@@ -454,7 +453,7 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 	}
 	if exists {
 		err = fmt.Errorf("context %q already exists", ctxName)
-		return
+		return context, err
 	}
 
 	context = &configtypes.Context{
@@ -474,13 +473,13 @@ func createContextWithTMCEndpoint() (context *configtypes.Context, err error) {
 	if endpoint == "" {
 		endpoint, err = promptEndpoint("")
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	if ctxName == "" {
 		ctxName, err = promptContextName("")
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	exists, err := config.ContextExists(ctxName)
@@ -489,7 +488,7 @@ func createContextWithTMCEndpoint() (context *configtypes.Context, err error) {
 	}
 	if exists {
 		err = fmt.Errorf("context %q already exists", ctxName)
-		return
+		return context, err
 	}
 
 	if os.Getenv(constants.E2ETestEnvironment) != "true" && (strings.HasPrefix(endpoint, "https:") || strings.HasPrefix(endpoint, "http:")) {
@@ -510,13 +509,13 @@ func createContextWithClusterEndpoint() (context *configtypes.Context, err error
 	if endpoint == "" {
 		endpoint, err = promptEndpoint("")
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	if ctxName == "" {
 		ctxName, err = promptContextName("")
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	exists, err := config.ContextExists(ctxName)
@@ -525,14 +524,14 @@ func createContextWithClusterEndpoint() (context *configtypes.Context, err error
 	}
 	if exists {
 		err = fmt.Errorf("context %q already exists", ctxName)
-		return
+		return context, err
 	}
 
 	// TKGKubeconfigFetcher would detect the endpoint is TKGm/TKGs and then fetch the pinniped kubeconfig to create a context
 	tkf := NewTKGKubeconfigFetcher(endpoint, endpointCACertPath, skipTLSVerify)
 	kubeConfig, kubeContext, err = tkf.GetPinnipedKubeconfig()
 	if err != nil {
-		return
+		return context, err
 	}
 
 	context = &configtypes.Context{
@@ -555,13 +554,13 @@ func createContextWithTanzuEndpoint() (context *configtypes.Context, err error) 
 	if endpoint == "" {
 		endpoint, err = promptEndpoint(defaultTanzuEndpoint)
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 	if ctxName == "" {
 		ctxName, err = promptContextName("")
 		if err != nil {
-			return
+			return context, err
 		}
 	}
 
@@ -571,7 +570,7 @@ func createContextWithTanzuEndpoint() (context *configtypes.Context, err error) 
 	}
 	if exists {
 		err = fmt.Errorf("context %q already exists", ctxName)
-		return
+		return context, err
 	}
 
 	// Tanzu context would have both CSP(GlobalOpts) auth details and kubeconfig(ClusterOpts),

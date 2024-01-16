@@ -17,10 +17,9 @@ func main() {
 			// If a plugin exited with an error, we don't want to print its
 			// exit status as a string, but want to use it as our own exit code.
 			os.Exit(errStr.ExitCode())
-		} else {
-			// We got an error other than a plugin exiting with an error, let's
-			// print the error message.
-			log.Fatal(err, "")
 		}
+		// We got an error other than a plugin exiting with an error, let's
+		// print the error message.
+		log.Fatal(err, "")
 	}
 }
