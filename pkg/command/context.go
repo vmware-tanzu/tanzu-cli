@@ -1279,8 +1279,11 @@ func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.W
 	// additional metadata map correctly in their native JSON/YAML form
 	opts := []component.OutputWriterOption{}
 	op := component.NewOutputWriterWithOptions(writer, outputFormat, opts, "Name", "Type", "IsManagementCluster", "IsCurrent", "Endpoint", "KubeConfigPath", "KubeContext", "AdditionalMetadata")
+	ctxToList := cfg.KnownContexts
 
-	for _, ctx := range cfg.KnownContexts {
+	// sort the contexts by name amd then by target
+	sort.Sort(configtypes.ContextSorter(ctxToList))
+	for _, ctx := range ctxToList {
 		if contextType != "" && ctx.ContextType != contextType {
 			continue
 		}
@@ -1345,6 +1348,7 @@ type ContextListOutputRow struct {
 func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, writer io.Writer, showAllColumns bool) { //nolint:funlen
 	ct := getContextType()
 	ctxs, _ := getContextsToDisplay(cfg, ct, onlyCurrent)
+	sort.Sort(configtypes.ContextSorter(ctxs))
 
 	opts := []component.OutputWriterOption{}
 	rows := []ContextListOutputRow{}
