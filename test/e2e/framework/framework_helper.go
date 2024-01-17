@@ -211,7 +211,7 @@ func CreateKindCluster(tf *Framework, name string) (*ClusterInfo, error) {
 
 // IsContextExists checks the given context is exists in the config file by listing the existing contexts in the config file
 func IsContextExists(tf *Framework, contextName string, opts ...E2EOption) bool {
-	list, err := tf.ContextCmd.ListContext(opts...)
+	list, _, _, err := tf.ContextCmd.ListContext(opts...)
 	gomega.Expect(err).To(gomega.BeNil(), "list context should not return any error")
 	for _, context := range list {
 		if context.Name == contextName {
@@ -556,7 +556,7 @@ func GetHTTPCall(url string, v interface{}) error {
 // GetAvailableContexts takes list of contexts and returns only which are available in both the 'tanzu context list' command output and the input list
 func GetAvailableContexts(tf *Framework, contextNames []string) []string {
 	var available []string
-	list, err := tf.ContextCmd.ListContext()
+	list, _, _, err := tf.ContextCmd.ListContext()
 	gomega.Expect(err).To(gomega.BeNil(), "list context should not return any error")
 	set := SliceToSet(contextNames)
 	for _, context := range list {
