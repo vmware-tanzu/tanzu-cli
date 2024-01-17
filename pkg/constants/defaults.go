@@ -22,4 +22,11 @@ const (
 
 	// DefaultCLIEssentialsPluginGroupName  name of the essentials plugin group which is used to install essential plugins
 	DefaultCLIEssentialsPluginGroupName = "vmware-tanzucli/essentials"
+
+	// TanzuContextPluginDiscoveryEndpointPath specifies the default plugin discovery endpoint path
+	// Note: This path value needs to be updated once the Tanzu context backend support the context-scoped
+	// plugin discovery and the endpoint value gets finallized
+	// Until then for testing purpose, user can overwrite this path using `TANZU_CLI_TANZU_CONTEXT_PLUGIN_DISCOVERY_PATH`
+	// environment variable
+	TanzuContextPluginDiscoveryEndpointPath = "/discovery"
 )

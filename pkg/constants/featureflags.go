@@ -7,6 +7,10 @@ package constants
 const (
 	// FeatureContextCommand determines whether to surface the context command. This is disabled by default.
 	FeatureContextCommand = "features.global.context-target-v2"
+
+	// FeatureContextScopedPluginDiscoveryForTanzuContext determines whether to enable context-scoped plugin discovery for Tanzu context.
+	// This is disabled by default
+	FeatureContextScopedPluginDiscoveryForTanzuContext = "features.global.context-plugin-discovery-for-tanzu-context"
 )
 
 // DefaultCliFeatureFlags is used to populate an initially empty config file with default values for feature flags.
