@@ -28,6 +28,8 @@ var (
 	showNonMandatory bool
 )
 
+const groupSearchShowDetailsMsg = "Note: To view all plugin group versions available, use 'tanzu plugin group search --show-details'."
+
 func newPluginGroupCmd() *cobra.Command {
 	var pluginGroupCmd = &cobra.Command{
 		Use:   "group",
@@ -158,6 +160,11 @@ func displayGroupsFound(groups []*plugininventory.PluginGroup, writer io.Writer)
 		output.AddRow(id, pg.Description, pg.RecommendedVersion)
 	}
 	output.Render()
+
+	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
+		fmt.Fprintln(writer)
+		fmt.Fprintln(writer, groupSearchShowDetailsMsg)
+	}
 }
 
 func displayGroupDetails(groups []*plugininventory.PluginGroup, writer io.Writer) {

@@ -23,13 +23,13 @@ func TestPluginGroupSearch(t *testing.T) {
 			test:            "search for all groups",
 			args:            []string{"plugin", "group", "search"},
 			expectedFailure: false,
-			expected:        "GROUP DESCRIPTION LATEST vmware-tap/default Plugins for TAP v3.3.3 vmware-tkg/default Plugins for TKG v2.2.2",
+			expected:        "GROUP DESCRIPTION LATEST vmware-tap/default Plugins for TAP v3.3.3 vmware-tkg/default Plugins for TKG v2.2.2 " + groupSearchShowDetailsMsg,
 		},
 		{
 			test:            "search for group with --name",
 			args:            []string{"plugin", "group", "search", "--name", "vmware-tap/default"},
 			expectedFailure: false,
-			expected:        "GROUP DESCRIPTION LATEST vmware-tap/default Plugins for TAP v3.3.3",
+			expected:        "GROUP DESCRIPTION LATEST vmware-tap/default Plugins for TAP v3.3.3 " + groupSearchShowDetailsMsg,
 		},
 		{
 			test:            "search for invalid group with --name",
