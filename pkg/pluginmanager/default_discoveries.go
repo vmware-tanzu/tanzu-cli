@@ -6,10 +6,15 @@ package pluginmanager
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 const True = "true"
@@ -38,7 +43,15 @@ func defaultDiscoverySourceBasedOnContext(context *configtypes.Context) []config
 		defaultDiscoveries = append(defaultDiscoveries, defaultDiscoverySourceForK8sTargetedContext(context.Name, context.ClusterOpts.Path, context.ClusterOpts.Context))
 	} else if context.ContextType == configtypes.ContextTypeTMC && context.GlobalOpts != nil {
 		defaultDiscoveries = append(defaultDiscoveries, defaultDiscoverySourceForTMCTargetedContext(context))
+	} else if context.ContextType == configtypes.ContextTypeTanzu && config.IsFeatureActivated(constants.FeatureContextScopedPluginDiscoveryForTanzuContext) {
+		discovery, err := defaultDiscoverySourceForTanzuTargetedContext(context.Name)
+		if err != nil {
+			log.V(6).Infof("error while getting default discovery for context %q, error: %s", context.Name, err.Error())
+		} else {
+			defaultDiscoveries = append(defaultDiscoveries, discovery)
+		}
 	}
+
 	return defaultDiscoveries
 }
 
@@ -60,6 +73,31 @@ func defaultDiscoverySourceForTMCTargetedContext(context *configtypes.Context) c
 			BasePath: "v1alpha1/system/binaries/plugins",
 		},
 	}
+}
+
+func defaultDiscoverySourceForTanzuTargetedContext(context string) (configtypes.PluginDiscovery, error) {
+	tanzuContextDiscoveryEndpointPath := strings.TrimSpace(os.Getenv(constants.TanzuContextPluginDiscoveryPath))
+	if tanzuContextDiscoveryEndpointPath == "" {
+		tanzuContextDiscoveryEndpointPath = constants.TanzuContextPluginDiscoveryEndpointPath
+	}
+
+	kubeconfigBytes, err := config.GetKubeconfigForContext(context, config.ForCustomPath(tanzuContextDiscoveryEndpointPath))
+	if err != nil {
+		return configtypes.PluginDiscovery{}, err
+	}
+	kubeconfigFilePath := filepath.Join(common.DefaultCacheDir, "kubeconfig", "config.yaml")
+	err = utils.SaveFile(kubeconfigFilePath, kubeconfigBytes)
+	if err != nil {
+		return configtypes.PluginDiscovery{}, err
+	}
+
+	return configtypes.PluginDiscovery{
+		Kubernetes: &configtypes.KubernetesDiscovery{
+			Name:    fmt.Sprintf("default-%s", context),
+			Path:    kubeconfigFilePath,
+			Context: "",
+		},
+	}, nil
 }
 
 func appendURLScheme(endpoint string) string {
