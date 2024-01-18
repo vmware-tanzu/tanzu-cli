@@ -71,8 +71,8 @@ github.com/VividCortex/ewma v1.1.1/go.mod h1:2Tkkvm3sRDVXaiyucHiACn4cqf7DpdyLvmx
 github.com/adrg/xdg v0.4.0 h1:RzRqFcjH4nE5C6oTAxhBtoE2IRyjBSa62SCbyPidvls=
 github.com/adrg/xdg v0.4.0/go.mod h1:N6ag73EX4wyxeaoeHctc1mas01KZgsj5tYiAIwqJE/E=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/anujc25/tanzu-plugin-runtime v0.0.0-20240118202906-67f297155151 h1:MSeXae5rWha20DFNJxEhujlKjakoLaB8GKn06auiIG8=
-github.com/anujc25/tanzu-plugin-runtime v0.0.0-20240118202906-67f297155151/go.mod h1:M7WVZoItdyQp53tEprQIa6PZmhbrLe3CzuyQphWuRyI=
+github.com/anujc25/tanzu-plugin-runtime v0.0.0-20240118222105-b86ee79b29c4 h1:grvCB/0+FecHNNDnsqxnk9FFYizVcLobKKgiLD2VJeQ=
+github.com/anujc25/tanzu-plugin-runtime v0.0.0-20240118222105-b86ee79b29c4/go.mod h1:M7WVZoItdyQp53tEprQIa6PZmhbrLe3CzuyQphWuRyI=
 github.com/asaskevich/govalidator v0.0.0-20200907205600-7a23bdc65eef/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3dyBCFEj5IhUbnKptjxatkF07cF2ak3yi77so=
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=

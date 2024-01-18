@@ -8,12 +8,13 @@ import (
 )
 
 type ClusterClientFactory struct {
-	NewClientStub        func(string, string, cluster.Options) (cluster.Client, error)
+	NewClientStub        func(string, string, []byte, cluster.Options) (cluster.Client, error)
 	newClientMutex       sync.RWMutex
 	newClientArgsForCall []struct {
 		arg1 string
 		arg2 string
-		arg3 cluster.Options
+		arg3 []byte
+		arg4 cluster.Options
 	}
 	newClientReturns struct {
 		result1 cluster.Client
@@ -27,20 +28,26 @@ type ClusterClientFactory struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *ClusterClientFactory) NewClient(arg1 string, arg2 string, arg3 cluster.Options) (cluster.Client, error) {
+func (fake *ClusterClientFactory) NewClient(arg1 string, arg2 string, arg3 []byte, arg4 cluster.Options) (cluster.Client, error) {
+	var arg3Copy []byte
+	if arg3 != nil {
+		arg3Copy = make([]byte, len(arg3))
+		copy(arg3Copy, arg3)
+	}
 	fake.newClientMutex.Lock()
 	ret, specificReturn := fake.newClientReturnsOnCall[len(fake.newClientArgsForCall)]
 	fake.newClientArgsForCall = append(fake.newClientArgsForCall, struct {
 		arg1 string
 		arg2 string
-		arg3 cluster.Options
-	}{arg1, arg2, arg3})
+		arg3 []byte
+		arg4 cluster.Options
+	}{arg1, arg2, arg3Copy, arg4})
 	stub := fake.NewClientStub
 	fakeReturns := fake.newClientReturns
-	fake.recordInvocation("NewClient", []interface{}{arg1, arg2, arg3})
+	fake.recordInvocation("NewClient", []interface{}{arg1, arg2, arg3Copy, arg4})
 	fake.newClientMutex.Unlock()
 	if stub != nil {
-		return stub(arg1, arg2, arg3)
+		return stub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -54,17 +61,17 @@ func (fake *ClusterClientFactory) NewClientCallCount() int {
 	return len(fake.newClientArgsForCall)
 }
 
-func (fake *ClusterClientFactory) NewClientCalls(stub func(string, string, cluster.Options) (cluster.Client, error)) {
+func (fake *ClusterClientFactory) NewClientCalls(stub func(string, string, []byte, cluster.Options) (cluster.Client, error)) {
 	fake.newClientMutex.Lock()
 	defer fake.newClientMutex.Unlock()
 	fake.NewClientStub = stub
 }
 
-func (fake *ClusterClientFactory) NewClientArgsForCall(i int) (string, string, cluster.Options) {
+func (fake *ClusterClientFactory) NewClientArgsForCall(i int) (string, string, []byte, cluster.Options) {
 	fake.newClientMutex.RLock()
 	defer fake.newClientMutex.RUnlock()
 	argsForCall := fake.newClientArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *ClusterClientFactory) NewClientReturns(result1 cluster.Client, result2 error) {

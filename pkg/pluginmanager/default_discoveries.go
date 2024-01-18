@@ -6,12 +6,9 @@ package pluginmanager
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
@@ -85,17 +82,11 @@ func defaultDiscoverySourceForTanzuTargetedContext(context string) (configtypes.
 	if err != nil {
 		return configtypes.PluginDiscovery{}, err
 	}
-	kubeconfigFilePath := filepath.Join(common.DefaultCacheDir, "kubeconfig", "config.yaml")
-	err = utils.SaveFile(kubeconfigFilePath, kubeconfigBytes)
-	if err != nil {
-		return configtypes.PluginDiscovery{}, err
-	}
 
 	return configtypes.PluginDiscovery{
 		Kubernetes: &configtypes.KubernetesDiscovery{
-			Name:    fmt.Sprintf("default-%s", context),
-			Path:    kubeconfigFilePath,
-			Context: "",
+			Name:            fmt.Sprintf("default-%s", context),
+			KubeConfigBytes: kubeconfigBytes,
 		},
 	}, nil
 }

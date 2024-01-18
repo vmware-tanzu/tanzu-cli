@@ -119,7 +119,7 @@ func CreateDiscoveryFromV1alpha1(pd configtypes.PluginDiscovery, options ...Disc
 	case pd.Local != nil:
 		return NewLocalDiscovery(pd.Local.Name, pd.Local.Path), nil
 	case pd.Kubernetes != nil:
-		return NewKubernetesDiscovery(pd.Kubernetes.Name, pd.Kubernetes.Path, pd.Kubernetes.Context), nil
+		return NewKubernetesDiscovery(pd.Kubernetes.Name, pd.Kubernetes.Path, pd.Kubernetes.Context, pd.Kubernetes.KubeConfigBytes), nil
 	case pd.REST != nil:
 		return NewRESTDiscovery(pd.REST.Name, pd.REST.Endpoint, pd.REST.BasePath), nil
 	}
