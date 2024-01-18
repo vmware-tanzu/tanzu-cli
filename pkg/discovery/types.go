@@ -69,8 +69,8 @@ type DiscoveredSorter []Discovered
 func (d DiscoveredSorter) Len() int      { return len(d) }
 func (d DiscoveredSorter) Swap(i, j int) { d[i], d[j] = d[j], d[i] }
 func (d DiscoveredSorter) Less(i, j int) bool {
-	if d[i].Target != d[j].Target {
-		return d[i].Target < d[j].Target
+	if d[i].Name != d[j].Name {
+		return d[i].Name < d[j].Name
 	}
-	return d[i].Name < d[j].Name
+	return string(d[i].Target) < string(d[j].Target)
 }

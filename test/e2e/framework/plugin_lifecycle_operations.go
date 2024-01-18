@@ -22,7 +22,7 @@ type PluginBasicOps interface {
 	// ListPluginsForGivenContext lists all plugins for a given context and either installed only or all
 	ListPluginsForGivenContext(context string, installedOnly bool, opts ...E2EOption) ([]*PluginInfo, error)
 	// SearchPlugins searches all plugins for given filter (keyword|regex) by running 'tanzu plugin search' command
-	SearchPlugins(filter string, opts ...E2EOption) ([]*PluginInfo, error)
+	SearchPlugins(filter string, opts ...E2EOption) ([]*PluginInfo, string, string, error)
 	// InstallPlugin installs given plugin and flags
 	InstallPlugin(pluginName, target, versions string, opts ...E2EOption) error
 	// Sync performs sync operation and returns stdOut, stdErr and error
@@ -175,17 +175,16 @@ func (po *pluginCmdOps) Sync(opts ...E2EOption) (string, string, error) {
 	return out.String(), stdErr.String(), err
 }
 
-func (po *pluginCmdOps) SearchPlugins(filter string, opts ...E2EOption) ([]*PluginInfo, error) {
+func (po *pluginCmdOps) SearchPlugins(filter string, opts ...E2EOption) (plugins []*PluginInfo, stdOutStr, stdErrStr string, err error) {
 	searchPluginCmdWithOptions := SearchPluginsCmd
 	if len(strings.TrimSpace(filter)) > 0 {
 		searchPluginCmdWithOptions = searchPluginCmdWithOptions + " " + strings.TrimSpace(filter)
 	}
-	result, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginSearch](po.cmdExe, searchPluginCmdWithOptions+JSONOutput, opts...)
+	result, stdOutStr, stdErrStr, err := ExecuteCmdAndBuildJSONOutput[PluginSearch](po.cmdExe, searchPluginCmdWithOptions+JSONOutput, opts...)
 	if err != nil {
-		return nil, err
+		return plugins, stdOutStr, stdErrStr, err
 	}
 	// Convert from PluginSearch to PluginInfo
-	var plugins []*PluginInfo
 	for _, p := range result {
 		plugins = append(plugins, &PluginInfo{
 			Name:        p.Name,
@@ -194,7 +193,7 @@ func (po *pluginCmdOps) SearchPlugins(filter string, opts ...E2EOption) ([]*Plug
 			Version:     p.Latest,
 		})
 	}
-	return plugins, nil
+	return plugins, stdOutStr, stdErrStr, err
 }
 
 func (po *pluginCmdOps) SearchPluginGroups(flagsWithValues string, opts ...E2EOption) ([]*PluginGroup, error) {
