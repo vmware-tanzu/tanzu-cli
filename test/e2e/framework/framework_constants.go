@@ -21,16 +21,14 @@ const (
 	TzPrefix         = "tz"
 
 	// Config commands
-	ConfigCmd          = "%s config"
-	ConfigSet          = "%s config set "
-	ConfigGet          = "%s config get"
-	ConfigUnset        = "%s config unset "
-	ConfigInit         = "%s config init"
-	ConfigServerList   = "%s config server list"
-	ConfigServerDelete = "%s config server delete %s -y"
-	ConfigCertAdd      = "%s config cert add --host %s --ca-cert %s --skip-cert-verify %s --insecure %s"
-	ConfigCertDelete   = "%s config cert delete %s"
-	ConfigCertList     = "%s config cert list -o json"
+	ConfigCmd        = "%s config"
+	ConfigSet        = "%s config set "
+	ConfigGet        = "%s config get"
+	ConfigUnset      = "%s config unset "
+	ConfigInit       = "%s config init"
+	ConfigCertAdd    = "%s config cert add --host %s --ca-cert %s --skip-cert-verify %s --insecure %s"
+	ConfigCertDelete = "%s config cert delete %s"
+	ConfigCertList   = "%s config cert list -o json"
 
 	// Plugin commands
 	UpdatePluginSource                  = "%s plugin source update %s --uri %s"
@@ -170,7 +168,6 @@ const (
 	FailedToCreateContextWithStdout = FailedToCreateContext + ", stdout:%s"
 	ContextCreated                  = "context %s created successfully"
 	ContextDeleted                  = "context %s deleted successfully"
-	ConfigServerDeleted             = "config server %s deleted successfully"
 	FailedToDeleteContext           = "failed to delete context"
 	ContextPrefixK8s                = "plugin-sync-k8s-"
 	ContextPrefixTMC                = "plugin-sync-tmc-"

@@ -23,25 +23,6 @@ tanzu builder init <repo-name> --dry-run
 
 `tanzu builder cli add-plugin <plugin-name>` adds a new plugin to your repository. The plugins command will live in the `./cmd/plugin/<plugin-name>` directory.
 
-### Compile
-
-`tanzu builder cli compile` will compile a repository and create the artifacts to be used with tanzu cli.
-
-The artifact output directory structure will be created to match the expected layout. This will include some plugin
-metadata used in the publishing and installation of plugins in a `manifest.yaml` file and a `plugin.yaml` file for
-each included plugin.
-
-Plugins will find that their `make build` command will suffice for most compile cases, but there are many flags at your disposal as well:
-
-```txt
---artifacts string   path to output artifacts (default "artifacts")
---ldflags string     ldflags to set on build
---match string       match a plugin name to build, supports globbing (default "*")
---path string        path of the plugins directory (default "./cmd/cli/plugin")
---target string      only compile for a specific target, use 'local' to compile for host os (default "all")
---version string     version of the root cli (required)
-```
-
 ### Build-plugins
 
 `tanzu builder plugin build` can be used to build the plugins and create artifacts that can be used with tanzu cli.
