@@ -16,7 +16,7 @@ import (
 
 // PluginsForCompatibilityTesting search for test-plugin-'s from the test central repository and returns all test-plugin-'s
 func PluginsForCompatibilityTesting(tf *framework.Framework) []*framework.PluginInfo {
-	list, err := tf.PluginCmd.SearchPlugins("")
+	list, _, _, err := tf.PluginCmd.SearchPlugins("")
 	gomega.Expect(err).To(gomega.BeNil(), "should not occur any error while searching for plugins")
 	testPlugins := make([]*framework.PluginInfo, 0)
 	for _, plugin := range list {

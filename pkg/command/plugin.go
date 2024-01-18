@@ -142,7 +142,6 @@ func newListPluginCmd() *cobra.Command {
 				errorList = append(errorList, err)
 				log.Warningf("there was an error while getting installed standalone plugins, error information: '%v'", err.Error())
 			}
-			sort.Sort(cli.PluginInfoSorter(standalonePlugins))
 
 			// List installed context plugins and also missing context plugins.
 			// Showing missing ones guides the user to know some plugins are recommended for the
@@ -152,8 +151,6 @@ func newListPluginCmd() *cobra.Command {
 				errorList = append(errorList, err)
 				log.Warningf(errorWhileGettingContextPlugins, err.Error())
 			}
-			sort.Sort(discovery.DiscoveredSorter(installedContextPlugins))
-			sort.Sort(discovery.DiscoveredSorter(missingContextPlugins))
 
 			if outputFormat == "" || outputFormat == string(component.TableOutputType) {
 				displayInstalledAndMissingSplitView(standalonePlugins, installedContextPlugins, missingContextPlugins, pluginSyncRequired, cmd.OutOrStdout())
@@ -521,6 +518,7 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 	cyanBold := color.New(color.FgCyan).Add(color.Bold)
 	_, _ = cyanBold.Println("Standalone Plugins")
 
+	sort.Sort(cli.PluginInfoSorter(installedStandalonePlugins))
 	outputStandalone := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Description", "Target", "Version", "Status")
 	for index := range installedStandalonePlugins {
 		outputStandalone.AddRow(
@@ -537,7 +535,6 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 	// First group them by context.
 	contextPlugins := installedContextPlugins
 	contextPlugins = append(contextPlugins, missingContextPlugins...)
-	sort.Sort(discovery.DiscoveredSorter(contextPlugins))
 
 	ctxPluginsByContext := make(map[string][]discovery.Discovered)
 	for index := range contextPlugins {
@@ -556,19 +553,22 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 	for _, context := range contexts {
 		outputWriter := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Description", "Target", "Version", "Status")
 
+		ctxSpecificPlugins := ctxPluginsByContext[context]
+		// sort plugins to maintain consistency in the plugin list output
+		sort.Sort(discovery.DiscoveredSorter(ctxSpecificPlugins))
 		fmt.Println("")
 		_, _ = cyanBold.Println("Plugins from Context: ", cyanBoldItalic.Sprintf(context))
-		for i := range ctxPluginsByContext[context] {
-			v := ctxPluginsByContext[context][i].InstalledVersion
-			if ctxPluginsByContext[context][i].Status == common.PluginStatusNotInstalled {
-				v = ctxPluginsByContext[context][i].RecommendedVersion
+		for i := range ctxSpecificPlugins {
+			v := ctxSpecificPlugins[i].InstalledVersion
+			if ctxSpecificPlugins[i].Status == common.PluginStatusNotInstalled {
+				v = ctxSpecificPlugins[i].RecommendedVersion
 			}
 			outputWriter.AddRow(
-				ctxPluginsByContext[context][i].Name,
-				ctxPluginsByContext[context][i].Description,
-				string(ctxPluginsByContext[context][i].Target),
+				ctxSpecificPlugins[i].Name,
+				ctxSpecificPlugins[i].Description,
+				string(ctxSpecificPlugins[i].Target),
 				v,
-				ctxPluginsByContext[context][i].Status,
+				ctxSpecificPlugins[i].Status,
 			)
 		}
 		outputWriter.Render()
@@ -582,7 +582,9 @@ func displayInstalledAndMissingSplitView(installedStandalonePlugins []cli.Plugin
 }
 
 func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginInfo, installedContextPlugins, missingContextPlugins []discovery.Discovered, writer io.Writer) {
+	// List installed standalone plugins
 	outputWriter := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Description", "Target", "Version", "Status", "Context")
+	sort.Sort(cli.PluginInfoSorter(installedStandalonePlugins))
 	for index := range installedStandalonePlugins {
 		outputWriter.AddRow(
 			installedStandalonePlugins[index].Name,
@@ -594,7 +596,8 @@ func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginI
 		)
 	}
 
-	// List context plugins that are installed.
+	// List context plugins that are installed
+	sort.Sort(discovery.DiscoveredSorter(installedContextPlugins))
 	for i := range installedContextPlugins {
 		outputWriter.AddRow(
 			installedContextPlugins[i].Name,
@@ -606,7 +609,8 @@ func displayInstalledAndMissingListView(installedStandalonePlugins []cli.PluginI
 		)
 	}
 
-	// List context plugins that are not installed.
+	// List context plugins that are not installed
+	sort.Sort(discovery.DiscoveredSorter(missingContextPlugins))
 	for i := range missingContextPlugins {
 		outputWriter.AddRow(
 			missingContextPlugins[i].Name,

@@ -26,7 +26,7 @@ func CheckAllLegacyPluginsExists(superList, subList []*framework.PluginInfo) boo
 
 // SearchAllPlugins runs the plugin search command and returns all the plugins from the search output
 func SearchAllPlugins(tf *framework.Framework, opts ...framework.E2EOption) ([]*framework.PluginInfo, error) {
-	pluginsSearchList, err := tf.PluginCmd.SearchPlugins("", opts...)
+	pluginsSearchList, _, _, err := tf.PluginCmd.SearchPlugins("", opts...)
 	return pluginsSearchList, err
 }
 

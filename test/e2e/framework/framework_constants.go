@@ -152,6 +152,7 @@ const (
 	NoErrorForPluginGroupSearch                   = "should not get any error for plugin group search"
 	NoErrorForPluginGroupGet                      = "should not get any error for plugin group get"
 	NoErrorForPluginSearch                        = "should not get any error for plugin search"
+	PluginSearchOutputShouldBeSortedByName        = "plugin search output should be sorted by name"
 	UnableToSync                                  = "unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually"
 	PluginDescribeShouldNotThrowErr               = "should not get any error for plugin describe"
 	PluginDescShouldExist                         = "there should be one plugin description"
