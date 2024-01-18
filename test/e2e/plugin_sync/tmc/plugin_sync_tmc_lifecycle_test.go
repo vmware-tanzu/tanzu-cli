@@ -154,19 +154,33 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// Test case: d. uninstall one of the installed plugin, make sure plugin is uninstalled,
 		//				run plugin sync, make sure the uninstalled plugin has installed again.
 		//
-		//nolint:gosec  // G602: Potentially accessing slice out of bounds (gosec) i.e. pluginsToGenerateMockResponse
 		It("uninstall one of the installed plugin", func() {
-			pluginToUninstall := pluginsToGenerateMockResponse[0]
-			err := tf.PluginCmd.UninstallPlugin(pluginToUninstall.Name, pluginToUninstall.Target)
-			Expect(err).To(BeNil(), "should not get any error for plugin uninstall")
 
-			latestPluginsInstalledList := pluginsToGenerateMockResponse[1:]
-			allPluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextName, false)
-			Expect(err).To(BeNil(), noErrorForPluginList)
-			installedPluginsList = f.GetInstalledPlugins(allPluginsList)
-			Expect(f.IsPluginExists(allPluginsList, f.GetGivenPluginFromTheGivenPluginList(allPluginsList, pluginToUninstall), f.NotInstalled)).To(BeTrue(), "uninstalled plugin should be listed as not installed")
-			Expect(len(installedPluginsList)).Should(Equal(len(latestPluginsInstalledList)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
-			Expect(f.CheckAllPluginsExists(installedPluginsList, latestPluginsInstalledList)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+			var pluginToUninstall *f.PluginInfo
+			var latestPluginsInstalledList []*f.PluginInfo
+			for i := range pluginsToGenerateMockResponse {
+				if i == 0 {
+					pluginToUninstall = pluginsToGenerateMockResponse[i]
+				}
+				if i == 1 {
+					latestPluginsInstalledList = pluginsToGenerateMockResponse[i:]
+					break
+				}
+			}
+			if pluginToUninstall != nil && len(latestPluginsInstalledList) > 0 {
+				err := tf.PluginCmd.UninstallPlugin(pluginToUninstall.Name, pluginToUninstall.Target)
+				Expect(err).To(BeNil(), "should not get any error for plugin uninstall")
+
+				allPluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextName, false)
+				Expect(err).To(BeNil(), noErrorForPluginList)
+				installedPluginsList = f.GetInstalledPlugins(allPluginsList)
+				Expect(f.IsPluginExists(allPluginsList, f.GetGivenPluginFromTheGivenPluginList(allPluginsList, pluginToUninstall), f.NotInstalled)).To(BeTrue(), "uninstalled plugin should be listed as not installed")
+				Expect(len(installedPluginsList)).Should(Equal(len(latestPluginsInstalledList)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+				Expect(f.CheckAllPluginsExists(installedPluginsList, latestPluginsInstalledList)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+			} else {
+				// fail the test case if at least two plugins are not available in the mock response
+				Fail("there should be at least two plugins to uninstall")
+			}
 
 			_, _, err = tf.PluginCmd.Sync()
 			Expect(err).To(BeNil(), "should not get any error for plugin sync")
@@ -1075,7 +1089,8 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// Test case: i. plugin search should work fine even though k8s context has issues
 		It("plugin search when active context has issues", func() {
-			plugins, err := tf.PluginCmd.SearchPlugins("")
+			var plugins []*f.PluginInfo
+			plugins, _, _, err = tf.PluginCmd.SearchPlugins("")
 			Expect(err).To(BeNil(), noErrorForPluginSearch)
 			Expect(len(plugins) > 0).Should(BeTrue(), shouldBeSomePluginsForPluginSearch)
 		})
