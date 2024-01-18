@@ -198,6 +198,8 @@ func (b *SQLiteInventory) getPluginsFromDB(filter *PluginInventoryFilter) ([]*Pl
 }
 
 // createPluginWhereClause parses the filter and creates the WHERE clause for the DB query.
+//
+//nolint:unparam
 func createPluginWhereClause(filter *PluginInventoryFilter) (string, error) {
 	var whereClause string
 
@@ -375,6 +377,8 @@ func (b *SQLiteInventory) getGroupsFromDB(filter PluginGroupFilter) ([]*PluginGr
 }
 
 // createGroupWhereClause parses the filter and creates the WHERE clause for the DB query for groups.
+//
+//nolint:unparam
 func createGroupWhereClause(filter PluginGroupFilter) (string, error) {
 	var whereClause string
 

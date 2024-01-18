@@ -751,7 +751,7 @@ func TestEnvVarsSet(t *testing.T) {
 	os.Unsetenv(envVarName)
 }
 
-func setupFakePlugin(dir, pluginName, version string, commandGroup plugin.CmdGroup, completionType uint8, target configtypes.Target, postInstallResult uint8, hidden bool, aliases []string) error {
+func setupFakePlugin(dir, pluginName, _ string, commandGroup plugin.CmdGroup, completionType uint8, target configtypes.Target, postInstallResult uint8, hidden bool, aliases []string) error {
 	filePath := filepath.Join(dir, fmt.Sprintf("%s_%s", pluginName, string(target)))
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)

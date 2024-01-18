@@ -29,7 +29,7 @@ func ProcessCarvelPackage(image string, valuesFiles ...string) ([]byte, error) {
 }
 
 // CarvelPackageProcessor processes a carvel package and returns a configuration YAML file
-func CarvelPackageProcessor(pkgDir, image string, valuesFiles ...string) ([]byte, error) {
+func CarvelPackageProcessor(pkgDir, _ string, valuesFiles ...string) ([]byte, error) {
 	// Each package contains `config` and `.imgpkg` directory
 	// `config` directory contains ytt files
 	// `.imgpkg` directory contains ImageLock configuration for ImageResolution

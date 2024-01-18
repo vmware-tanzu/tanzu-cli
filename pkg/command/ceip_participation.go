@@ -96,7 +96,7 @@ func newCEIPParticipationGetCmd() *cobra.Command {
 	return getCmd
 }
 
-func completeCeipSet(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func completeCeipSet(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
 		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}

@@ -423,7 +423,7 @@ func unsetEnvs(paramArray []string) error {
 // Shell completion functions
 // ====================================
 
-func completeSetConfig(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func completeSetConfig(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 1 {
 		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
@@ -438,7 +438,7 @@ func completeSetConfig(cmd *cobra.Command, args []string, toComplete string) ([]
 	return comps, cobra.ShellCompDirectiveNoFileComp
 }
 
-func completeUnsetConfig(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func completeUnsetConfig(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if len(args) > 0 {
 		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 	}
