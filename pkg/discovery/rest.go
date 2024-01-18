@@ -89,11 +89,7 @@ func (d *RESTDiscovery) doRequest(req *http.Request, v interface{}) error {
 		return fmt.Errorf("API error, status code: %d", res.StatusCode)
 	}
 
-	if err := json.NewDecoder(res.Body).Decode(v); err != nil {
-		return err
-	}
-
-	return nil
+	return json.NewDecoder(res.Body).Decode(v)
 }
 
 // List available plugins.

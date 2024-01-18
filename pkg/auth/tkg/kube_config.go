@@ -58,30 +58,30 @@ func KubeconfigWithPinnipedAuthLoginPlugin(endpoint string, options *KubeConfigO
 	clusterInfo, err := GetClusterInfoFromCluster(endpoint, discoveryStrategy.ClusterInfoConfigMap, endpointCACertPath, skipTLSVerify)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get cluster-info")
-		return
+		return mergeFilePath, currentContext, err
 	}
 
 	pinnipedInfo, err := GetPinnipedInfoFromCluster(clusterInfo, discoveryStrategy.DiscoveryPort)
 	if err != nil {
 		err = errors.Wrap(err, "failed to get pinniped-info")
-		return
+		return mergeFilePath, currentContext, err
 	}
 
 	if pinnipedInfo == nil {
 		err = errors.New("failed to get pinniped-info from cluster")
-		return
+		return mergeFilePath, currentContext, err
 	}
 
 	config, err := GetPinnipedKubeconfig(clusterInfo, pinnipedInfo, pinnipedInfo.Data.ClusterName, pinnipedInfo.Data.Issuer)
 	if err != nil {
 		err = errors.Wrap(err, "unable to get the kubeconfig")
-		return
+		return mergeFilePath, currentContext, err
 	}
 
 	kubeconfigBytes, err := json.Marshal(config)
 	if err != nil {
 		err = errors.Wrap(err, "unable to marshall the kubeconfig")
-		return
+		return mergeFilePath, currentContext, err
 	}
 
 	return MergeAndSaveKubeconfigBytes(kubeconfigBytes, options)
@@ -188,7 +188,7 @@ func MergeAndSaveKubeconfigBytes(kubeconfigBytes []byte, options *KubeConfigOpti
 	err = kubeutils.MergeKubeConfigWithoutSwitchContext(kubeconfigBytes, mergeFilePath)
 	if err != nil {
 		err = errors.Wrap(err, "unable to merge cluster kubeconfig to the Tanzu local kubeconfig path")
-		return
+		return mergeFilePath, currentContext, err
 	}
 	config, err := clientcmd.Load(kubeconfigBytes)
 	if err != nil {

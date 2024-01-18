@@ -45,16 +45,16 @@ func (stub *stubInventory) GetPluginGroups(filter plugininventory.PluginGroupFil
 func (stub *stubInventory) CreateSchema() error {
 	return nil
 }
-func (stub *stubInventory) InsertPlugin(pluginInventoryEntry *plugininventory.PluginInventoryEntry) error {
+func (stub *stubInventory) InsertPlugin(_ *plugininventory.PluginInventoryEntry) error {
 	return nil
 }
-func (stub *stubInventory) InsertPluginGroup(pg *plugininventory.PluginGroup, override bool) error {
+func (stub *stubInventory) InsertPluginGroup(_ *plugininventory.PluginGroup, _ bool) error {
 	return nil
 }
-func (stub *stubInventory) UpdatePluginActivationState(pluginInventoryEntry *plugininventory.PluginInventoryEntry) error {
+func (stub *stubInventory) UpdatePluginActivationState(_ *plugininventory.PluginInventoryEntry) error {
 	return nil
 }
-func (stub *stubInventory) UpdatePluginGroupActivationState(pg *plugininventory.PluginGroup) error {
+func (stub *stubInventory) UpdatePluginGroupActivationState(_ *plugininventory.PluginGroup) error {
 	return nil
 }
 
