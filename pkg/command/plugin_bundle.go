@@ -129,7 +129,7 @@ environment. The plugin bundle is obtained using the "download-bundle" command.`
 // ====================================
 // Shell completion functions
 // ====================================
-func completeDownloadBundle(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+func completeDownloadBundle(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if !dpbo.dryRun && dpbo.tarFile == "" {
 		// The user must provide more info by using flags.
 		// Note that those flags are not marked as mandatory
@@ -142,7 +142,7 @@ func completeDownloadBundle(_ *cobra.Command, args []string, _ string) ([]string
 	return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 }
 
-func completeUploadBundle(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
+func completeUploadBundle(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
 	if upbo.destinationRepo == "" || upbo.sourceTar == "" {
 		// Both flags are required, so completion will be provided for them
 		return nil, cobra.ShellCompDirectiveNoFileComp
@@ -152,7 +152,7 @@ func completeUploadBundle(_ *cobra.Command, args []string, _ string) ([]string, 
 	return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 }
 
-func completeGroupVersionsForDownloadBundle(groups []*plugininventory.PluginGroup, id, versionToComplete string) []string {
+func completeGroupVersionsForDownloadBundle(groups []*plugininventory.PluginGroup, id, _ string) []string {
 	var group *plugininventory.PluginGroup
 	for _, g := range groups {
 		if plugininventory.PluginGroupToID(g) == id {
@@ -214,7 +214,7 @@ func completionGetPluginGroupsForBundleDownload() ([]*plugininventory.PluginGrou
 	return pluginGroups, err
 }
 
-func completeGroupsAndVersionForBundleDownload(cmd *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func completeGroupsAndVersionForBundleDownload(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	pluginGroups, err := completionGetPluginGroupsForBundleDownload()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp

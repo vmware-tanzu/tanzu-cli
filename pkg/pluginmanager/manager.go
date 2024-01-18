@@ -967,12 +967,11 @@ func DeletePlugin(options DeletePluginOptions) error {
 				return errors.Errorf("unable to find any installed plugins for target '%s'", string(options.Target))
 			}
 			return errors.Errorf("unable to find any installed plugins")
-		} else {
-			if options.Target != configtypes.TargetUnknown {
-				return errors.Errorf("unable to find plugin '%v' for target '%s'", options.PluginName, string(options.Target))
-			}
-			return errors.Errorf("unable to find plugin '%v'", options.PluginName)
 		}
+		if options.Target != configtypes.TargetUnknown {
+			return errors.Errorf("unable to find plugin '%v' for target '%s'", options.PluginName, string(options.Target))
+		}
+		return errors.Errorf("unable to find plugin '%v'", options.PluginName)
 	}
 
 	// It is possible that the catalog contains two entries for a name/target combination:
@@ -1488,6 +1487,8 @@ func verifyPluginPostDownload(p *discovery.Discovered, srcDigest string, b []byt
 }
 
 // getPluginDiscoveries returns the plugin discoveries found in the configuration file.
+//
+//nolint:unparam
 func getPluginDiscoveries() ([]configtypes.PluginDiscovery, error) {
 	// Look for testing discoveries.  Those should be stored and searched AFTER the central repo.
 	testDiscoveries := GetAdditionalTestPluginDiscoveries()

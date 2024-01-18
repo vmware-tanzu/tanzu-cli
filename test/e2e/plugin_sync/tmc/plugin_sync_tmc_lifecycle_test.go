@@ -153,6 +153,8 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// Test case: d. uninstall one of the installed plugin, make sure plugin is uninstalled,
 		//				run plugin sync, make sure the uninstalled plugin has installed again.
+		//
+		//nolint:gosec  // G602: Potentially accessing slice out of bounds (gosec) i.e. pluginsToGenerateMockResponse
 		It("uninstall one of the installed plugin", func() {
 			pluginToUninstall := pluginsToGenerateMockResponse[0]
 			err := tf.PluginCmd.UninstallPlugin(pluginToUninstall.Name, pluginToUninstall.Target)

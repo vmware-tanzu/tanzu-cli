@@ -47,7 +47,7 @@ func (mc *mockMetricsDB) CreateSchema() error {
 	return mc.createSchemaReturnError
 }
 
-func (mc *mockMetricsDB) SaveOperationMetric(payload *OperationMetricsPayload) error {
+func (mc *mockMetricsDB) SaveOperationMetric(_ *OperationMetricsPayload) error {
 	mc.saveOperationMetricCalled = true
 	return mc.saveOperationMetricReturnError
 }

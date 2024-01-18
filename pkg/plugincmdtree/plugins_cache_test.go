@@ -187,7 +187,7 @@ func TestCache_DeleteTree(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func getCacheWithSamplePluginCommandTree(pluginName, pluginInstallationPath string) *cacheImpl {
+func getCacheWithSamplePluginCommandTree(_, pluginInstallationPath string) *cacheImpl {
 	pluginCMDTree := &CommandNode{
 		Subcommands: map[string]*CommandNode{
 			"plugin-subcmd1": &CommandNode{

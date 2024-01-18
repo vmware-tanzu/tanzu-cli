@@ -92,7 +92,7 @@ func init() {
     default kubeconfig file ($HOME/.kube/config) will be used.`
 }
 
-func login(cmd *cobra.Command, args []string) (err error) {
+func login(_ *cobra.Command, _ []string) (err error) {
 	cfg, err := config.GetClientConfig()
 	if err != nil {
 		return err
@@ -246,7 +246,7 @@ func createServerWithKubeconfig() (server *configtypes.Server, err error) { //no
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return server, err
 		}
 	}
 	kubeConfig = strings.TrimSpace(kubeConfig)
@@ -263,7 +263,7 @@ func createServerWithKubeconfig() (server *configtypes.Server, err error) { //no
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return server, err
 		}
 	}
 	kubeContext = strings.TrimSpace(kubeContext)
@@ -276,7 +276,7 @@ func createServerWithKubeconfig() (server *configtypes.Server, err error) { //no
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return server, err
 		}
 	}
 	name = strings.TrimSpace(name)
@@ -285,8 +285,8 @@ func createServerWithKubeconfig() (server *configtypes.Server, err error) { //no
 		return server, err
 	}
 	if nameExists {
-		err = fmt.Errorf("server %q already exists", name)
-		return
+		err := fmt.Errorf("server %q already exists", name)
+		return server, err
 	}
 
 	endpointType := configtypes.ManagementClusterServerType //nolint:staticcheck // Deprecated
@@ -313,7 +313,7 @@ func createServerWithEndpoint() (server *configtypes.Server, err error) { //noli
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return server, err
 		}
 	}
 	endpoint = strings.TrimSpace(endpoint)
@@ -326,7 +326,7 @@ func createServerWithEndpoint() (server *configtypes.Server, err error) { //noli
 			promptOpts...,
 		)
 		if err != nil {
-			return
+			return server, err
 		}
 	}
 	name = strings.TrimSpace(name)
@@ -335,8 +335,8 @@ func createServerWithEndpoint() (server *configtypes.Server, err error) { //noli
 		return server, err
 	}
 	if nameExists {
-		err = fmt.Errorf("server %q already exists", name)
-		return
+		err := fmt.Errorf("server %q already exists", name)
+		return server, err
 	}
 	if isGlobalServer(endpoint) {
 		server = &configtypes.Server{ //nolint:staticcheck // Deprecated
@@ -348,7 +348,7 @@ func createServerWithEndpoint() (server *configtypes.Server, err error) { //noli
 		tkf := NewTKGKubeconfigFetcher(endpoint, endpointCACertPath, skipTLSVerify)
 		kubeConfig, kubeContext, err = tkf.GetPinnipedKubeconfig()
 		if err != nil {
-			return
+			return server, err
 		}
 
 		server = &configtypes.Server{ //nolint:staticcheck // Deprecated

@@ -227,6 +227,8 @@ imagesToCopy:
 
 	// downloadInventoryImageAndSaveFilesToDirStub fakes the image downloads and puts a database
 	// with the table schemas created to provided path
+	//
+	//nolint:unparam
 	downloadInventoryImageAndSaveFilesToDirStub := func(_, path string) error {
 		dbFile := filepath.Join(path, plugininventory.SQliteDBFileName)
 		err := utils.SaveFile(dbFile, []byte{})
@@ -254,6 +256,8 @@ imagesToCopy:
 
 	// downloadInventoryMetadataImageWithNoExistingPlugins fakes the image downloads and puts a database
 	// with the table schemas created to provided path
+	//
+	//nolint:unparam
 	downloadInventoryMetadataImageWithNoExistingPlugins := func(_, path string) error {
 		dbFile := filepath.Join(path, plugininventory.SQliteInventoryMetadataDBFileName)
 		err := utils.SaveFile(dbFile, []byte{})
@@ -268,6 +272,8 @@ imagesToCopy:
 
 	// downloadInventoryMetadataImageWithExistingPlugins fakes the image downloads and puts a database
 	// with the table schemas created to provided path
+	//
+	//nolint:unparam
 	downloadInventoryMetadataImageWithExistingPlugins := func(_, path string) error {
 		dbFile := filepath.Join(path, plugininventory.SQliteInventoryMetadataDBFileName)
 		err := utils.SaveFile(dbFile, []byte{})
@@ -293,6 +299,8 @@ imagesToCopy:
 	}
 
 	// copyImageToTarStub fakes the image downloads and creates a fake tar.gz file for images
+	//
+	//nolint:unparam
 	copyImageToTarStub := func(_, tarfile string) error {
 		_, err := os.Create(tarfile)
 		Expect(err).ToNot(HaveOccurred())
