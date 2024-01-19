@@ -57,6 +57,6 @@ const (
 	// TanzuContextPluginDiscoveryPath specifies the custom endpoint path to use with the kubeconfig when talking
 	// to the tanzu context to get the recommended plugins by querying CLIPlugin resources
 	// If environment variable 'TANZU_CLI_TANZU_CONTEXT_PLUGIN_DISCOVERY_PATH' is not configured
-	// context-scoped plugin discovery will be disabled for the `tanzu` contexts
+	// default discovery endpoint configured with TanzuContextPluginDiscoveryEndpointPath will be used
 	TanzuContextPluginDiscoveryPath = "TANZU_CLI_TANZU_CONTEXT_PLUGIN_DISCOVERY_PATH"
 )
