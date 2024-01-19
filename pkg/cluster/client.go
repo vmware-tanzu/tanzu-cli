@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	capdiscovery "github.com/vmware-tanzu/tanzu-framework/capabilities/client/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
@@ -97,11 +98,11 @@ type client struct {
 // if kubeconfig path is empty it gets default path
 // if options.poller is nil it creates default poller. You should only pass custom poller for unit testing
 // if options.crtClientFactory is nil it creates default CrtClientFactory
-func NewClient(kubeConfigPath, contextStr string, kubeconfigBytes []byte, options Options) (Client, error) {
+func NewClient(kubeConfigPath, contextStr string, kubeConfigBytes []byte, options Options) (Client, error) {
 	var err error
 	client := &client{}
 
-	if len(kubeconfigBytes) == 0 {
+	if len(kubeConfigBytes) == 0 {
 		var rules *clientcmd.ClientConfigLoadingRules
 		if kubeConfigPath == "" {
 			rules = clientcmd.NewDefaultClientConfigLoadingRules()
@@ -109,8 +110,10 @@ func NewClient(kubeConfigPath, contextStr string, kubeconfigBytes []byte, option
 		}
 		client.kubeConfigPath = kubeConfigPath
 		client.currentContext = contextStr
+		log.V(7).Infof("creating kubernetes client with kubeconfig %q, kubecontext %q", kubeConfigPath, contextStr)
 	} else {
-		client.kubeConfigBytes = kubeconfigBytes
+		client.kubeConfigBytes = kubeConfigBytes
+		log.V(7).Infof("creating kubernetes client with kubeconfigbytes %q", string(kubeConfigBytes))
 	}
 
 	InitializeOptions(&options)
