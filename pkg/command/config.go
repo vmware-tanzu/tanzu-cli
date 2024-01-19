@@ -142,8 +142,14 @@ func setConfiguration(pathParam, value string) error {
 
 	switch configLiteral {
 	case ConfigLiteralFeatures:
+		if len(paramArray) != 3 {
+			return errors.New("unable to parse config path parameter into three parts [" + strings.Join(paramArray, ".") + "]  (was expecting 'features.<plugin>.<feature>'")
+		}
 		return configlib.SetFeature(paramArray[1], paramArray[2], value)
 	case ConfigLiteralEnv:
+		if len(paramArray) != 2 {
+			return errors.New("unable to parse config path parameter into two parts [" + strings.Join(paramArray, ".") + "]  (was expecting 'env.<variable>'")
+		}
 		return configlib.SetEnv(paramArray[1], value)
 	default:
 		return errors.New("unsupported config path parameter [" + configLiteral + "] (was expecting 'features.<plugin>.<feature>' or 'env.<env_variable>')")
@@ -165,7 +171,7 @@ var initConfigCmd = &cobra.Command{
 		// Plugins that are installed but are not active plugin will not be processed here
 		// and defaultFeatureFlags will not be configured for those plugins
 		for _, desc := range plugins {
-			err := configlib.ConfigureFeatureFlags(desc.DefaultFeatureFlags)
+			err := configlib.ConfigureFeatureFlags(desc.DefaultFeatureFlags, configlib.SkipIfExists())
 			if err != nil {
 				return err
 			}
@@ -273,16 +279,14 @@ func completionGetEnvAndFeatures() []string {
 	}
 
 	// Retrieve client config node
-	cfg, err := configlib.GetClientConfig()
+	featureFlags, err := configlib.GetAllFeatureFlags()
 	if err != nil {
 		return comps
 	}
 
-	if cfg.ClientOptions != nil && cfg.ClientOptions.Features != nil {
-		for plugin, features := range cfg.ClientOptions.Features {
-			for name, value := range features {
-				comps = append(comps, fmt.Sprintf("%s.%s.%s\tValue: %q", ConfigLiteralFeatures, plugin, name, value))
-			}
+	for pluginKey, features := range featureFlags {
+		for name, value := range features {
+			comps = append(comps, fmt.Sprintf("%s.%s.%s\tValue: %q", ConfigLiteralFeatures, pluginKey, name, value))
 		}
 	}
 
