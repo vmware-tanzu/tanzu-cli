@@ -93,9 +93,8 @@ tanzu plugin uninstall <plugin-name>
 ## Context
 
 Context is an isolated scope of relevant client-side configurations for a combination of user identity and server identity.
-There can be multiple contexts for the same combination of `(user, server)`. Previously, this was referred to as `Server` in the Tanzu CLI.
+There can be multiple contexts for the same combination of `(user, server)`.
 Going forward we shall refer to them as `Context` to be explicit. Also, the context can be managed in one place using the `tanzu context` command.
-Earlier, this was distributed between the `tanzu login` command and the `tanzu config server` command.
 
 - Each `Context` has a type associated with it which is specified with `ContextType`.
 
@@ -112,9 +111,6 @@ tanzu context create --kubeconfig path/to/kubeconfig --kubecontext context-name 
 List known contexts:
 
 ```sh
-# Deprecated
-tanzu config server list
-
 # New Command
 tanzu context list
 ```
@@ -122,9 +118,6 @@ tanzu context list
 Delete a context:
 
 ```sh
-# Deprecated
-tanzu config server delete demo-cluster
-
 # New Command
 tanzu context delete demo-cluster
 ```
@@ -286,12 +279,6 @@ Add a cli command:
 
 ```sh
 tanzu builder cli add-plugin <name>
-```
-
-Compile into an artifact directory.
-
-```sh
-tanzu builder cli compile ./cmd/plugins
 ```
 
 ## Release

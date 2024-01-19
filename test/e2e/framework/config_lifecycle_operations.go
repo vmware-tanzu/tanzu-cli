@@ -13,8 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
-
 	configapi "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
@@ -38,10 +36,6 @@ type ConfigLifecycleOps interface {
 	ConfigInit(opts ...E2EOption) error
 	// GetConfig gets the tanzu config
 	GetConfig(opts ...E2EOption) (*configapi.ClientConfig, error)
-	// ConfigServerList returns the server list
-	ConfigServerList(opts ...E2EOption) ([]*Server, error)
-	// ConfigServerDelete deletes given server from tanzu config
-	ConfigServerDelete(serverName string, opts ...E2EOption) error
 	// DeleteCLIConfigurationFiles deletes cli configuration files
 	DeleteCLIConfigurationFiles() error
 	// IsCLIConfigurationFilesExists checks the existence of cli configuration files
@@ -134,26 +128,6 @@ func (co *configOps) ConfigUnsetFeature(path string, opts ...E2EOption) (err err
 func (co *configOps) ConfigInit(opts ...E2EOption) (err error) {
 	_, _, err = co.cmdExe.TanzuCmdExec(ConfigInit, opts...)
 	return
-}
-
-// ConfigServerList returns the server list
-func (co *configOps) ConfigServerList(opts ...E2EOption) ([]*Server, error) {
-	ConfigServerListWithJSONOutput := ConfigServerList + JSONOutput
-	list, _, _, err := ExecuteCmdAndBuildJSONOutput[Server](co.cmdExe, ConfigServerListWithJSONOutput, opts...)
-	return list, err
-}
-
-// ConfigServerDelete deletes a server from tanzu config
-func (co *configOps) ConfigServerDelete(serverName string, opts ...E2EOption) error {
-	configDelCmd := fmt.Sprintf(ConfigServerDelete, "%s", serverName)
-	_, _, err := co.cmdExe.TanzuCmdExec(configDelCmd, opts...)
-	if err != nil {
-		log.Infof("failed to delete config server: %s", serverName)
-		log.Error(err, "error while running: "+configDelCmd)
-	} else {
-		log.Infof(ConfigServerDeleted, serverName)
-	}
-	return err
 }
 
 // DeleteCLIConfigurationFiles deletes cli configuration files

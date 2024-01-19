@@ -59,7 +59,7 @@ spec:
                         type: string
                       type:
                         description: Type of the binary artifact. Valid values are
-                          S3, GCP, OCIImage.
+                          S3, OCIImage.
                         type: string
                       uri:
                         description: AssetURI is a URI of the plugin binary. This
