@@ -33,6 +33,9 @@ const (
 
 	// cliOperationMetricRowClause is the SELECT section of the SQL query to be used when querying the Metric DB row count.
 	cliOperationMetricRowClause = "SELECT count(*) FROM tanzu_cli_operations"
+
+	// cliOperationMetricClearAllDataClause is the SQL query to be used to clear all the metrics data collected so far.
+	cliOperationMetricClearAllDataClause = "DELETE FROM tanzu_cli_operations"
 )
 
 // Structure of each row of the PluginBinaries table within the SQLite database
@@ -160,6 +163,28 @@ func (b *sqliteMetricsDB) GetRowCount() (int, error) {
 	}
 	return count, err
 }
+
+func (b *sqliteMetricsDB) ClearMetricData() error {
+	err := AcquireTanzuMetricDBLock()
+	if err != nil {
+		return err
+	}
+	defer ReleaseTanzuMetricDBLock()
+	db, err := sql.Open("sqlite", b.metricsDBFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to open the DB from '%s' file", b.metricsDBFile)
+	}
+	defer db.Close()
+
+	dbQuery := cliOperationMetricClearAllDataClause
+	_, err = db.Exec(dbQuery)
+
+	if err != nil {
+		return errors.Wrapf(err, "failed to execute the DB query : %v", dbQuery)
+	}
+	return err
+}
+
 func isDBRowCountThresholdReached(db *sql.DB) (bool, error) {
 	dbQuery := cliOperationMetricRowClause
 	rows, err := db.Query(dbQuery) //nolint:rowserrcheck // rows.Err must be checked (rowserrcheck)

@@ -139,6 +139,16 @@ func (tc *telemetryClient) SaveMetrics() error {
 		return errors.Wrap(err, "unable to create the telemetry schema")
 	}
 
+	// If user opts-out from CEIP, clear the metrics data from the local database
+	// TODO(prkalle): Once the DB is emptied, the subsequent calls will keep trying to delete the rows from the empty DB.
+	// So this need to be optimized. One possible future enhancement/optimization could be to let the telemetry plugin to empty
+	// the DB as soon as the user updates the opt-out choice and CLI would just ignore saving the metrics if user opts-out.
+	ceipOptInConfigVal, _ := configlib.GetCEIPOptIn()
+	optIn, _ := strconv.ParseBool(ceipOptInConfigVal)
+	if !optIn {
+		return tc.metricsDB.ClearMetricData()
+	}
+
 	return tc.metricsDB.SaveOperationMetric(tc.currentOperationMetrics)
 }
 
