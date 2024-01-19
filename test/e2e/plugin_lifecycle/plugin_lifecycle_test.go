@@ -149,7 +149,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 		})
 		// Test case: install all plugins from framework.PluginsForLifeCycleTests, and validate the installation by running describe command on each plugin
 		It("install plugins and describe each installed plugin", func() {
@@ -236,7 +236,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 		})
 		// Test case: install all plugins from framework.PluginsForLifeCycleTests
 		It("install plugins and describe installed plugins", func() {
@@ -275,7 +275,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
+			Expect(len(pluginsList)).Should(Equal(1), "there should be only one essential plugin available after uninstall all")
 		})
 	})
 
@@ -351,7 +351,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 		})
 		// Test case: install plugins with different shorthand version like vMAJOR, vMAJOR.MINOR
 		It("install plugins and describe installed plugins", func() {
@@ -375,7 +375,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
+			Expect(len(pluginsList)).Should(Equal(1), "there should be only one essential plugin available after uninstall all")
 		})
 	})
 
@@ -474,7 +474,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
+			Expect(len(pluginsList)).Should(Equal(1), "there should be only one essential plugin available after uninstall all")
 		})
 	})
 
@@ -581,7 +581,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(Equal(0), "there should not be any plugins available after uninstall all")
+			Expect(len(pluginsList)).Should(Equal(0), "there should be no plugins available after uninstall all")
 		})
 		It("put back the E2E plugin repository", func() {
 			os.Unsetenv("TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY")
