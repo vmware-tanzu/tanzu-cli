@@ -40,6 +40,8 @@ type mockMetricsDB struct {
 	saveOperationMetricReturnError error
 	getRowCountError               error
 	getRowCountReturnVal           int
+	clearMetricDataCalled          bool
+	clearMetricDataReturnError     error
 }
 
 func (mc *mockMetricsDB) CreateSchema() error {
@@ -54,6 +56,10 @@ func (mc *mockMetricsDB) SaveOperationMetric(_ *OperationMetricsPayload) error {
 func (mc *mockMetricsDB) GetRowCount() (int, error) {
 	mc.getRowCountCalled = true
 	return mc.getRowCountReturnVal, mc.getRowCountError
+}
+func (mc *mockMetricsDB) ClearMetricData() error {
+	mc.clearMetricDataCalled = true
+	return mc.clearMetricDataReturnError
 }
 
 var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
@@ -517,9 +523,11 @@ func TestTelemetryClient_UpdateCmdPostRunMetrics(t *testing.T) {
 
 var _ = Describe("Unit tests for SaveMetrics()", func() {
 	var (
-		tc        *telemetryClient
-		metricsDB *mockMetricsDB
-		err       error
+		tc           *telemetryClient
+		metricsDB    *mockMetricsDB
+		configFile   *os.File
+		configFileNG *os.File
+		err          error
 	)
 	BeforeEach(func() {
 		metricsDB = &mockMetricsDB{}
@@ -529,6 +537,24 @@ var _ = Describe("Unit tests for SaveMetrics()", func() {
 			},
 			metricsDB: metricsDB,
 		}
+		configFile, err = os.CreateTemp("", "config")
+		Expect(err).To(BeNil())
+		os.Setenv("TANZU_CONFIG", configFile.Name())
+
+		configFileNG, err = os.CreateTemp("", "config_ng")
+		Expect(err).To(BeNil())
+		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+
+		err = configlib.SetCEIPOptIn("true")
+		Expect(err).ToNot(HaveOccurred(), "failed to set the CEIP OptIn")
+	})
+	AfterEach(func() {
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+
+		os.RemoveAll(configFile.Name())
+		os.RemoveAll(configFileNG.Name())
+
 	})
 
 	Context("when the start time is zero", func() {
@@ -549,6 +575,34 @@ var _ = Describe("Unit tests for SaveMetrics()", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("unable to create the telemetry schema: fake schema creation error"))
 			Expect(metricsDB.createSchemaCalled).To(BeTrue())
+			Expect(metricsDB.saveOperationMetricCalled).To(BeFalse())
+		})
+	})
+	Context("when the user opt-out of CEIP", func() {
+		It("should not return error and should delete the existing metric data in the DB", func() {
+			tc.currentOperationMetrics.StartTime = time.Now()
+			err = configlib.SetCEIPOptIn("false")
+			Expect(err).ToNot(HaveOccurred(), "failed to set the CEIP OptOut")
+
+			err = tc.SaveMetrics()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(metricsDB.createSchemaCalled).To(BeTrue())
+			Expect(metricsDB.clearMetricDataCalled).To(BeTrue())
+			Expect(metricsDB.saveOperationMetricCalled).To(BeFalse())
+		})
+	})
+	Context("when the user opt-out of CEIP and when deleting the existing metric data failed", func() {
+		It("should return error", func() {
+			tc.currentOperationMetrics.StartTime = time.Now()
+			err = configlib.SetCEIPOptIn("false")
+			Expect(err).ToNot(HaveOccurred(), "failed to set the CEIP OptOut")
+			metricsDB.clearMetricDataReturnError = errors.New("fake clear metrics error")
+
+			err = tc.SaveMetrics()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("fake clear metrics error"))
+			Expect(metricsDB.createSchemaCalled).To(BeTrue())
+			Expect(metricsDB.clearMetricDataCalled).To(BeTrue())
 			Expect(metricsDB.saveOperationMetricCalled).To(BeFalse())
 		})
 	})
