@@ -13,4 +13,7 @@ type MetricsDB interface {
 
 	// GetRowCount gets metrics table current row count
 	GetRowCount() (int, error)
+
+	// ClearMetricData clears all the CLI operation metrics collected in the database
+	ClearMetricData() error
 }
