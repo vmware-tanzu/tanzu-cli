@@ -3,6 +3,10 @@
 
 package constants
 
+import (
+	"time"
+)
+
 const (
 	// TanzuCLISystemNamespace  is the namespace for tanzu cli resources
 	TanzuCLISystemNamespace = "tanzu-cli-system"
@@ -22,4 +26,7 @@ const (
 
 	// DefaultCLIEssentialsPluginGroupName  name of the essentials plugin group which is used to install essential plugins
 	DefaultCLIEssentialsPluginGroupName = "vmware-tanzucli/essentials"
+
+	// DefaultDigestExpirationThreshold is the default value for digest expiration threshold
+	DefaultDigestExpirationThreshold = 24 * time.Hour
 )

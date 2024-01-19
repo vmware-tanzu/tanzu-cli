@@ -4,7 +4,17 @@
 package discovery
 
 import (
+	"bufio"
+	"os"
+	"path/filepath"
+	"time"
+
+	"github.com/pkg/errors"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
@@ -58,4 +68,97 @@ func compareRESTDiscoverySources(ds1, ds2 configtypes.PluginDiscovery) bool {
 		ds1.REST.Name == ds2.REST.Name &&
 		ds1.REST.BasePath == ds2.REST.BasePath &&
 		ds1.REST.Endpoint == ds2.REST.Endpoint
+}
+
+func getDiscoverySourceNameAndURL(source configtypes.PluginDiscovery) (string, string, error) {
+	var name string
+	var url string
+	switch {
+	case source.OCI != nil:
+		name = source.OCI.Name
+		url = source.OCI.Image
+	case source.Local != nil:
+		name = source.Local.Name
+		url = source.Local.Path
+	case source.Kubernetes != nil:
+		name = source.Kubernetes.Name
+		url = source.Kubernetes.Path
+	case source.REST != nil:
+		name = source.REST.Name
+		url = source.REST.Endpoint
+	default:
+		return "", "", errors.New("unknown discovery source type")
+	}
+	return name, url, nil
+}
+
+// RefreshDatabase function refreshes the plugin inventory database if the digest timestamp is past 24 hours
+func RefreshDatabase() error {
+	// Initialize digestExpirationThreshold with the default value
+	digestExpirationThreshold := constants.DefaultDigestExpirationThreshold
+
+	// Check if the user has set a custom value for digest expiration threshold
+	if envValue, ok := os.LookupEnv(constants.TanzuCLIDBRefreshThreshold); ok {
+		if customThreshold, err := time.ParseDuration(envValue); err == nil {
+			// Use the custom value if it's a valid duration
+			digestExpirationThreshold = customThreshold
+		}
+	}
+
+	// Fetch all Discovery sources
+	sources, err := config.GetCLIDiscoverySources()
+	if err != nil {
+		return errors.Wrap(err, "failed to get discovery sources")
+	}
+
+	//
+	for _, source := range sources {
+		name, url, err := getDiscoverySourceNameAndURL(source)
+		if err != nil {
+			return err
+		}
+
+		// Construct the digest file path
+		pluginDataDir := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, name)
+		matches, _ := filepath.Glob(filepath.Join(pluginDataDir, "digest.*"))
+
+		if len(matches) == 1 {
+			file, err := os.Open(matches[0])
+			if err != nil {
+				return err
+			}
+
+			scanner := bufio.NewScanner(file)
+			if scanner.Scan() {
+				// Check that the discovery image URI matches what is in the digest file.
+				// This is important for test discoveries which can be changed by setting
+				// the TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY variable.
+				// If the image URI is not correct then the cache must be refreshed.
+				cachedURI := scanner.Text()
+				if cachedURI == url {
+					// The URI matches.  Now check the modification time of the digest file to see
+					// if the TTL is expired.
+					if stat, err := os.Stat(matches[0]); err == nil {
+						// Check if the digest timestamp is passed 24 hours if so refresh the database
+						if time.Since(stat.ModTime()) > digestExpirationThreshold {
+							if discObject, err := CreateDiscoveryFromV1alpha1(source); err == nil {
+								_, _ = discObject.List()
+							}
+						}
+					}
+				}
+			}
+
+			// Close the file explicitly inside the loop
+			if err := file.Close(); err != nil {
+				return err
+			}
+		} else {
+			// Refresh the database if digest is not found
+			if discObject, err := CreateDiscoveryFromV1alpha1(source); err == nil {
+				_, _ = discObject.List()
+			}
+		}
+	}
+	return nil
 }

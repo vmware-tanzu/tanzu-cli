@@ -53,4 +53,5 @@ const (
 
 	// TanzuCLIOAuthLocalListenerPort is the port to be used by local listener for OAuth authorization flow
 	TanzuCLIOAuthLocalListenerPort = "TANZU_CLI_OAUTH_LOCAL_LISTENER_PORT"
+	TanzuCLIDBRefreshThreshold = "TANZU_CLI_DATABASE_REFRESH_THRESHOLD"
 )
