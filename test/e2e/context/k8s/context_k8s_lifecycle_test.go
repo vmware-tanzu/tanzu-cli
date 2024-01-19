@@ -37,11 +37,10 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Context-k8s-tests]", func
 })
 
 // k8sContextLifeCycleTests has test cases for context life cycle use cases for the k8s target
-//
-//nolint:gosec  // G602: Potentially accessing slice out of bounds (gosec) i.e. contextNames
 func k8sContextLifeCycleTests() bool {
 	var active string
 	contextNames := make([]string, 0)
+	firstContext := ""
 	return Context("Context lifecycle tests for k8s target", func() {
 		// Test case: Create context for k8s target with kubeconfig and its context as input
 		It("create context with kubeconfig and context", func() {
@@ -51,6 +50,7 @@ func k8sContextLifeCycleTests() bool {
 			Expect(err).To(BeNil(), "context should create without any error")
 			log.Infof("context: %s added", ctxName)
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, ctxName))
+			firstContext = ctxName
 			contextNames = append(contextNames, ctxName)
 		})
 		// Test case: (negative test) Create context for k8s target with incorrect kubeconfig file path and its context as input
@@ -86,34 +86,34 @@ func k8sContextLifeCycleTests() bool {
 		})
 		// Test case: test 'tanzu context use' command with the specific context name (not the recently created one)
 		It("use context command", func() {
-			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(firstContext)
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
-			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
+			Expect(active).To(Equal(firstContext), "the active context should be recently set context")
 		})
 		// Test case: context unset command: test 'tanzu context unset' command with active context name
 		It("unset context command: by context name", func() {
-			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(firstContext)
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
-			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
+			Expect(active).To(Equal(firstContext), "the active context should be recently set context")
 
-			stdOut, _, err = tf.ContextCmd.UnsetContext(contextNames[0])
+			stdOut, _, err = tf.ContextCmd.UnsetContext(firstContext)
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
-			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForContextTypeSetInactive, contextNames[0], framework.KubernetesTarget)))
+			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForContextTypeSetInactive, firstContext, framework.KubernetesTarget)))
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
 			Expect(active).To(Equal(""), "there should not be any active context as unset performed")
 		})
 		// Test case: context unset command: test 'tanzu context unset' command with random context name
 		It("unset context command: negative use case: by random context name", func() {
-			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(firstContext)
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
-			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
+			Expect(active).To(Equal(firstContext), "the active context should be recently set context")
 
 			name := framework.RandomString(5)
 			_, _, err = tf.ContextCmd.UnsetContext(name)
@@ -121,45 +121,45 @@ func k8sContextLifeCycleTests() bool {
 		})
 		// Test case: context unset command: test 'tanzu context unset' command by providing target
 		It("unset context command: by target", func() {
-			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(firstContext)
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
-			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
+			Expect(active).To(Equal(firstContext), "the active context should be recently set context")
 			stdOut, _, err = tf.ContextCmd.UnsetContext("", framework.AddAdditionalFlagAndValue("--type k8s"))
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
-			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForContextTypeSetInactive, contextNames[0], framework.KubernetesTarget)))
+			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForContextTypeSetInactive, firstContext, framework.KubernetesTarget)))
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
 			Expect(active).To(Equal(""), "there should not be any active context as unset performed")
 		})
 		// Test case: context unset command: test 'tanzu context unset' by providing target and context name
 		It("unset context command: by target and context name", func() {
-			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(firstContext)
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
-			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
-			stdOut, _, err = tf.ContextCmd.UnsetContext(contextNames[0], framework.AddAdditionalFlagAndValue("--type k8s"))
+			Expect(active).To(Equal(firstContext), "the active context should be recently set context")
+			stdOut, _, err = tf.ContextCmd.UnsetContext(firstContext, framework.AddAdditionalFlagAndValue("--type k8s"))
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
-			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForContextTypeSetInactive, contextNames[0], framework.KubernetesTarget)))
+			Expect(stdOut).To(ContainSubstring(fmt.Sprintf(framework.ContextForContextTypeSetInactive, firstContext, framework.KubernetesTarget)))
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
 			Expect(active).To(Equal(""), "there should not be any active context as unset performed")
 		})
 		// Test case: context unset command: test 'tanzu context unset' command with incorrect target
 		It("unset context command: negative use case: by target and context name: incorrect target", func() {
-			_, _, err = tf.ContextCmd.UseContext(contextNames[0])
+			_, _, err = tf.ContextCmd.UseContext(firstContext)
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
-			Expect(active).To(Equal(contextNames[0]), "the active context should be recently set context")
+			Expect(active).To(Equal(firstContext), "the active context should be recently set context")
 
-			_, _, err = tf.ContextCmd.UnsetContext(contextNames[0], framework.AddAdditionalFlagAndValue("--type tmc"))
-			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.ContextNotExistsForTarget, contextNames[0], framework.MissionControlTarget)))
+			_, _, err = tf.ContextCmd.UnsetContext(firstContext, framework.AddAdditionalFlagAndValue("--type tmc"))
+			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(framework.ContextNotExistsForTarget, firstContext, framework.MissionControlTarget)))
 			active, err = tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should not be any error for the get context")
-			Expect(active).To(Equal(contextNames[0]), "there should be an active context as unset failed")
+			Expect(active).To(Equal(firstContext), "there should be an active context as unset failed")
 		})
 		// Test case: (negative test) test 'tanzu context use' command with the specific context name (incorrect, which is not exists)
 		It("use context command with incorrect context as input", func() {
@@ -205,16 +205,17 @@ func k8sContextStressTests() bool {
 		// Test case: b. list and delete contexts if any exists already, before running test cases
 		It("list and delete contexts if any exists already", func() {
 			By("list and delete contexts if any exists already before running test cases")
-			list, err := tf.ContextCmd.ListContext()
+			var contexts []*framework.ContextListInfo
+			contexts, _, _, err = tf.ContextCmd.ListContext()
 			Expect(err).To(BeNil(), "list context should not return any error")
-			for _, ctx := range list {
+			for _, ctx := range contexts {
 				_, _, err = tf.ContextCmd.DeleteContext(ctx.Name)
 				Expect(err).To(BeNil(), "delete context should delete context without any error")
 				Expect(framework.IsContextExists(tf, ctx.Name)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, ctx.Name))
 			}
-			list, err = tf.ContextCmd.ListContext()
+			contexts, _, _, err = tf.ContextCmd.ListContext()
 			Expect(err).To(BeNil(), "list context should not return any error")
-			Expect(len(list)).To(Equal(0), "all contexts should be deleted")
+			Expect(len(contexts)).To(Equal(0), "all contexts should be deleted")
 		})
 		// Test case: c. create multiple contexts with kubeconfig and context
 		It("create multiple contexts with kubeconfig and context", func() {
@@ -242,10 +243,18 @@ func k8sContextStressTests() bool {
 			}
 		})
 		// Test case: e. test 'tanzu context list' command, should list all contexts created
-		It("list context should have all added contexts", func() {
+		It("list context use case", func() {
 			By("list context should have all added contexts")
 			list := framework.GetAvailableContexts(tf, contextNamesStress)
 			Expect(len(list) >= len(contextNamesStress)).Should(BeTrue(), "list context should have all contexts added in previous tests")
+			By("context list output should be sorted by context name")
+			previous := ""
+			for _, ctx := range list {
+				if previous != "" {
+					Expect(ctx >= previous).Should(BeTrue(), "context list output should be sorted by context name")
+				}
+				previous = ctx
+			}
 		})
 		// Test case: f. test 'tanzu context delete' command, make sure to delete all contexts created in previous test cases
 		It("delete context command", func() {
