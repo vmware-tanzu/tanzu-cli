@@ -16,14 +16,8 @@ import (
 func Test_CheckDiscoveryName(t *testing.T) {
 	assert := assert.New(t)
 
-	gcpDiscovery := configtypes.PluginDiscovery{GCP: &configtypes.GCPDiscovery{Name: "gcp-test"}}
-	result := CheckDiscoveryName(gcpDiscovery, "gcp-test")
-	assert.True(result)
-	result = CheckDiscoveryName(gcpDiscovery, "test")
-	assert.False(result)
-
 	ociDiscovery := configtypes.PluginDiscovery{OCI: &configtypes.OCIDiscovery{Name: "oci-test"}}
-	result = CheckDiscoveryName(ociDiscovery, "oci-test")
+	result := CheckDiscoveryName(ociDiscovery, "oci-test")
 	assert.True(result)
 	result = CheckDiscoveryName(ociDiscovery, "test")
 	assert.False(result)
@@ -50,32 +44,24 @@ func Test_CheckDiscoveryName(t *testing.T) {
 func Test_CompareDiscoverySource(t *testing.T) {
 	assert := assert.New(t)
 
-	ds1 := configtypes.PluginDiscovery{GCP: &configtypes.GCPDiscovery{Name: "gcp-test", Bucket: "bucket1", ManifestPath: "manifest1"}}
-	ds2 := configtypes.PluginDiscovery{GCP: &configtypes.GCPDiscovery{Name: "gcp-test", Bucket: "bucket1", ManifestPath: "manifest1"}}
-	result := CompareDiscoverySource(ds1, ds2, common.DiscoveryTypeGCP)
+	ds1 := configtypes.PluginDiscovery{Local: &configtypes.LocalDiscovery{Name: "local-test", Path: "path1"}}
+	ds2 := configtypes.PluginDiscovery{Local: &configtypes.LocalDiscovery{Name: "local-test", Path: "path1"}}
+	result := CompareDiscoverySource(ds1, ds2, common.DiscoveryTypeLocal)
 	assert.True(result)
-	ds2 = configtypes.PluginDiscovery{GCP: &configtypes.GCPDiscovery{Name: "gcp-test", Bucket: "bucket2", ManifestPath: "manifest1"}}
-	result = CompareDiscoverySource(ds1, ds2, common.DiscoveryTypeGCP)
-	assert.False(result)
-
-	ds1 = configtypes.PluginDiscovery{Local: &configtypes.LocalDiscovery{Name: "gcp-test", Path: "path1"}}
-	ds2 = configtypes.PluginDiscovery{Local: &configtypes.LocalDiscovery{Name: "gcp-test", Path: "path1"}}
-	result = CompareDiscoverySource(ds1, ds2, common.DiscoveryTypeLocal)
-	assert.True(result)
-	ds2 = configtypes.PluginDiscovery{Local: &configtypes.LocalDiscovery{Name: "gcp-test", Path: "path2"}}
+	ds2 = configtypes.PluginDiscovery{Local: &configtypes.LocalDiscovery{Name: "local-test", Path: "path2"}}
 	result = CompareDiscoverySource(ds1, ds2, common.DiscoveryTypeLocal)
 	assert.False(result)
 
-	ds1 = configtypes.PluginDiscovery{OCI: &configtypes.OCIDiscovery{Name: "gcp-test", Image: "image1"}}
-	ds2 = configtypes.PluginDiscovery{OCI: &configtypes.OCIDiscovery{Name: "gcp-test", Image: "image1"}}
+	ds1 = configtypes.PluginDiscovery{OCI: &configtypes.OCIDiscovery{Name: "oci-test", Image: "image1"}}
+	ds2 = configtypes.PluginDiscovery{OCI: &configtypes.OCIDiscovery{Name: "oci-test", Image: "image1"}}
 	result = CompareDiscoverySource(ds1, ds2, common.DiscoveryTypeOCI)
 	assert.True(result)
-	ds2 = configtypes.PluginDiscovery{OCI: &configtypes.OCIDiscovery{Name: "gcp-test", Image: "image2"}}
+	ds2 = configtypes.PluginDiscovery{OCI: &configtypes.OCIDiscovery{Name: "oci-test", Image: "image2"}}
 	result = CompareDiscoverySource(ds1, ds2, common.DiscoveryTypeOCI)
 	assert.False(result)
 
-	ds1 = configtypes.PluginDiscovery{OCI: &configtypes.OCIDiscovery{Name: "gcp-test", Image: "image1"}}
-	ds2 = configtypes.PluginDiscovery{Local: &configtypes.LocalDiscovery{Name: "gcp-test", Path: "path1"}}
+	ds1 = configtypes.PluginDiscovery{OCI: &configtypes.OCIDiscovery{Name: "oci-test", Image: "image1"}}
+	ds2 = configtypes.PluginDiscovery{Local: &configtypes.LocalDiscovery{Name: "oci-test", Path: "path1"}}
 	result = CompareDiscoverySource(ds1, ds2, common.DiscoveryTypeOCI)
 	assert.False(result)
 	result = CompareDiscoverySource(ds1, ds2, common.DiscoveryTypeLocal)

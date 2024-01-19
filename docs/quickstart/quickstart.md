@@ -259,7 +259,7 @@ instead of the deprecated `tanzu login` command.
 
 ### tanzu config server
 
-The `tanzu config server` group of commands has been deprecated in favor of
+The `tanzu config server` group of commands has been removed in favor of
 `tanzu context list` and `tanzu context delete`.
 
 ### tanzu plugin sync

@@ -4,16 +4,13 @@
 package config
 
 import (
-	"fmt"
 	"net/url"
 	"os"
 	"strings"
 
-	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
 // Default Standalone Discovery configuration
@@ -40,36 +37,8 @@ const CoreRepositoryName = "core"
 // CoreBucketName is the name of the core plugin repository bucket to use.
 var CoreBucketName = "tanzu-cli-framework"
 
-// DefaultVersionSelector is to only use stable versions of plugins
-const DefaultVersionSelector = configtypes.NoUnstableVersions //nolint:staticcheck // Deprecated
-
-// DefaultEdition is the edition assumed when there is no value in the local config file
-const DefaultEdition = "tkg"
-
-// CoreGCPBucketRepository is the default GCP bucket repository.
-var CoreGCPBucketRepository = configtypes.GCPPluginRepository{ //nolint:staticcheck // Deprecated
-	BucketName: CoreBucketName,
-	Name:       CoreRepositoryName,
-}
-
-// AdvancedRepositoryName is the advanced repository name.
-const AdvancedRepositoryName = "advanced"
-
-// AdvancedGCPBucketRepository is the GCP bucket repository for advanced plugins.
-var AdvancedGCPBucketRepository = configtypes.GCPPluginRepository{ //nolint:staticcheck // Deprecated
-	BucketName: "tanzu-cli-advanced-plugins",
-	Name:       AdvancedRepositoryName,
-}
-
 // DefaultTMCPluginsArtifactRepository is the S3 bucket repository for TMC plugins.
 const DefaultTMCPluginsArtifactRepository = "https://tmc-cli.s3-us-west-2.amazonaws.com/plugins/artifacts"
-
-// DefaultRepositories are the default repositories for the CLI.
-var DefaultRepositories = []configtypes.PluginRepository{ //nolint:staticcheck // Deprecated
-	{
-		GCPPluginRepository: &CoreGCPBucketRepository,
-	},
-}
 
 // GetDefaultStandaloneDiscoveryImage returns the default Standalone Discovery image
 // from the configured build time variables
@@ -179,17 +148,12 @@ func GetAdditionalTestDiscoveryImages() []string {
 	return additionalImages
 }
 
-func getHTTPURIForGCPPluginRepository(repo configtypes.GCPPluginRepository) string { //nolint:staticcheck // Deprecated
-	return fmt.Sprintf("https://storage.googleapis.com/%s/", repo.BucketName)
-}
-
 // GetTrustedArtifactLocations returns the list of trusted URI prefixes that can
 // be trusted for downloading the CLIPlugins. Currently, this includes only the
 // "tanzu-cli-advanced-plugins" GCP bucket where TMC plugins are stored. Other
 // exceptions can be added as and when necessary.
 func GetTrustedArtifactLocations() []string {
 	trustedLocations := []string{
-		getHTTPURIForGCPPluginRepository(AdvancedGCPBucketRepository),
 		DefaultTMCPluginsArtifactRepository,
 	}
 

@@ -19,13 +19,10 @@ func init() {
 		log.Warningf("unable to get client config: %v", err)
 	}
 	addedFeatureFlags := AddDefaultFeatureFlagsIfMissing(c, constants.DefaultCliFeatureFlags)
-	addedEdition := addDefaultEditionIfMissing(c)
-	addedBomRepo := AddBomRepoIfMissing(c)
-	addedCompatabilityFile := AddCompatibilityFileIfMissing(c)
 	// contexts could be lost when older plugins edit the config, so populate them from servers
 	addedContexts := config.PopulateContexts(c)
 
-	if addedFeatureFlags || addedEdition || addedCompatabilityFile || addedBomRepo || addedContexts {
+	if addedFeatureFlags || addedContexts {
 		_ = config.StoreClientConfig(c)
 	}
 

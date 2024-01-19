@@ -7,10 +7,9 @@ contexts:
       path: test-path
       context: test-mc-context
     discoverySources:
-      - gcp:
+      - oci:
           name: test
-          bucket: test-bucket
-          manifestPath: test-manifest-path
+          image: test-image
     additionalMetadata:
       isPinnipedEndpoint: true
   - name: test-tmc-context
