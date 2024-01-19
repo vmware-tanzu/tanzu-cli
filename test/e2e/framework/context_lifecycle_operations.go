@@ -21,7 +21,7 @@ type ContextCmdOps interface {
 	// GetContext helps to run `context get` command
 	GetContext(contextName string, opts ...E2EOption) (ContextInfo, error)
 	// ListContext helps to run `context list` command
-	ListContext(opts ...E2EOption) ([]*ContextListInfo, error)
+	ListContext(opts ...E2EOption) (contexts []*ContextListInfo, stdOutStr, stdErrStr string, err error)
 	// DeleteContext helps to run `context delete` command
 	DeleteContext(contextName string, opts ...E2EOption) (stdOutStr, stdErrStr string, err error)
 	// GetActiveContext returns current active context for given context-type
@@ -75,13 +75,13 @@ func (cc *contextCmdOps) GetContext(contextName string, opts ...E2EOption) (Cont
 	return contextInfo, nil
 }
 
-func (cc *contextCmdOps) ListContext(opts ...E2EOption) ([]*ContextListInfo, error) {
-	list, _, _, err := ExecuteCmdAndBuildJSONOutput[ContextListInfo](cc.cmdExe, ListContextOutputInJSON, opts...)
-	return list, err
+func (cc *contextCmdOps) ListContext(opts ...E2EOption) (contexts []*ContextListInfo, stdOut, stdErr string, err error) {
+	contexts, stdOut, stdErr, err = ExecuteCmdAndBuildJSONOutput[ContextListInfo](cc.cmdExe, ListContextOutputInJSON, opts...)
+	return contexts, stdOut, stdErr, err
 }
 
 func (cc *contextCmdOps) GetActiveContext(targetType string, opts ...E2EOption) (string, error) {
-	list, err := cc.ListContext(opts...)
+	list, _, _, err := cc.ListContext(opts...)
 	if err != nil {
 		return "", err
 	}
@@ -98,7 +98,7 @@ func (cc *contextCmdOps) GetActiveContext(targetType string, opts ...E2EOption) 
 }
 
 func (cc *contextCmdOps) GetActiveContexts(opts ...E2EOption) ([]*ContextListInfo, error) {
-	list, err := cc.ListContext(opts...)
+	list, _, _, err := cc.ListContext(opts...)
 	contexts := make([]*ContextListInfo, 0)
 	if err != nil {
 		return contexts, err

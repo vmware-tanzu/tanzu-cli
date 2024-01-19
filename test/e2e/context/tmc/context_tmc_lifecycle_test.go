@@ -77,6 +77,15 @@ func tmcStressTestCases() bool {
 			list := framework.GetAvailableContexts(tf, contextNamesStress)
 			Expect(len(list)).Should(BeNumerically(">=", len(contextNamesStress)))
 		})
+
+		// Test case: c. test 'tanzu context list' command, should list all contexts created
+		It("list context should have all added contexts", func() {
+			By("list context should have all added contexts")
+			list, _, _, err := framework.NewContextCmdOps().ListContext()
+			Expect(err).To(BeNil(), "context list should not return any error")
+			Expect(len(list)).Should(BeNumerically(">=", len(contextNamesStress)))
+		})
+
 		// Test case: d. test 'tanzu context delete' command, make sure to delete all contexts created in previous test cases
 		It("delete context command", func() {
 			By("delete all contexts created in previous tests")
@@ -211,7 +220,7 @@ func tmcAndK8sContextTests() bool {
 
 			// Test case: d. list all contexts
 			It("list all contexts", func() {
-				cts, err := tf.ContextCmd.ListContext()
+				cts, _, _, err := tf.ContextCmd.ListContext()
 				Expect(err).To(BeNil(), "there should no error for list contexts")
 				Expect(len(cts)).To(Equal(len(k8sCtxs)+len(tmcCtxs)), "there should be all k8s+tmc contexts")
 				m := framework.ContextInfoToMap(cts)
