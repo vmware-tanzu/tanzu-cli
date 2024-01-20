@@ -48,8 +48,6 @@ func (k *KubernetesDiscovery) Name() string {
 
 // Manifest returns the manifest for a kubernetes repository.
 func (k *KubernetesDiscovery) Manifest() ([]Discovered, error) {
-	log.V(6).Infof("creating kubernetes client with kubeconfig %q, kubecontext %q", k.kubeconfigPath, k.kubecontext)
-
 	// Create cluster client
 	clusterClient, err := cluster.NewClient(k.kubeconfigPath, k.kubecontext, k.kubeconfigBytes, cluster.Options{RequestTimeout: defaultTimeout})
 	if err != nil {

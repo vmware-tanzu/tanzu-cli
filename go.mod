@@ -4,7 +4,7 @@ go 1.21
 
 replace cloud.google.com/go => cloud.google.com/go v0.102.1
 
-replace github.com/vmware-tanzu/tanzu-plugin-runtime => github.com/anujc25/tanzu-plugin-runtime v0.0.0-20240119233614-3affdb098903
+replace github.com/vmware-tanzu/tanzu-plugin-runtime => github.com/anujc25/tanzu-plugin-runtime v0.0.0-20240122024954-261ba514ea6a
 
 replace github.com/vmware-tanzu/tanzu-cli/test/e2e/framework => ./test/e2e/framework
 

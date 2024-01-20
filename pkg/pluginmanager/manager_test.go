@@ -1134,7 +1134,7 @@ func TestGetPluginDiscoveries(t *testing.T) {
 	err := os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, "")
 	assertions.Nil(err)
 
-	discoveries, err := getPluginDiscoveries()
+	discoveries, err := getDiscoveries()
 	assertions.Nil(err)
 	assertions.Equal(2, len(discoveries))
 	assertions.Equal("default-local", discoveries[0].Local.Name)
@@ -1145,7 +1145,7 @@ func TestGetPluginDiscoveries(t *testing.T) {
 	err = os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, expectedTestDiscovery)
 	assertions.Nil(err)
 
-	discoveries, err = getPluginDiscoveries()
+	discoveries, err = getDiscoveries()
 	assertions.Nil(err)
 	assertions.Equal(3, len(discoveries))
 	// The test discovery must be last
@@ -1165,7 +1165,7 @@ func TestGetPluginDiscoveries(t *testing.T) {
 		expectedTestDiscoveries[0]+","+expectedTestDiscoveries[1]+"   ,"+expectedTestDiscoveries[2]+"  ,  "+expectedTestDiscoveries[3])
 	assertions.Nil(err)
 
-	discoveries, err = getPluginDiscoveries()
+	discoveries, err = getDiscoveries()
 	assertions.Nil(err)
 	assertions.Equal(len(expectedTestDiscoveries)+2, len(discoveries))
 	// The test discoveries in order but after the configured discoveries

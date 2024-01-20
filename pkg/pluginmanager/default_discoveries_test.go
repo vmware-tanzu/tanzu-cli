@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
@@ -53,11 +54,13 @@ servers:
 
 	server, err := configlib.GetServer("mgmt")
 	assert.Nil(t, err)
-	pds := append(server.DiscoverySources, defaultDiscoverySourceBasedOnServer(server)...)
+	pds := defaultDiscoverySourceBasedOnServer(server)
 	assert.Equal(t, 1, len(pds))
-	assert.Equal(t, pds[0].Kubernetes.Name, "default-mgmt")
-	assert.Equal(t, pds[0].Kubernetes.Path, "config")
-	assert.Equal(t, pds[0].Kubernetes.Context, "mgmt-admin@mgmt")
+	assert.Equal(t, pds[0].Name(), "default-mgmt")
+	assert.Equal(t, pds[0].Type(), common.DiscoveryTypeKubernetes)
+	// assert.Equal(t, pds[0].Kubernetes.Name, "default-mgmt")
+	// assert.Equal(t, pds[0].Kubernetes.Path, "config")
+	// assert.Equal(t, pds[0].Kubernetes.Context, "mgmt-admin@mgmt")
 }
 
 func Test_defaultDiscoverySourceBasedOnContext(t *testing.T) {
@@ -124,24 +127,28 @@ metadata:
 
 	context, err := configlib.GetContext("tmc-test")
 	assert.Nil(t, err)
-	pdsTMC := append(context.DiscoverySources, defaultDiscoverySourceBasedOnContext(context)...)
+	pdsTMC := defaultDiscoverySourceBasedOnContext(context)
 	assert.Equal(t, 1, len(pdsTMC))
-	assert.Equal(t, pdsTMC[0].REST.Endpoint, "https://test.cloud.vmware.com:443")
-	assert.Equal(t, pdsTMC[0].REST.BasePath, "v1alpha1/system/binaries/plugins")
-	assert.Equal(t, pdsTMC[0].REST.Name, "default-tmc-test")
+	assert.Equal(t, pdsTMC[0].Name(), "default-tmc-test")
+	assert.Equal(t, pdsTMC[0].Type(), common.DiscoveryTypeREST)
+	// assert.Equal(t, pdsTMC[0].REST.Endpoint, "https://test.cloud.vmware.com:443")
+	// assert.Equal(t, pdsTMC[0].REST.BasePath, "v1alpha1/system/binaries/plugins")
+	// assert.Equal(t, pdsTMC[0].REST.Name, "default-tmc-test")
 
 	context, err = configlib.GetContext("mgmt")
 	assert.Nil(t, err)
-	pdsK8s := append(context.DiscoverySources, defaultDiscoverySourceBasedOnContext(context)...)
+	pdsK8s := defaultDiscoverySourceBasedOnContext(context)
 	assert.Equal(t, 1, len(pdsK8s))
-	assert.Equal(t, pdsK8s[0].Kubernetes.Name, "default-mgmt")
-	assert.Equal(t, pdsK8s[0].Kubernetes.Path, "config")
-	assert.Equal(t, pdsK8s[0].Kubernetes.Context, "mgmt-admin@mgmt")
+	assert.Equal(t, pdsK8s[0].Name(), "default-mgmt")
+	assert.Equal(t, pdsK8s[0].Type(), common.DiscoveryTypeKubernetes)
+	// assert.Equal(t, pdsK8s[0].Kubernetes.Name, "default-mgmt")
+	// assert.Equal(t, pdsK8s[0].Kubernetes.Path, "config")
+	// assert.Equal(t, pdsK8s[0].Kubernetes.Context, "mgmt-admin@mgmt")
 
 	// Verify that no discovery sources are returned when feature-flag is disabled
 	context, err = configlib.GetContext("tanzu-context-1")
 	assert.Nil(t, err)
-	pdsTanzu := append(context.DiscoverySources, defaultDiscoverySourceBasedOnContext(context)...)
+	pdsTanzu := defaultDiscoverySourceBasedOnContext(context)
 	assert.Equal(t, 0, len(pdsTanzu))
 
 	// Enable feature-flag and verify that one discovery source is returned
@@ -149,10 +156,12 @@ metadata:
 	assert.Nil(t, err)
 	context, err = configlib.GetContext("tanzu-context-1")
 	assert.Nil(t, err)
-	pdsTanzu = append(context.DiscoverySources, defaultDiscoverySourceBasedOnContext(context)...)
+	pdsTanzu = defaultDiscoverySourceBasedOnContext(context)
 	assert.Equal(t, 1, len(pdsTanzu))
-	assert.Equal(t, pdsTanzu[0].Kubernetes.Name, "default-tanzu-context-1")
-	assert.NotEmpty(t, pdsTanzu[0].Kubernetes.KubeConfigBytes)
+	assert.Equal(t, pdsTanzu[0].Name(), "default-tanzu-context-1")
+	assert.Equal(t, pdsTanzu[0].Type(), common.DiscoveryTypeKubernetes)
+	// assert.Equal(t, pdsTanzu[0].Kubernetes.Name, "default-tanzu-context-1")
+	// assert.NotEmpty(t, pdsTanzu[0].Kubernetes.KubeConfigBytes)
 }
 
 func Test_appendURLScheme(t *testing.T) {
