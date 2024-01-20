@@ -18,6 +18,7 @@ func SyncContextsAndServers() error {
 
 	config.PopulateContexts(cfg)
 
+	// Now write the context to the configuration file.  This will also create any missing server for its corresponding context
 	for _, c := range cfg.KnownContexts {
 		err := config.SetContext(c, false)
 		if err != nil {
@@ -25,5 +26,13 @@ func SyncContextsAndServers() error {
 		}
 	}
 
+	// Now write the active contexts to the configuration file. This will also create any missing active server for its corresponding context
+	activeContexts, _ := cfg.GetAllActiveContextsList()
+	for _, c := range activeContexts {
+		err := config.SetActiveContext(c)
+		if err != nil {
+			return errors.Wrap(err, "failed to set active context")
+		}
+	}
 	return nil
 }
