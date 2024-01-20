@@ -47,7 +47,11 @@ const (
 	ConfigVariablePluginDBCacheTTL = "TANZU_CLI_PLUGIN_DB_CACHE_TTL_SECONDS"
 
 	// ConfigVariablePluginDBCacheRefreshThreshold Change the default value of db cache refresh threshold
-	ConfigVariablePluginDBCacheRefreshThreshold = "TANZU_CLI_PLUGIN_DB_CACHE_REFRESH_THRESHOLD_HOURS"
+	// A duration string is a possibly signed sequence of
+	// decimal numbers, each with optional fraction and a unit suffix,
+	// such as "300ms", "-1.5h" or "2h45m".
+	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	ConfigVariablePluginDBCacheRefreshThreshold = "TANZU_CLI_PLUGIN_DB_CACHE_REFRESH_THRESHOLD"
 
 	// CSPLoginOrgID overrides the CSP default OrgID to which the user logs into, using CLI interactive login flow
 	// Note: More information regarding the CSP organizations can be found at

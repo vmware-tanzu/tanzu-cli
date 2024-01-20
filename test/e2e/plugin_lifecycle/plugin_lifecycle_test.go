@@ -618,4 +618,46 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			}
 		})
 	})
+
+	// use case: Plugin inventory DB cache refresh check on every tanzu command
+	// and perform refresh only when digest timestamp is passed 24 hours or env variable TANZU_CLI_DATABASE_REFRESH_THRESHOLD is set
+	// a. run a "tanzu plugin source init" to do a digest check
+	// b. set the TTL to 5 seconds
+	// c. set the TANZU_CLI_DATABASE_REFRESH_THRESHOLD to 10 seconds
+	// d. Run a tanzu plugin list every 2 seconds and looking for the DB refresh printout after the 5th command.
+
+	Context("plugin inventory DB cache refresh when digest timestamp is passed the expiry threshold", func() {
+		const (
+			refreshingDBPrintout           = "Reading plugin inventory for"
+			refreshingPluginInventoryCache = "Refreshing plugin inventory cache"
+		)
+
+		It("plugin list doesnt refresh db cache until threshold is passed", func() {
+
+			// Set the TTL to something small: 5 seconds
+			_ = os.Setenv(constants.ConfigVariablePluginDBCacheTTL, "5")
+			_ = os.Setenv(constants.ConfigVariablePluginDBCacheRefreshThreshold, "10s")
+
+			for i := 0; i < 4; i++ {
+				time.Sleep(time.Second * 2) // Sleep for 2 seconds
+				_, _, errStream, err := tf.PluginCmd.ListPlugins()
+				Expect(err).To(BeNil())
+				// No printouts on the error stream about refreshing the DB
+				Expect(errStream).ToNot(ContainSubstring(refreshingPluginInventoryCache))
+				Expect(errStream).ToNot(ContainSubstring(refreshingDBPrintout))
+			}
+			time.Sleep(time.Second * 5) // Sleep for 2 seconds
+			_, _, errStream, err := tf.PluginCmd.ListPlugins()
+			Expect(err).To(BeNil())
+			// Now we expect printouts on the error stream about refreshing the DB
+			Expect(errStream).To(ContainSubstring(refreshingPluginInventoryCache))
+			Expect(errStream).To(ContainSubstring(refreshingDBPrintout))
+
+			// Unset the TTL override
+			_ = os.Unsetenv(constants.ConfigVariablePluginDBCacheTTL)
+			_ = os.Unsetenv(constants.ConfigVariablePluginDBCacheRefreshThreshold)
+		})
+
+	})
+
 })
