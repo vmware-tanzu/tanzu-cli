@@ -5,6 +5,7 @@ package csp
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -18,6 +19,7 @@ import (
 )
 
 const fakeIssuerURL = "https://fake.issuer.com"
+const fakeOrgName = "TestOrg"
 
 func TestHandleTokenRefresh(t *testing.T) {
 	// Mock HTTP server for token refresh
@@ -55,15 +57,8 @@ func TestHandleTokenRefresh(t *testing.T) {
 
 func TestGetOrgNameFromOrgID(t *testing.T) {
 	// Mock HTTP server for org name request
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/orgs/org123" {
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write([]byte(`{"displayName": "TestOrg"}`))
-		} else {
-			w.WriteHeader(http.StatusNotFound)
-		}
-	}))
-	defer server.Close()
+	server, cleanupServer := createFakeIssuerToServeOrgName()
+	defer cleanupServer()
 
 	// Mock HTTP client to use the server
 	httpRestClient = &http.Client{
@@ -75,8 +70,8 @@ func TestGetOrgNameFromOrgID(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
-	if orgName != "TestOrg" {
-		t.Errorf("Expected org name 'TestOrg', got %s", orgName)
+	if orgName != fakeOrgName {
+		t.Errorf("Expected org name '%s', got %s", fakeOrgName, orgName)
 	}
 
 	// Test the invalid org
@@ -243,5 +238,63 @@ func TestPromptAndLoginWithAuthCode(t *testing.T) {
 
 	if h.token != nil {
 		t.Error("promptAndLoginWithAuthCode set the token with context canceled while waiting for user input")
+	}
+}
+
+func TestGetOrgName(t *testing.T) {
+	// Mock HTTP server for org name request
+	server, cleanUpServer := createFakeIssuerToServeOrgName()
+	defer cleanUpServer()
+
+	// Mock HTTP client to use the server
+	httpRestClient = &http.Client{
+		Transport: http.DefaultTransport,
+	}
+
+	h := &cspLoginHandler{}
+	h.issuer = server.URL
+	h.token = &oauth2.Token{
+		AccessToken: generateJWTToken(
+			`{"sub":"1234567890","username":"John Doe","context_name":"org123"}`,
+		),
+	}
+	// Test the success path
+	orgName, err := h.getOrganizationName()
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if orgName != fakeOrgName {
+		t.Errorf("Expected org name '%s', got %s", fakeOrgName, orgName)
+	}
+
+	// Test with invalid token (without context_name)
+	h.token.AccessToken = generateJWTToken(
+		`{"sub":"1234567890","username":"John Doe"}`,
+	)
+	_, err = h.getOrganizationName()
+	assert.ErrorContains(t, err, "failed to parse the token: could not parse orgID from token")
+
+	// Test the invalid org
+	h.token.AccessToken = generateJWTToken(
+		`{"sub":"1234567890","username":"John Doe","context_name":"invalidOrg"}`,
+	)
+	_, err = h.getOrganizationName()
+	assert.ErrorContains(t, err, "failed to obtain the CSP organization information")
+}
+
+// createFakeIssuerToServeOrgName creates the fake issuer to server API that return the organization information.
+// It returns org name if the request is for orgID "org123" else it returns http 404 error
+func createFakeIssuerToServeOrgName() (*httptest.Server, func()) {
+	// Mock HTTP server for org name request
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/orgs/org123" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(fmt.Sprintf("{\"displayName\": \"%s\"}", fakeOrgName)))
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	return server, func() {
+		server.Close()
 	}
 }

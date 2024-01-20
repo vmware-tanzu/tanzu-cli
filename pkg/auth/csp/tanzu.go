@@ -185,7 +185,7 @@ func (h *cspLoginHandler) handleBrowserLogin() (*Token, error) {
 		return nil, fmt.Errorf("login failed: must have either a localhost listener or stdin must be a TTY")
 	}
 
-	// update the redirect URL with the random port allocated
+	// update the redirect URL with the port allocated/used
 	redirectURI := url.URL{Scheme: "http", Host: listener.Addr().String(), Path: h.callbackPath}
 	h.oauthConfig.RedirectURL = redirectURI.String()
 
@@ -262,7 +262,25 @@ func (h *cspLoginHandler) callbackHandler(w http.ResponseWriter, r *http.Request
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprint(w, "You have successfully logged in! You can now safely close this window")
+	// best effort: get the organization name to show in the browser
+	orgName, _ := h.getOrganizationName()
+	msg := "You have successfully logged in!\n\nYou can now safely close this window"
+	if orgName != "" {
+		msg = fmt.Sprintf("You have successfully logged into '%s' organization!\n\nYou can now safely close this window", orgName)
+	}
+	fmt.Fprint(w, msg)
+}
+
+func (h *cspLoginHandler) getOrganizationName() (string, error) {
+	claims, err := ParseToken(&oauth2.Token{AccessToken: h.token.AccessToken})
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse the token")
+	}
+	orgName, err := GetOrgNameFromOrgID(claims.OrgID, h.token.AccessToken, h.issuer)
+	if err != nil {
+		return "", err
+	}
+	return orgName, nil
 }
 
 func (h *cspLoginHandler) interruptHandler() {
