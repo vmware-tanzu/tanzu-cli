@@ -27,6 +27,6 @@ const (
 	// DefaultCLIEssentialsPluginGroupName  name of the essentials plugin group which is used to install essential plugins
 	DefaultCLIEssentialsPluginGroupName = "vmware-tanzucli/essentials"
 
-	// DefaultDigestExpirationThreshold is the default value for digest expiration threshold
-	DefaultDigestExpirationThreshold = 24 * time.Hour
+	// DefaultPluginDBCacheRefreshThreshold is the default value for db cache refresh
+	DefaultPluginDBCacheRefreshThreshold = 24 * time.Hour
 )

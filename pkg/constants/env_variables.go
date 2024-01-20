@@ -46,6 +46,9 @@ const (
 	// Change the default value of the plugin inventory cache TTL
 	ConfigVariablePluginDBCacheTTL = "TANZU_CLI_PLUGIN_DB_CACHE_TTL_SECONDS"
 
+	// ConfigVariablePluginDBCacheRefreshThreshold Change the default value of db cache refresh threshold
+	ConfigVariablePluginDBCacheRefreshThreshold = "TANZU_CLI_PLUGIN_DB_CACHE_REFRESH_THRESHOLD_HOURS"
+
 	// CSPLoginOrgID overrides the CSP default OrgID to which the user logs into, using CLI interactive login flow
 	// Note: More information regarding the CSP organizations can be found at
 	// https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html
@@ -53,5 +56,4 @@ const (
 
 	// TanzuCLIOAuthLocalListenerPort is the port to be used by local listener for OAuth authorization flow
 	TanzuCLIOAuthLocalListenerPort = "TANZU_CLI_OAUTH_LOCAL_LISTENER_PORT"
-	TanzuCLIDBRefreshThreshold = "TANZU_CLI_DATABASE_REFRESH_THRESHOLD"
 )
