@@ -620,38 +620,61 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 	})
 
 	// use case: Plugin inventory DB cache refresh check on every tanzu command
-	// and perform refresh only when digest timestamp is passed 24 hours or env variable TANZU_CLI_DATABASE_REFRESH_THRESHOLD is set
+	// and perform refresh only when digest timestamp is passed 24 hours or env variable TANZU_CLI_PLUGIN_DB_CACHE_REFRESH_THRESHOLD is set
 	// a. run a "tanzu plugin source init" to do a digest check
 	// b. set the TTL to 5 seconds
-	// c. set the TANZU_CLI_DATABASE_REFRESH_THRESHOLD to 10 seconds
+	// c. set the TANZU_CLI_PLUGIN_DB_CACHE_REFRESH_THRESHOLD to 10 seconds
 	// d. Run a tanzu plugin list every 2 seconds and looking for the DB refresh printout after the 5th command.
 
 	Context("plugin inventory DB cache refresh when digest timestamp is passed the expiry threshold", func() {
 		const (
-			refreshingDBPrintout           = "Reading plugin inventory for"
-			refreshingPluginInventoryCache = "Refreshing plugin inventory cache"
+			refreshingDBPrintout                = "Reading plugin inventory for"
+			refreshPluginInventoryCachePrintout = "Refreshing plugin inventory cache for"
 		)
 
 		It("plugin list doesnt refresh db cache until threshold is passed", func() {
+			err := framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
+			Expect(err).To(BeNil(), "should not get any error for plugin source update")
+
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil())
 
 			// Set the TTL to something small: 5 seconds
 			_ = os.Setenv(constants.ConfigVariablePluginDBCacheTTL, "5")
+			// Set the db cache refresh time to 10 seconds
 			_ = os.Setenv(constants.ConfigVariablePluginDBCacheRefreshThreshold, "10s")
 
-			for i := 0; i < 4; i++ {
-				time.Sleep(time.Second * 2) // Sleep for 2 seconds
-				_, _, errStream, err := tf.PluginCmd.ListPlugins()
-				Expect(err).To(BeNil())
-				// No printouts on the error stream about refreshing the DB
-				Expect(errStream).ToNot(ContainSubstring(refreshingPluginInventoryCache))
-				Expect(errStream).ToNot(ContainSubstring(refreshingDBPrintout))
-			}
-			time.Sleep(time.Second * 5) // Sleep for 2 seconds
+			// tanzu plugin list should
+			// 1. Read plugin inventory
+			// 2. Refresh plugin inventory cache
 			_, _, errStream, err := tf.PluginCmd.ListPlugins()
 			Expect(err).To(BeNil())
+
+			// Now we expect printouts on the error stream about refreshing the DB cache
+			Expect(errStream).To(ContainSubstring(refreshPluginInventoryCachePrintout))
+
 			// Now we expect printouts on the error stream about refreshing the DB
-			Expect(errStream).To(ContainSubstring(refreshingPluginInventoryCache))
 			Expect(errStream).To(ContainSubstring(refreshingDBPrintout))
+
+			for i := 0; i < 8; i++ {
+				time.Sleep(time.Second * 1) // Sleep for 1 second
+				_, _, errStream, err = tf.PluginCmd.ListPlugins()
+				Expect(err).To(BeNil())
+
+				// No printouts on the error stream about refreshing the DB cache
+				Expect(errStream).ToNot(ContainSubstring(refreshPluginInventoryCachePrintout))
+
+				// No printouts on the error stream about refreshing the DB
+				Expect(errStream).ToNot(ContainSubstring(refreshingDBPrintout))
+			}
+
+			time.Sleep(time.Second * 3) // Sleep for 3 seconds
+
+			_, _, errStream, err = tf.PluginCmd.ListPlugins()
+			Expect(err).To(BeNil())
+
+			// Now we expect printouts on the error stream about refreshing the DB cache
+			Expect(errStream).To(ContainSubstring(refreshPluginInventoryCachePrintout))
 
 			// Unset the TTL override
 			_ = os.Unsetenv(constants.ConfigVariablePluginDBCacheTTL)
