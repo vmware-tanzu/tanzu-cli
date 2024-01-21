@@ -31,12 +31,6 @@ var (
 	DefaultStandaloneDiscoveryLocalPath = ""
 )
 
-// CoreRepositoryName is the core repository name.
-const CoreRepositoryName = "core"
-
-// CoreBucketName is the name of the core plugin repository bucket to use.
-var CoreBucketName = "tanzu-cli-framework"
-
 // DefaultTMCPluginsArtifactRepository is the S3 bucket repository for TMC plugins.
 const DefaultTMCPluginsArtifactRepository = "https://tmc-cli.s3-us-west-2.amazonaws.com/plugins/artifacts"
 

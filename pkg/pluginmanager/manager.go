@@ -887,7 +887,7 @@ func updatePluginInfoAndInitializePlugin(p *discovery.Discovered, plugin *cli.Pl
 	if err := InitializePlugin(plugin); err != nil {
 		log.Infof("could not initialize plugin after installing: %v", err.Error())
 	}
-	if err := config.ConfigureDefaultFeatureFlagsIfMissing(plugin.DefaultFeatureFlags); err != nil {
+	if err := configlib.ConfigureFeatureFlags(plugin.DefaultFeatureFlags, configlib.SkipIfExists()); err != nil {
 		log.Infof("could not configure default featureflags for the plugin: %v", err.Error())
 	}
 	// add plugin to the plugin command tree cache for telemetry to consume later for plugin command chain parsing

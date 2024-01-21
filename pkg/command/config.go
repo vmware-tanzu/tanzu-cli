@@ -15,11 +15,9 @@ import (
 	"gopkg.in/yaml.v3"
 
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
@@ -123,26 +121,17 @@ var setConfigCmd = &cobra.Command{
 			return errors.Errorf("only PATH and <value> are allowed")
 		}
 
-		// Acquire tanzu config lock
-		configlib.AcquireTanzuConfigLock()
-		defer configlib.ReleaseTanzuConfigLock()
-
-		cfg, err := configlib.GetClientConfigNoLock()
+		err := setConfiguration(args[0], args[1])
 		if err != nil {
 			return err
 		}
 
-		err = setConfiguration(cfg, args[0], args[1])
-		if err != nil {
-			return err
-		}
-
-		return configlib.StoreClientConfig(cfg)
+		return nil
 	},
 }
 
 // setConfiguration sets the key-value pair for the given path
-func setConfiguration(cfg *configtypes.ClientConfig, pathParam, value string) error {
+func setConfiguration(pathParam, value string) error {
 	// parse the param
 	paramArray := strings.Split(pathParam, ".")
 	if len(paramArray) < 2 {
@@ -153,49 +142,18 @@ func setConfiguration(cfg *configtypes.ClientConfig, pathParam, value string) er
 
 	switch configLiteral {
 	case ConfigLiteralFeatures:
-		return setFeatures(cfg, paramArray, value)
+		if len(paramArray) != 3 {
+			return errors.New("unable to parse config path parameter into three parts [" + strings.Join(paramArray, ".") + "]  (was expecting 'features.<plugin>.<feature>'")
+		}
+		return configlib.SetFeature(paramArray[1], paramArray[2], value)
 	case ConfigLiteralEnv:
-		return setEnvs(cfg, paramArray, value)
+		if len(paramArray) != 2 {
+			return errors.New("unable to parse config path parameter into two parts [" + strings.Join(paramArray, ".") + "]  (was expecting 'env.<variable>'")
+		}
+		return configlib.SetEnv(paramArray[1], value)
 	default:
 		return errors.New("unsupported config path parameter [" + configLiteral + "] (was expecting 'features.<plugin>.<feature>' or 'env.<env_variable>')")
 	}
-}
-
-func setFeatures(cfg *configtypes.ClientConfig, paramArray []string, value string) error {
-	if len(paramArray) != 3 {
-		return errors.New("unable to parse config path parameter into three parts [" + strings.Join(paramArray, ".") + "]  (was expecting 'features.<plugin>.<feature>'")
-	}
-	pluginName := paramArray[1]
-	featureName := paramArray[2]
-
-	if cfg.ClientOptions == nil {
-		cfg.ClientOptions = &configtypes.ClientOptions{}
-	}
-	if cfg.ClientOptions.Features == nil {
-		cfg.ClientOptions.Features = make(map[string]configtypes.FeatureMap)
-	}
-	if cfg.ClientOptions.Features[pluginName] == nil {
-		cfg.ClientOptions.Features[pluginName] = configtypes.FeatureMap{}
-	}
-	cfg.ClientOptions.Features[pluginName][featureName] = value
-	return nil
-}
-
-func setEnvs(cfg *configtypes.ClientConfig, paramArray []string, value string) error {
-	if len(paramArray) != 2 {
-		return errors.New("unable to parse config path parameter into two parts [" + strings.Join(paramArray, ".") + "]  (was expecting 'env.<variable>'")
-	}
-	envVariable := paramArray[1]
-
-	if cfg.ClientOptions == nil {
-		cfg.ClientOptions = &configtypes.ClientOptions{}
-	}
-	if cfg.ClientOptions.Env == nil {
-		cfg.ClientOptions.Env = make(map[string]string)
-	}
-
-	cfg.ClientOptions.Env[envVariable] = value
-	return nil
 }
 
 var initConfigCmd = &cobra.Command{
@@ -204,23 +162,6 @@ var initConfigCmd = &cobra.Command{
 	Long:              "Initialize config with defaults including plugin specific defaults such as default feature flags for all active and installed plugins",
 	ValidArgsFunction: noMoreCompletions,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Acquire tanzu config lock
-		configlib.AcquireTanzuConfigLock()
-		defer configlib.ReleaseTanzuConfigLock()
-
-		cfg, err := configlib.GetClientConfigNoLock()
-		if err != nil {
-			return err
-		}
-		if cfg.ClientOptions == nil {
-			cfg.ClientOptions = &configtypes.ClientOptions{}
-		}
-		//nolint: staticcheck
-		//SA1019: cfg.ClientOptions.CLI is deprecated: CLI has been deprecated and will be removed from future version. use CoreCliOptions (staticcheck)
-		if cfg.ClientOptions.CLI == nil {
-			cfg.ClientOptions.CLI = &configtypes.CLIOptions{}
-		}
-
 		plugins, err := pluginsupplier.GetInstalledPlugins()
 		if err != nil {
 			return err
@@ -230,12 +171,10 @@ var initConfigCmd = &cobra.Command{
 		// Plugins that are installed but are not active plugin will not be processed here
 		// and defaultFeatureFlags will not be configured for those plugins
 		for _, desc := range plugins {
-			config.AddDefaultFeatureFlagsIfMissing(cfg, desc.DefaultFeatureFlags)
-		}
-
-		err = configlib.StoreClientConfig(cfg)
-		if err != nil {
-			return err
+			err := configlib.ConfigureFeatureFlags(desc.DefaultFeatureFlags, configlib.SkipIfExists())
+			if err != nil {
+				return err
+			}
 		}
 
 		log.Success("successfully initialized the config")
@@ -340,16 +279,14 @@ func completionGetEnvAndFeatures() []string {
 	}
 
 	// Retrieve client config node
-	cfg, err := configlib.GetClientConfig()
+	featureFlags, err := configlib.GetAllFeatureFlags()
 	if err != nil {
 		return comps
 	}
 
-	if cfg.ClientOptions != nil && cfg.ClientOptions.Features != nil {
-		for plugin, features := range cfg.ClientOptions.Features {
-			for name, value := range features {
-				comps = append(comps, fmt.Sprintf("%s.%s.%s\tValue: %q", ConfigLiteralFeatures, plugin, name, value))
-			}
+	for pluginKey, features := range featureFlags {
+		for name, value := range features {
+			comps = append(comps, fmt.Sprintf("%s.%s.%s\tValue: %q", ConfigLiteralFeatures, pluginKey, name, value))
 		}
 	}
 
