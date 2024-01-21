@@ -20,7 +20,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
-	configcli "github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 )
 
@@ -713,14 +712,8 @@ func TestEnvVarsSet(t *testing.T) {
 	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
 	defer os.RemoveAll(configFileNG.Name())
 
-	// Setup default feature flags since we have created new config files
-	// TODO(khouzam): This is because AddDefaultFeatureFlagsIfMissing() has already
-	// been called in an init() function.  We should fix that in a more generic way.
-	c, err := config.GetClientConfigNoLock()
+	err := config.ConfigureFeatureFlags(constants.DefaultCliFeatureFlags)
 	assert.Nil(err)
-	if configcli.AddDefaultFeatureFlagsIfMissing(c, constants.DefaultCliFeatureFlags) {
-		_ = config.StoreClientConfig(c)
-	}
 
 	rootCmd, err := NewRootCmd()
 	assert.Nil(err)

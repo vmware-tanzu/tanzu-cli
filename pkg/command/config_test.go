@@ -12,12 +12,11 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
-	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // Test_config_MalformedPathArg validates functionality when an invalid argument is provided.
 func TestConfigMalformedPathArg(t *testing.T) {
-	err := setConfiguration(nil, "invalid-arg", "")
+	err := setConfiguration("invalid-arg", "")
 	if err == nil {
 		t.Error("Malformed path argument should have resulted in an error")
 	}
@@ -29,7 +28,7 @@ func TestConfigMalformedPathArg(t *testing.T) {
 
 // Test_config_InvalidPathArg validates functionality when an invalid argument is provided.
 func TestConfigInvalidPathArg(t *testing.T) {
-	err := setConfiguration(nil, "shouldbefeatures.plugin.feature", "")
+	err := setConfiguration("shouldbefeatures.plugin.feature", "")
 	if err == nil {
 		t.Error("Invalid path argument should have resulted in an error")
 	}
@@ -39,69 +38,34 @@ func TestConfigInvalidPathArg(t *testing.T) {
 	}
 }
 
-// TestConfigGlobalFeature validates functionality when global feature path argument is provided.
-func TestConfigGlobalFeature(t *testing.T) {
-	cfg := &configtypes.ClientConfig{}
-	value := "bar"
-	err := setConfiguration(cfg, "features.global.foo", value)
-	if err != nil {
-		t.Errorf("Unexpected error returned for global features path argument: %s", err.Error())
-	}
-
-	if cfg.ClientOptions.Features["global"]["foo"] != value {
-		t.Error("cfg.ClientOptions.Features[\"global\"][\"foo\"] was not assigned the value \"" + value + "\"")
-	}
-}
-
-// TestConfigFeature validates functionality when normal feature path argument is provided.
-func TestConfigFeature(t *testing.T) {
-	cfg := &configtypes.ClientConfig{}
-	value := "barr"
-	err := setConfiguration(cfg, "features.any-plugin.foo", value)
-	if err != nil {
-		t.Errorf("Unexpected error returned for any-plugin features path argument: %s", err.Error())
-	}
-
-	if cfg.ClientOptions.Features["any-plugin"]["foo"] != value {
-		t.Error("cfg.ClientOptions.Features[\"any-plugin\"][\"foo\"] was not assigned the value \"" + value + "\"")
-	}
-}
-
 // TestConfigSetUnsetEnv validates set and unset functionality when env config path argument is provided.
 func TestConfigSetUnsetEnv(t *testing.T) {
-	cfg := &configtypes.ClientConfig{}
 	value := "baar"
-	err := setConfiguration(cfg, "env.foo", value)
+	err := setConfiguration("env.foo", value)
 	assert.Nil(t, err)
-	assert.Equal(t, value, cfg.ClientOptions.Env["foo"])
 
 	err = unsetConfiguration("env.foo")
 	assert.Nil(t, err)
 
-	cfg, err = configlib.GetClientConfigNoLock()
+	cfg, err := configlib.GetClientConfigNoLock()
 	assert.NoError(t, err)
 	assert.Equal(t, cfg.ClientOptions.Env["foo"], "")
 }
 
 // TestConfigIncorrectConfigLiteral validates incorrect config literal
 func TestConfigIncorrectConfigLiteral(t *testing.T) {
-	cfg := &configtypes.ClientConfig{}
 	value := "b"
-	err := setConfiguration(cfg, "fake.any-plugin.foo", value)
+	err := setConfiguration("fake.any-plugin.foo", value)
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "unsupported config path parameter [fake] (was expecting 'features.<plugin>.<feature>' or 'env.<env_variable>')")
 }
 
 // TestConfigEnv validates functionality when normal env path argument is provided.
 func TestConfigEnv(t *testing.T) {
-	cfg := &configtypes.ClientConfig{}
 	value := "baarr"
-	err := setConfiguration(cfg, "env.any-plugin", value)
+	err := setConfiguration("env.any-plugin", value)
 	if err != nil {
 		t.Errorf("Unexpected error returned for any-plugin env path argument: %s", err.Error())
-	}
-	if cfg.ClientOptions.Env["any-plugin"] != value {
-		t.Error("cfg.ClientOptions.Features[\"any-plugin\"][\"foo\"] was not assigned the value \"" + value + "\"")
 	}
 }
 
