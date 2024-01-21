@@ -545,7 +545,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextNameK8s = f.ContextPrefixK8s + f.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			_, _, err := tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -721,7 +721,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextNameK8s = f.ContextPrefixK8s + f.RandomString(4)
-			err = tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			_, _, err = tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeK8s))
 			Expect(err).To(BeNil(), thereShouldNotBeError+" while getting active context")
@@ -1020,7 +1020,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextNameK8s = f.ContextPrefixK8s + f.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			_, _, err := tf.ContextCmd.CreateContextWithKubeconfig(contextNameK8s, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeK8s))
 			Expect(err).To(BeNil(), "there should be a active context")

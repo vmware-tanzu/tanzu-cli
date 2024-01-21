@@ -18,7 +18,7 @@ type ContextCreateOps interface {
 	// CreateContextWithEndPointStaging creates a context with a given endpoint URL for staging, returns stdout, stderr and error
 	CreateContextWithEndPointStaging(contextName, endpoint string, opts ...E2EOption) (stdOut, stdErr string, err error)
 	// CreateContextWithKubeconfig creates a context with the given kubeconfig file path and a context from the kubeconfig file
-	CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string, opts ...E2EOption) error
+	CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string, opts ...E2EOption) (stdOut, stdErr string, err error)
 	// CreateContextWithDefaultKubeconfig creates a context with the default kubeconfig file and a given input context name if it exists in the default kubeconfig file
 	CreateContextWithDefaultKubeconfig(contextName, kubeContext string, opts ...E2EOption) error
 }
@@ -56,15 +56,15 @@ func (cc *contextCreateOps) CreateContextWithEndPointStaging(contextName, endpoi
 	return out.String(), stdErrBuffer.String(), err
 }
 
-func (cc *contextCreateOps) CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string, opts ...E2EOption) error {
+func (cc *contextCreateOps) CreateContextWithKubeconfig(contextName, kubeconfigPath, kubeContext string, opts ...E2EOption) (stdOut, stdErr string, err error) {
 	createContextCmd := fmt.Sprintf(CreateContextWithKubeconfigFile, "%s", kubeconfigPath, kubeContext, contextName)
-	out, _, err := cc.cmdExe.TanzuCmdExec(createContextCmd, opts...)
+	stdOutBuff, stdErrBuff, err := cc.cmdExe.TanzuCmdExec(createContextCmd, opts...)
 	if err != nil {
-		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
-		return errors.Wrap(err, fmt.Sprintf(FailedToCreateContextWithStdout, out.String()))
+		log.Info(fmt.Sprintf(FailedToCreateContextWithStdout, stdOutBuff.String()))
+		return stdOutBuff.String(), stdErrBuff.String(), err
 	}
 	log.Infof(ContextCreated, contextName)
-	return err
+	return stdOutBuff.String(), stdErrBuff.String(), err
 }
 
 func (cc *contextCreateOps) CreateContextWithDefaultKubeconfig(contextName, kubeContext string, opts ...E2EOption) error {
