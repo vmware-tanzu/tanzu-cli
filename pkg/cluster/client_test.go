@@ -47,7 +47,7 @@ var _ = Describe("New Cluster Client Tests", func() {
 			discoveryClientFactoryFake.ServerVersionReturns(nil, nil)
 		})
 		It("return cluster client", func() {
-			client, err := cluster.NewClient(kubeconfigFile, "foo-context", options)
+			client, err := cluster.NewClient(kubeconfigFile, "foo-context", nil, options)
 			Expect(client).NotTo(BeNil())
 			Expect(err).To(BeNil())
 		})
@@ -61,7 +61,7 @@ var _ = Describe("New Cluster Client Tests", func() {
 			BeforeEach(func() {
 				discoveryClientFactoryFake.NewDiscoveryClientForConfigReturns(&discovery.DiscoveryClient{}, nil)
 				discoveryClientFactoryFake.ServerVersionReturns(nil, nil)
-				clusterClient, _ = cluster.NewClient(kubeconfigFile, "foo-context", options)
+				clusterClient, _ = cluster.NewClient(kubeconfigFile, "foo-context", nil, options)
 				crtClientFake.ListObjectsReturns(nil)
 			})
 			It("return empty plugins and no error", func() {
@@ -74,7 +74,7 @@ var _ = Describe("New Cluster Client Tests", func() {
 			BeforeEach(func() {
 				discoveryClientFactoryFake.NewDiscoveryClientForConfigReturns(&discovery.DiscoveryClient{}, nil)
 				discoveryClientFactoryFake.ServerVersionReturns(nil, nil)
-				clusterClient, _ = cluster.NewClient(kubeconfigFile, "foo-context", options)
+				clusterClient, _ = cluster.NewClient(kubeconfigFile, "foo-context", nil, options)
 				crtClientFake.ListObjectsReturns(nil)
 			})
 			It("return clusterQuery object and no errors", func() {
@@ -87,7 +87,7 @@ var _ = Describe("New Cluster Client Tests", func() {
 			BeforeEach(func() {
 				discoveryClientFactoryFake.NewDiscoveryClientForConfigReturns(&discovery.DiscoveryClient{}, nil)
 				discoveryClientFactoryFake.ServerVersionReturns(nil, nil)
-				clusterClient, _ = cluster.NewClient(kubeconfigFile, "foo-context", options)
+				clusterClient, _ = cluster.NewClient(kubeconfigFile, "foo-context", nil, options)
 				crtClientFake.ListObjectsReturns(nil)
 			})
 			It("return empty map and no error", func() {
@@ -105,7 +105,7 @@ var _ = Describe("New Cluster Client Tests", func() {
 			kubeconfigFile = "invalidkubeconfigfile.yaml"
 		})
 		It("should return error for NewClient()", func() {
-			client, err := cluster.NewClient(kubeconfigFile, "foo-context", options)
+			client, err := cluster.NewClient(kubeconfigFile, "foo-context", nil, options)
 			Expect(client).To(BeNil())
 			Expect(err.Error()).To(ContainSubstring("Failed to load Kubeconfig file from \"invalidkubeconfigfile.yaml\""))
 		})

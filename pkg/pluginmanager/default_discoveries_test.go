@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
@@ -79,7 +80,26 @@ metadata:
     context: mgmt-admin@mgmt
     path: config
   name: mgmt
-  target: kubernetes`
+  target: kubernetes
+- name: tanzu-context-1
+  target: tanzu
+  contextType: tanzu
+  globalOpts:
+    endpoint: https://localhost:8443
+    auth:
+      issuer: https://console-stg.cloud.vmware.com/csp/gateway/am/api
+      userName: anujc
+      accessToken: eyJ
+      IDToken: eyJ
+      refresh_token: sA4
+      expiration: 2024-01-18T14:56:59.557973-08:00
+      type: id-token
+  clusterOpts:
+    endpoint: https://localhost:8443/org/testorg
+    path: test/kubeconfig.yaml
+    context: tanzu-cli-tanzu-context-1
+  additionalMetadata:
+    tanzuOrgID: testorg`
 	tf, err := os.CreateTemp("", "tanzu_tmc_config")
 	assert.Nil(t, err)
 	err = os.WriteFile(tf.Name(), []byte(tanzuConfigBytes), 0644)
@@ -117,6 +137,22 @@ metadata:
 	assert.Equal(t, pdsK8s[0].Kubernetes.Name, "default-mgmt")
 	assert.Equal(t, pdsK8s[0].Kubernetes.Path, "config")
 	assert.Equal(t, pdsK8s[0].Kubernetes.Context, "mgmt-admin@mgmt")
+
+	// Verify that no discovery sources are returned when feature-flag is disabled
+	context, err = configlib.GetContext("tanzu-context-1")
+	assert.Nil(t, err)
+	pdsTanzu := append(context.DiscoverySources, defaultDiscoverySourceBasedOnContext(context)...)
+	assert.Equal(t, 0, len(pdsTanzu))
+
+	// Enable feature-flag and verify that one discovery source is returned
+	err = configlib.ConfigureFeatureFlags(map[string]bool{constants.FeaturePluginDiscoveryForTanzuContext: true})
+	assert.Nil(t, err)
+	context, err = configlib.GetContext("tanzu-context-1")
+	assert.Nil(t, err)
+	pdsTanzu = append(context.DiscoverySources, defaultDiscoverySourceBasedOnContext(context)...)
+	assert.Equal(t, 1, len(pdsTanzu))
+	assert.Equal(t, pdsTanzu[0].Kubernetes.Name, "default-tanzu-context-1")
+	assert.NotEmpty(t, pdsTanzu[0].Kubernetes.KubeConfigBytes)
 }
 
 func Test_appendURLScheme(t *testing.T) {

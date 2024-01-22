@@ -20,17 +20,19 @@ import (
 
 // KubernetesDiscovery is an artifact discovery utilizing CLIPlugin API in kubernetes cluster
 type KubernetesDiscovery struct {
-	name           string
-	kubeconfigPath string
-	kubecontext    string
+	name            string
+	kubeconfigPath  string
+	kubecontext     string
+	kubeconfigBytes []byte
 }
 
 // NewKubernetesDiscovery returns a new kubernetes repository
-func NewKubernetesDiscovery(name, kubeconfigPath, kubecontext string) Discovery {
+func NewKubernetesDiscovery(name, kubeconfigPath, kubecontext string, kubeconfigBytes []byte) Discovery {
 	return &KubernetesDiscovery{
-		name:           name,
-		kubeconfigPath: kubeconfigPath,
-		kubecontext:    kubecontext,
+		name:            name,
+		kubeconfigPath:  kubeconfigPath,
+		kubecontext:     kubecontext,
+		kubeconfigBytes: kubeconfigBytes,
 	}
 }
 
@@ -49,7 +51,7 @@ func (k *KubernetesDiscovery) Manifest() ([]Discovered, error) {
 	log.V(6).Infof("creating kubernetes client with kubeconfig %q, kubecontext %q", k.kubeconfigPath, k.kubecontext)
 
 	// Create cluster client
-	clusterClient, err := cluster.NewClient(k.kubeconfigPath, k.kubecontext, cluster.Options{RequestTimeout: defaultTimeout})
+	clusterClient, err := cluster.NewClient(k.kubeconfigPath, k.kubecontext, k.kubeconfigBytes, cluster.Options{RequestTimeout: defaultTimeout})
 	if err != nil {
 		return nil, err
 	}

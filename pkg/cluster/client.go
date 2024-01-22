@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
 	capdiscovery "github.com/vmware-tanzu/tanzu-framework/capabilities/client/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
@@ -88,6 +89,7 @@ type client struct {
 	CrtClient       CrtClient
 	DiscoveryClient DiscoveryClient
 	DynamicClient   DynamicClient
+	kubeConfigBytes []byte
 	kubeConfigPath  string
 	currentContext  string
 }
@@ -96,18 +98,25 @@ type client struct {
 // if kubeconfig path is empty it gets default path
 // if options.poller is nil it creates default poller. You should only pass custom poller for unit testing
 // if options.crtClientFactory is nil it creates default CrtClientFactory
-func NewClient(kubeConfigPath, contextStr string, options Options) (Client, error) {
+func NewClient(kubeConfigPath, contextStr string, kubeConfigBytes []byte, options Options) (Client, error) {
 	var err error
-	var rules *clientcmd.ClientConfigLoadingRules
-	if kubeConfigPath == "" {
-		rules = clientcmd.NewDefaultClientConfigLoadingRules()
-		kubeConfigPath = rules.GetDefaultFilename()
+	client := &client{}
+
+	if len(kubeConfigBytes) == 0 {
+		var rules *clientcmd.ClientConfigLoadingRules
+		if kubeConfigPath == "" {
+			rules = clientcmd.NewDefaultClientConfigLoadingRules()
+			kubeConfigPath = rules.GetDefaultFilename()
+		}
+		client.kubeConfigPath = kubeConfigPath
+		client.currentContext = contextStr
+		log.V(7).Infof("creating kubernetes client with kubeconfig %q, kubecontext %q", kubeConfigPath, contextStr)
+	} else {
+		client.kubeConfigBytes = kubeConfigBytes
+		log.V(7).Infof("creating kubernetes client with kubeconfigbytes %q", string(kubeConfigBytes))
 	}
+
 	InitializeOptions(&options)
-	client := &client{
-		kubeConfigPath: kubeConfigPath,
-		currentContext: contextStr,
-	}
 	err = client.getK8sClients(options.CrtClient, options.DiscoveryClientFactory, options.DynamicClientFactory, options.RequestTimeout)
 	if err != nil {
 		return nil, err
@@ -201,19 +210,29 @@ func ConsolidateImageRepoMaps(cmList *corev1.ConfigMapList) (map[string]string, 
 
 func (c *client) getK8sClients(crtClient CrtClient, discoveryClientFactory DiscoveryClientFactory, dynamicClientFactory DynamicClientFactory, timeout time.Duration) error {
 	var discoveryClient discovery.DiscoveryInterface
-	config, err := clientcmd.LoadFromFile(c.kubeConfigPath)
-	if err != nil {
-		return errors.Errorf("Failed to load Kubeconfig file from %q", c.kubeConfigPath)
-	}
-	configOverrides := &clientcmd.ConfigOverrides{}
-	if c.currentContext != "" {
-		configOverrides.CurrentContext = c.currentContext
+	var restConfig *rest.Config
+	var err error
+
+	if len(c.kubeConfigBytes) != 0 {
+		restConfig, err = clientcmd.RESTConfigFromKubeConfig(c.kubeConfigBytes)
+		if err != nil {
+			return errors.Errorf("Unable to set up rest config due to : %v", err)
+		}
+	} else {
+		config, err := clientcmd.LoadFromFile(c.kubeConfigPath)
+		if err != nil {
+			return errors.Errorf("Failed to load Kubeconfig file from %q", c.kubeConfigPath)
+		}
+		configOverrides := &clientcmd.ConfigOverrides{}
+		if c.currentContext != "" {
+			configOverrides.CurrentContext = c.currentContext
+		}
+		restConfig, err = clientcmd.NewDefaultClientConfig(*config, configOverrides).ClientConfig()
+		if err != nil {
+			return errors.Errorf("Unable to set up rest config due to : %v", err)
+		}
 	}
 
-	restConfig, err := clientcmd.NewDefaultClientConfig(*config, configOverrides).ClientConfig()
-	if err != nil {
-		return errors.Errorf("Unable to set up rest config due to : %v", err)
-	}
 	// As there are many registered resources in the cluster, set the values for the maximum number of
 	// queries per second and the maximum burst for throttle to a high value to avoid throttling of messages
 	restConfig.QPS = constants.DefaultQPS
@@ -312,14 +331,14 @@ func NewOptions(crtClient CrtClient, discoveryClientFactory DiscoveryClientFacto
 
 // ClusterClientFactory a factory for creating cluster clients
 type ClusterClientFactory interface {
-	NewClient(kubeConfigPath, context string, options Options) (Client, error)
+	NewClient(kubeConfigPath, contextStr string, kubeConfigBytes []byte, options Options) (Client, error)
 }
 
 type clusterClientFactory struct{}
 
 // NewClient creates new clusterclient
-func (c *clusterClientFactory) NewClient(kubeConfigPath, contextStr string, options Options) (Client, error) {
-	return NewClient(kubeConfigPath, contextStr, options)
+func (c *clusterClientFactory) NewClient(kubeConfigPath, contextStr string, kubeConfigBytes []byte, options Options) (Client, error) {
+	return NewClient(kubeConfigPath, contextStr, kubeConfigBytes, options)
 }
 
 // NewClusterClientFactory creates new clusterclient factory
