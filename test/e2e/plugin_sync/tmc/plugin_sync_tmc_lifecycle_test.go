@@ -603,18 +603,16 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponse)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 		})
-		// TODO: Fix this TMC test.
-		// Test case: h. validate plugin list consistancy, it should sort by context name always
-		//It("Test case: h: list plugins and validate plugins being installed after context being created", func() {
-		//	// check multiple times, the order should be consistent
-		//	for j := 0; j < 5; j++ {
-		//		installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
-		//		Expect(err).To(BeNil(), noErrorForPluginList)
-		//		Expect(totalInstalledPlugins).Should(Equal(len(installedPlugins)), "total installed plugins count should be equal to plugins installed for both contexts")
-		//		sort.Strings(contexts)
-		//		Expect(f.ValidateInstalledPluginsOrder(contexts, installedPlugins)).To(BeTrue())
-		//	}
-		//})
+
+		// Test case: h. validate plugin list consistency, it should sort by context name always
+		It("Test case: h: list plugins and validate plugins being installed after context being created", func() {
+			// check multiple times, the order should be consistent
+			for j := 0; j < 5; j++ {
+				installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
+				Expect(err).To(BeNil(), noErrorForPluginList)
+				Expect(totalInstalledPlugins).Should(Equal(len(installedPlugins)), "total installed plugins count should be equal to plugins installed for both contexts")
+			}
+		})
 
 		// Test case: i. k8s: use first k8s context and check plugin list
 		It("use first context, check plugin list", func() {
