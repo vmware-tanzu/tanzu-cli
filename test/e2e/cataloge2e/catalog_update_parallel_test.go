@@ -24,7 +24,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Catalog-Update]", func() 
 
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 
 			// Install "vmware-tkg/default" plugin group because it contains
 			// telemetry plugin with kubernetes target
@@ -34,7 +34,6 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Catalog-Update]", func() 
 			pluginsList, err = framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(pluginsList)).Should(BeNumerically("==", 8), "plugins list should return 8 plugins installing plugin group")
-
 			// Run the tanzu version command in parallel
 			// Run 50 commands in parallel total 10 times
 			for i := 0; i < 10; i++ {
@@ -64,7 +63,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Catalog-Update]", func() 
 
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 
 			// Install all plugins from the "vmware-tkg/default" plugin group individually in parallel
 			pluginGroupGet, err := tf.PluginCmd.GetPluginGroup("vmware-tkg/default", "")
