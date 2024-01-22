@@ -127,7 +127,7 @@ func tmcAndK8sContextTests() bool {
 			// Test case: b. create k8s context, make sure its active
 			It("create k8s context", func() {
 				k8sCtx = prefixK8s + framework.RandomString(4)
-				err := tf.ContextCmd.CreateContextWithKubeconfig(k8sCtx, k8sClusterInfo.KubeConfigPath, k8sClusterInfo.ClusterKubeContext)
+				_, _, err := tf.ContextCmd.CreateContextWithKubeconfig(k8sCtx, k8sClusterInfo.KubeConfigPath, k8sClusterInfo.ClusterKubeContext)
 				Expect(err).To(BeNil(), "context should create without any error")
 				Expect(framework.IsContextExists(tf, k8sCtx)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, k8sCtx))
 
@@ -195,7 +195,7 @@ func tmcAndK8sContextTests() bool {
 			It("create k8s context", func() {
 				for i := 0; i < 5; i++ {
 					k8sCtx = prefixK8s + framework.RandomString(4)
-					err := tf.ContextCmd.CreateContextWithKubeconfig(k8sCtx, k8sClusterInfo.KubeConfigPath, k8sClusterInfo.ClusterKubeContext)
+					_, _, err := tf.ContextCmd.CreateContextWithKubeconfig(k8sCtx, k8sClusterInfo.KubeConfigPath, k8sClusterInfo.ClusterKubeContext)
 					Expect(err).To(BeNil(), "context should create without any error")
 					Expect(framework.IsContextExists(tf, k8sCtx)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, k8sCtx))
 

@@ -289,6 +289,9 @@ func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType,
 	// update plugins installation status
 	pluginmanager.UpdatePluginsInstallationStatus(plugins)
 
+	// sort the plugins based on the plugin name
+	sort.Sort(discovery.DiscoveredSorter(plugins))
+
 	// list plugins only if listPlugins is true and there are plugins to be installed
 	if listPlugins {
 		pluginsNeedstoBeInstalled := 0

@@ -64,7 +64,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextName = f.ContextPrefixK8s + f.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			_, _, err := tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -126,7 +126,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		// Test case: c. create context and make sure context has created
 		It("create context with kubeconfig and context", func() {
 			contextName = f.ContextPrefixK8s + f.RandomString(4)
-			err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			_, _, err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -264,7 +264,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextName = f.ContextPrefixK8s + f.RandomString(4)
-			err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			_, _, err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
@@ -366,7 +366,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		It("create context and validate installed plugins list, should installed all plugins for which CRs has applied in KIND cluster", func() {
 			By("create context with kubeconfig and context")
 			contextName = f.ContextPrefixK8s + f.RandomString(4)
-			err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			_, _, err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
@@ -440,7 +440,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		It("create context and validate installed plugins list, should installed all plugins for which CRs has applied in KIND cluster", func() {
 			By("create context with kubeconfig and context")
 			contextNameClusterOne = f.ContextPrefixK8s + f.RandomString(4)
-			err = tf.ContextCmd.CreateContextWithKubeconfig(contextNameClusterOne, clusterOne.KubeConfigPath, clusterOne.ClusterKubeContext)
+			_, _, err = tf.ContextCmd.CreateContextWithKubeconfig(contextNameClusterOne, clusterOne.KubeConfigPath, clusterOne.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			pluginsListClusterOne, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameClusterOne, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
@@ -452,7 +452,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		It("create context and validate installed plugins list, should installed all plugins for which CRs has applied in KIND cluster", func() {
 			By("create context with kubeconfig and context")
 			contextNameClusterTwo = f.ContextPrefixK8s + f.RandomString(4)
-			err = tf.ContextCmd.CreateContextWithKubeconfig(contextNameClusterTwo, clusterTwo.KubeConfigPath, clusterTwo.ClusterKubeContext)
+			_, _, err = tf.ContextCmd.CreateContextWithKubeconfig(contextNameClusterTwo, clusterTwo.KubeConfigPath, clusterTwo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			pluginsListClusterTwo, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameClusterTwo, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
@@ -519,7 +519,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextName = f.ContextPrefixK8s + f.RandomString(4)
-			err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			_, _, err = tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.TargetK8s))
 			Expect(err).To(BeNil(), "there should be a active context")
