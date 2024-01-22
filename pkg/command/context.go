@@ -191,6 +191,8 @@ var createCtxCmd = &cobra.Command{
        environment variable with the custom organization ID value. More information regarding organizations in Cloud Services
        and how to obtain the organization ID can be found at
        https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html
+       Also, more information on creating tanzu context and using interactive login in terminal based hosts (without browser) can be found at
+       https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/quickstart/quickstart.md#creating-and-connecting-to-a-new-context
 
     [*] : Users have two options to create a kubernetes cluster context. They can choose the control
     plane option by providing 'endpoint', or use the kubeconfig for the cluster by providing
