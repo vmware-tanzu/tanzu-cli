@@ -58,7 +58,7 @@ var _ = framework.CLICoreDescribe("[Tests:Sample-Plugin-E2E][Feature:plugin-spec
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			contextName = "k8s-context-" + framework.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			_, _, err := tf.ContextCmd.CreateContextWithKubeconfig(contextName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			log.Infof("context: %s added", contextName)
 			Expect(framework.IsContextExists(tf, contextName)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, contextName))
