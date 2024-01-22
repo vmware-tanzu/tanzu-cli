@@ -411,16 +411,21 @@ resulting images without authentication.
 
 #### Downloading plugin bundle
 
-You can download all plugins within the default central repository by running
-the following command:
+To download plugins you will use the `tanzu plugin download-bundle` command and
+specify the different plugin groups relevant to your environment.
 
-```sh
-tanzu plugin download-bundle --to-tar /tmp/plugin_bundle_complete.tar.gz
-```
+This command will download the plugin bundle containing the plugin versions specified
+in the plugin group definition.  The bundle will also include the plugin group
+definition itself, so that it can be used for plugin installation by users.
 
-However, if you only want to migrate plugins within a specific plugin group version
-(e.g. `vmware-tkg/default:v2.1.0`) you can run the following command to download
-the plugin bundle containing only the plugins from specified group version:
+Note that the latest version of the `vmware-tanzucli/essentials` plugin group
+and the plugin versions it contains will automatically be included in any plugin
+bundle.
+
+For example, the following command downloads the plugin bundle containing the
+plugins from `vmware-tkg/default:v2.1.0` as well as the `vmware-tkg/default:v2.1.0`
+plugin group definition itself along with the `vmware-tanzucli/essentials` plugin group
+plugins and group definition:
 
 ```sh
 tanzu plugin download-bundle --group vmware-tkg/default:v2.1.0 --to-tar /tmp/plugin_bundle_tkg_v2_1_0.tar.gz
@@ -449,6 +454,14 @@ tanzu plugin download-bundle
                   --image custom.repo.example.com/tanzu-cli/plugins/plugin-inventory:latest
                   --group vmware-tkg/default:v2.1.0
                   --to-tar /tmp/plugin_bundle_tkg_v2_1_0.tar.gz
+```
+
+It is possible to download all plugins within the default central repository by running
+the command below.  Note that this is not recommended as all versions of all plugins
+will be downloaded, which represents a very large amount of data.
+
+```sh
+tanzu plugin download-bundle --to-tar /tmp/plugin_bundle_complete.tar.gz
 ```
 
 #### Uploading plugin bundle to the private registry
