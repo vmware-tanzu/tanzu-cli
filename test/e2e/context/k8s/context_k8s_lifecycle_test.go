@@ -46,7 +46,7 @@ func k8sContextLifeCycleTests() bool {
 		It("create context with kubeconfig and context", func() {
 			By("create context with kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+			_, _, err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 			Expect(err).To(BeNil(), "context should create without any error")
 			log.Infof("context: %s added", ctxName)
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, ctxName))
@@ -57,7 +57,7 @@ func k8sContextLifeCycleTests() bool {
 		It("create context with incorrect kubeconfig and context", func() {
 			By("create context with incorrect kubeconfig and context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, framework.RandomString(4), clusterInfo.ClusterKubeContext)
+			_, _, err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, framework.RandomString(4), clusterInfo.ClusterKubeContext)
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, ctxName))
@@ -66,7 +66,7 @@ func k8sContextLifeCycleTests() bool {
 		It("create context with kubeconfig and incorrect context", func() {
 			By("create context with kubeconfig and incorrect context")
 			ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-			err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, framework.RandomString(4))
+			_, _, err := tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, framework.RandomString(4))
 			Expect(err).ToNot(BeNil())
 			Expect(strings.Contains(err.Error(), framework.FailedToCreateContext)).To(BeTrue())
 			Expect(framework.IsContextExists(tf, ctxName)).To(BeFalse(), fmt.Sprintf(framework.ContextShouldNotExists, ctxName))
@@ -222,7 +222,7 @@ func k8sContextStressTests() bool {
 			By("create multiple contexts with kubeconfig and context")
 			for i := 0; i < ContextCreateLimit; i++ {
 				ctxName := ContextNameConfigPrefix + framework.RandomString(4)
-				err = tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
+				_, _, err = tf.ContextCmd.CreateContextWithKubeconfig(ctxName, clusterInfo.KubeConfigPath, clusterInfo.ClusterKubeContext)
 				Expect(err).To(BeNil(), "context should create without any error")
 				log.Info("context: " + ctxName + " added")
 				Expect(framework.IsContextExists(tf, ctxName)).To(BeTrue(), fmt.Sprintf(framework.ContextShouldExistsAsCreated, ctxName))
