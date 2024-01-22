@@ -187,7 +187,58 @@ CLI can target. There are various ways to create Contexts, such as providing an
 endpoint to the Tanzu Mission Control service, or providing a kubeconfig to
 an existing Tanzu Cluster as shown above.
 
-See the [tanzu context create](../cli/commands/tanzu_context_create.md)
+#### Creating a Tanzu Context
+
+The context of type "tanzu" can be created using interactive login (default mechanism) or by utilizing an API Token
+
+##### Interactive Login
+
+By default, CLI uses interactive login to create a tanzu context. The CLI opens the browser for the user to log in.
+CLI will attempt to log in interactively to the user's default Cloud Services organization. You can override or choose a
+custom organization by setting the `TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID` environment variable with the custom
+organization ID value. More information regarding organizations in Cloud Services and how to obtain the organization ID
+can be
+found [here](https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html).
+
+After successful authentication, a context of type "tanzu" is created.
+
+Example command for interactive login:
+
+```console
+tanzu context create <context-name> --type tanzu --endpoint https://api.tanzu.cloud.vmware.com
+```
+
+Notes:
+
+- For terminal hosts without a browser, users can set the `TANZU_CLI_OAUTH_LOCAL_LISTENER_PORT` environment variable
+  with a chosen port number. Then, run the `tanzu context create --type tanzu --endpoint <endpoint>` command.
+  The CLI will show an OAuth URL link in the console and start a local listener on the specified port.
+  Users can use SSH port forwarding to forward the port on their machine to the terminal/server machine where the
+  local listener is running. Once the port forwarding is initiated, the user can open the OAuth URL in their local
+  machine browser to complete the login and create a Tanzu context.
+
+- Alternatively, users can run the `tanzu context create --type tanzu --endpoint <endpoint>` command in the
+  terminal host. The CLI will display the OAuth URL link in the console and provide an option for the user to paste
+  the Auth code from the browser URL([Image reference](./images/interactive_login_copy_authcode.png)) to the
+  console.
+
+##### API Token
+
+Example command for creating a tanzu context using an API token:
+
+```console
+TANZU_API_TOKEN=<APIToken> tanzu context create <context-name> --type tanzu --endpoint https://api.tanzu.cloud.vmware.com
+```
+
+Users can persist the environment variable in the CLI configuration file, which will be used for each CLI command
+invocation:
+
+```console
+tanzu config set env.TANZU_API_TOKEN <api_token>
+tanzu context create <context-name> --type tanzu --endpoint https://api.tanzu.cloud.vmware.com
+```
+
+To create other context types see the [tanzu context create](../cli/commands/tanzu_context_create.md)
 reference for more detail.
 
 Other plugins, such as the Tanzu `management-cluster` plugin, can create a
