@@ -1094,6 +1094,11 @@ func deleteCtx(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Sort the installed plugins by name
+	sort.Sort(discovery.DiscoveredSorter(installed))
+
+	// List the plugins that are being deactivated
 	listDeactivatedPlugins(installed, name)
 	deleteKubeconfigContext(ctx)
 
@@ -1261,6 +1266,11 @@ func unsetGivenContext(name string, contextType configtypes.ContextType) error {
 		return err
 	} else if unset {
 		log.Outputf(contextForContextTypeSetInactive, name, contextType)
+
+		// Sort the installed plugins by name
+		sort.Sort(discovery.DiscoveredSorter(installed))
+
+		// List the plugins that are being deactivated
 		listDeactivatedPlugins(installed, name)
 	}
 	return nil
