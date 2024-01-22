@@ -187,15 +187,15 @@ func newRootCmd() *cobra.Command {
 				}
 			}
 
-			// Install or update essential plugins
-			InstallEssentialPlugins(cmd)
-
 			// Prompt for CEIP agreement
 			if !shouldSkipPrompts(cmd) {
 				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
 					return err
 				}
 			}
+
+			// Install or update essential plugins
+			InstallEssentialPlugins(cmd)
 
 			setupActiveHelp(cmd, args)
 
