@@ -3,6 +3,10 @@
 
 package constants
 
+import (
+	"time"
+)
+
 const (
 	// TanzuCLISystemNamespace  is the namespace for tanzu cli resources
 	TanzuCLISystemNamespace = "tanzu-cli-system"
@@ -22,4 +26,7 @@ const (
 
 	// DefaultCLIEssentialsPluginGroupName  name of the essentials plugin group which is used to install essential plugins
 	DefaultCLIEssentialsPluginGroupName = "vmware-tanzucli/essentials"
+
+	// DefaultPluginDBCacheRefreshThreshold is the default value for db cache refresh
+	DefaultPluginDBCacheRefreshThreshold = 24 * time.Hour
 )

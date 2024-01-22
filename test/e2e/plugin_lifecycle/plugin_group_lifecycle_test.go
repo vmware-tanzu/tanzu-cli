@@ -49,7 +49,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 
 			// search plugin groups and make sure there plugin groups available
 			pluginGroups, err = SearchAllPluginGroups(tf)
@@ -69,7 +69,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 		})
 		// Test case: install a plugin from each plugin group and validate the installation
 		It("install a plugin from each plugin group and validate the plugin installation by 'plugin describe'", func() {
@@ -111,7 +111,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 		})
 		// Test case: a. with command 'tanzu plugin install all --group group_name': when no plugins in a group has installed already: install a plugin from each plugin group and validate the installation with plugin describe
 		It("install all plugins in each group", func() {
@@ -139,7 +139,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 		})
 		// Test case: b. with command 'tanzu plugin install --group group_name': when no plugins in a group has installed already: install a plugin from each plugin group and validate the installation with plugin describe
 		It("install all plugins in each group", func() {
@@ -166,7 +166,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 			Expect(err).To(BeNil(), "should not get any error for plugin clean")
 			pluginsList, err := framework.GetPluginsList(tf, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(pluginsList)).Should(BeNumerically("==", 0), "plugins list should not return any plugins after plugin clean")
+			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 		})
 		// Test case: a. install a plugin with incorrect plugin group name
 		It("install a plugin with incorrect plugin group name", func() {

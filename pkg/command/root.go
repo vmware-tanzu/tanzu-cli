@@ -20,6 +20,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/telemetry"
@@ -186,15 +187,15 @@ func newRootCmd() *cobra.Command {
 				}
 			}
 
-			// Install or update essential plugins
-			InstallEssentialPlugins(cmd)
-
 			// Prompt for CEIP agreement
 			if !shouldSkipPrompts(cmd) {
 				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
 					return err
 				}
 			}
+
+			// Install or update essential plugins
+			InstallEssentialPlugins(cmd)
 
 			setupActiveHelp(cmd, args)
 
@@ -237,6 +238,9 @@ func InstallEssentialPlugins(cmd *cobra.Command) {
 		}
 	}
 	if !skipEssentials {
+		// Refresh the database
+		_ = discovery.RefreshDatabase()
+
 		// Check if essential plugins are installed and up to date if not Install or Upgrade the Essential plugins
 		_, _ = pluginmanager.InstallPluginsFromEssentialPluginGroup()
 	}
