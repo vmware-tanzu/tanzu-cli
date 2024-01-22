@@ -145,7 +145,7 @@ metadata:
 	assert.Equal(t, 0, len(pdsTanzu))
 
 	// Enable feature-flag and verify that one discovery source is returned
-	err = configlib.ConfigureFeatureFlags(map[string]bool{constants.FeatureContextScopedPluginDiscoveryForTanzuContext: true})
+	err = configlib.ConfigureFeatureFlags(map[string]bool{constants.FeaturePluginDiscoveryForTanzuContext: true})
 	assert.Nil(t, err)
 	context, err = configlib.GetContext("tanzu-context-1")
 	assert.Nil(t, err)

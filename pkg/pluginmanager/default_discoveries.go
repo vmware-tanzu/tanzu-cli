@@ -40,7 +40,7 @@ func defaultDiscoverySourceBasedOnContext(context *configtypes.Context) []config
 		defaultDiscoveries = append(defaultDiscoveries, defaultDiscoverySourceForK8sTargetedContext(context.Name, context.ClusterOpts.Path, context.ClusterOpts.Context))
 	} else if context.ContextType == configtypes.ContextTypeTMC && context.GlobalOpts != nil {
 		defaultDiscoveries = append(defaultDiscoveries, defaultDiscoverySourceForTMCTargetedContext(context))
-	} else if context.ContextType == configtypes.ContextTypeTanzu && config.IsFeatureActivated(constants.FeatureContextScopedPluginDiscoveryForTanzuContext) {
+	} else if context.ContextType == configtypes.ContextTypeTanzu && config.IsFeatureActivated(constants.FeaturePluginDiscoveryForTanzuContext) {
 		discovery, err := defaultDiscoverySourceForTanzuTargetedContext(context.Name)
 		if err != nil {
 			log.V(6).Infof("error while getting default discovery for context %q, error: %s", context.Name, err.Error())
