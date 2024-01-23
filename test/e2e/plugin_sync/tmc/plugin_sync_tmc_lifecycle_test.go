@@ -6,7 +6,6 @@ package pluginsynce2etmc
 
 import (
 	"fmt"
-	"sort"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -605,15 +604,38 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 		})
 
-		// Test case: h. validate plugin list consistancy, it should sort by context name always
+		// Test case: h. validate plugin list consistency, it should sort by context name always
 		It("Test case: h: list plugins and validate plugins being installed after context being created", func() {
+			// IsSortedByName checks if the array of objects is sorted by name
+			IsSortedByName := func(arr []*f.PluginInfo) bool {
+				n := len(arr)
+
+				// Iterate through the array to check if it is sorted
+				for i := 1; i < n; i++ {
+
+					// Compare the names of adjacent objects
+					if arr[i-1].Name > arr[i].Name {
+						return false
+					}
+				}
+
+				// If the loop completes without returning false, the array is sorted
+				return true
+			}
 			// check multiple times, the order should be consistent
 			for j := 0; j < 5; j++ {
 				installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
 				Expect(err).To(BeNil(), noErrorForPluginList)
 				Expect(totalInstalledPlugins).Should(Equal(len(installedPlugins)), "total installed plugins count should be equal to plugins installed for both contexts")
-				sort.Strings(contexts)
-				Expect(f.ValidateInstalledPluginsOrder(contexts, installedPlugins)).To(BeTrue())
+
+				// Filter plugins without context
+				var installedPluginsWithContext []*f.PluginInfo
+				for _, plugin := range installedPlugins {
+					if plugin.Context != "" {
+						installedPluginsWithContext = append(installedPluginsWithContext, plugin)
+					}
+				}
+				Expect(IsSortedByName(installedPluginsWithContext)).To(BeTrue())
 			}
 		})
 
