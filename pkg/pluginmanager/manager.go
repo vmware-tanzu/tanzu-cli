@@ -746,23 +746,25 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 	// Log message based on different installation conditions
 	installingMsg, installedMsg, errMsg := getPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
 
-	var spinnerErr, pluginErr error
+	var spinnerErr error
 	var sow component.OutputWriterSpinner
-	var signalChannel chan os.Signal
 
 	// Initialize the spinner if the spinner is allowed
 	if component.IsTTYEnabled() {
-		// Set spinner options
 		spinnerOptions := component.OutputWriterSpinnerOptions{
 			SpinnerOptions: []component.OutputWriterSpinnerOption{
 				component.WithSpinnerFinalText(installedMsg, log.LogTypeINFO),
 			},
 		}
-		// Create a channel to receive OS signals
-		signalChannel = make(chan os.Signal, 1)
 
+		// Create a channel to receive OS signals
+		signalChannel := make(chan os.Signal, 1)
 		// Register the channel to receive interrupt signals (e.g., Ctrl+C)
 		signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
+		defer func() {
+			signal.Stop(signalChannel)
+			close(signalChannel)
+		}()
 
 		// Initialize the spinner
 		sow, spinnerErr = component.NewOutputWriterSpinnerWithSpinnerOptions(os.Stderr, component.TableOutputType, installingMsg, true, spinnerOptions)
@@ -772,44 +774,49 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		}
 		if sow != nil {
 			defer sow.StopSpinner()
-
-			// Start a goroutine that listens for interrupt signals
-			go func() {
-				// Wait for an interrupt signal
-				<-signalChannel
-
-				// Handle the interrupt signal by setting the final text and stopping the spinner
-				sow.SetFinalText(errMsg, log.LogTypeERROR)
-				sow.StopSpinner()
-
-				// Exit the program with exit code 130 (interrupted)
-				os.Exit(128 + int(syscall.SIGINT))
-			}()
 		}
+		// Start a goroutine that listens for interrupt signals
+		go func(s component.OutputWriterSpinner) {
+			sig := <-signalChannel
+			if sig != nil {
+				if s != nil {
+					s.SetFinalText(errMsg, log.LogTypeERROR)
+					s.StopSpinner()
+				}
+				os.Exit(128 + int(sig.(syscall.Signal)))
+			}
+		}(sow)
 	} else {
 		log.Info(installingMsg)
 	}
 
-	var binary []byte
-	if plugin == nil {
-		binary, pluginErr = fetchAndVerifyPlugin(p, version)
-		if pluginErr == nil {
-			plugin, pluginErr = installAndDescribePlugin(p, version, binary)
-		}
-	}
-	if pluginErr == nil && installTestPlugin {
-		pluginErr = doInstallTestPlugin(p, plugin.InstallationPath, version)
-	}
-
-	if pluginErr == nil {
-		pluginErr = updatePluginInfoAndInitializePlugin(p, plugin)
-	}
+	pluginErr := verifyInstallAndInitializePlugin(plugin, p, version, installTestPlugin)
 	if pluginErr != nil {
 		if sow != nil {
 			sow.SetFinalText(errMsg, log.LogTypeERROR)
 		}
 	}
 	return pluginErr
+}
+
+func verifyInstallAndInitializePlugin(plugin *cli.PluginInfo, p *discovery.Discovered, version string, installTestPlugin bool) error {
+	if plugin == nil {
+		binary, err := fetchAndVerifyPlugin(p, version)
+		if err != nil {
+			return err
+		}
+
+		plugin, err = installAndDescribePlugin(p, version, binary)
+		if err != nil {
+			return err
+		}
+	}
+	if installTestPlugin {
+		if err := doInstallTestPlugin(p, plugin.InstallationPath, version); err != nil {
+			return err
+		}
+	}
+	return updatePluginInfoAndInitializePlugin(p, plugin)
 }
 
 func getPluginFromCache(p *discovery.Discovered, version string) *cli.PluginInfo {
