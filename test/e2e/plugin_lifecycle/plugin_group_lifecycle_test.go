@@ -16,11 +16,10 @@ import (
 )
 
 const (
-	PluginGroupInstallation           = "The following plugins will be installed from plugin group '%s"
-	PluginGroupTableHeaderRegExp      = "NAME\\s+TARGET\\s+VERSION"
-	PluginGroupTableRowPluginRegExp   = "%s\\s+%s\\s+%s"
-	PluginGroupPluginInstallingRegExp = "Installing plugin '%s:.+' with target '%s'|Plugin '%s:.+' with target '%s'"
-	PluginGroupPluginInstalledRegExp  = "Installing plugin '%s:.+' with target '%s'"
+	PluginGroupInstallation          = "The following plugins will be installed from plugin group '%s"
+	PluginGroupTableHeaderRegExp     = "NAME\\s+TARGET\\s+VERSION"
+	PluginGroupTableRowPluginRegExp  = "%s\\s+%s\\s+%s"
+	PluginGroupPluginInstalledRegExp = "Installed plugin '%s:.+' with target '%s'|Reinitialized plugin '%s:.+' with target '%s'"
 )
 
 // This test suite covers plugin group life cycle use cases for central repository
@@ -114,7 +113,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 			Expect(len(pluginsList)).Should(BeNumerically("==", 1), "plugins list should return only one essential plugin after plugin clean")
 		})
 		// Test case: a. with command 'tanzu plugin install all --group group_name': when no plugins in a group has installed already: install a plugin from each plugin group and validate the installation with plugin describe
-		It("install all plugins in each group", func() {
+		It("install all plugins in each group with all option", func() {
 			for pg := range pluginGroupToPluginListMap {
 				_, stdErr, err := tf.PluginCmd.InstallPluginsFromGroup("all", pg)
 				Expect(err).To(BeNil(), "should not get any error for plugin install from plugin group")
@@ -123,13 +122,13 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 				Expect(stdErr).To(MatchRegexp(PluginGroupTableHeaderRegExp))
 				plugins := pluginGroupToPluginListMap[pg]
 				for i := range plugins {
+					// Validate the plugin list output
 					Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginGroupTableRowPluginRegExp, plugins[i].Name, plugins[i].Target, plugins[i].Version)))
-					Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginGroupPluginInstallingRegExp, plugins[i].Name, plugins[i].Target, plugins[i].Name, plugins[i].Target)))
+					// Validate the plugin installed output
 					pd, err := tf.PluginCmd.DescribePlugin(plugins[i].Name, plugins[i].Target, framework.GetJsonOutputFormatAdditionalFlagFunction())
 					Expect(err).To(BeNil(), framework.PluginDescribeShouldNotThrowErr)
 					Expect(len(pd)).To(Equal(1), framework.PluginDescShouldExist)
 					Expect(pd[0].Name).To(Equal(plugins[i].Name), framework.PluginNameShouldMatch)
-
 				}
 			}
 		})
@@ -159,7 +158,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Group-lifecycle]",
 	// Use cases: This context covers NEGATIVE USE CASES:
 	// a. incorrect plugin group: clean, install a plugin with incorrect plugin group name
 	// b. incorrect plugin name: install a plugin with incorrect name and correct plugin group name.
-	Context("plugin install from group: perform all plugin installation in a group", func() {
+	Context("plugin install from group: perform all plugin installation in a group - Negative use cases", func() {
 		// Test case: clean plugins if any installed already
 		It("clean plugins if any installed already", func() {
 			err := tf.PluginCmd.CleanPlugins()

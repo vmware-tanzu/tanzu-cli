@@ -45,7 +45,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Compatibility]", f
 		It("Install all test plugins", func() {
 			for _, plugin := range plugins {
 				log.Infof("Installing test plugin:%s", plugin)
-				err := tf.PluginCmd.InstallPlugin(plugin.Name, "", "")
+				_, _, err := tf.PluginCmd.InstallPlugin(plugin.Name, "", "")
 				Expect(err).To(BeNil(), fmt.Sprintf("should not occur any error while installing the test plugin: %s", plugin))
 			}
 		})

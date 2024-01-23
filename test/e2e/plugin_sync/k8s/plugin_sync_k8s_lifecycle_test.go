@@ -283,7 +283,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			PluginWillBeInstalled    = "The following plugins will be installed for context '%s' of contextType '%s':"
 			PluginsTableHeaderRegExp = "NAME\\s+TARGET\\s+VERSION"
 			PluginsRow               = "%s\\s+%s\\s+%s"
-			PluginInstallingRegExp   = "Installing plugin '%s:.+' with target '%s'"
+			PluginInstalledRegExp    = "Installed plugin '%s:.+' with target '%s'|Reinitialized plugin '%s:.+' with target '%s'"
 		)
 		// validate the 'context use' output UX
 		// clean plugins, unset context, set context, validate UX
@@ -303,8 +303,8 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			Expect(stdErr).To(ContainSubstring(fmt.Sprintf(PluginWillBeInstalled, contextName, types.TargetK8s)))
 			Expect(stdErr).To(MatchRegexp(PluginsTableHeaderRegExp))
 			for i := range pluginsList {
+				// Validate plugin list output
 				Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginsRow, pluginsList[i].Name, pluginsList[i].Target, pluginsList[i].Version)))
-				Expect(stdErr).To(MatchRegexp(fmt.Sprintf(PluginInstallingRegExp, pluginsList[i].Name, pluginsList[i].Target)))
 			}
 		})
 

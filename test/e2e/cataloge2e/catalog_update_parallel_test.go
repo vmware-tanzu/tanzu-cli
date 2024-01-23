@@ -74,7 +74,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Catalog-Update]", func() 
 				wg.Add(1)
 				go func(pluginGroup *framework.PluginGroupGet) {
 					defer wg.Done()
-					_ = tf.PluginCmd.InstallPlugin(pluginGroup.PluginName, pluginGroup.PluginTarget, pluginGroup.PluginVersion)
+					_, _, _ = tf.PluginCmd.InstallPlugin(pluginGroup.PluginName, pluginGroup.PluginTarget, pluginGroup.PluginVersion)
 				}(pluginGroupGet[i])
 			}
 			wg.Wait()
