@@ -306,7 +306,7 @@ func (po *pluginCmdOps) RunPluginCmd(options string, opts ...E2EOption) (string,
 	}
 	stdOut, stdErr, err := po.cmdExe.TanzuCmdExec(cmd, opts...)
 	if err != nil {
-		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, CleanPluginsCmd, err.Error(), stdErr.String(), stdOut.String())
+		log.Errorf(ErrorLogForCommandWithErrStdErrAndStdOut, cmd, err.Error(), stdErr.String(), stdOut.String())
 		return stdOut.String(), stdErr.String(), nil
 	}
 	return stdOut.String(), stdErr.String(), nil

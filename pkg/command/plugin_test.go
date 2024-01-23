@@ -332,6 +332,119 @@ func TestDeletePlugin(t *testing.T) {
 	}
 }
 
+func TestCleanPlugins(t *testing.T) {
+	tests := []struct {
+		test             string
+		args             []string
+		expectedErrorMsg string
+		dirsRemoved      bool
+	}{
+		{
+			test:        "clean",
+			args:        []string{"plugin", "clean", "-y"},
+			dirsRemoved: true,
+		},
+		{
+			test:             "clean with args",
+			args:             []string{"plugin", "clean", "-y", "foo"},
+			expectedErrorMsg: `unknown command "foo" for "tanzu plugin clean"`,
+			dirsRemoved:      false,
+		},
+	}
+
+	for _, spec := range tests {
+		cacheDir, err := os.MkdirTemp("", "tanzu-cli-cache-dir")
+		assert.Nil(t, err)
+		defer os.RemoveAll(cacheDir)
+		common.DefaultCacheDir = cacheDir
+
+		binaryDir, err := os.MkdirTemp("", "tanzu-cli-binary-dir")
+		assert.Nil(t, err)
+		defer os.RemoveAll(binaryDir)
+		common.DefaultPluginRoot = binaryDir
+
+		// Create a catalog file to see that it gets removed
+		catalogFile, _ := os.Create(filepath.Join(cacheDir, "catalog.yaml"))
+
+		// Create a plugin inventory directory to see that it gets removed
+		pluginInventoryDirPath := filepath.Join(cacheDir, common.PluginInventoryDirName)
+		err = os.Mkdir(pluginInventoryDirPath, 0755)
+		assert.Nil(t, err)
+
+		// Create a command tree directory for telemetry to see that it gets removed
+		commandTreeDirPath := filepath.Join(cacheDir, "plugins_command_tree")
+		err = os.Mkdir(commandTreeDirPath, 0755)
+		assert.Nil(t, err)
+
+		// Setup a temporary configuration.  This means no
+		// plugin source will be available which will prevent
+		// trying to install the essential plugins.
+		// This speeds up the test.
+		configFile, _ := os.CreateTemp("", "config")
+		os.Setenv("TANZU_CONFIG", configFile.Name())
+		defer os.RemoveAll(configFile.Name())
+
+		configFileNG, _ := os.CreateTemp("", "config_ng")
+		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+		defer os.RemoveAll(configFileNG.Name())
+
+		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+		os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
+
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+			rootCmd.SetArgs(spec.args)
+
+			// Execute the test command
+			err = rootCmd.Execute()
+			if spec.expectedErrorMsg != "" {
+				assert.Contains(err.Error(), spec.expectedErrorMsg)
+			}
+
+			if spec.dirsRemoved {
+				// Verify the catalog file has been removed
+				_, err := os.Stat(catalogFile.Name())
+				assert.True(os.IsNotExist(err))
+
+				// Verify the plugin inventory dir has been removed
+				_, err = os.Stat(pluginInventoryDirPath)
+				assert.True(os.IsNotExist(err))
+
+				// Verify the entire directory of plugin binaries has been removed
+				_, err = os.Stat(common.DefaultPluginRoot)
+				assert.True(os.IsNotExist(err))
+
+				// Verify the command tree directory has been removed
+				_, err = os.Stat(commandTreeDirPath)
+				assert.True(os.IsNotExist(err))
+			} else {
+				// Verify the catalog file still exists
+				_, err := os.Stat(catalogFile.Name())
+				assert.Nil(err)
+
+				// Verify the plugin inventory dir still exists
+				_, err = os.Stat(pluginInventoryDirPath)
+				assert.Nil(err)
+
+				// Verify the directory of plugin binaries still exists
+				_, err = os.Stat(common.DefaultPluginRoot)
+				assert.Nil(err)
+
+				// Verify the command tree directory still exists
+				_, err = os.Stat(commandTreeDirPath)
+				assert.Nil(err)
+			}
+		})
+		os.Unsetenv("TANZU_CONFIG")
+		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
+		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
+	}
+}
+
 func TestInstallPlugin(t *testing.T) {
 	tests := []struct {
 		test             string

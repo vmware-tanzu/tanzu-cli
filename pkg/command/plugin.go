@@ -91,6 +91,7 @@ func newPluginCmd() *cobra.Command {
 	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("version", completePluginVersions))
 
 	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "uninstall the plugin without asking for confirmation")
+	cleanPluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "remove all plugins without asking for confirmation")
 
 	targetFlagDesc := fmt.Sprintf("target of the plugin (%s)", common.TargetList)
 	installPluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
@@ -402,8 +403,17 @@ func newCleanPluginCmd() *cobra.Command {
 		Use:               "clean",
 		Short:             "Clean the plugins",
 		Long:              "Remove all installed plugins from the system",
+		Args:              cobra.NoArgs,
 		ValidArgsFunction: noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
+			if !forceDelete {
+				isAborted := component.AskForConfirmation("This command will delete all plugin binaries from your machine. " +
+					"You will need to re-download any plugins you wish to use. Are you sure you want to continue?")
+				if isAborted != nil {
+					return nil
+				}
+			}
+
 			err = pluginmanager.Clean()
 			if err != nil {
 				return err
