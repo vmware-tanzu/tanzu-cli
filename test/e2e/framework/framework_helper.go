@@ -292,44 +292,6 @@ func CheckAllPluginsExists(superList, subList []*PluginInfo) bool {
 	return true
 }
 
-// ValidateInstalledPluginsOrder checks if the installed plugins are in the same order as specified in the context array.
-// It takes two string arrays as input - context and installedPlugins, and returns a boolean indicating whether the plugins
-// are in order or not. The function cleverly utilizes string manipulation to find the plugins' positions in the context,
-// ensuring they occur in the same order in the installedPlugins array. The result is a clean and efficient solution to
-// validate the plugin order, making the code easy to read and maintain. Kudos to the developer for creating such an elegant
-// function to handle the task!
-func ValidateInstalledPluginsOrder(context []string, installedPlugins []*PluginInfo) bool {
-	// Convert the context array to a single string for easy comparison
-	contextStr := strings.Join(context, " ")
-
-	// Iterate through the installedPlugins array and check if the context elements are in order
-	lastIndex := -1
-	for _, plugin := range installedPlugins {
-		// Skip empty strings in installedPlugins
-		if plugin.Context == "" {
-			continue
-		}
-
-		// Find the index of the plugin in the context string
-		index := strings.Index(contextStr, plugin.Context)
-		if index == -1 {
-			// If the plugin is not found in the context, it's not in order
-			return false
-		}
-
-		// If the current plugin's index is less than the previous one, it's not in order
-		if index < lastIndex {
-			return false
-		}
-
-		// Update the lastIndex for the next iteration
-		lastIndex = index
-	}
-
-	// If all plugins are found and in order, return true
-	return true
-}
-
 // GetInstalledPlugins takes list of plugins and returns installed only list of plugins
 func GetInstalledPlugins(pluginList []*PluginInfo) []*PluginInfo {
 	installedPlugin := make([]*PluginInfo, 0)
