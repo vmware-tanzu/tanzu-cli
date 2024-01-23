@@ -100,9 +100,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		// Test case: (Negative) try to install plugins that are not migrated to the airgapped repository
 		It("installing plugins that are not migrated to the airgapped repository should throw an error", func() {
 			// All plugins should get installed from the group
-			err := tf.PluginCmd.InstallPlugin("isolated-cluster", "", "")
+			_, _, err = tf.PluginCmd.InstallPlugin("isolated-cluster", "", "")
 			Expect(err).NotTo(BeNil())
-			err = tf.PluginCmd.InstallPlugin("pinniped-auth", "", "")
+			_, _, err = tf.PluginCmd.InstallPlugin("pinniped-auth", "", "")
 			Expect(err).NotTo(BeNil())
 		})
 	})
@@ -302,9 +302,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		// Test case: validate that all plugins that are not part of any plugin-groups can be installed as well
 		It("validate that all plugins not part of any plugin-groups can be installed as well", func() {
 			// All plugins should get installed from the group
-			err := tf.PluginCmd.InstallPlugin("isolated-cluster", "", "")
+			_, _, err := tf.PluginCmd.InstallPlugin("isolated-cluster", "", "")
 			Expect(err).To(BeNil())
-			err = tf.PluginCmd.InstallPlugin("pinniped-auth", "", "")
+			_, _, err = tf.PluginCmd.InstallPlugin("pinniped-auth", "", "")
 			Expect(err).To(BeNil())
 
 			// Verify above plugins got installed with `tanzu plugin list`
@@ -316,7 +316,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 		// Test case: validate thaa plugin using a sha can be installed
 		It("validate that a plugin using a sha can be installed", func() {
-			err := tf.PluginCmd.InstallPlugin("plugin-with-sha", "", "")
+			_, _, err := tf.PluginCmd.InstallPlugin("plugin-with-sha", "", "")
 			Expect(err).To(BeNil())
 
 			// Verify above plugin got installed with `tanzu plugin list`
