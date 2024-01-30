@@ -38,10 +38,29 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Setup gcloud account
+        env:
+          GCP_SA: ${{ secrets.GCP_SA }}
+          GCP_PROJECT_NAME: ${{ secrets.GCP_PROJECT_NAME }}
+        run: |
+          if [ -n "$GCP_SA" ]; then
+            # Download and install Google Cloud SDK
+            wget https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz
+            tar zxvf google-cloud-sdk.tar.gz && ./google-cloud-sdk/install.sh --usage-reporting=false --path-update=true
+            PATH="google-cloud-sdk/bin:${PATH}"
+            gcloud --quiet components update
+
+            echo $GCP_SA > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file ${HOME}/gcloud-service-key.json
+            cat ${HOME}/gcloud-service-key.json | docker login -u _json_key --password-stdin https://gcr.io
+            gcloud config set project $GCP_PROJECT_NAME
+          fi
+
       - name: Setup dependencies
         run: |
           make tools
           echo "${PWD}/hack/tools/bin" >> $GITHUB_PATH
+          echo "${PWD}/google-cloud-sdk/bin" >> $GITHUB_PATH
           echo "${PWD}/bin" >> $GITHUB_PATH
 
       - name: Build CLI Core
@@ -56,6 +75,7 @@ jobs:
         env:
           TANZU_API_TOKEN: ${{ secrets.TANZU_API_TOKEN }}
           TANZU_CLI_TMC_UNSTABLE_URL: ${{ secrets.TANZU_CLI_TMC_UNSTABLE_URL }}
+          CRD_PACKAGE_IMAGE : ${{ secrets.CRD_PACKAGE_IMAGE_FOR_TEST }}
         run: |
           make e2e-cli-core
 
