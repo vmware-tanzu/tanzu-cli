@@ -422,7 +422,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			}
 
 			// Set the TTL to something small: 12 seconds
-			os.Setenv(constants.ConfigVariablePluginDBCacheTTL, "12")
+			os.Setenv(constants.ConfigVariablePluginDBCacheTTLSeconds, "12")
 
 			// Now wait for the TTL to expire so we can start fresh
 			removeDigestFile()
@@ -459,7 +459,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "metadata digest file should have been created")
 
 			// Unset the TTL override
-			os.Unsetenv(constants.ConfigVariablePluginDBCacheTTL)
+			os.Unsetenv(constants.ConfigVariablePluginDBCacheTTLSeconds)
 		})
 		// Run "plugin clean" which also removes the plugin DB and make sure a "plugin search" immediately does a digest check
 		It("clean DB and do a plugin search", func() {
@@ -529,7 +529,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			}
 
 			// Set the TTL to something small: 12 seconds
-			os.Setenv(constants.ConfigVariablePluginDBCacheTTL, "12")
+			os.Setenv(constants.ConfigVariablePluginDBCacheTTLSeconds, "12")
 
 			// Now wait for the TTL to expire so we can start fresh
 			removeDigestFile()
@@ -566,7 +566,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil(), "metadata digest file should have been created")
 
 			// Unset the TTL override
-			os.Unsetenv(constants.ConfigVariablePluginDBCacheTTL)
+			os.Unsetenv(constants.ConfigVariablePluginDBCacheTTLSeconds)
 		})
 		// Change the TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY value and make sure
 		// the digest check is done immediately
@@ -644,9 +644,9 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(err).To(BeNil())
 
 			// Set the TTL to something small: 5 seconds
-			_ = os.Setenv(constants.ConfigVariablePluginDBCacheTTL, "5")
+			_ = os.Setenv(constants.ConfigVariablePluginDBCacheTTLSeconds, "5")
 			// Set the db cache refresh time to 10 seconds
-			_ = os.Setenv(constants.ConfigVariablePluginDBCacheRefreshThreshold, "10s")
+			_ = os.Setenv(constants.ConfigVariablePluginDBCacheRefreshThresholdSeconds, "10")
 
 			// tanzu plugin list should
 			// 1. Read plugin inventory
@@ -681,8 +681,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Plugin-lifecycle]", func(
 			Expect(errStream).To(ContainSubstring(refreshPluginInventoryCachePrintout))
 
 			// Unset the TTL override
-			_ = os.Unsetenv(constants.ConfigVariablePluginDBCacheTTL)
-			_ = os.Unsetenv(constants.ConfigVariablePluginDBCacheRefreshThreshold)
+			_ = os.Unsetenv(constants.ConfigVariablePluginDBCacheTTLSeconds)
+			_ = os.Unsetenv(constants.ConfigVariablePluginDBCacheRefreshThresholdSeconds)
 		})
 
 	})
