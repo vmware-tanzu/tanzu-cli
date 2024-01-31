@@ -6,6 +6,7 @@ package discovery
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -85,16 +86,16 @@ func getDiscoverySourceNameAndURL(source configtypes.PluginDiscovery) (string, s
 // RefreshDatabase function refreshes the plugin inventory database if the digest timestamp is past 24 hours
 func RefreshDatabase() error {
 	// Initialize digestExpirationThreshold with the default value
-	digestExpirationThreshold := constants.DefaultPluginDBCacheRefreshThreshold
+	dbCacheRefreshThreshold := constants.DefaultPluginDBCacheRefreshThresholdSeconds
 
 	// Check if the user has set a custom value for digest expiration threshold
-	if envValue, ok := os.LookupEnv(constants.ConfigVariablePluginDBCacheRefreshThreshold); ok {
-		if customThreshold, err := time.ParseDuration(envValue); err == nil {
+	if dbCacheRefreshThresholdOverride, ok := os.LookupEnv(constants.ConfigVariablePluginDBCacheRefreshThresholdSeconds); ok {
+		dbCacheRefreshThresholdOverrideValue, err := strconv.Atoi(dbCacheRefreshThresholdOverride)
+		if err == nil && dbCacheRefreshThresholdOverrideValue >= 0 {
 			// Use the custom value if it's a valid duration
-			digestExpirationThreshold = customThreshold
+			dbCacheRefreshThreshold = dbCacheRefreshThresholdOverrideValue
 		}
 	}
-
 	// Fetch all Discovery sources
 	sources, err := config.GetCLIDiscoverySources()
 	if err != nil {
@@ -119,7 +120,7 @@ func RefreshDatabase() error {
 			// if the TTL is expired.
 			if stat, err := os.Stat(matches[0]); err == nil {
 				// Check if the digest timestamp is passed 24 hours if so refresh the database cache
-				if time.Since(stat.ModTime()) > digestExpirationThreshold {
+				if time.Since(stat.ModTime()) > time.Duration(dbCacheRefreshThreshold)*time.Second {
 					if discObject, err := CreateDiscoveryFromV1alpha1(source); err == nil {
 						_, _ = discObject.List()
 					}
