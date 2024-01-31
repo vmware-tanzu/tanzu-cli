@@ -22,6 +22,8 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
+const FalseStr = "false"
+
 var (
 	host, caCertPathForAdd, skipCertVerifyForAdd, insecureForAdd    string
 	caCertPathForUpdate, skipCertVerifyForUpdate, insecureForUpdate string
@@ -66,10 +68,10 @@ func newCertCmd() *cobra.Command {
 	// The completion for this flag is simple file completion, which is configured by default
 	addCertCmd.Flags().StringVarP(&caCertPathForAdd, "ca-cert", "", "", "path to the public certificate")
 
-	addCertCmd.Flags().StringVarP(&skipCertVerifyForAdd, "skip-cert-verify", "", "false", "skip server's TLS certificate verification")
+	addCertCmd.Flags().StringVarP(&skipCertVerifyForAdd, "skip-cert-verify", "", FalseStr, "skip server's TLS certificate verification")
 	utils.PanicOnErr(addCertCmd.RegisterFlagCompletionFunc("skip-cert-verify", compSkipFlag))
 
-	addCertCmd.Flags().StringVarP(&insecureForAdd, "insecure", "", "false", "allow the use of http when interacting with the host")
+	addCertCmd.Flags().StringVarP(&insecureForAdd, "insecure", "", FalseStr, "allow the use of http when interacting with the host")
 	utils.PanicOnErr(addCertCmd.RegisterFlagCompletionFunc("insecure", compInsecureFlag))
 
 	utils.PanicOnErr(cobra.MarkFlagRequired(addCertCmd.Flags(), "host"))
@@ -149,19 +151,24 @@ func newAddCertCmd() *cobra.Command {
 		ValidArgsFunction: completeAddCert,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if skipCertVerifyForAdd != "" {
-				if !strings.EqualFold(skipCertVerifyForAdd, "true") && !strings.EqualFold(skipCertVerifyForAdd, "false") {
+				if !strings.EqualFold(skipCertVerifyForAdd, "true") && !strings.EqualFold(skipCertVerifyForAdd, FalseStr) {
 					return errors.Errorf("incorrect boolean argument for '--skip-cert-verify' option : %q", skipCertVerifyForAdd)
 				}
 			}
 			if insecureForAdd != "" {
-				if !strings.EqualFold(insecureForAdd, "true") && !strings.EqualFold(insecureForAdd, "false") {
+				if !strings.EqualFold(insecureForAdd, "true") && !strings.EqualFold(insecureForAdd, FalseStr) {
 					return errors.Errorf("incorrect boolean argument for '--insecure' option : %q", insecureForAdd)
 				}
 			}
-			if strings.EqualFold(skipCertVerifyForAdd, "false") && strings.EqualFold(insecureForAdd, "false") &&
+			if strings.EqualFold(skipCertVerifyForAdd, FalseStr) && strings.EqualFold(insecureForAdd, FalseStr) &&
 				caCertPathForAdd == "" {
-				return errors.New("please specify at least one additional valid option apart from '--host' ")
+				return errors.New("please specify at least one additional valid option apart from '--host'")
 			}
+
+			if !strings.EqualFold(skipCertVerifyForAdd, FalseStr) && caCertPathForAdd != "" {
+				return errors.New("please specify only one valid option either '--skip-cert-verify' or '--ca-cert'")
+			}
+
 			certExistError := fmt.Errorf("certificate configuration for host %q already exist", host)
 			exits, _ := configlib.CertExists(host)
 			if exits {
@@ -203,35 +210,39 @@ func newUpdateCertCmd() *cobra.Command {
     tanzu config cert update test.vmware.com  --insecure true`,
 		ValidArgsFunction: completeCertHosts,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if skipCertVerifyForUpdate != "" {
-				if !strings.EqualFold(skipCertVerifyForUpdate, "true") && !strings.EqualFold(skipCertVerifyForUpdate, "false") {
-					return errors.Errorf("incorrect boolean argument for '--skip-cert-verify' option : %q", skipCertVerifyForUpdate)
-				}
+			if err := validateUpdateOptions(); err != nil {
+				return err
 			}
-			if insecureForUpdate != "" {
-				if !strings.EqualFold(insecureForUpdate, "true") && !strings.EqualFold(insecureForUpdate, "false") {
-					return errors.Errorf("incorrect boolean argument for '--insecure' option : %q", insecureForUpdate)
-				}
+
+			uHost := args[0]
+			existingCert, _ := configlib.GetCert(uHost)
+
+			if existingCert == nil {
+				return fmt.Errorf("certificate configuration for host %q does not exist", uHost)
 			}
-			if skipCertVerifyForUpdate == "" && insecureForUpdate == "" && caCertPathForUpdate == "" {
-				return errors.New("please specify at least one update option ")
+
+			updCert := &configtypes.Cert{
+				Host:           uHost,
+				CACertData:     existingCert.CACertData,
+				SkipCertVerify: existingCert.SkipCertVerify,
+				Insecure:       existingCert.Insecure,
 			}
-			aHost := args[0]
-			certNoExistError := fmt.Errorf("certificate configuration for host %q does not exist", aHost)
-			exits, _ := configlib.CertExists(aHost)
-			if !exits {
-				return certNoExistError
-			}
-			cert, err := createCert(aHost, caCertPathForUpdate, skipCertVerifyForUpdate, insecureForUpdate)
+
+			updCert, err := updateCert(updCert, caCertPathForUpdate, skipCertVerifyForUpdate, insecureForUpdate)
 			if err != nil {
 				return err
 			}
 
-			err = configlib.SetCert(cert)
+			if err := configlib.DeleteCert(uHost); err != nil {
+				return err
+			}
+
+			err = configlib.SetCert(updCert)
 			if err != nil {
 				return err
 			}
-			log.Successf("updated certificate data for host %s", aHost)
+
+			log.Successf("updated certificate data for host %s", uHost)
 			return nil
 		},
 	}
@@ -285,6 +296,71 @@ func createCert(host, caCertPath, skipCertVerify, insecure string) (*configtypes
 	}
 
 	return cert, nil
+}
+
+func updateCert(updateCert *configtypes.Cert, caCertPath, skipCertVerify, insecure string) (*configtypes.Cert, error) {
+	if caCertPath != "" {
+		fileBytes, err := os.ReadFile(caCertPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error reading CA certificate file %s", caCertPath)
+		}
+		updateCert.CACertData = base64.StdEncoding.EncodeToString(fileBytes)
+		// Reset skip cert verify if ca cert is specified
+		updateCert.SkipCertVerify = FalseStr
+	}
+
+	if skipCertVerify != "" {
+		updateCert.SkipCertVerify = skipCertVerify
+		// Reset ca cert data is skip cert is specified
+		if skipCertVerify != FalseStr {
+			updateCert.CACertData = ""
+		}
+	}
+
+	if insecure != "" {
+		updateCert.Insecure = insecure
+	}
+	return updateCert, nil
+}
+
+func validateUpdateOptions() error {
+	if err := validateBooleanOption(skipCertVerifyForUpdate, "--skip-cert-verify"); err != nil {
+		return err
+	}
+
+	if err := validateBooleanOption(insecureForUpdate, "--insecure"); err != nil {
+		return err
+	}
+
+	return validateUpdateOptionCombination()
+}
+
+func validateBooleanOption(value, option string) error {
+	if value != "" && !strings.EqualFold(value, "true") && !strings.EqualFold(value, FalseStr) {
+		return errors.Errorf("incorrect boolean argument for '%s' option: %q", option, value)
+	}
+	return nil
+}
+
+func validateUpdateOptionCombination() error {
+	if areNoUpdateOptionsSpecified() {
+		return errors.New("please specify at least one update option")
+	}
+
+	if areBothSkipCertAndCACertSpecified() {
+		return errors.New("please specify only one valid option either '--skip-cert-verify' or '--ca-cert'")
+	}
+
+	return nil
+}
+
+func areNoUpdateOptionsSpecified() bool {
+	return (skipCertVerifyForUpdate == "" || strings.EqualFold(skipCertVerifyForUpdate, FalseStr)) &&
+		insecureForUpdate == "" && caCertPathForUpdate == ""
+}
+
+func areBothSkipCertAndCACertSpecified() bool {
+	return skipCertVerifyForUpdate != "" && !strings.EqualFold(skipCertVerifyForUpdate, FalseStr) && caCertPathForUpdate != ""
 }
 
 // ====================================

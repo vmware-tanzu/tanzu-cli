@@ -57,11 +57,27 @@ var _ = Describe("config cert command tests", func() {
 			resetCertCommandFlags()
 		})
 		Context("config cert add with all the options", func() {
-			It("should be success and cert list should return the cert successfully", func() {
+
+			It("should error add cert with both ca cert and skip cert verify", func() {
 				certCmd := newCertCmd()
 				certCmd.SetArgs([]string{
 					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
 					"--skip-cert-verify", "true", "--insecure", "true"})
+				err = certCmd.Execute()
+				Expect(err.Error()).To(Equal("please specify only one valid option either '--skip-cert-verify' or '--ca-cert'"))
+
+				certs := listCerts()
+				Expect(certs).NotTo(ContainElement(certOutputRow{
+					Host:                 testHost,
+					CACertificate:        "<REDACTED>",
+					SkipCertVerification: "true",
+					Insecure:             "true",
+				}))
+			})
+
+			It("should be success and cert list should return the cert successfully", func() {
+				certCmd := newCertCmd()
+				certCmd.SetArgs([]string{"add", "--host", testHost, "--ca-cert", caCertFile.Name(), "--insecure", "true"})
 				err = certCmd.Execute()
 				Expect(err).To(BeNil())
 
@@ -69,21 +85,37 @@ var _ = Describe("config cert command tests", func() {
 				Expect(certs).To(ContainElement(certOutputRow{
 					Host:                 testHost,
 					CACertificate:        "<REDACTED>",
-					SkipCertVerification: "true",
+					SkipCertVerification: "false",
 					Insecure:             "true",
 				}))
 			})
+
+			It("should be success with skip cert verify false and cert list should return the cert successfully", func() {
+				certCmd := newCertCmd()
+				certCmd.SetArgs([]string{"add", "--host", testHost, "--ca-cert", caCertFile.Name(), "--skip-cert-verify", "false", "--insecure", "true"})
+				err = certCmd.Execute()
+				Expect(err).To(BeNil())
+
+				certs := listCerts()
+				Expect(certs).To(ContainElement(certOutputRow{
+					Host:                 testHost,
+					CACertificate:        "<REDACTED>",
+					SkipCertVerification: "false",
+					Insecure:             "true",
+				}))
+			})
+
 			It("should return error if the cert for a host already exists", func() {
 				certCmd := newCertCmd()
 				certCmd.SetArgs([]string{
 					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
-					"--skip-cert-verify", "true", "--insecure", "true"})
+					"--skip-cert-verify", "false", "--insecure", "true"})
 				err = certCmd.Execute()
 				Expect(err).To(BeNil())
 
 				certCmd.SetArgs([]string{
 					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
-					"--skip-cert-verify", "true", "--insecure", "false"})
+					"--skip-cert-verify", "false", "--insecure", "false"})
 				err = certCmd.Execute()
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring(`certificate configuration for host "test.vmware.com" already exist`))
@@ -174,6 +206,36 @@ var _ = Describe("config cert command tests", func() {
 				Expect(err).To(BeNil())
 				Expect(cert.SkipCertVerify).To(Equal("true"))
 				Expect(cert.Insecure).To(Equal("true"))
+				Expect(cert.CACertData).To(Equal(""))
+
+			})
+
+			It("should not update the 'skipCertVerify' and 'insecure' config data successfully", func() {
+				certCmd := newCertCmd()
+				certCmd.SetArgs([]string{
+					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
+					"--skip-cert-verify", "false", "--insecure", "false"})
+				err = certCmd.Execute()
+				Expect(err).To(BeNil())
+
+				gotCAData := getConfigCertData(testHost)
+				Expect(gotCAData).To(Equal(fakeCACertData))
+
+				cert, err := configlib.GetCert(testHost)
+				Expect(err).To(BeNil())
+				Expect(cert.SkipCertVerify).To(Equal("false"))
+				Expect(cert.Insecure).To(Equal("false"))
+
+				// update the SkipCertVerify and Insecure configuration
+				certCmd.SetArgs([]string{
+					"update", testHost, "--ca-cert", caCertFile.Name(), "--skip-cert-verify", "true", "--insecure", "true"})
+				err = certCmd.Execute()
+				Expect(err.Error()).To(Equal("please specify only one valid option either '--skip-cert-verify' or '--ca-cert'"))
+
+				cert, err = configlib.GetCert(testHost)
+				Expect(err).To(BeNil())
+				Expect(cert.SkipCertVerify).To(Equal("false"))
+				Expect(cert.Insecure).To(Equal("false"))
 
 			})
 		})
@@ -182,7 +244,7 @@ var _ = Describe("config cert command tests", func() {
 				certCmd := newCertCmd()
 				certCmd.SetArgs([]string{
 					"add", "--host", testHost, "--ca-cert", caCertFile.Name(),
-					"--skip-cert-verify", "true", "--insecure", "true"})
+					"--skip-cert-verify", "false", "--insecure", "true"})
 				err = certCmd.Execute()
 				Expect(err).To(BeNil())
 
@@ -190,7 +252,7 @@ var _ = Describe("config cert command tests", func() {
 				Expect(certs).To(ContainElement(certOutputRow{
 					Host:                 testHost,
 					CACertificate:        "<REDACTED>",
-					SkipCertVerification: "true",
+					SkipCertVerification: "false",
 					Insecure:             "true",
 				}))
 
@@ -234,6 +296,7 @@ func listCerts() []certOutputRow {
 	return certs
 }
 
+//nolint:unparam
 func getConfigCertData(host string) string {
 	cert, err := configlib.GetCert(host)
 	Expect(err).To(BeNil())
