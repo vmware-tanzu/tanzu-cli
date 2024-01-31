@@ -23,10 +23,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
-// inventoryRefreshTTLInSecs is the interval in seconds between two checks of the inventory digest.
-// For testing, it can be overridden using the environment variable TANZU_CLI_PLUGIN_DB_CACHE_TTL_SECONDS.
-const inventoryRefreshTTLInSecs = 30 * 60 // 30 minutes
-
 // DBBackedOCIDiscovery is an artifact discovery utilizing an OCI image
 // which contains an SQLite database describing the content of the plugin
 // discovery.
@@ -384,8 +380,8 @@ func (od *DBBackedOCIDiscovery) checkDigestFileExistence(hashHexVal, digestPrefi
 }
 
 func getCacheTTLValue() int {
-	cacheTTL := inventoryRefreshTTLInSecs
-	cacheTTLOverride := os.Getenv(constants.ConfigVariablePluginDBCacheTTL)
+	cacheTTL := constants.DefaultInventoryRefreshTTLSeconds
+	cacheTTLOverride := os.Getenv(constants.ConfigVariablePluginDBCacheTTLSeconds)
 	if cacheTTLOverride != "" {
 		cacheTTLOverrideValue, err := strconv.Atoi(cacheTTLOverride)
 		if err == nil && cacheTTLOverrideValue >= 0 {
