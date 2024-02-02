@@ -7,15 +7,18 @@ $packageName = 'tanzu-cli'
 $packagePath = "${releaseVersion}"
 $scriptsDir = "$(Split-Path -parent $MyInvocation.MyCommand.Definition)"
 $checksumType64 = 'sha256'
+$tanzuExeName = ''
 
 # Check if we are dealing with an ARM64 architecture
 $os = Get-WmiObject -Class Win32_OperatingSystem
 if ($os.OSArchitecture -like "*ARM*") {
     $url64 = "https://github.com/vmware-tanzu/tanzu-cli/releases/download/${releaseVersion}/tanzu-cli-windows-arm64-windows11.zip"
     $checksum64 = '__CLI_SHA_ARM64__'
+    $tanzuExeName = 'tanzu-cli-windows_arm64.exe'
 } else {
     $url64 = "https://github.com/vmware-tanzu/tanzu-cli/releases/download/${releaseVersion}/tanzu-cli-windows-amd64.zip"
     $checksum64 = '__CLI_SHA_AMD64__'
+    $tanzuExeName = 'tanzu-cli-windows_amd64.exe'
 }
 
 $packageArgs = @{
@@ -30,12 +33,19 @@ $packageArgs = @{
 }
 
 function Install-TanzuEnvironment {
-    # Rename CLI
-    # Note that we use the scriptsDir path because chocolatey doesn't put
-    # binaries on the $PATH until _after_ the install script runs.
-    $tanzuExe = "${scriptsDir}\${packagePath}\tanzu.exe"
-    # Use a glob pattern since the binary could be for arm64 or amd64
-    Move-Item "${scriptsDir}\${packagePath}\tanzu-cli-windows_*.exe" "${tanzuExe}"
+    # The default shim normally created by Chocolatey in the bin directory does not forward interrupts to the CLI
+    # Since the CLI needs to catch interrupts we prevent chocolatey from creating the shim, and instead
+    # we copy the full CLI binary to the bin directory
+
+    $binDirectory = Join-Path $env:ChocolateyInstall 'bin'
+    $tanzuExePath = Join-Path $(Join-Path ${scriptsDir} ${packagePath}) $tanzuExeName
+
+    $tanzuExe = Join-Path ${binDirectory} tanzu.exe
+
+    Copy-Item "${tanzuExePath}" "${tanzuExe}"
+
+    #Create .ignore file so chocolatey does not shim the Exe
+    New-Item "${tanzuExePath}.ignore" -type file -force | Out-Null
 
     # Setup shell completion
     if (Test-Path -Path $PROFILE) {
