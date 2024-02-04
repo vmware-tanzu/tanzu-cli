@@ -746,17 +746,10 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 	// Log message based on different installation conditions
 	installingMsg, installedMsg, errMsg := getPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
 
-	var spinnerErr error
-	var sow component.OutputWriterSpinner
+	var spinner component.OutputWriterSpinner
 
 	// Initialize the spinner if the spinner is allowed
 	if component.IsTTYEnabled() {
-		spinnerOptions := component.OutputWriterSpinnerOptions{
-			SpinnerOptions: []component.OutputWriterSpinnerOption{
-				component.WithSpinnerFinalText(installedMsg, log.LogTypeINFO),
-			},
-		}
-
 		// Create a channel to receive OS signals
 		signalChannel := make(chan os.Signal, 1)
 		// Register the channel to receive interrupt signals (e.g., Ctrl+C)
@@ -767,14 +760,13 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		}()
 
 		// Initialize the spinner
-		sow, spinnerErr = component.NewOutputWriterSpinnerWithSpinnerOptions(os.Stderr, component.TableOutputType, installingMsg, true, spinnerOptions)
-		if spinnerErr != nil {
-			log.V(6).Infof("Unable to initialize spinner: %v", spinnerErr.Error())
-			log.Info(installingMsg)
-		}
-		if sow != nil {
-			defer sow.StopSpinner()
-		}
+		spinner = component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr),
+			component.WithSpinnerText(installingMsg),
+			component.WithSpinnerStarted(),
+			component.WithSpinnerFinalText(installedMsg, log.LogTypeINFO))
+
+		defer spinner.StopSpinner()
+
 		// Start a goroutine that listens for interrupt signals
 		go func(s component.OutputWriterSpinner) {
 			sig := <-signalChannel
@@ -785,15 +777,15 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 				}
 				os.Exit(128 + int(sig.(syscall.Signal)))
 			}
-		}(sow)
+		}(spinner)
 	} else {
 		log.Info(installingMsg)
 	}
 
 	pluginErr := verifyInstallAndInitializePlugin(plugin, p, version, installTestPlugin)
 	if pluginErr != nil {
-		if sow != nil {
-			sow.SetFinalText(errMsg, log.LogTypeERROR)
+		if spinner != nil {
+			spinner.SetFinalText(errMsg, log.LogTypeERROR)
 		}
 	}
 	return pluginErr
