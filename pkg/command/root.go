@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
@@ -163,6 +165,10 @@ func newRootCmd() *cobra.Command {
 		// silencing usage for now as we are getting double usage from plugins on errors
 		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// Sets the verbosity of the logger if TANZU_CLI_LOG_LEVEL is set
+			setLoggerVerbosity()
+
+			log.V(6).Info("testing logger with 6")
 			// Ensure mutual exclusion in current contexts just in case if any plugins with old
 			// plugin-runtime sets k8s context as current when tanzu context is already set as current
 			if err := utils.EnsureMutualExclusiveCurrentContexts(); err != nil {
@@ -208,6 +214,18 @@ func newRootCmd() *cobra.Command {
 		},
 	}
 	return rootCmd
+}
+
+// setLoggerVerbosity sets the verbosity of the logger if TANZU_CLI_LOG_LEVEL is set
+func setLoggerVerbosity() {
+	// Configure the log level if env variable TANZU_CLI_LOG_LEVEL is set
+	logLevel := os.Getenv(log.EnvTanzuCLILogLevel)
+	if logLevel != "" {
+		logValue, err := strconv.Atoi(logLevel)
+		if err == nil {
+			log.SetVerbosity(int32(logValue)) //nolint:gosec
+		}
+	}
 }
 
 func InstallEssentialPlugins(cmd *cobra.Command) {
