@@ -19,6 +19,8 @@ import (
 )
 
 const InvalidPath = "invalid path for \"%s\""
+const fileExists = "the file '%s' already exists"
+const showThrowErr = "should throw error for incorrect input path"
 
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-DownloadBundle-UploadBundle-Lifecycle]", func() {
 
@@ -328,20 +330,23 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		// Test case: (negative use case) empty path for --to-tar
 		It("plugin download-bundle when to-tar path is empty", func() {
 			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, "")
-			Expect(err).NotTo(BeNil(), "should throw error for incorrect input path")
+			Expect(err).NotTo(BeNil(), showThrowErr)
 			Expect(strings.Contains(err.Error(), "flag '--to-tar' is required")).To(BeTrue())
 		})
 		// Test case: (negative use case) directory name only for --to-tar
 		It("plugin download-bundle when to-tar path is a directory", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, tempDir)
-			Expect(err).NotTo(BeNil(), "should throw error for incorrect input path")
-			Expect(strings.Contains(err.Error(), fmt.Sprintf(InvalidPath, tempDir))).To(BeTrue())
+			// Attempt download bundle specifying directory as output
+			err = tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, tempDir)
+
+			// Expect error and validate text
+			Expect(err).NotTo(BeNil())
+			Expect(strings.Contains(err.Error(), fmt.Sprintf(fileExists, tempDir))).To(BeTrue())
 		})
 		// Test case: (negative use case) current directory only for --to-tar
 		It("plugin download-bundle when to-tar path is current directory", func() {
 			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, ".")
-			Expect(err).NotTo(BeNil(), "should throw error for incorrect input path")
-			Expect(strings.Contains(err.Error(), fmt.Sprintf(InvalidPath, "."))).To(BeTrue())
+			Expect(err).NotTo(BeNil(), showThrowErr)
+			Expect(strings.Contains(err.Error(), fmt.Sprintf(fileExists, "."))).To(BeTrue())
 		})
 	})
 })
