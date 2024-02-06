@@ -22,6 +22,8 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
+const fileExists = "the file '%s' already exists"
+
 // DownloadPluginBundleOptions defines options for downloading plugin bundle
 type DownloadPluginBundleOptions struct {
 	PluginInventoryImage string
@@ -338,6 +340,9 @@ func (o *DownloadPluginBundleOptions) verifyTarFile() error {
 	_, err := os.Stat(dir)
 	if err != nil {
 		return errors.Wrapf(err, "invalid path for %q", dir)
+	}
+	if _, err = os.Stat(o.ToTar); err == nil {
+		return fmt.Errorf(fileExists, o.ToTar)
 	}
 	// Check the input file path for --to-tar is valid
 	var empty []byte
