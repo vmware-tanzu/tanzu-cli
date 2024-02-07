@@ -221,9 +221,9 @@ func setLoggerVerbosity() {
 	// Configure the log level if env variable TANZU_CLI_LOG_LEVEL is set
 	logLevel := os.Getenv(log.EnvTanzuCLILogLevel)
 	if logLevel != "" {
-		logValue, err := strconv.Atoi(logLevel)
+		logValue, err := strconv.ParseInt(logLevel, 10, 32)
 		if err == nil {
-			log.SetVerbosity(int32(logValue)) //nolint:gosec
+			log.SetVerbosity(int32(logValue))
 		}
 	}
 }
