@@ -7,7 +7,7 @@ require (
 	github.com/onsi/gomega v1.27.10
 	github.com/spf13/cobra v1.8.0
 	github.com/vmware-tanzu/tanzu-cli/test/e2e/framework v1.0.0-dev
-	github.com/vmware-tanzu/tanzu-plugin-runtime v1.1.0
+	github.com/vmware-tanzu/tanzu-plugin-runtime v1.2.0
 )
 
 require (
