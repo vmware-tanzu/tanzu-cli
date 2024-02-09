@@ -10,11 +10,14 @@ jobs:
   build:
     name: MSYS2 Tanzu CLI Core E2E Tests on Windows
     runs-on: windows-latest
-    env:
-      MSYS2_PATH: 'C:\tools\msys64\usr\bin\bash'  # Note on usage
+
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v1
+
+      - name: Set TOPLEVEL_DIR environment variable
+        run: echo "TOPLEVEL_DIR=$(git rev-parse --show-toplevel)" >> $GITHUB_ENV
+        shell: bash
 
       - name: Verify Docker Desktop is running
         run: |
@@ -57,12 +60,14 @@ jobs:
           C:\tools\msys64\usr\bin\bash -lc "echo 'Hello from MSYS2'"
           C:\tools\msys64\usr\bin\bash -lc "ls"
           C:\tools\msys64\usr\bin\bash -lc "pwd"
+          C:\tools\msys64\usr\bin\bash -lc "go version"
         shell: powershell
 
       - name: Setup dependencies
         run: |
-          cd $(git rev-parse --show-toplevel)
-          pwd
-          ls
-          make tools
+          topLevel=$(git rev-parse --show-toplevel)
+          echo "Top level: $topLevel"
+          
+          C:/tools/msys64/usr/bin/bash -lc "cd '$topLevel' && make tools"
         shell: powershell
+      
