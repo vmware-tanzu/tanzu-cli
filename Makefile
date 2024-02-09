@@ -18,6 +18,34 @@ GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 GOHOSTOS ?= $(shell go env GOHOSTOS)
 GOHOSTARCH ?= $(shell go env GOHOSTARCH)
+HOST_OS=$(shell go env GOOS)
+
+WGET := $(shell which wget)
+BZIP2 := $(shell which bzip2) 
+TAR := $(shell which tar)
+
+# Load environment variables from GitHub workflow
+ifeq ($(GITHUB_ACTIONS),true)
+	ifeq ($(GOOS),windows)
+		# Use the values from GitHub Actions
+		MSYS_BIN ?= $(shell echo $MSYS_BIN)
+		WGET = $(MSYS_BIN)/wget
+		BZIP2 = $(MSYS_BIN)/bzip2
+		TAR = $(MSYS_BIN)/tar
+		GITHUB_INFO := Running in GitHub Actions on Windows
+	endif
+endif
+
+# Ensure $(GOPATH) uses forward slashes
+WGET := $(subst \,/,$(WGET))
+BZIP2 := $(subst \,/,$(BZIP2))
+TAR := $(subst \,/,$(TAR))
+
+$(info WGET after update: $(WGET))
+$(info BZIP2 after update: $(BZIP2))
+$(info TAR after update: $(TAR))
+$(info $(GITHUB_INFO))
+
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -54,7 +82,6 @@ VENDIR             := $(TOOLS_BIN_DIR)/vendir
 YQ                 := $(TOOLS_BIN_DIR)/yq
 
 TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
-
 # Build and version information
 
 NUL = /dev/null
@@ -256,9 +283,13 @@ e2e-cli-core: tools crd-package-for-test start-test-central-repo start-airgapped
 
 .PHONY: setup-custom-cert-for-test-central-repo
 setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test-central-repo in the config file
+	@echo "ROOT_DIR inside setup-custom-cert-for-test-central-repo: $(ROOT_DIR)"
+	@echo "WGET inside setup-custom-cert-for-test-central-repo: $(WGET)"
+	@echo "BZIP2 inside setup-custom-cert-for-test-central-repo: $(BZIP2)"
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/certs ]; then \
-    	wget https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2;\
-  		tar xjf $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2 -C $(ROOT_DIR)/hack/central-repo/;\
+    	$(WGET) https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2;\
+		TAR_BZ2_FILE:=$(shell cygpath -w $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2)
+  		$(TAR) xjf ${TAR_BZ2_FILE} -C $(ROOT_DIR)/hack/central-repo/;\
 	fi
 	echo "Adding docker test central repo cert to the config file"
 	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" TANZU_CLI_EULA_PROMPT_ANSWER="Yes" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
@@ -267,7 +298,7 @@ setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test
 .PHONY: start-test-central-repo
 start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
-		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
+		(cd $(ROOT_DIR)/hack/central-repo && $(TAR) xjf registry-content.bz2 || true;) \
 	fi
 	@docker run --rm -d -p 9876:443 --name central \
 		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
