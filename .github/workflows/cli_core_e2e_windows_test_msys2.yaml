@@ -67,7 +67,12 @@ jobs:
         run: |
           topLevel=$(git rev-parse --show-toplevel)
           echo "Top level: $topLevel"
+
+          # Set up PATH to include Go binaries
+          export PATH=$PATH:/c/go/bin:$(go env GOPATH)/bin
           
           C:/tools/msys64/usr/bin/bash -lc "cd '$topLevel' && make tools"
         shell: powershell
+        env:
+          MSYS2_PATH_TYPE: inherit  # This might help inheriting the PATH correctly
       
