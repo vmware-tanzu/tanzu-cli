@@ -5,11 +5,12 @@ include ./plugin-tooling.mk
 include ./test/e2e/Makefile
 
 # Ensure Make is run with bash shell as some syntax below is bash-specific
-SHELL := /usr/bin/env bash
 
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
+ROOT_DIR := $(subst \,/,$(ROOT_DIR))
 ARTIFACTS_DIR ?= $(ROOT_DIR)/artifacts
 
+HOME := $(subst \,/,$(HOME))
 XDG_CONFIG_HOME := ${HOME}/.config
 export XDG_CONFIG_HOME
 
@@ -18,6 +19,34 @@ GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 GOHOSTOS ?= $(shell go env GOHOSTOS)
 GOHOSTARCH ?= $(shell go env GOHOSTARCH)
+HOST_OS=$(shell go env GOOS)
+
+WGET := $(shell which wget)
+BZIP2 := $(shell which bzip2) 
+TAR := $(shell which tar)
+
+# Load environment variables from GitHub workflow
+ifeq ($(GITHUB_ACTIONS),true)
+	ifeq ($(GOOS),windows)
+		# Use the values from GitHub Actions
+		MSYS_BIN ?= $(shell echo $MSYS_BIN)
+		WGET = $(MSYS_BIN)/wget
+		BZIP2 = $(MSYS_BIN)/bzip2
+		TAR = $(MSYS_BIN)/tar
+		GITHUB_INFO := Running in GitHub Actions on Windows
+	endif
+endif
+
+# Ensure $(GOPATH) uses forward slashes
+WGET := $(subst \,/,$(WGET))
+BZIP2 := $(subst \,/,$(BZIP2))
+TAR := $(subst \,/,$(TAR))
+
+$(info WGET after update: $(WGET))
+$(info BZIP2 after update: $(BZIP2))
+$(info TAR after update: $(TAR))
+$(info $(GITHUB_INFO))
+
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -54,7 +83,10 @@ VENDIR             := $(TOOLS_BIN_DIR)/vendir
 YQ                 := $(TOOLS_BIN_DIR)/yq
 
 #TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
-TOOLING_BINARIES   :=  $(GOLANGCI_LINT)
+TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
+#TOOLING_BINARIES   := $(GOIMPORTS)
+
+#TOOLING_BINARIES   :=  $(GOLANGCI_LINT)
 
 # Build and version information
 
@@ -145,17 +177,19 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 
 	@echo build $(OS)-$(ARCH) CLI with version: $(BUILD_VERSION)
 
-	@if [ "$(filter $(OS)-$(ARCH),$(ENVS))" = "" ]; then\
-		printf "\n\n======================================\n";\
-		printf "! $(OS)-$(ARCH) is not an officially supported platform!\n";\
-		printf "======================================\n\n";\
-	fi
+	@mkdir -p artifacts/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)
 
-	@if [ "$(OS)" = "windows" ]; then \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
-	else \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
-	fi
+	@echo "Listing artifacts directory:"
+	@ls artifacts
+
+	@echo "BEfore build"
+	@echo "Windows build"
+	@pwd
+	@cd cmd/tanzu
+	@pwd
+	@go build -o $(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe cmd/tanzu/main.go
+	@ls cmd/tanzu
+	@ls $(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)
 
 ## --------------------------------------
 ## Plugins-specific
@@ -255,12 +289,18 @@ test-with-summary-report: tools
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
 e2e-cli-core: tools crd-package-for-test start-test-central-repo start-airgapped-local-registry e2e-cli-core-all ## Execute all CLI Core E2E Tests
 
+
 .PHONY: setup-custom-cert-for-test-central-repo
 setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test-central-repo in the config file
-	@if [ ! -d $(ROOT_DIR)/hack/central-repo/certs ]; then \
-    	wget https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2;\
-  		tar xjf $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2 -C $(ROOT_DIR)/hack/central-repo/;\
-	fi
+	@echo "ROOT_DIR inside setup-custom-cert-for-test-central-repo: $(ROOT_DIR)"
+	@echo "WGET inside setup-custom-cert-for-test-central-repo: $(WGET)"
+	@echo "BZIP2 inside setup-custom-cert-for-test-central-repo: $(BZIP2)"
+	$(WGET) https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O hack/central-repo/local-central-repo-testcontent.bz2
+	$(TAR) xjf hack/central-repo/local-central-repo-testcontent.bz2 -C hack/central-repo/
+	@echo "Listing the contents of the hack/central-repo"
+	@ls -l hack/central-repo
+	@echo "current directory: $(PWD) files: $(ls)"
+	@ls
 	echo "Adding docker test central repo cert to the config file"
 	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" TANZU_CLI_EULA_PROMPT_ANSWER="Yes" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
 	$(ROOT_DIR)/bin/tanzu config cert add --host localhost:9876 --ca-cert $(ROOT_DIR)/hack/central-repo/certs/localhost.crt
@@ -268,15 +308,35 @@ setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test
 .PHONY: start-test-central-repo
 start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
+		(cd $(ROOT_DIR)/hack/central-repo && $(TAR) xjf registry-content.bz2 || true;) \
+	fi
+	@echo "Starting docker test central repo"
+
+	@docker run --rm -d -p 9876:443 --name central \
+		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
+		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
+		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
+		-v "D:\a\tanzu-cli\tanzu-cli\hack\central-repo\registry-content:C:\registry" \
+		-v "D:\a\tanzu-cli\tanzu-cli\hack\central-repo\certs:C:\certs" \
+		stefanscherer/registry-windows:latest > /dev/null && \
+		echo "Started docker test central repo with images:" && \
+		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
+	
+	@echo "Docker test central repo started at localhost:9876"
+
+.PHONY: start-test-central-repo-11
+start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
+	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
 		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
 	fi
+	@echo "Starting docker test central repo"
 	@docker run --rm -d -p 9876:443 --name central \
 		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
 		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
 		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
 		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
-		$(REGISTRY_IMAGE) > /dev/null && \
+		stefanscherer/registry-windows:latest > /dev/null && \
 		echo "Started docker test central repo with images:" && \
 		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 
@@ -285,7 +345,24 @@ stop-test-central-repo: ## Stops and removes the local test central repository
 	@docker container stop central > /dev/null 2>&1 && echo "Stopped docker test central repo" || true
 
 .PHONY: start-airgapped-local-registry
-start-airgapped-local-registry: stop-airgapped-local-registry
+start-airgapped-local-registry-11: stop-airgapped-local-registry
+	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry \
+		$(REGISTRY_IMAGE) > /dev/null && \
+		echo "Started docker test airgapped repo at 'localhost:6001'."
+
+	@mkdir -p $(ROOT_DIR)/hack/central-repo/auth && docker run --entrypoint htpasswd httpd:2 -Bbn ${TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_USERNAME} ${TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_PASSWORD} > $(ROOT_DIR)/hack/central-repo/auth/htpasswd
+	@docker run --rm -d -p 6002:5000 --name temp-airgapped-local-registry-with-auth \
+		-v "D:\a\tanzu-cli\tanzu-cli\hack\central-repo\auth:C:\auth" \
+		-e "REGISTRY_AUTH=htpasswd" \
+		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
+		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+		stefanscherer/registry-windows:latest > /dev/null && \
+		echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
+
+	@docker logout localhost:6002 || true
+
+.PHONY: start-airgapped-local-registry-11
+start-airgapped-local-registry-11: stop-airgapped-local-registry
 	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry \
 		$(REGISTRY_IMAGE) > /dev/null && \
 		echo "Started docker test airgapped repo at 'localhost:6001'."
@@ -300,6 +377,7 @@ start-airgapped-local-registry: stop-airgapped-local-registry
 		echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
 
 	@docker logout localhost:6002 || true
+
 
 .PHONY: stop-airgapped-local-registry
 stop-airgapped-local-registry:

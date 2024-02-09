@@ -62,11 +62,50 @@ VAL_URL := https://github.com/errata-ai/vale/releases/download/v$(VALE_VERSION)/
 		sed 's,darwin,macOS,g'| sed 's,linux,Linux,g'| sed 's,windows,Windows,g')_$(shell echo $(HOST_ARCH) | sed 's,amd64,64-bit,g')$(shell echo $(HOST_OS) | \
 		sed 's,darwin,.tar.gz,g'| sed 's,linux,.tar.gz,g'| sed 's,windows,.zip,g')
 
-ifeq ($(CI),true)
-GOBIN := $(subst /,\,$(ROOT_DIR)/hack/tools/$(BIN_DIR))
+
+ifeq ($(GITHUB_ACTIONS),true)
+    # Use the values from GitHub Actions
+    GOPATH := $(shell echo $$GOPATH)
+    GOBIN := $(shell echo $$GOBIN)
+	GITHUB_INFO := Running in GitHub Actions
 else
-GOBIN := $(ROOT_DIR)/hack/tools/$(BIN_DIR)
+    # Use the system's GOPATH and GOBIN; if they're not set, use defaults
+    GOPATH ?= $(HOME)/go
+    GOBIN ?= $(GOPATH)/bin
+	GITHUB_INFO := Not running in GitHub Actions
 endif
+
+$(info GOPATH before update: $(GOPATH))
+$(info GOBIN before update: $(GOBIN))
+$(info $(GITHUB_INFO))
+
+# Normalize $(ROOT_DIR) and ensure no double slashes before appending
+GOBIN := $(patsubst %/,%,$(subst \,/,${ROOT_DIR}))/hack/tools/$(BIN_DIR)
+
+# Ensure $(GOPATH) uses forward slashes
+GOPATH := $(subst \,/,$(GOPATH))
+
+
+# It's best to use these echo commands in an actual recipe, not directly in the conditional logic
+# For demonstration purposes, they are kept here but consider moving them into a rule's command
+$(info GOBIN after update: $(GOBIN))
+$(info GOPATH after update: $(GOPATH))
+
+
+golangci-lint: $(GOLANGCI_LINT) ## Install golangci-lint
+$(GOLANGCI_LINT):
+	@echo "GOPATH current: $(GOPATH)"
+	@echo "GOBIN current: $(GOBIN)"
+	mkdir -p $(BIN_DIR)
+	@ls $(GOPATH)
+	@ls $(GOPATH)/bin
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v$(GOLANGCI_LINT_VERSION)
+	@ls $(GOPATH)
+	@ls $(GOPATH)/bin
+	@echo "GOBIN files: $(GOBIN)"
+	@ls $(GOBIN)
+#mv $(GOPATH)/$(GOLANGCI_LINT) $(GOBIN) && chmod a+x $(GOBIN)/$(notdir $(GOLANGCI_LINT))
+
 
 ## --------------------------------------
 ## Help
@@ -81,11 +120,11 @@ help: ## Display this help
 
 goimports: $(GOIMPORTS) ## Install goimports
 $(GOIMPORTS):
-	@echo "BIN_DIR: $(BIN_DIR)"
-	@echo "ROOT_DIR: $(ROOT_DIR)"
-	@echo "GOBIN path: $(ROOT_DIR)/hack/tools/$(BIN_DIR)"
-	@mkdir -p $(BIN_DIR)
-	@GOBIN=$(subst \,/,$(ROOT_DIR)/hack/tools/$(BIN_DIR)) go install golang.org/x/tools/cmd/goimports@v$(GOIMPORTS_VERSION)
+	@echo "gobin in goimports: $(GOBIN)"
+	mkdir -p $(BIN_DIR)
+	go install golang.org/x/tools/cmd/goimports@v$(GOIMPORTS_VERSION)
+	@echo "GOBIN files: $(GOBIN)"
+	@ls $(GOBIN)
 	
 #mkdir -p $(BIN_DIR)
 #GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install golang.org/x/tools/cmd/goimports@v$(GOIMPORTS_VERSION)
@@ -95,13 +134,6 @@ $(GOIMPORTS):
 #mv $(GOPATH)/bin/goimports $(GOIMPORTS)
 #GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install golang.org/x/tools/cmd/goimports@v$(GOIMPORTS_VERSION)
 
-golangci-lint: $(GOLANGCI_LINT) ## Install golangci-lint
-$(GOLANGCI_LINT):
-	@echo "Installing golangci-lint to $(GOLANGCI_LINT)"
-	@echo "GOBIN path: $(ROOT_DIR)/hack/tools/$(BIN_DIR)"
-	@echo "GOBIN will be set to $(GOBIN)"
-	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v$(GOLANGCI_LINT_VERSION)
 
 vale: $(VALE)
 $(VALE):
@@ -123,18 +155,17 @@ $(VALE):
 controller-gen: $(CONTROLLER_GEN) ## Build controller-gen
 $(CONTROLLER_GEN):
 	mkdir -p $(BIN_DIR)
-	#go build -tags=tools -o $@ sigs.k8s.io/controller-tools/cmd/controller-gen
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_TOOLS_VERSION)
+	go install sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_TOOLS_VERSION)
 
 cosign: $(COSIGN) ## Install cosign
 $(COSIGN):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/sigstore/cosign/v2/cmd/cosign@v$(COSIGN_VERSION)
+	go install github.com/sigstore/cosign/v2/cmd/cosign@v$(COSIGN_VERSION)
 
 misspell: $(MISSPELL) ## Install misspell
 $(MISSPELL):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install  github.com/client9/misspell/cmd/misspell@v$(MISSPELL_VERSION)
+	go install  github.com/client9/misspell/cmd/misspell@v$(MISSPELL_VERSION)
 
 imgpkg: $(IMGPKG) ## Install imgpkg 
 $(IMGPKG):
@@ -198,12 +229,13 @@ $(KIND):
 ginkgo: $(GINKGO) ## Install ginkgo
 $(GINKGO):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
+	go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
 
 go-junit-report: $(GOJUNITREPORT) ## Install go-junit-report
 $(GOJUNITREPORT):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/jstemmer/go-junit-report@latest
+	go install github.com/jstemmer/go-junit-report@latest
+	@ls $(GOBIN)
 
 ## --------------------------------------
 ## Cleanup
