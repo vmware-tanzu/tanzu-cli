@@ -14,16 +14,15 @@ fi
 # Accepts file directory as an argument, which has ginkgo test results files in json format
 # Usage:  sh process-ginkgo-test-results.sh ./testresults
 
-
-
 # Print the table header
-echo "| :memo: Test Suite Description | Total Tests | Passed | Failed |"
-echo "| --- | ---: | ---: | ---: |"
+echo "| :memo: Test Suite Description | Total Tests | Passed | Failed | Skipped |"
+echo "| --- | ---: | ---: | ---: | ---: |"
 
 # Counters for total tests
 total_tests=0
 total_passed=0
 total_failed=0
+total_skipped=0
 
 # Loop through each file in the given directory
 for file in `ls $1`; do
@@ -39,6 +38,7 @@ for file in `ls $1`; do
     suite_tests=0
     suite_passed=0
     suite_failed=0
+    suite_skipped=0
 
     # Loop through each spec in the suite
     for spec in $(echo "$suite_json" | jq -r '.SpecReports[] | @base64'); do
@@ -52,24 +52,27 @@ for file in `ls $1`; do
       if [ "$state" == "passed" ]; then
         ((suite_passed++))
         ((total_passed++))
-      else
+      elif [ "$state" == "failed" ]; then
         ((suite_failed++))
         ((total_failed++))
+      elif [ "$state" == "skipped" ]; then
+        ((suite_skipped++))
+        ((total_skipped++))
       fi
     done
 
     # Print the suite row with color and icon depending on the result
     if [ "$suite_failed" -eq 0 ]; then
-      echo "| $suite_description | $suite_tests | $suite_passed | $suite_failed |"
+      echo "| $suite_description | $suite_tests | $suite_passed | $suite_failed | $suite_skipped |"
     else
-      echo "| $suite_description | $suite_tests | $suite_passed | :x: $suite_failed |"
+      echo "| $suite_description | $suite_tests | $suite_passed | :x: $suite_failed | $suite_skipped |"
     fi
 
   done
 done
 # Print the total line with color and icon depending on the result
 if [ "$total_failed" -eq 0 ]; then
-  echo "| **Total** | **$total_tests** | **$total_passed** | **$total_failed** |"
+  echo "| **Total** | **$total_tests** | **$total_passed** | **$total_failed** | **$total_skipped** |"
 else
-  echo "| **Total** | **$total_tests** | **$total_passed** | :x: **$total_failed** |"
+  echo "| **Total** | **$total_tests** | **$total_passed** | :x: **$total_failed** | **$total_skipped** |"
 fi
