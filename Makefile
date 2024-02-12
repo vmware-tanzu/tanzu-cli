@@ -280,7 +280,7 @@ setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test
 	@echo "BZIP2 inside setup-custom-cert-for-test-central-repo: $(BZIP2)"
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/certs ]; then \
     	$(WGET) https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2;\
-		TAR_BZ2_FILE:=$(shell cygpath -w $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2)
+		TAR_BZ2_FILE:=$(shell cygpath -w $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2);\
   		$(TAR) xjf ${TAR_BZ2_FILE} -C $(ROOT_DIR)/hack/central-repo/;\
 	fi
 	echo "Adding docker test central repo cert to the config file"
