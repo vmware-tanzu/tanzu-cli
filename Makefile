@@ -279,11 +279,10 @@ setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test
 	@echo "WGET inside setup-custom-cert-for-test-central-repo: $(WGET)"
 	@echo "BZIP2 inside setup-custom-cert-for-test-central-repo: $(BZIP2)"
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/certs ]; then \
-    	$(WGET) https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2;\
+    	$(WGET) https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O hack/central-repo/local-central-repo-testcontent.bz2;\
 		
-		TAR_BZ2_FILE:=$(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2
 
-		$(TAR) xjf ${TAR_BZ2_FILE} -C "$(ROOT_DIR)/hack/central-repo/certs" --strip-components=1
+		$(TAR) -xzf hack/central-repo/local-central-repo-testcontent.bz2 -C hack/central-repo/certs
 	fi
 	echo "Adding docker test central repo cert to the config file"
 	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" TANZU_CLI_EULA_PROMPT_ANSWER="Yes" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
