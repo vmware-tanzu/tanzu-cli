@@ -291,7 +291,7 @@ setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test
 		
 		TAR_BZ2_FILE:=$(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2
 
-		$(TAR) xjf ${TAR_BZ2_FILE} -C $(shell cygpath -u $(ROOT_DIR)/hack/central-repo/certs)
+		$(TAR) xjf ${TAR_BZ2_FILE} -C $(shell cygpath -u $(ROOT_DIR)/hack/central-repo/certs\)
 	fi
 	echo "Adding docker test central repo cert to the config file"
 	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" TANZU_CLI_EULA_PROMPT_ANSWER="Yes" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
