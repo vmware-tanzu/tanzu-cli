@@ -104,6 +104,11 @@ jobs:
           echo "MSYS_BIN=$msysBin" >> $env:GITHUB_ENV
         shell: powershell
 
+      - name: Build CLI Core
+        run: |
+          make build
+        shell: powershell
+
       - name: E2E Tests
         run: |
           C:\tools\msys64\usr\bin\bash -lc "wget --version"
