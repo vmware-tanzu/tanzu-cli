@@ -177,8 +177,10 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 		printf "======================================\n\n";\
 	fi
 
-	echo "mkdir -p artifacts/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)"
 	@mkdir -p artifacts/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)
+
+	@echo "Listing artifacts directory:"
+	@ls artifacts
 
 	echo "BEfore build"
 	@if [ "$(OS)" = "windows" ]; then \
