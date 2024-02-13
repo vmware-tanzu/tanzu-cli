@@ -177,6 +177,8 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 		printf "======================================\n\n";\
 	fi
 
+	@mkdir -p artifacts/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)
+
 	@if [ "$(OS)" = "windows" ]; then \
 		echo "Windows build" ;\
 		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "artifacts/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
