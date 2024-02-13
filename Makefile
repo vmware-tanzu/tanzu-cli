@@ -8,8 +8,10 @@ include ./test/e2e/Makefile
 SHELL := /usr/bin/env bash
 
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
+ROOT_DIR := $(subst \,/,$(ROOT_DIR))
 ARTIFACTS_DIR ?= $(ROOT_DIR)/artifacts
 
+HOME := $(subst \,/,$(HOME))
 XDG_CONFIG_HOME := ${HOME}/.config
 export XDG_CONFIG_HOME
 
@@ -171,26 +173,19 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 
 	@echo build $(OS)-$(ARCH) CLI with version: $(BUILD_VERSION)
 
-	@if [ "$(filter $(OS)-$(ARCH),$(ENVS))" = "" ]; then\
-		printf "\n\n======================================\n";\
-		printf "! $(OS)-$(ARCH) is not an officially supported platform!\n";\
-		printf "======================================\n\n";\
-	fi
-
 	@mkdir -p artifacts/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)
 
 	@echo "Listing artifacts directory:"
 	@ls artifacts
 
-	echo "BEfore build"
-	@if [ "$(OS)" = "windows" ]; then \
-		echo "Windows build" ;\
-		ARTIFACTS_DIR := $(patsubst %/,%,$(subst \,/,${ARTIFACTS_DIR}))/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(ARTIFACTS_DIR)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
-		echo "After Windows build" ;\
-	else \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
-	fi
+	@echo "BEfore build"
+	@echo "Windows build"
+	@pwd
+	@cd cmd/tanzu
+	@pwd
+	@go build -o $(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe cmd/tanzu/main.go
+	@ls cmd/tanzu
+	@ls $(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)
 
 ## --------------------------------------
 ## Plugins-specific
@@ -297,7 +292,11 @@ setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test
 	@echo "WGET inside setup-custom-cert-for-test-central-repo: $(WGET)"
 	@echo "BZIP2 inside setup-custom-cert-for-test-central-repo: $(BZIP2)"
 	$(WGET) https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O hack/central-repo/local-central-repo-testcontent.bz2
-	$(BZIP2) -d hack/central-repo/local-central-repo-testcontent.bz2
+	$(TAR) xjf hack/central-repo/local-central-repo-testcontent.bz2 -C hack/central-repo/
+	@echo "Listing the contents of the hack/central-repo"
+	@ls -l hack/central-repo
+	@echo "current directory: $(PWD) files: $(ls)"
+	@ls
 	echo "Adding docker test central repo cert to the config file"
 	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" TANZU_CLI_EULA_PROMPT_ANSWER="Yes" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
 	$(ROOT_DIR)/bin/tanzu config cert add --host localhost:9876 --ca-cert $(ROOT_DIR)/hack/central-repo/certs/localhost.crt
@@ -307,15 +306,18 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
 		(cd $(ROOT_DIR)/hack/central-repo && $(TAR) xjf registry-content.bz2 || true;) \
 	fi
+	@echo "Starting docker test central repo"
 	@docker run --rm -d -p 9876:443 --name central \
-		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
+		-v /d/a/tanzu-cli/tanzu-cli/hack/central-repo/certs:/certs \
 		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
 		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
-		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
-		$(REGISTRY_IMAGE) > /dev/null && \
+		-v /d/a/tanzu-cli/tanzu-cli/hack/central-repo/registry-content:/var/lib/registry \
+		stefanscherer/registry-windows:latest > /dev/null && \
 		echo "Started docker test central repo with images:" && \
 		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
+	@echo "Docker test central repo started at localhost:9876"
+
 
 .PHONY: stop-test-central-repo
 stop-test-central-repo: ## Stops and removes the local test central repository
