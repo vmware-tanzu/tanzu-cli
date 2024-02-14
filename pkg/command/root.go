@@ -52,6 +52,7 @@ func NewRootCmd() (*cobra.Command, error) {
 		contextCmd,
 		k8sCmd,
 		tmcCmd,
+		opsCmd,
 		// Note(TODO:prkalle): The below ceip-participation command(experimental) added may be removed in the next release,
 		//       If we decide to fold this functionality into existing 'tanzu telemetry' plugin
 		newCEIPParticipationCmd(),
@@ -131,8 +132,9 @@ func NewRootCmd() (*cobra.Command, error) {
 // setupTargetPlugins sets up the commands for the plugins under the k8s and tmc targets
 func setupTargetPlugins() error {
 	mapTargetToCmd := map[configtypes.Target]*cobra.Command{
-		configtypes.TargetK8s: k8sCmd,
-		configtypes.TargetTMC: tmcCmd,
+		configtypes.TargetK8s:        k8sCmd,
+		configtypes.TargetTMC:        tmcCmd,
+		configtypes.TargetOperations: opsCmd,
 	}
 
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
@@ -289,6 +291,18 @@ var tmcCmd = &cobra.Command{
 	Use:     "mission-control",
 	Short:   "Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
 	Aliases: []string{"tmc"},
+	Annotations: map[string]string{
+		"group": string(plugin.TargetCmdGroup),
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		handleTargetHelp(cmd, args)
+	},
+}
+
+var opsCmd = &cobra.Command{
+	Use:     "operations",
+	Short:   "Tanzu CLI Operations related commands",
+	Aliases: []string{"ops"},
 	Annotations: map[string]string{
 		"group": string(plugin.TargetCmdGroup),
 	},
