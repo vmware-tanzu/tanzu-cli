@@ -321,7 +321,7 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
 		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
 		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
-		$(REGISTRY_IMAGE) > /dev/null && \
+		stefanscherer/registry-windows:latest > /dev/null && \
 		echo "Started docker test central repo with images:" && \
 		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 
