@@ -5,7 +5,6 @@ include ./plugin-tooling.mk
 include ./test/e2e/Makefile
 
 # Ensure Make is run with bash shell as some syntax below is bash-specific
-SHELL := /usr/bin/env bash
 
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
 ROOT_DIR := $(subst \,/,$(ROOT_DIR))
