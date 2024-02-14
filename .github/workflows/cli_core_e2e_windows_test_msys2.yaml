@@ -102,6 +102,8 @@ jobs:
           echo "BZIP2_PATH: $BZIP2"
           $msysBin = "C:\tools\msys64\usr\bin"
           echo "MSYS_BIN=$msysBin" >> $env:GITHUB_ENV
+          echo "PATH info: $env:PATH"
+          echo "PATH info2: $PATH"
         shell: powershell
 
       - name: Build CLI Core
