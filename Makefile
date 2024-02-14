@@ -300,7 +300,7 @@ setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test
 	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" TANZU_CLI_EULA_PROMPT_ANSWER="Yes" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
 	$(ROOT_DIR)/bin/tanzu config cert add --host localhost:9876 --ca-cert $(ROOT_DIR)/hack/central-repo/certs/localhost.crt
 
-.PHONY: start-test-central-repo
+.PHONY: start-test-central-repo-11
 start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
 		(cd $(ROOT_DIR)/hack/central-repo && $(TAR) xjf registry-content.bz2 || true;) \
@@ -317,6 +317,21 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 	@echo "Docker test central repo started at localhost:9876"
 
+.PHONY: start-test-central-repo
+start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
+	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
+		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
+	fi
+	@echo "Starting docker test central repo"
+	@docker run --rm -d -p 9876:443 --name central \
+		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
+		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
+		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
+		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
+		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
+		$(REGISTRY_IMAGE) > /dev/null && \
+		echo "Started docker test central repo with images:" && \
+		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 
 .PHONY: stop-test-central-repo
 stop-test-central-repo: ## Stops and removes the local test central repository
