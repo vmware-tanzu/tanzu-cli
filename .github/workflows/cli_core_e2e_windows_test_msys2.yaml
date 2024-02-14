@@ -106,10 +106,10 @@ jobs:
           echo "PATH info2: $PATH"
         shell: powershell
 
-      # - name: Build CLI Core
-      #   run: |
-      #     make build
-      #   shell: powershell
+      - name: Build CLI Core
+        run: |
+          make build
+        shell: powershell
 
       - name: E2E Tests
         run: |
