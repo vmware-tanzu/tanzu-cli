@@ -106,14 +106,14 @@ jobs:
           echo "PATH info2: $PATH"
         shell: powershell
 
-      - name: Build CLI Core
-        run: |
-          make build
-        shell: powershell
+      # - name: Build CLI Core
+      #   run: |
+      #     make build
+      #   shell: powershell
 
       - name: E2E Tests
         run: |
           C:\tools\msys64\usr\bin\bash -lc "wget --version"
           C:\tools\msys64\usr\bin\bash -lc "bzip2 --version"
-          make e2e-cli-core
+          make start-test-central-repo
         shell: powershell
