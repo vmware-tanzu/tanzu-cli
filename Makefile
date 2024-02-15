@@ -298,6 +298,7 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 		(cd $(ROOT_DIR)/hack/central-repo && $(TAR) xjf registry-content.bz2 || true;) \
 	fi
 	@echo "Starting docker test central repo"
+
 	@docker run --rm -d -p 9876:443 --name central \
 		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
@@ -307,6 +308,7 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 		stefanscherer/registry-windows:latest > /dev/null && \
 		echo "Started docker test central repo with images:" && \
 		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
+	
 	@echo "Docker test central repo started at localhost:9876"
 
 .PHONY: start-test-central-repo-11
@@ -330,7 +332,24 @@ stop-test-central-repo: ## Stops and removes the local test central repository
 	@docker container stop central > /dev/null 2>&1 && echo "Stopped docker test central repo" || true
 
 .PHONY: start-airgapped-local-registry
-start-airgapped-local-registry: stop-airgapped-local-registry
+start-airgapped-local-registry-11: stop-airgapped-local-registry
+	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry \
+		$(REGISTRY_IMAGE) > /dev/null && \
+		echo "Started docker test airgapped repo at 'localhost:6001'."
+
+	@mkdir -p $(ROOT_DIR)/hack/central-repo/auth && docker run --entrypoint htpasswd httpd:2 -Bbn ${TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_USERNAME} ${TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_PASSWORD} > $(ROOT_DIR)/hack/central-repo/auth/htpasswd
+	@docker run --rm -d -p 6002:5000 --name temp-airgapped-local-registry-with-auth \
+		-v "D:\a\tanzu-cli\tanzu-cli\hack\central-repo\auth:C:\auth" \
+		-e "REGISTRY_AUTH=htpasswd" \
+		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
+		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+		stefanscherer/registry-windows:latest > /dev/null && \
+		echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
+
+	@docker logout localhost:6002 || true
+
+.PHONY: start-airgapped-local-registry-11
+start-airgapped-local-registry-11: stop-airgapped-local-registry
 	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry \
 		$(REGISTRY_IMAGE) > /dev/null && \
 		echo "Started docker test airgapped repo at 'localhost:6001'."
@@ -345,6 +364,7 @@ start-airgapped-local-registry: stop-airgapped-local-registry
 		echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
 
 	@docker logout localhost:6002 || true
+
 
 .PHONY: stop-airgapped-local-registry
 stop-airgapped-local-registry:
