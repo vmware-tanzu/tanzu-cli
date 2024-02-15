@@ -115,5 +115,5 @@ jobs:
         run: |
           C:\tools\msys64\usr\bin\bash -lc "wget --version"
           C:\tools\msys64\usr\bin\bash -lc "bzip2 --version"
-          make start-test-central-repo
+          make e2e-cli-core
         shell: powershell
