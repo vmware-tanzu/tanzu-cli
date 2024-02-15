@@ -301,7 +301,7 @@ setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test
 	$(ROOT_DIR)/bin/tanzu config cert add --host localhost:9876 --ca-cert $(ROOT_DIR)/hack/central-repo/certs/localhost.crt
 
 .PHONY: start-test-central-repo
-start-test-central-repo: # stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
+start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
 		(cd $(ROOT_DIR)/hack/central-repo && $(TAR) xjf registry-content.bz2 || true;) \
 	fi
