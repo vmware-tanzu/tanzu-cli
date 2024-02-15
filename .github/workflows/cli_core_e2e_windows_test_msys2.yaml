@@ -104,6 +104,7 @@ jobs:
           echo "MSYS_BIN=$msysBin" >> $env:GITHUB_ENV
           echo "PATH info: $env:PATH"
           echo "PATH info2: $PATH"
+
         shell: powershell
 
       - name: Build CLI Core
