@@ -15,6 +15,6 @@ jobs:
       - name: Set and Echo GOPATH and GOBIN
         run: |
           pwd
-          docker run --isolation=hyperv --rm -d --name central stefanscherer/registry-windows:latest
+          docker run --isolation=hyperv --rm -d -v D:\a\tanzu-cli\tanzu-cli:D:\a\tanzu-cli\tanzu-cli --name central stefanscherer/registry-windows:latest
         shell: pwsh
 
