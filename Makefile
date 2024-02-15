@@ -307,7 +307,7 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 	fi
 	@echo "Starting docker test central repo"
 	ls "/d/a/tanzu-cli/tanzu-cli/hack/central-repo/"
-	@docker run --isolation=hyperv --rm -d -p 9876:443 --name central \
+	docker run --isolation=hyperv --rm -d -p 9876:443 --name central \
 		-v /d/a/tanzu-cli/tanzu-cli/hack/central-repo/certs:/c/certs \
 		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
