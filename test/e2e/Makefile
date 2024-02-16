@@ -73,12 +73,24 @@ e2e-cli-core-all: e2e-cli-lifecycle e2e-plugin-lifecycle-tests
 
 .PHONY: e2e-cli-lifecycle ## Execute CLI life cycle specific e2e tests
 e2e-cli-lifecycle:
-	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
-	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	echo "Running CLI lifecycle tests: ${ROOT_DIR}/test/e2e/cli_lifecycle" ; \
-	ls ${ROOT_DIR}/test/e2e/cli_lifecycle ; \
-	mkdir -p /tmp/ginkgo
-	cd /tmp/ginkgo && ${GINKGO} -r ${ROOT_DIR}/test/e2e/cli_lifecycle
+	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No"; \
+	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes"; \
+	echo "Running CLI lifecycle tests: ${ROOT_DIR}/test/e2e/cli_lifecycle"; \
+	ls ${ROOT_DIR}/test/e2e/cli_lifecycle; \
+	mkdir -p /tmp/ginkgo ; \
+	cd /tmp/ginkgo && ${GINKGO} -r ${ROOT_DIR}/test/e2e/cli_lifecycle ; \
+	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports \
+	--race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/cli_lifecycle  --trace > /tmp/out && \
+	{ \
+		cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; \
+		rm /tmp/out; \
+	} || \
+	{ \
+		exit_code=$$?; \
+		cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; \
+		rm /tmp/out; \
+		exit $$exit_code; \
+	}
 
 .PHONY: e2e-cli-config ## Execute CLI config life cycle specific e2e tests
 e2e-cli-config:
