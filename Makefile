@@ -170,7 +170,7 @@ build: build-cli-${GOHOSTOS}-${GOHOSTARCH} ## Build the Tanzu Core CLI for the l
 	mkdir -p bin
 	cp $(ARTIFACTS_DIR)/$(GOHOSTOS)/$(GOHOSTARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(GOHOSTOS)_$(GOHOSTARCH) ./bin/tanzu
 
-build-cli-%: ##Build the Tanzu Core CLI for a platform
+build-cli-11-%: ##Build the Tanzu Core CLI for a platform
 	$(eval ARCH = $(word 2,$(subst -, ,$*)))
 	$(eval OS = $(word 1,$(subst -, ,$*)))
 
@@ -189,6 +189,20 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 	@go build -o $(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe cmd/tanzu/main.go
 	@ls cmd/tanzu
 	@ls $(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)
+
+build-cli-%: ##Build the Tanzu Core CLI for a platform
+	$(eval ARCH = $(word 2,$(subst -, ,$*)))
+	$(eval OS = $(word 1,$(subst -, ,$*)))
+
+	@echo build $(OS)-$(ARCH) CLI with version: $(BUILD_VERSION)
+
+
+	@if [ "$(OS)" = "windows" ]; then \
+		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
+	else \
+		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
+	fi
+
 
 ## --------------------------------------
 ## Plugins-specific
