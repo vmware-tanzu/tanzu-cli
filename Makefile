@@ -287,7 +287,8 @@ test-with-summary-report: tools
 	rm ./make_test.output ./test_suite_output.json ./CLI-ginkgo-tests-summary.txt ./CLI-junit-report.xml
 
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
-e2e-cli-core: tools crd-package-for-test start-test-central-repo start-airgapped-local-registry e2e-cli-core-all ## Execute all CLI Core E2E Tests
+#e2e-cli-core: tools crd-package-for-test start-test-central-repo start-airgapped-local-registry e2e-cli-core-all ## Execute all CLI Core E2E Tests
+e2e-cli-core: tools start-test-central-repo e2e-cli-core-all ## Execute all CLI Core E2E Tests
 
 
 .PHONY: setup-custom-cert-for-test-central-repo
@@ -312,7 +313,7 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 	fi
 	@echo "Starting docker test central repo"
 
-	@docker run --rm -d -p 9876:443 --name central \
+	docker run --isolation=hyperv --rm -d -p 9876:443 --name central \
 		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
 		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
@@ -323,22 +324,6 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 	
 	@echo "Docker test central repo started at localhost:9876"
-
-.PHONY: start-test-central-repo-11
-start-test-central-repo-11: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
-	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
-		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
-	fi
-	@echo "Starting docker test central repo"
-	@docker run --rm -d -p 9876:443 --name central \
-		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
-		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
-		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
-		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
-		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
-		$(REGISTRY_IMAGE) > /dev/null && \
-		echo "Started docker test central repo with images:" && \
-		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 
 .PHONY: stop-test-central-repo
 stop-test-central-repo: ## Stops and removes the local test central repository
@@ -360,24 +345,6 @@ start-airgapped-local-registry: stop-airgapped-local-registry
 		echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
 
 	@docker logout localhost:6002 || true
-
-.PHONY: start-airgapped-local-registry-11
-start-airgapped-local-registry-11: stop-airgapped-local-registry
-	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry \
-		$(REGISTRY_IMAGE) > /dev/null && \
-		echo "Started docker test airgapped repo at 'localhost:6001'."
-
-	@mkdir -p $(ROOT_DIR)/hack/central-repo/auth && docker run --entrypoint htpasswd httpd:2 -Bbn ${TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_USERNAME} ${TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_PASSWORD} > $(ROOT_DIR)/hack/central-repo/auth/htpasswd
-	@docker run --rm -d -p 6002:5000 --name temp-airgapped-local-registry-with-auth \
-		-v $(ROOT_DIR)/hack/central-repo/auth:/auth \
-		-e "REGISTRY_AUTH=htpasswd" \
-		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
-		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
-		$(REGISTRY_IMAGE) > /dev/null && \
-		echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
-
-	@docker logout localhost:6002 || true
-
 
 .PHONY: stop-airgapped-local-registry
 stop-airgapped-local-registry:
