@@ -78,8 +78,7 @@ e2e-cli-lifecycle:
 	echo "Running CLI lifecycle tests: ${ROOT_DIR}/test/e2e/cli_lifecycle" ; \
 	ls ${ROOT_DIR}/test/e2e/cli_lifecycle ; \
 	mkdir -p /tmp/ginkgo
-	${GINKGO}  -work-dir=/tmp/ginkgo -createdir=false -suppress-workspace-creation=true -r ./test/e2e/cli_lifecycle
-
+	${GINKGO}  -createdir=false -suppress-workspace-creation=true -r ${ROOT_DIR}/test/e2e/cli_lifecycle
 
 .PHONY: e2e-cli-config ## Execute CLI config life cycle specific e2e tests
 e2e-cli-config:
