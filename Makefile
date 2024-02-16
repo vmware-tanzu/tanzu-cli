@@ -83,10 +83,9 @@ VENDIR             := $(TOOLS_BIN_DIR)/vendir
 YQ                 := $(TOOLS_BIN_DIR)/yq
 
 #TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
-TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
-#TOOLING_BINARIES   := $(GOIMPORTS)
+#TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
+TOOLING_BINARIES   := $(GOIMPORTS) $(GINKGO)
 
-#TOOLING_BINARIES   :=  $(GOLANGCI_LINT)
 
 # Build and version information
 
@@ -288,7 +287,7 @@ test-with-summary-report: tools
 
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
 #e2e-cli-core: tools crd-package-for-test start-test-central-repo start-airgapped-local-registry e2e-cli-core-all ## Execute all CLI Core E2E Tests
-e2e-cli-core: tools start-test-central-repo e2e-cli-core-all ## Execute all CLI Core E2E Tests
+e2e-cli-core: tools e2e-cli-core-all ## Execute all CLI Core E2E Tests
 
 
 .PHONY: setup-custom-cert-for-test-central-repo

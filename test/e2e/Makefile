@@ -75,7 +75,10 @@ e2e-cli-core-all: e2e-cli-lifecycle e2e-plugin-lifecycle-tests
 e2e-cli-lifecycle:
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
+	echo "Running CLI lifecycle tests: ${ROOT_DIR}/test/e2e/cli_lifecycle" ; \
+	@ls ${ROOT_DIR}/test/e2e/cli_lifecycle"
 	${GINKGO} -r ${ROOT_DIR}/test/e2e/cli_lifecycle
+
 
 .PHONY: e2e-cli-config ## Execute CLI config life cycle specific e2e tests
 e2e-cli-config:
