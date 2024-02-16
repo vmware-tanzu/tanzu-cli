@@ -325,7 +325,7 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 	@echo "Docker test central repo started at localhost:9876"
 
 .PHONY: start-test-central-repo-11
-start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
+start-test-central-repo-11: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
 		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
 	fi
@@ -336,7 +336,7 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
 		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
 		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
-		stefanscherer/registry-windows:latest > /dev/null && \
+		$(REGISTRY_IMAGE) > /dev/null && \
 		echo "Started docker test central repo with images:" && \
 		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 
@@ -345,7 +345,7 @@ stop-test-central-repo: ## Stops and removes the local test central repository
 	@docker container stop central > /dev/null 2>&1 && echo "Stopped docker test central repo" || true
 
 .PHONY: start-airgapped-local-registry
-start-airgapped-local-registry-11: stop-airgapped-local-registry
+start-airgapped-local-registry: stop-airgapped-local-registry
 	@docker run --rm -d -p 6001:5000 --name temp-airgapped-local-registry \
 		$(REGISTRY_IMAGE) > /dev/null && \
 		echo "Started docker test airgapped repo at 'localhost:6001'."
@@ -355,7 +355,7 @@ start-airgapped-local-registry-11: stop-airgapped-local-registry
 		-v "D:\a\tanzu-cli\tanzu-cli\hack\central-repo\auth:C:\auth" \
 		-e "REGISTRY_AUTH=htpasswd" \
 		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
-		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+		-e "REGISTRY_AUTH_HTPASSWD_PATH=C:\auth\htpasswd" \
 		stefanscherer/registry-windows:latest > /dev/null && \
 		echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
 
