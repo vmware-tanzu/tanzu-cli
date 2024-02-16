@@ -69,16 +69,13 @@ RACE_OPTION := $(shell echo $(HOST_OS) | sed 's,darwin,--race,g' | sed 's,linux,
 
 .PHONY: e2e-cli-core-all ## Execute all CLI Core E2E Tests
 #e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-plugin-compatibility-tests e2e-plugin-lifecycle-tests  e2e-plugin-sync-tmc e2e-plugin-sync-k8s e2e-context-tmc-tests e2e-context-k8s-tests e2e-airgapped-tests e2e-catalog-tests e2e-extra-column-tests
-e2e-cli-core-all: e2e-cli-lifecycle
+e2e-cli-core-all: e2e-cli-lifecycle e2e-plugin-lifecycle-tests
 
 .PHONY: e2e-cli-lifecycle ## Execute CLI life cycle specific e2e tests
 e2e-cli-lifecycle:
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports \
-	$(RACE_OPTION) --nodes=1 ${GOTEST_VERBOSE}  \
-	-r ${ROOT_DIR}/test/e2e/cli_lifecycle  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } ||  \
-	{ exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	${GINKGO} -r ${ROOT_DIR}/test/e2e/cli_lifecycle
 
 .PHONY: e2e-cli-config ## Execute CLI config life cycle specific e2e tests
 e2e-cli-config:
@@ -103,7 +100,7 @@ e2e-plugin-lifecycle-tests:
 	export TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH=$(TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH) ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports $(RACE_OPTION) --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugin_lifecycle  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	${GINKGO} -r ${ROOT_DIR}/test/e2e/plugin_lifecycle
 	
 
 .PHONY: e2e-plugin-sync-k8s ## Execute CLI Core Plugin sync E2E test cases for k8s target
