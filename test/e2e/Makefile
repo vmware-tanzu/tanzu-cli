@@ -70,7 +70,7 @@ RACE_OPTION := $(shell echo $(HOST_OS) | sed 's,darwin,--race,g' | sed 's,linux,
 .PHONY: e2e-cli-core-all ## Execute all CLI Core E2E Tests
 #e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-plugin-compatibility-tests e2e-plugin-lifecycle-tests  e2e-plugin-sync-tmc e2e-plugin-sync-k8s e2e-context-tmc-tests e2e-context-k8s-tests e2e-airgapped-tests e2e-catalog-tests e2e-extra-column-tests
 #e2e-cli-core-all: e2e-cli-lifecycle e2e-plugin-lifecycle-tests
-e2e-cli-core-all: e2e-cli-config
+e2e-cli-core-all: e2e-cli-simple
 
 .PHONY: e2e-cli-simple ## Execute CLI config life cycle specific e2e tests
 e2e-cli-simple:
