@@ -74,12 +74,10 @@ e2e-cli-core-all: e2e-cli-config
 
 .PHONY: e2e-cli-simple ## Execute CLI config life cycle specific e2e tests
 e2e-cli-simple:
-	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
-	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	echo "Running CLI lifecycle tests: ${ROOT_DIR}/test/e2e/config"; \
-	ls ${ROOT_DIR}/test/e2e/config; \
+	echo "Running CLI simple tests: ${ROOT_DIR}/test/e2e/simple"; \
+	ls ${ROOT_DIR}/test/e2e/simple; \
 	mkdir -p /tmp/ginkgo ; \
-	cd /tmp/ginkgo && ${GINKGO} -r ${ROOT_DIR}/test/e2e/config ; \
+	cd /tmp/ginkgo && ${GINKGO} -r ${ROOT_DIR}/test/e2e/simple ; \
 
 .PHONY: e2e-cli-lifecycle ## Execute CLI life cycle specific e2e tests
 e2e-cli-lifecycle:
