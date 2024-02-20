@@ -77,7 +77,7 @@ e2e-cli-simple:
 	echo "Running CLI simple tests: ${ROOT_DIR}/test/e2e/simple"; \
 	ls ${ROOT_DIR}/test/e2e/simple; \
 	mkdir -p /tmp/ginkgo ; \
-	cd /tmp/ginkgo && ${GINKGO} ${ROOT_DIR}/test/e2e/simple ; \
+	${GINKGO} ${ROOT_DIR}/test/e2e/simple ; \
 
 .PHONY: e2e-cli-lifecycle ## Execute CLI life cycle specific e2e tests
 e2e-cli-lifecycle:
