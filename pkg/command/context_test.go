@@ -1422,3 +1422,42 @@ func resetContextCommandFlags() {
 	contextTypeStr = ""
 	outputFormat = ""
 }
+
+func TestMapTanzuEndpointToTMCEndpoint(t *testing.T) {
+	testCases := []struct {
+		input    string
+		expected string
+	}{
+		{
+			input:    "https://api.tanzu-dev.cloud.vmware.com",
+			expected: "https://tmc.tanzu-dev.cloud.vmware.com",
+		},
+		{
+			input:    "https://api.tanzu-stable.cloud.vmware.com",
+			expected: "https://tmc.tanzu-stable.cloud.vmware.com",
+		},
+		{
+			input:    "https://api.tanzu.cloud.vmware.com",
+			expected: "https://tmc.tanzu.cloud.vmware.com",
+		},
+		{
+			input:    "https://symphony.api.tanzu.cloud.vmware.com",
+			expected: "",
+		},
+		{
+			input:    "https://random.tanzu.cloud.vmware.com",
+			expected: "",
+		},
+		{
+			input:    "https://random.foo.com",
+			expected: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		result := mapTanzuEndpointToTMCEndpoint(tc.input)
+		if result != tc.expected {
+			t.Errorf("For input %s, expected %s, but got %s", tc.input, tc.expected, result)
+		}
+	}
+}

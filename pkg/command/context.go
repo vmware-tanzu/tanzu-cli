@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -54,9 +55,10 @@ var (
 )
 
 const (
-	knownGlobalHost      = "cloud.vmware.com"
-	defaultTanzuEndpoint = "https://api.tanzu.cloud.vmware.com"
-	isPinnipedEndpoint   = "isPinnipedEndpoint"
+	knownGlobalHost             = "cloud.vmware.com"
+	defaultTanzuEndpoint        = "https://api.tanzu.cloud.vmware.com"
+	isPinnipedEndpoint          = "isPinnipedEndpoint"
+	tanzuMissionControlEndpoint = "tanzuMissionControlEndpoint"
 
 	contextNotExistsForContextType      = "The provided context '%v' does not exist or is not active for the given context type '%v'"
 	noActiveContextExistsForContextType = "There is no active context for the given context type '%v'"
@@ -578,15 +580,20 @@ func createContextWithTanzuEndpoint() (context *configtypes.Context, err error) 
 		return context, err
 	}
 
+	sanitizedEndpoint := sanitizeEndpoint(endpoint)
 	// Tanzu context would have both CSP(GlobalOpts) auth details and kubeconfig(ClusterOpts),
 	context = &configtypes.Context{
 		Name:        ctxName,
 		ContextType: configtypes.ContextTypeTanzu,
-		GlobalOpts:  &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
+		GlobalOpts:  &configtypes.GlobalServer{Endpoint: sanitizedEndpoint},
 		ClusterOpts: &configtypes.ClusterServer{},
+		AdditionalMetadata: map[string]interface{}{
+			tanzuMissionControlEndpoint: mapTanzuEndpointToTMCEndpoint(sanitizedEndpoint),
+		},
 	}
 	return context, err
 }
+
 func globalLogin(c *configtypes.Context) (err error) {
 	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
 	if apiTokenExists {
@@ -708,7 +715,9 @@ func doCSPInteractiveLoginAndUpdateContext(c *configtypes.Context) (claims *csp.
 	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
 	a.Expiration = expiresAt
 	c.GlobalOpts.Auth = a
-	c.AdditionalMetadata = make(map[string]interface{})
+	if c.AdditionalMetadata == nil {
+		c.AdditionalMetadata = make(map[string]interface{})
+	}
 
 	return claims, nil
 }
@@ -1783,4 +1792,16 @@ func renderDynamicTable(slices interface{}, tableWriter component.OutputWriter, 
 		}
 	}
 	tableWriter.Render()
+}
+
+func mapTanzuEndpointToTMCEndpoint(tanzuEndpoint string) string {
+	// Define the regular expression pattern
+	apiPattern := regexp.MustCompile(`https://api\.tanzu(-\w*)?\.cloud\.vmware\.com`)
+	// Replace "api" with "tmc" in the input URL
+	tmcEndpoint := apiPattern.ReplaceAllString(tanzuEndpoint, "https://tmc.tanzu$1.cloud.vmware.com")
+	// Check if the transformation was successful
+	if tanzuEndpoint == tmcEndpoint {
+		return ""
+	}
+	return tmcEndpoint
 }
