@@ -100,7 +100,7 @@ func newSearchPluginCmd() *cobra.Command {
 
 	f.StringVarP(&targetStr, "target", "t", "", fmt.Sprintf("limit the search to plugins of the specified target (%s)", common.TargetList))
 	utils.PanicOnErr(searchCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+		return []string{compGlobalTarget, compK8sTarget, compTMCTarget, compOpsTarget}, cobra.ShellCompDirectiveNoFileComp
 	}))
 
 	searchCmd.MarkFlagsMutuallyExclusive("local", "name")

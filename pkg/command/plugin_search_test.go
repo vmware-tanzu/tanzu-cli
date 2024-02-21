@@ -105,7 +105,7 @@ func TestCompletionPluginSearch(t *testing.T) {
 	// command.  Let's deactivate it.
 	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
 
-	expectedOutforTargetFlag := compGlobalTarget + "\n" + compK8sTarget + "\n" + compTMCTarget + "\n"
+	expectedOutforTargetFlag := compGlobalTarget + "\n" + compK8sTarget + "\n" + compTMCTarget + "\n" + compOpsTarget + "\n"
 
 	tests := []struct {
 		test     string

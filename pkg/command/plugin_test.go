@@ -476,8 +476,8 @@ func TestCompletionPlugin(t *testing.T) {
 	// This is global logic and needs not be tested for each
 	// command.  Let's deactivate it.
 	os.Setenv("TANZU_ACTIVE_HELP", "no_short_help")
-
 	// Test local discovery
+
 	localSourcePath := filepath.Join("..", "fakes", "plugins", cli.GOOS, cli.GOARCH)
 
 	tests := []struct {
@@ -636,6 +636,7 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
 				compTMCTarget + "\n" +
+				compOpsTarget + "\n" +
 				":4\n",
 		},
 		{
@@ -652,6 +653,7 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
 				compTMCTarget + "\n" +
+				compOpsTarget + "\n" +
 				":4\n",
 		},
 
@@ -759,6 +761,7 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
 				compTMCTarget + "\n" +
+				compOpsTarget + "\n" +
 				":4\n",
 		},
 		{
@@ -776,6 +779,7 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
 				compTMCTarget + "\n" +
+				compOpsTarget + "\n" +
 				":4\n",
 		},
 
@@ -849,6 +853,7 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
 				compTMCTarget + "\n" +
+				compOpsTarget + "\n" +
 				":4\n",
 		},
 		{
@@ -866,6 +871,7 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
 				compTMCTarget + "\n" +
+				compOpsTarget + "\n" +
 				":4\n",
 		},
 		{
@@ -875,6 +881,7 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
 				compTMCTarget + "\n" +
+				compOpsTarget + "\n" +
 				":4\n",
 		},
 		// =====================
@@ -926,6 +933,7 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
 				compTMCTarget + "\n" +
+				compOpsTarget + "\n" +
 				":4\n",
 		},
 		{
@@ -942,6 +950,7 @@ func TestCompletionPlugin(t *testing.T) {
 			expected: compGlobalTarget + "\n" +
 				compK8sTarget + "\n" +
 				compTMCTarget + "\n" +
+				compOpsTarget + "\n" +
 				":4\n",
 		},
 	}
