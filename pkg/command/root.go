@@ -277,7 +277,7 @@ func handleTargetHelp(cmd *cobra.Command, args []string) {
 
 var k8sCmd = &cobra.Command{
 	Use:     "kubernetes",
-	Short:   "Tanzu CLI plugins that target a Kubernetes cluster",
+	Short:   "Commands that interact with a Kubernetes endpoint",
 	Aliases: []string{"k8s"},
 	Annotations: map[string]string{
 		"group": string(plugin.TargetCmdGroup),
@@ -289,7 +289,7 @@ var k8sCmd = &cobra.Command{
 
 var tmcCmd = &cobra.Command{
 	Use:     "mission-control",
-	Short:   "Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+	Short:   "Commands that provide functionality for Tanzu Mission Control",
 	Aliases: []string{"tmc"},
 	Annotations: map[string]string{
 		"group": string(plugin.TargetCmdGroup),
@@ -301,7 +301,7 @@ var tmcCmd = &cobra.Command{
 
 var opsCmd = &cobra.Command{
 	Use:     "operations",
-	Short:   "Tanzu CLI Operations related commands",
+	Short:   "Commands that support Kubernetes operations for Tanzu Application Platform",
 	Aliases: []string{"ops"},
 	Annotations: map[string]string{
 		"group": string(plugin.TargetCmdGroup),
