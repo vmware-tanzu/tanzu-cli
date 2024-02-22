@@ -6,8 +6,6 @@ replace cloud.google.com/go => cloud.google.com/go v0.102.1
 
 replace github.com/vmware-tanzu/tanzu-cli/test/e2e/framework => ./test/e2e/framework
 
-replace github.com/vmware-tanzu/tanzu-plugin-runtime => github.com/anujc25/tanzu-plugin-runtime v0.0.0-20240214002508-cc83ffc09fda
-
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/Masterminds/semver v1.5.0
@@ -44,7 +42,7 @@ require (
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-cli/test/e2e/framework v0.0.0-00010101000000-000000000000
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686
-	github.com/vmware-tanzu/tanzu-plugin-runtime v1.2.0-dev.0.20240206192120-055fd83cf63d
+	github.com/vmware-tanzu/tanzu-plugin-runtime v1.2.0-dev.0.20240222161642-59c7320668fa
 	go.pinniped.dev v0.20.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/oauth2 v0.8.0
