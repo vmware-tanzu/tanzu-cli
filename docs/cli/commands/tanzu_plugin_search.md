@@ -20,7 +20,7 @@ tanzu plugin search [flags]
   -n, --name string     limit the search to plugins with the specified name
   -o, --output string   output format (yaml|json|table)
       --show-details    show the details of the specified plugin, including all available versions
-  -t, --target string   limit the search to plugins of the specified target (kubernetes[k8s]/mission-control[tmc]/global)
+  -t, --target string   limit the search to plugins of the specified target (kubernetes[k8s]/mission-control[tmc]/operations[ops]/global)
 ```
 
 ### SEE ALSO

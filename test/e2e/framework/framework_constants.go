@@ -11,7 +11,7 @@ import (
 const (
 	CliCore = "[CLI-Core]"
 
-	TargetList = "kubernetes[k8s]/mission-control[tmc]/global"
+	TargetList = "kubernetes[k8s]/mission-control[tmc]/operations[ops]/global"
 
 	InitCmd          = "%s init"
 	VersionCmd       = "%s version"

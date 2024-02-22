@@ -21,8 +21,9 @@ such sets of plugins.
 
 *Target* : A class of control-plane endpoints that a plugin may interact with.
 The list of targets supported thus far are `kubernetes`, which applies to
-Kubernetes clusters, and `mission-control`, which applies to Tanzu Mission
-Control service endpoints. A plugin can be associated with one or zero targets.
+Kubernetes endpoint, `mission-control`, which applies to Tanzu Mission
+Control service endpoints, and `operations`, to support Kubernetes operations
+for Tanzu Application Platform. A plugin can be associated with one or zero targets.
 A plugin associated with no target implies its functionality can be used
 regardless of what endpoint the CLI may be connecting to.
 

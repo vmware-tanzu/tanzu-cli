@@ -269,7 +269,7 @@ func InstallEssentialPlugins(cmd *cobra.Command) {
 func handleTargetHelp(cmd *cobra.Command, args []string) {
 	// If there are no plugins installed for this target, print a message
 	if len(cmd.Commands()) == 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "Note: No plugins are currently installed for the %[1]q target.\n      Such plugins will be accessible when a %[1]q context is created/activated or a %[1]q plugin is explicitly installed.\n\n", cmd.Name())
+		fmt.Fprintf(cmd.OutOrStdout(), "Note: No plugins are currently installed for the %[1]q target.\n\n", cmd.Name())
 	}
 	// Always print the help for the target command is invoked without any subcommand
 	cmd.HelpFunc()(cmd, args)

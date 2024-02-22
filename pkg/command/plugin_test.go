@@ -209,7 +209,7 @@ func TestDeletePlugin(t *testing.T) {
 			targets:          []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s},
 			args:             []string{"plugin", "delete", "foo", "-y"},
 			expectedFailure:  true,
-			expectedErrorMsg: "unable to uniquely identify plugin 'foo'. Please specify the target (kubernetes[k8s]/mission-control[tmc]/global) of the plugin using the `--target` flag",
+			expectedErrorMsg: "unable to uniquely identify plugin 'foo'. Please specify the target (kubernetes[k8s]/mission-control[tmc]/operations[ops]/global) of the plugin using the `--target` flag",
 		},
 		{
 			test:             "delete an installed plugin present for multiple targets using --target",

@@ -14,7 +14,7 @@ tanzu plugin uninstall PLUGIN_NAME [flags]
 
 ```
   -h, --help            help for uninstall
-  -t, --target string   target of the plugin (kubernetes[k8s]/mission-control[tmc]/global)
+  -t, --target string   target of the plugin (kubernetes[k8s]/mission-control[tmc]/operations[ops]/global)
   -y, --yes             uninstall the plugin without asking for confirmation
 ```
 
