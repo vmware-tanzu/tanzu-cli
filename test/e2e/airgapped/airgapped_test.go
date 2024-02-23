@@ -308,6 +308,8 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			Expect(err).To(BeNil())
 			_, _, err = tf.PluginCmd.InstallPlugin("pinniped-auth", "", "")
 			Expect(err).To(BeNil())
+			_, _, err = tf.PluginCmd.InstallPlugin("clustergroup", "operations", "")
+			Expect(err).To(BeNil())
 
 			// Verify above plugins got installed with `tanzu plugin list`
 			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()

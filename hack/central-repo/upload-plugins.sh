@@ -196,6 +196,7 @@ k8sPlugins=(cluster feature management-cluster package secret kubernetes-release
 tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster events iam
             inspection integration management-cluster policy workspace helm secret
             continuousdelivery tanzupackage)
+opsPlugins=(clustergroup)
 globalPlugins=(isolated-cluster pinniped-auth)
 essentialPlugins=(telemetry)
 pluginUsingSha=(plugin-with-sha)
@@ -255,6 +256,10 @@ for db in small extra; do
         addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
     done
 
+    for name in ${opsPlugins[*]}; do
+        addPlugin $name operations true
+    done
+
     for name in ${pluginUsingSha[*]}; do
         addPlugin $name global true v0.0.1 useSha
         addPlugin $name global true v9.9.9 useSha
@@ -289,7 +294,7 @@ echo "======================================"
 
 # Push generic plugins to get to 100 total plugins in the DB.
 # Those plugins will not be installable as we won't push their binaries.
-pluginCount=$((${#k8sPlugins[@]} + ${#tmcPlugins[@]} + ${#globalPlugins[@]}))
+pluginCount=$((${#k8sPlugins[@]} + ${#tmcPlugins[@]} + ${#opsPlugins[@]} + ${#globalPlugins[@]}))
 numPluginsToCreate=$((100-$pluginCount))
 
 for (( idx=1; idx<=$numPluginsToCreate; idx++ )); do
@@ -330,6 +335,10 @@ for name in ${tmcPlugins[*]}; do
     addGroup vmware tmc tmc-user v11.11.11 $name mission-control v11.11.11
 done
 
+for name in ${opsPlugins[*]}; do
+    addPlugin $name operations true v11.11.11
+done
+
 # Push sanbox inventory file
 ${dry_run} imgpkg push -i $repoBasePath/$sanboxImage1 -f $database --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$sanboxImage1
@@ -355,6 +364,10 @@ done
 for name in ${tmcPlugins[*]}; do
     addPlugin $name mission-control true v22.22.22
     addGroup vmware tmc tmc-user v22.22.22 $name mission-control v22.22.22
+done
+
+for name in ${opsPlugins[*]}; do
+    addPlugin $name operations true v22.22.22
 done
 
 # Push sandbox inventory file
@@ -394,6 +407,11 @@ for name in ${tmcPlugins[0]}; do
     addPlugin $name mission-control true v9.9.9
     addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1
     addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
+done
+
+for name in ${opsPlugins[0]}; do
+    addPlugin $name operations true v0.0.1
+    addPlugin $name operations true v9.9.9
 done
 
 for name in ${pluginUsingSha[0]}; do
@@ -440,6 +458,11 @@ for name in ${tmcPlugins[*]}; do
     addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
 done
 
+for name in ${opsPlugins[*]}; do
+    addPlugin $name operations true v0.0.1
+    addPlugin $name operations true v9.9.9
+done
+
 for name in ${pluginUsingSha[*]}; do
     addPlugin $name global true v0.0.1 useSha
     addPlugin $name global true v9.9.9 useSha
@@ -475,6 +498,11 @@ for name in ${tmcPlugins[0]}; do
     addPlugin $name mission-control true v9.9.9 useSha
     addGroup vmware tmc tmc-user v0.0.1 $name mission-control v0.0.1
     addGroup vmware tmc tmc-user v9.9.9 $name mission-control v9.9.9
+done
+
+for name in ${opsPlugins[0]}; do
+    addPlugin $name operations true v0.0.1
+    addPlugin $name operations true v9.9.9 useSha
 done
 
 # Push airgapped inventory file
