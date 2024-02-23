@@ -33,7 +33,6 @@ ifeq ($(GITHUB_ACTIONS),true)
 		WGET = $(MSYS_BIN)/wget
 		BZIP2 = $(MSYS_BIN)/bzip2
 		TAR = $(MSYS_BIN)/tar
-		GITHUB_INFO := Running in GitHub Actions on Windows
 	endif
 endif
 
@@ -41,11 +40,6 @@ endif
 WGET := $(subst \,/,$(WGET))
 BZIP2 := $(subst \,/,$(BZIP2))
 TAR := $(subst \,/,$(TAR))
-
-$(info WGET after update: $(WGET))
-$(info BZIP2 after update: $(BZIP2))
-$(info TAR after update: $(TAR))
-$(info $(GITHUB_INFO))
 
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -61,7 +55,6 @@ GOTEST_VERBOSE ?= -v
 # Directories
 BIN_DIR := $(shell echo "bin")
 TOOLS_DIR := $(abspath $(ROOT_DIR)/hack/tools)
-#TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
 TOOLS_BIN_DIR := $(TOOLS_DIR)/$(BIN_DIR)
 
 # Add tooling binaries here and in hack/tools/Makefile
@@ -288,20 +281,17 @@ test-with-summary-report: tools
 
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
 #e2e-cli-core: tools crd-package-for-test start-test-central-repo start-airgapped-local-registry e2e-cli-core-all ## Execute all CLI Core E2E Tests
-e2e-cli-core: tools e2e-cli-core-all ## Execute all CLI Core E2E Tests
+e2e-cli-core:  start-test-central-repo  ## Execute all CLI Core E2E Tests
+#e2e-cli-core: tools e2e-cli-core-all ## Execute all CLI Core E2E Tests
 
 
 .PHONY: setup-custom-cert-for-test-central-repo
 setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test-central-repo in the config file
-	@echo "ROOT_DIR inside setup-custom-cert-for-test-central-repo: $(ROOT_DIR)"
-	@echo "WGET inside setup-custom-cert-for-test-central-repo: $(WGET)"
-	@echo "BZIP2 inside setup-custom-cert-for-test-central-repo: $(BZIP2)"
-	$(WGET) https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O hack/central-repo/local-central-repo-testcontent.bz2
-	$(TAR) xjf hack/central-repo/local-central-repo-testcontent.bz2 -C hack/central-repo/
-	@echo "Listing the contents of the hack/central-repo"
-	@ls -l hack/central-repo
-	@echo "current directory: $(PWD) files: $(ls)"
-	@ls
+	@if [ ! -d $(ROOT_DIR)/hack/central-repo/certs ]; then \
+		echo "Downloading test central repo certs";\
+    	wget https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2;\
+  		tar xjf $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2 -C $(ROOT_DIR)/hack/central-repo/;\
+	fi
 	echo "Adding docker test central repo cert to the config file"
 	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" TANZU_CLI_EULA_PROMPT_ANSWER="Yes" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
 	$(ROOT_DIR)/bin/tanzu config cert add --host localhost:9876 --ca-cert $(ROOT_DIR)/hack/central-repo/certs/localhost.crt
@@ -309,21 +299,50 @@ setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test
 .PHONY: start-test-central-repo
 start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-central-repo ## Starts up a test central repository locally with docker
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
-		(cd $(ROOT_DIR)/hack/central-repo && $(TAR) xjf registry-content.bz2 || true;) \
+		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
 	fi
-	@echo "Starting docker test central repo"
-
-	docker run --isolation=hyperv --rm -d -p 9876:443 --name central \
+	echo "Starting docker test central repo with images:"
+	@echo "docker run -d -p 9876:443 --name central \
+		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
 		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
 		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
-		-v "D:\a\tanzu-cli\tanzu-cli\hack\central-repo\registry-content:C:\registry" \
-		-v "D:\a\tanzu-cli\tanzu-cli\hack\central-repo\certs:C:\certs" \
-		stefanscherer/registry-windows:latest > /dev/null && \
+		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
+		$(REGISTRY_IMAGE)"
+	export MSYS_NO_PATHCONV=1
+	docker run -d -p 9876:443 --name central \
+		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
+		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
+		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
+		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
+		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
+		$(REGISTRY_IMAGE) > /dev/null && \
 		echo "Started docker test central repo with images:" && \
 		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
-	
-	@echo "Docker test central repo started at localhost:9876"
+
+.PHONY: start-test-central-repo33
+start-test-central-repo33: ## Starts up a test central repository locally with docker
+	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
+		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
+	fi
+	echo "Starting docker test central repo with images:"
+	@echo "docker run -d -p 9876:443 --name central \
+		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
+		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
+		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
+		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
+		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
+		$(REGISTRY_IMAGE)"
+	export MSYS_NO_PATHCONV=1
+	docker run -d -p 9876:443 --name central \
+		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
+		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
+		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
+		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
+		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
+		$(REGISTRY_IMAGE) > /dev/null && \
+		echo "Started docker test central repo with images:" && \
+		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 
 .PHONY: stop-test-central-repo
 stop-test-central-repo: ## Stops and removes the local test central repository

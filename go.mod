@@ -1,6 +1,6 @@
 module github.com/vmware-tanzu/tanzu-cli
 
-go 1.18
+go 1.21
 
 replace cloud.google.com/go => cloud.google.com/go v0.102.1
 
