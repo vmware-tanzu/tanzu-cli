@@ -78,6 +78,7 @@ var pluginsForPGTMC999 = []*framework.PluginInfo{
 var pluginsNotInAnyPG999 = []*framework.PluginInfo{
 	{Name: "isolated-cluster", Target: "global", Version: "v9.9.9", Description: "isolated-cluster " + functionality},
 	{Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "pinniped-auth " + functionality},
+	{Name: "clustergroup", Target: "operations", Version: "v9.9.9", Description: "clustergroup " + functionality},
 }
 
 var essentialPlugins = []*framework.PluginInfo{
