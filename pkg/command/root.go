@@ -170,7 +170,6 @@ func newRootCmd() *cobra.Command {
 			// Sets the verbosity of the logger if TANZU_CLI_LOG_LEVEL is set
 			setLoggerVerbosity()
 
-			log.V(6).Info("testing logger with 6")
 			// Ensure mutual exclusion in current contexts just in case if any plugins with old
 			// plugin-runtime sets k8s context as current when tanzu context is already set as current
 			if err := utils.EnsureMutualExclusiveCurrentContexts(); err != nil {
