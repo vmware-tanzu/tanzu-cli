@@ -10,8 +10,9 @@ import (
 const (
 	// Completion strings for the values of the --target flag
 	compGlobalTarget = "global\tApplicable globally"
-	compK8sTarget    = "k8s\tFor interactions with a Kubernetes cluster"
-	compTMCTarget    = "tmc\tFor interactions with a Tanzu Mission Control endpoint"
+	compK8sTarget    = "k8s\tInteractions with a Kubernetes endpoint"
+	compTMCTarget    = "tmc\tInteractions with a Tanzu Mission Control endpoint"
+	compOpsTarget    = "ops\tKubernetes operations for Tanzu Application Platform"
 
 	// Completion strings for the values of the --type flag
 	compK8sContextType   = "k8s\tContext for a Kubernetes cluster"

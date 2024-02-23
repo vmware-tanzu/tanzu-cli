@@ -14,7 +14,7 @@ tanzu plugin upgrade PLUGIN_NAME [flags]
 
 ```
   -h, --help            help for upgrade
-  -t, --target string   target of the plugin (kubernetes[k8s]/mission-control[tmc]/global)
+  -t, --target string   target of the plugin (kubernetes[k8s]/mission-control[tmc]/operations[ops]/global)
 ```
 
 ### SEE ALSO

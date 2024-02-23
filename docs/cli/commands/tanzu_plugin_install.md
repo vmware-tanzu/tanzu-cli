@@ -48,7 +48,7 @@ tanzu plugin install [PLUGIN_NAME] [flags]
 ```
       --group string     install the plugins specified by a plugin-group version
   -h, --help             help for install
-  -t, --target string    target of the plugin (kubernetes[k8s]/mission-control[tmc]/global)
+  -t, --target string    target of the plugin (kubernetes[k8s]/mission-control[tmc]/operations[ops]/global)
   -v, --version string   version of the plugin (default "latest")
 ```
 

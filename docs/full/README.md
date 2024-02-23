@@ -51,16 +51,14 @@ contexts for the same combination of `(user, server)`.
 
 ## Target
 
-A Target refers to a category or tier of control planes that the CLI can
-interact with. There are currently two supported targets : `kubernetes` (or
-`k8s`) and `mission-control` (or `tmc`) which corresponds to the Kubernetes
-cluster endpoint type and Tanzu Mission Control endpoint type respectively. A
-context is associated with one of the two supported targets. Plugins are
+A Target refers to a category of commands or tier of control planes that the CLI
+can interact with. There are currently three supported targets : `kubernetes` (or
+`k8s`), `mission-control` (or `tmc`) and `operations` (or `ops`). Plugins are
 generally associated with one of the above mentioned targets but if a plugin
 doesn't fall into any of the above categories a developer can create a plugin
 with the `global` target. A plugin using the `global` target is available as a
-root Tanzu CLI sub-command. To see plugins that only apply to the `kubernetes` target
-or only to the `mission-control` target, run the command `tanzu <target>'.
+root Tanzu CLI sub-command. To see plugins that only apply to a specific target,
+run the command `tanzu <target>'.
 
 Similarly, commands from plugins that are associated with a target are
 unambiguously invoked by prefixing the command group with the target, like so:
@@ -69,13 +67,14 @@ unambiguously invoked by prefixing the command group with the target, like so:
 tanzu mission-control data-protection ...
 or
 tanzu k8s management-cluster ...
+or
+tanzu operations clustergroup ...
 ```
 
 Note that today, the CLI supports omitting the target for historical reasons,
 but this omission only applies to commands for the `k8s` target.
 (So `tanzu management-cluster ...` is a valid variant of the above example, but not
-`tanzu data-protection ...`). The CLI team is exploring making the 'assumed target'
-configurable.
+`tanzu data-protection ...` or `tanzu clustergroup`).
 
 Note also that until a plugin associated with a target is installed, the target in
 question will be hidden from the user.  For example, if no `tmc`/`mission-control`

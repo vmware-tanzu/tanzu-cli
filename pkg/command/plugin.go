@@ -980,12 +980,12 @@ func completeTargetsForInstalledPlugins(_ *cobra.Command, args []string, _ strin
 		pluginName := args[0]
 		if pluginName == cli.AllPlugins {
 			// Suggest all targets
-			return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+			return []string{compGlobalTarget, compK8sTarget, compTMCTarget, compOpsTarget}, cobra.ShellCompDirectiveNoFileComp
 		}
 
 		installedPlugins, err := pluginsupplier.GetInstalledPlugins()
 		if err != nil {
-			return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+			return []string{compGlobalTarget, compK8sTarget, compTMCTarget, compOpsTarget}, cobra.ShellCompDirectiveNoFileComp
 		}
 
 		// Find all plugins matching the pluginName.  Each of the corresponding target should be suggested
@@ -998,7 +998,7 @@ func completeTargetsForInstalledPlugins(_ *cobra.Command, args []string, _ strin
 
 		// If we found no plugins with the correct name, just complete all targets
 		if len(availableTargets) == 0 {
-			return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+			return []string{compGlobalTarget, compK8sTarget, compTMCTarget, compOpsTarget}, cobra.ShellCompDirectiveNoFileComp
 		}
 
 		sort.Strings(availableTargets)
@@ -1006,7 +1006,7 @@ func completeTargetsForInstalledPlugins(_ *cobra.Command, args []string, _ strin
 	}
 
 	// Suggest all targets
-	return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+	return []string{compGlobalTarget, compK8sTarget, compTMCTarget, compOpsTarget}, cobra.ShellCompDirectiveNoFileComp
 }
 
 func completeTargetsForAllPlugins(_ *cobra.Command, args []string, _ string) ([]string, cobra.ShellCompDirective) {
@@ -1021,7 +1021,7 @@ func completeTargetsForAllPlugins(_ *cobra.Command, args []string, _ string) ([]
 
 		// If we found no plugins with the correct name, just complete all targets
 		if err != nil || len(plugins) == 0 {
-			return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+			return []string{compGlobalTarget, compK8sTarget, compTMCTarget, compOpsTarget}, cobra.ShellCompDirectiveNoFileComp
 		}
 
 		// For all plugins withe the specified name, the corresponding target should be suggested
@@ -1034,7 +1034,7 @@ func completeTargetsForAllPlugins(_ *cobra.Command, args []string, _ string) ([]
 	}
 
 	// Suggest all targets
-	return []string{compGlobalTarget, compK8sTarget, compTMCTarget}, cobra.ShellCompDirectiveNoFileComp
+	return []string{compGlobalTarget, compK8sTarget, compTMCTarget, compOpsTarget}, cobra.ShellCompDirectiveNoFileComp
 }
 
 func compTargetToCompString(target configtypes.Target) string {
@@ -1045,6 +1045,8 @@ func compTargetToCompString(target configtypes.Target) string {
 		return compK8sTarget
 	case configtypes.TargetTMC:
 		return compTMCTarget
+	case configtypes.TargetOperations:
+		return compOpsTarget
 	}
 	return string(target)
 }

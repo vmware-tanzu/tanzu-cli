@@ -436,7 +436,7 @@ func TestTargetCommands(t *testing.T) {
 			args: []string{"k8s"},
 			expected: []string{
 				"Note: No plugins are currently installed for the \"kubernetes\" target",
-				"Tanzu CLI plugins that target a Kubernetes cluster",
+				"Commands that interact with a Kubernetes endpoint",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -446,7 +446,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for k8s target help when empty",
 			args: []string{"k8s", "-h"},
 			expected: []string{
-				"Tanzu CLI plugins that target a Kubernetes cluster",
+				"Commands that interact with a Kubernetes endpoint",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -457,7 +457,7 @@ func TestTargetCommands(t *testing.T) {
 			args: []string{"k8s", "invalid"},
 			expected: []string{
 				"Note: No plugins are currently installed for the \"kubernetes\" target",
-				"Tanzu CLI plugins that target a Kubernetes cluster",
+				"Commands that interact with a Kubernetes endpoint",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -468,7 +468,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"k8s"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
 			expected: []string{
-				"Tanzu CLI plugins that target a Kubernetes cluster",
+				"Commands that interact with a Kubernetes endpoint",
 				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
 			},
 			unexpected: []string{
@@ -480,7 +480,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"k8s", "-h"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
 			expected: []string{
-				"Tanzu CLI plugins that target a Kubernetes cluster",
+				"Commands that interact with a Kubernetes endpoint",
 				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
 			},
 			unexpected: []string{
@@ -492,7 +492,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"k8s"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
 			expected: []string{
-				"Tanzu CLI plugins that target a Kubernetes cluster",
+				"Commands that interact with a Kubernetes endpoint",
 				"Note: No plugins are currently installed for the \"kubernetes\" target",
 			},
 			unexpected: []string{
@@ -504,7 +504,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"k8s", "-h"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
 			expected: []string{
-				"Tanzu CLI plugins that target a Kubernetes cluster",
+				"Commands that interact with a Kubernetes endpoint",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -518,7 +518,7 @@ func TestTargetCommands(t *testing.T) {
 			args: []string{"tmc"},
 			expected: []string{
 				"Note: No plugins are currently installed for the \"mission-control\" target",
-				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+				"Commands that provide functionality for Tanzu Mission Control",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -528,7 +528,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for tmc target help when empty",
 			args: []string{"tmc", "-h"},
 			expected: []string{
-				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+				"Commands that provide functionality for Tanzu Mission Control",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -539,7 +539,7 @@ func TestTargetCommands(t *testing.T) {
 			args: []string{"tmc", "invalid"},
 			expected: []string{
 				"Note: No plugins are currently installed for the \"mission-control\" target",
-				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+				"Commands that provide functionality for Tanzu Mission Control",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -550,7 +550,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"tmc"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
 			expected: []string{
-				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+				"Commands that provide functionality for Tanzu Mission Control",
 				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
 			},
 			unexpected: []string{
@@ -562,7 +562,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"tmc", "-h"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
 			expected: []string{
-				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+				"Commands that provide functionality for Tanzu Mission Control",
 				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
 			},
 			unexpected: []string{
@@ -574,7 +574,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"tmc"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
 			expected: []string{
-				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+				"Commands that provide functionality for Tanzu Mission Control",
 				"Note: No plugins are currently installed for the \"mission-control\" target",
 			},
 			unexpected: []string{
@@ -586,7 +586,89 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"tmc", "-h"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
 			expected: []string{
-				"Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+				"Commands that provide functionality for Tanzu Mission Control",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		// ========================
+		// Tests for the ops target
+		// ========================
+		{
+			test: "help for ops target run when empty",
+			args: []string{"ops"},
+			expected: []string{
+				"Note: No plugins are currently installed for the \"operations\" target",
+				"Commands that support Kubernetes operations for Tanzu Application Platform",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test: "help for ops target help when empty",
+			args: []string{"ops", "-h"},
+			expected: []string{
+				"Commands that support Kubernetes operations for Tanzu Application Platform",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test: "help for ops target invalid when empty",
+			args: []string{"ops", "invalid"},
+			expected: []string{
+				"Note: No plugins are currently installed for the \"operations\" target",
+				"Commands that support Kubernetes operations for Tanzu Application Platform",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test:                   "help for ops target run when not empty",
+			args:                   []string{"ops"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetOperations},
+			expected: []string{
+				"Commands that support Kubernetes operations for Tanzu Application Platform",
+				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
+			},
+			unexpected: []string{
+				"Note: No plugins are currently installed",
+			},
+		},
+		{
+			test:                   "help for ops target help when not empty",
+			args:                   []string{"ops", "-h"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetOperations},
+			expected: []string{
+				"Commands that support Kubernetes operations for Tanzu Application Platform",
+				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
+			},
+			unexpected: []string{
+				"Note: No plugins are currently installed",
+			},
+		},
+		{
+			test:                   "help for ops target run when empty but k8s not empty",
+			args:                   []string{"ops"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
+			expected: []string{
+				"Commands that support Kubernetes operations for Tanzu Application Platform",
+				"Note: No plugins are currently installed for the \"operations\" target",
+			},
+			unexpected: []string{
+				"Available command groups",
+			},
+		},
+		{
+			test:                   "help for ops target help when empty but k8s not empty",
+			args:                   []string{"ops", "-h"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
+			expected: []string{
+				"Commands that support Kubernetes operations for Tanzu Application Platform",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -626,6 +708,12 @@ func TestTargetCommands(t *testing.T) {
 		k8sCmd.ResetCommands()
 		k8sCmd.Hidden = false
 		helpFlag = k8sCmd.Flags().Lookup("help")
+		if helpFlag != nil {
+			_ = helpFlag.Value.Set("false")
+		}
+		opsCmd.ResetCommands()
+		opsCmd.Hidden = false
+		helpFlag = opsCmd.Flags().Lookup("help")
 		if helpFlag != nil {
 			_ = helpFlag.Value.Set("false")
 		}

@@ -29,7 +29,7 @@ const (
 
 // Shared strings
 const (
-	TargetList = "kubernetes[k8s]/mission-control[tmc]/global"
+	TargetList = "kubernetes[k8s]/mission-control[tmc]/operations[ops]/global"
 )
 
 // CoreName is the name of the core binary.

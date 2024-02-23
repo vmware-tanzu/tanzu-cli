@@ -52,6 +52,7 @@ func NewRootCmd() (*cobra.Command, error) {
 		contextCmd,
 		k8sCmd,
 		tmcCmd,
+		opsCmd,
 		// Note(TODO:prkalle): The below ceip-participation command(experimental) added may be removed in the next release,
 		//       If we decide to fold this functionality into existing 'tanzu telemetry' plugin
 		newCEIPParticipationCmd(),
@@ -131,8 +132,9 @@ func NewRootCmd() (*cobra.Command, error) {
 // setupTargetPlugins sets up the commands for the plugins under the k8s and tmc targets
 func setupTargetPlugins() error {
 	mapTargetToCmd := map[configtypes.Target]*cobra.Command{
-		configtypes.TargetK8s: k8sCmd,
-		configtypes.TargetTMC: tmcCmd,
+		configtypes.TargetK8s:        k8sCmd,
+		configtypes.TargetTMC:        tmcCmd,
+		configtypes.TargetOperations: opsCmd,
 	}
 
 	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
@@ -267,7 +269,7 @@ func InstallEssentialPlugins(cmd *cobra.Command) {
 func handleTargetHelp(cmd *cobra.Command, args []string) {
 	// If there are no plugins installed for this target, print a message
 	if len(cmd.Commands()) == 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "Note: No plugins are currently installed for the %[1]q target.\n      Such plugins will be accessible when a %[1]q context is created/activated or a %[1]q plugin is explicitly installed.\n\n", cmd.Name())
+		fmt.Fprintf(cmd.OutOrStdout(), "Note: No plugins are currently installed for the %[1]q target.\n\n", cmd.Name())
 	}
 	// Always print the help for the target command is invoked without any subcommand
 	cmd.HelpFunc()(cmd, args)
@@ -275,7 +277,7 @@ func handleTargetHelp(cmd *cobra.Command, args []string) {
 
 var k8sCmd = &cobra.Command{
 	Use:     "kubernetes",
-	Short:   "Tanzu CLI plugins that target a Kubernetes cluster",
+	Short:   "Commands that interact with a Kubernetes endpoint",
 	Aliases: []string{"k8s"},
 	Annotations: map[string]string{
 		"group": string(plugin.TargetCmdGroup),
@@ -287,8 +289,20 @@ var k8sCmd = &cobra.Command{
 
 var tmcCmd = &cobra.Command{
 	Use:     "mission-control",
-	Short:   "Tanzu CLI plugins that target a Tanzu Mission Control endpoint",
+	Short:   "Commands that provide functionality for Tanzu Mission Control",
 	Aliases: []string{"tmc"},
+	Annotations: map[string]string{
+		"group": string(plugin.TargetCmdGroup),
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		handleTargetHelp(cmd, args)
+	},
+}
+
+var opsCmd = &cobra.Command{
+	Use:     "operations",
+	Short:   "Commands that support Kubernetes operations for Tanzu Application Platform",
+	Aliases: []string{"ops"},
 	Annotations: map[string]string{
 		"group": string(plugin.TargetCmdGroup),
 	},
