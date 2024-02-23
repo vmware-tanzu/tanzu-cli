@@ -75,7 +75,12 @@ func getCmdForPluginEx(p *PluginInfo, cmdGroupName string) *cobra.Command {
 		Use:   cmdGroupName,
 		Short: p.Description,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			runner := NewRunner(p.Name, p.InstallationPath, args)
+			// Process the args to determine to pass the supported flags
+			pluginArgs, err := processArgs(p, args)
+			if err != nil {
+				return err
+			}
+			runner := NewRunner(p.Name, p.InstallationPath, pluginArgs)
 			ctx := context.Background()
 			setupPluginEnv()
 			return runner.Run(ctx)
@@ -146,6 +151,97 @@ func getCmdForPluginEx(p *PluginInfo, cmdGroupName string) *cobra.Command {
 		}
 	})
 	return cmd
+}
+
+// processArgs retrieves all plugin flags and filters out the verbose flag if the plugin doesn't support it.
+// It returns a slice of known arguments and an error if any occurred during the process.
+func processArgs(p *PluginInfo, args []string) (known []string, err error) {
+	// Retrieve all plugin flags
+	pluginFlags, err := getPluginFlags(p)
+	if err != nil {
+		// If an error occurs while retrieving the plugin flags, return the error.
+		return known, err
+	}
+
+	// Iterate over all the arguments.
+	for i := 0; i < len(args); i++ {
+		// If the current argument is the verbose flag...
+		if args[i] == "--verbose" {
+			// ...check if the plugin supports the verbose flag.
+			if _, ok := pluginFlags[args[i]]; ok {
+				// If the plugin supports the verbose flag, add it to the known arguments.
+				known = append(known, args[i])
+				i++
+				// If there are more arguments, add the flag value to the known arguments.
+				if i < len(args) {
+					known = append(known, args[i])
+				}
+			} else {
+				// If the plugin does not support the verbose flag, skip it.
+				i++
+			}
+		} else {
+			// If the current argument is not the verbose flag, add it to the known arguments.
+			known = append(known, args[i])
+		}
+	}
+
+	// Return the known arguments and any error that occurred.
+	return known, err
+}
+
+// getPluginFlags parses the plugin's help command and returns all supported flags.
+// It returns a map where the keys are the supported flags and the values are all set to true.
+func getPluginFlags(plugin *PluginInfo) (map[string]bool, error) {
+	// Create a new runner with the plugin's name, installation path, and the help command.
+	runner := NewRunner(plugin.Name, plugin.InstallationPath, []string{"-h"})
+	ctx := context.Background()
+
+	// Run the help command and capture the output.
+	stdout, _, err := runner.RunOutput(ctx)
+	if err != nil {
+		// If an error occurs while running the help command, return the error.
+		return nil, err
+	}
+
+	// Split the output into lines.
+	lines := strings.Split(stdout, "\n")
+
+	// Initialize a boolean to track when to start capturing flags.
+	start := false
+
+	// Initialize a map to store the flags.
+	flags := make(map[string]bool)
+
+	// Iterate over each line of the output.
+	for _, line := range lines {
+		// If the line starts with "Flags:", start capturing flags on the next line.
+		if strings.HasPrefix(line, "Flags:") {
+			start = true
+			continue
+		}
+
+		// If the line starts with "Use", stop capturing flags.
+		if start && strings.HasPrefix(line, "Use") {
+			break
+		}
+
+		// If capturing flags, split the line into parts.
+		if start {
+			parts := strings.Fields(line)
+			for i := 0; i < len(parts); i++ {
+				// Trim any trailing commas from each part.
+				part := strings.Trim(parts[i], ",")
+				// If the part is a flag (starts with "-") and is not just "-", add it to the flags map.
+				if strings.HasPrefix(part, "-") && part != "-" {
+					flags[part] = true
+				}
+			}
+		}
+	}
+
+	// Return the flags map and any error that occurred.
+	return flags, nil
 }
 
 // getHelpArguments extracts the command line to pass along to help calls.

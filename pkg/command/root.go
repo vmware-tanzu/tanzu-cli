@@ -33,6 +33,9 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
+// verbose flag to set the log level
+var verbose int
+
 // NewRootCmd creates a root command.
 func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 	var rootCmd = newRootCmd()
@@ -41,6 +44,9 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 
 	// Configure defined environment variables found in the config file
 	cliconfig.ConfigureEnvVariables()
+
+	// Initialize the global verbose flag to set the log level verbosity (0 - 9)
+	rootCmd.PersistentFlags().IntVar(&verbose, "verbose", 0, "number for the log level verbosity (0 - 9)")
 
 	rootCmd.AddCommand(
 		newVersionCmd(),
@@ -58,6 +64,7 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 		newCEIPParticipationCmd(),
 		newGenAllDocsCmd(),
 	)
+
 	if _, err := ensureCLIInstanceID(); err != nil {
 		return nil, errors.Wrap(err, "failed to ensure CLI ID")
 	}
@@ -240,8 +247,42 @@ func newRootCmd() *cobra.Command {
 		// silencing usage for now as we are getting double usage from plugins on errors
 		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Sets the verbosity of the logger if TANZU_CLI_LOG_LEVEL is set
-			setLoggerVerbosity()
+			// Validate the verbose flag
+			if verbose < 0 || verbose > 9 {
+				return errors.New("Invalid value for verbose flag. It should be between 0 and 9")
+			}
+
+			// For CLI commands: Default the verbose value to -1 If the flag is not set by user
+			// For Plugin commands: This won't be executed since flags are not parsed by cli but send to plugin as args
+			if !cmd.Flags().Changed("verbose") {
+				verbose = -1
+			}
+
+			/**
+			Manually parse the flags when plugin command is triggered
+			1. For CLI commands; all flags have been parsed and removed from the list of args and this loop will not run
+			2. For Plugin commands; Since CLI doesn't parse args and sends all args to plugin this loop will run to verify if verbose flag is set by the user and then passes to plugin.
+			*/
+			if cmd.DisableFlagParsing {
+				err := determineVerbosityFromPluginCommandArgs(args)
+				if err != nil {
+					return err
+				}
+			}
+
+			// Sets the verbosity of the logger
+			setLoggerVerbosity(verbose)
+
+			//TODO: Remove test logs
+
+			log.Info("I am level default")
+			log.V(0).Info("I am level 0")
+			log.V(1).Info("I am level 1")
+			log.V(2).Info("I am level 2")
+			log.V(3).Info("I am level 3")
+			log.V(4).Info("I am level 4")
+			log.V(5).Info("I am level 5")
+			log.V(6).Info("I am level 6")
 
 			// Ensure mutual exclusion in current contexts just in case if any plugins with old
 			// plugin-runtime sets k8s context as current when tanzu context is already set as current
@@ -290,14 +331,59 @@ func newRootCmd() *cobra.Command {
 	return rootCmd
 }
 
+// determineVerbosityFromPluginCommandArgs processes the command line arguments for plugin commands.
+// It specifically looks for the '--verbose' flag and validates its value.
+// The function returns an error if the verbose flag is missing its value or the value is not an integer between 0 and 9.
+func determineVerbosityFromPluginCommandArgs(args []string) error {
+	// Iterate over all command line arguments.
+	for i := 0; i < len(args); i++ {
+		// If the current argument is the verbose flag...
+		if args[i] == "--verbose" {
+			// ...check if there is a next argument that could be the value for the verbose flag.
+			if i+1 < len(args) {
+				nextArg := args[i+1]
+				// If the next argument is another flag (starts with '-' or '--'), return an error because the verbose flag is missing its value.
+				if strings.HasPrefix(nextArg, "-") || strings.HasPrefix(nextArg, "--") {
+					return errors.New("Missing value for verbose flag")
+				}
+				// Try to convert the next argument to an integer.
+				if v, err := strconv.Atoi(nextArg); err == nil {
+					// If the conversion is successful but the value is not between 0 and 9, return an error.
+					if v < 0 || v > 9 {
+						return errors.New("Invalid value for verbose flag. It should be between 0 and 9")
+					}
+					// If the value is valid, set the global verbose variable to this value.
+					verbose = v
+				}
+				// Skip the next argument because it has been processed as the value for the verbose flag.
+				i++
+			} else {
+				// If there is no next argument, return an error because the verbose flag is missing its value.
+				return errors.New("Missing value for verbose flag")
+			}
+		}
+	}
+	// If all arguments have been processed without errors, return nil.
+	return nil
+}
+
 // setLoggerVerbosity sets the verbosity of the logger if TANZU_CLI_LOG_LEVEL is set
-func setLoggerVerbosity() {
-	// Configure the log level if env variable TANZU_CLI_LOG_LEVEL is set
-	logLevel := os.Getenv(log.EnvTanzuCLILogLevel)
-	if logLevel != "" {
-		logValue, err := strconv.ParseInt(logLevel, 10, 32)
-		if err == nil {
-			log.SetVerbosity(int32(logValue))
+func setLoggerVerbosity(verbosity int) {
+	// If verbose global flag is passed set the log level verbosity  if not then check if env variable TANZU_CLI_LOG_LEVEL is set
+	if verbosity >= 0 {
+		// Set the log level verbosity with the verbosity value
+		log.SetVerbosity(int32(verbosity))
+
+		// Set the TANZU_CLI_LOG_LEVEL env with the verbosity value
+		_ = os.Setenv(log.EnvTanzuCLILogLevel, strconv.Itoa(verbosity))
+	} else {
+		// Configure the log level if env variable TANZU_CLI_LOG_LEVEL is set
+		logLevel := os.Getenv(log.EnvTanzuCLILogLevel)
+		if logLevel != "" {
+			logValue, err := strconv.ParseInt(logLevel, 10, 32)
+			if err == nil {
+				log.SetVerbosity(int32(logValue))
+			}
 		}
 	}
 }
