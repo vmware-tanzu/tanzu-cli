@@ -35,6 +35,12 @@
          "Target":"global",
          "Version":"v9.9.9",
          "Description":"plugin-with-sha functionality"
+      },
+      {
+         "Name":"clustergroup",
+         "Target":"operations",
+         "Version":"v9.9.9",
+         "Description":"clustergroup functionality"
       }
    ],
    "PluginGroupsForLifeCycleTests":[
