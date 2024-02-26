@@ -1,5 +1,5 @@
 # Base image and platform
-FROM --platform=linux/amd64 ubuntu:latest
+FROM --platform=linux/amd64 golang:1.21
 
 # Tanzu CLI version and other build arguments
 ARG TANZU_CLI_BUILD_VERSION
@@ -21,14 +21,6 @@ ENV TANZU_CLI_BUILD_VERSION=$TANZU_CLI_BUILD_VERSION \
     TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR=$TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR \
     TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION=$TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION
 
-# Install dependencies and go1.19
-RUN apt-get update && \
-    apt-get install -y wget gcc vim make git curl && \
-    wget https://golang.org/dl/go1.19.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.19.linux-amd64.tar.gz && \
-    rm go1.19.linux-amd64.tar.gz
-ENV PATH="/usr/local/go/bin:${PATH}"
-
 # Setup legacy Tanzu CLI; Fetch the legacy tanzu cli binary
 RUN mkdir -p "${TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR}" && \
     wget -P "${TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR}" https://github.com/vmware-tanzu/tanzu-framework/releases/download/"${TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION}"/tanzu-cli-linux-amd64.tar.gz && \
@@ -37,7 +29,7 @@ RUN mkdir -p "${TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR}" && \
 
 # Copy source code
 WORKDIR /app/src
-COPY . /app/src/
+COPY ../../.. /app/src/
 
 # Build the application
 RUN make build

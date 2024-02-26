@@ -413,6 +413,7 @@ build-cli-coexistence: start-test-central-repo
 		--build-arg TANZU_CLI_PRE_RELEASE_REPO_IMAGE=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) \
 		--build-arg TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER=$(TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER) \
 		--build-arg TANZU_CLI_EULA_PROMPT_ANSWER=$(TANZU_CLI_EULA_PROMPT_ANSWER) \
+		-f test/e2e/coexistence/Dockerfile \
 		-t cli-coexistence \
 		.
 
@@ -435,4 +436,4 @@ cli-coexistence-tests:start-test-central-repo
 	  -v $(ROOT_DIR)/hack/central-repo/cosign-key-pair:/cosign-key-pair/ \
 	  -w /tmp/tanzu-cli/ \
 	  cli-coexistence \
-	  ${GO} test ${GOTEST_VERBOSE}  ./test/e2e/coexistence... --ginkgo.v --ginkgo.randomize-all --ginkgo.trace --ginkgo.json-report=coexistence-tests.json
+	  ${GO} test ${GOTEST_VERBOSE} ./test/e2e/coexistence... --ginkgo.v --ginkgo.randomize-all --ginkgo.trace --ginkgo.json-report=testresults/coexistence_results.json
