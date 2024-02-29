@@ -6,6 +6,7 @@ package pluginsupplier
 
 import (
 	"os"
+	"slices"
 	"strconv"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
@@ -46,6 +47,31 @@ func GetInstalledServerPlugins() ([]cli.PluginInfo, error) {
 		return nil, err
 	}
 	return serverPlugins, nil
+}
+
+// FilterPluginsByActiveContextType will exclude any plugin with an explicit
+// setting of supportedContextType that does not match the type of any active CLI context
+// Separating this conditional check so GetInstalledStandalonePlugins can
+// continue to return all standalone plugins regardless of supportedContextType
+func FilterPluginsByActiveContextType(plugins []cli.PluginInfo) (result []cli.PluginInfo, err error) {
+	activeContextMap, err := configlib.GetAllActiveContextsMap()
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range plugins { //nolint:gocritic
+		if len(p.SupportedContextType) == 0 {
+			result = append(result, p)
+		} else {
+			for ctxType := range activeContextMap {
+				if slices.Contains(p.SupportedContextType, ctxType) {
+					result = append(result, p)
+					break
+				}
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // IsStandalonePluginInstalled returns true if standalone plugin is already installed
