@@ -34,7 +34,7 @@ import (
 )
 
 // NewRootCmd creates a root command.
-func NewRootCmd() (*cobra.Command, error) {
+func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 	var rootCmd = newRootCmd()
 	uFunc := cli.NewMainUsage().UsageFunc()
 	rootCmd.SetUsageFunc(uFunc)
@@ -67,10 +67,15 @@ func NewRootCmd() (*cobra.Command, error) {
 		return nil, err
 	}
 
-	plugins, err := pluginsupplier.GetInstalledPlugins()
+	allPlugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return nil, err
 	}
+	plugins, err := pluginsupplier.FilterPluginsByActiveContextType(allPlugins)
+	if err != nil {
+		return nil, err
+	}
+
 	telemetry.Client().SetInstalledPlugins(plugins)
 	if err = config.CopyLegacyConfigDir(); err != nil {
 		return nil, fmt.Errorf("failed to copy legacy configuration directory to new location: %w", err)
@@ -82,7 +87,11 @@ func NewRootCmd() (*cobra.Command, error) {
 	for i := range plugins {
 		// Only add plugins that should be available as root level command
 		if isPluginRootCmdTargeted(&plugins[i]) {
-			cmd := cli.GetCmdForPlugin(&plugins[i])
+			cmd := cli.GetUnmappedCmdForPlugin(&plugins[i])
+			if cmd == nil {
+				// plugin is being remapped, will be processed in the second pass
+				continue
+			}
 			// check and find if a command/plugin with the same name already exists as part of the root command
 			matchedCmd := findSubCommand(rootCmd, cmd)
 			if matchedCmd == nil { // If the subcommand for the plugin doesn't exist add the command
@@ -114,19 +123,61 @@ func NewRootCmd() (*cobra.Command, error) {
 		}
 	}
 
+	remapCommandTree(rootCmd, plugins)
+
 	if len(maskedPluginsWithPluginOverlap) > 0 {
 		catalog.DeleteIncorrectPluginEntriesFromCatalog()
 	}
 	if len(maskedPluginsWithCoreCmdOverlap) > 0 {
 		fmt.Fprintf(os.Stderr, "Warning, masking commands for plugins %q because a core command with that name already exists. \n", strings.Join(maskedPluginsWithCoreCmdOverlap, ", "))
 	}
-
 	duplicateAliasWarning(rootCmd)
 
 	// Disable footers in docs generated for core commands
 	rootCmd.DisableAutoGenTag = true
 
 	return rootCmd, nil
+}
+
+func remapCommandTree(rootCmd *cobra.Command, plugins []cli.PluginInfo) {
+	cmdMap := buildReplacementMap(plugins)
+	for pathKey, cmd := range cmdMap {
+		matchedCmd, parentCmd := findSubCommandByPath(rootCmd, pathKey)
+		if matchedCmd == nil {
+			if parentCmd != nil {
+				parentCmd.AddCommand(cmd)
+			} else {
+				fmt.Fprintf(os.Stderr, "Unable to remap %s at %q\n", cmd.Name(), pathKey)
+			}
+		} else {
+			parentCmd.RemoveCommand(matchedCmd)
+			parentCmd.AddCommand(cmd)
+		}
+	}
+}
+
+func buildReplacementMap(plugins []cli.PluginInfo) map[string]*cobra.Command {
+	var maskedRemappedPlugins []string
+	result := map[string]*cobra.Command{}
+
+	for i := range plugins {
+		cmdMap := cli.GetCommandMapForPlugin(&plugins[i])
+		for pathKey, newCmd := range cmdMap {
+			if _, ok := result[pathKey]; ok {
+				// Remapping a remapped command is unexpected! Note it and skip the attempt.
+				maskedRemappedPlugins = append(maskedRemappedPlugins, newCmd.Name())
+			} else {
+				result[pathKey] = newCmd
+			}
+		}
+	}
+
+	if len(maskedRemappedPlugins) > 0 {
+		// TODO(vuil) improve on usefulness of message
+		fmt.Fprintf(os.Stderr, "Warning, multiple command groups are being remapped to the same command names : %q.\n", strings.Join(maskedRemappedPlugins, ", "))
+	}
+
+	return result
 }
 
 // setupTargetPlugins sets up the commands for the plugins under the k8s and tmc targets
@@ -144,8 +195,11 @@ func setupTargetPlugins() error {
 
 	// Insert the plugin commands under the appropriate target command
 	for i := range installedPlugins {
-		if cmd, exists := mapTargetToCmd[installedPlugins[i].Target]; exists {
-			cmd.AddCommand(cli.GetCmdForPlugin(&installedPlugins[i]))
+		if targetCmd, exists := mapTargetToCmd[installedPlugins[i].Target]; exists {
+			cmd := cli.GetUnmappedCmdForPlugin(&installedPlugins[i])
+			if cmd != nil {
+				targetCmd.AddCommand(cmd)
+			}
 		}
 	}
 
@@ -318,6 +372,35 @@ func findSubCommand(rootCmd, subCmd *cobra.Command) *cobra.Command {
 		}
 	}
 	return nil
+}
+
+func findSubCommandByHierarchy(cmd *cobra.Command, hierarchy []string) (*cobra.Command, *cobra.Command) {
+	childCmds := cmd.Commands()
+	for i := range childCmds {
+		if childCmds[i].Name() == hierarchy[0] {
+			if len(hierarchy) == 1 {
+				return childCmds[i], childCmds[i].Parent()
+			}
+			return findSubCommandByHierarchy(childCmds[i], hierarchy[1:])
+		}
+	}
+	if len(hierarchy) == 1 {
+		return nil, cmd
+	}
+	return nil, nil
+}
+
+func findSubCommandByPath(rootCmd *cobra.Command, path string) (*cobra.Command, *cobra.Command) {
+	var cmd, cmdParent *cobra.Command
+	cmd = rootCmd
+	cmdParent = rootCmd.Parent()
+
+	cmdHierarchy := strings.Split(path, " ")
+	if len(cmdHierarchy) > 0 {
+		cmd, cmdParent = findSubCommandByHierarchy(rootCmd, cmdHierarchy)
+	}
+
+	return cmd, cmdParent
 }
 
 func isPluginRootCmdTargeted(pluginInfo *cli.PluginInfo) bool {
