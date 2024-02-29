@@ -5,20 +5,73 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 )
+
+// K8s-targeted plugins command group shows up as top level commands and under
+// the kubernetes group. Any remap location that points to one should also map
+// to the other to be consistent.
+// This function returns the alternate location, if applicable.
+func alternateRemapLocation(p *PluginInfo, location string) string {
+	if p.Target == configtypes.TargetK8s {
+		cmdHierarchy := strings.Split(strings.TrimSpace(location), " ")
+		if len(cmdHierarchy) == 1 {
+			return fmt.Sprintf("kubernetes %s", cmdHierarchy[0])
+		}
+		if len(cmdHierarchy) == 2 && cmdHierarchy[0] == "kubernetes" {
+			return cmdHierarchy[1]
+		}
+	}
+	return ""
+}
+
+// GetCommandMapForPlugin returns how the plugin's commands should be mapped
+func GetCommandMapForPlugin(p *PluginInfo) map[string]*cobra.Command {
+	cmdMap := map[string]*cobra.Command{}
+
+	for _, remapLocation := range p.InvokedAs {
+		cmdHierarchy := strings.Split(strings.TrimSpace(remapLocation), " ")
+
+		if len(cmdHierarchy) > 0 {
+			cmdMap[remapLocation] = getCmdForPluginEx(p, cmdHierarchy[len(cmdHierarchy)-1])
+		}
+		if alternateLocation := alternateRemapLocation(p, remapLocation); alternateLocation != "" {
+			cmdMap[alternateLocation] = cmdMap[remapLocation]
+		}
+	}
+
+	return cmdMap
+}
 
 // GetCmdForPlugin returns a cobra command for the plugin.
 func GetCmdForPlugin(p *PluginInfo) *cobra.Command {
+	return getCmdForPluginEx(p, p.Name)
+}
+
+// GetUnmappedCmdForPlugin returns a cobra command for the plugin unless there
+// are remapping directives in the plugin info, in which case it will return
+// nil instead.
+func GetUnmappedCmdForPlugin(p *PluginInfo) *cobra.Command {
+	if len(p.InvokedAs) > 0 {
+		return nil
+	}
+	return getCmdForPluginEx(p, p.Name)
+}
+
+// getCmdForPluginEx returns a cobra command for the plugin.
+func getCmdForPluginEx(p *PluginInfo, cmdGroupName string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   p.Name,
+		Use:   cmdGroupName,
 		Short: p.Description,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			runner := NewRunner(p.Name, p.InstallationPath, args)

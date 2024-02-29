@@ -73,6 +73,14 @@ type PluginInfo struct {
 
 	// DefaultFeatureFlags is default featureflags to be configured if missing when invoking plugin
 	DefaultFeatureFlags map[string]bool `json:"defaultFeatureFlags" yaml:"defaultFeatureFlags"`
+
+	// InvokedAs provides a specific mapping to how any command provided by this plugin should be invoked as.
+	// EXPERIMENTAL: subject to change prior to the next official minor release
+	InvokedAs []string `json:"invokedAs,omitempty" yaml:"invokedAs,omitempty"`
+
+	// SupportedContextType specifies one of more ContextType that this plugin will specifically apply to.
+	// EXPERIMENTAL: subject to change prior to the next official minor release
+	SupportedContextType []configtypes.ContextType `json:"supportedContextType,omitempty" yaml:"supportedContextType,omitempty"`
 }
 
 // PluginInfoSorter sorts PluginInfo objects.

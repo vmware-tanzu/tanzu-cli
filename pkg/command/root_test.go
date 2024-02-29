@@ -903,3 +903,313 @@ func TestCompletionShortHelpInActiveHelp(t *testing.T) {
 
 	os.Unsetenv("TANZU_ACTIVE_HELP")
 }
+
+type fakePluginRemapAttributes struct {
+	name                 string
+	description          string
+	target               configtypes.Target
+	cmdGroup             plugin.CmdGroup
+	supportedContextType []configtypes.ContextType
+	invokedAs            []string
+	aliases              []string
+}
+
+func setupFakePluginInfo(p fakePluginRemapAttributes, pluginDir string) *cli.PluginInfo {
+	description := fmt.Sprintf("%s commands", p.name)
+	if p.description != "" {
+		description = p.description
+	}
+	cmdGroup := plugin.SystemCmdGroup
+	if p.cmdGroup != "" {
+		cmdGroup = p.cmdGroup
+	}
+
+	pi := &cli.PluginInfo{
+		Name:                 p.name,
+		Description:          description,
+		Group:                cmdGroup,
+		Version:              "v0.1.0",
+		Aliases:              []string{},
+		Hidden:               false,
+		InstallationPath:     filepath.Join(pluginDir, fmt.Sprintf("%s_%s", p.name, string(p.target))),
+		Target:               p.target,
+		InvokedAs:            []string{},
+		SupportedContextType: []configtypes.ContextType{},
+	}
+
+	if len(p.invokedAs) != 0 {
+		pi.InvokedAs = p.invokedAs
+	}
+	if len(p.supportedContextType) != 0 {
+		pi.SupportedContextType = p.supportedContextType
+	}
+	if len(p.aliases) != 0 {
+		pi.Aliases = p.aliases
+	}
+	return pi
+}
+
+// Tests behavior of command tree with plugins remapped (at a plugin level)
+func TestPluginLevelRemapping(t *testing.T) {
+	tests := []struct {
+		test              string
+		pluginVariants    []fakePluginRemapAttributes
+		args              []string
+		expected          []string
+		unexpected        []string
+		expectedFailure   bool
+		activeContextType configtypes.ContextType
+	}{
+		{
+			test: "one unmapped k8s plugin",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:   "dummy",
+					target: configtypes.TargetK8s,
+				},
+			},
+			args:     []string{"dummy", "say", "hello"},
+			expected: []string{"hello"},
+		},
+		{
+			test: "one mapped k8s plugin",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:      "dummy2",
+					target:    configtypes.TargetK8s,
+					invokedAs: []string{"dummy"},
+				},
+			},
+			args:     []string{"dummy", "say", "hello"},
+			expected: []string{"hello"},
+		},
+		{
+			test: "once mapped, command using original plugin name is not accessible",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:      "dummy2",
+					target:    configtypes.TargetK8s,
+					invokedAs: []string{"dummy"},
+				},
+			},
+			args:            []string{"dummy2"},
+			expectedFailure: true,
+		},
+		{
+			test: "two plugins share aliases shows duplicate warning",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				fakePluginRemapAttributes{
+					name:      "dummy2",
+					target:    configtypes.TargetK8s,
+					invokedAs: []string{"dummy3"},
+					aliases:   []string{"dum"},
+				},
+			},
+			args:     []string{"dummy3", "say", "hello"},
+			expected: []string{"hello", "the alias dum is duplicated across plugins: dummy, dummy3"},
+		},
+		{
+			test: "two plugins sharing aliases does not show duplicate warning if one replaces another",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				fakePluginRemapAttributes{
+					name:      "dummy2",
+					target:    configtypes.TargetK8s,
+					invokedAs: []string{"dummy"},
+					aliases:   []string{"dum"},
+				},
+			},
+			args:       []string{"dummy", "say", "hello"},
+			expected:   []string{"hello"},
+			unexpected: []string{"duplciated across plugins"},
+		},
+		{
+			test: "map to deeper subcommand is valid as long as parent exists",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:      "dummy2",
+					target:    configtypes.TargetK8s,
+					invokedAs: []string{"dummy", "kubernetes dummy"},
+				},
+			},
+			args:     []string{"kubernetes", "dummy", "say", "hello"},
+			expected: []string{"hello"},
+		},
+		{
+			test: "map to deeper subcommand is invalid if parent missing",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:      "dummy2",
+					target:    configtypes.TargetK8s,
+					invokedAs: []string{"dummy", "nonexistentprefix dummy"},
+				},
+			},
+			args:            []string{"nonexistentprefix", "dummy"},
+			expectedFailure: true,
+		},
+		{
+			test: "one mapped tmc plugin",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:      "dummy2",
+					target:    configtypes.TargetTMC,
+					invokedAs: []string{"dummy", "mission-control dummy"},
+				},
+			},
+			args:     []string{"mission-control", "dummy", "say", "hello"},
+			expected: []string{"hello"},
+		},
+		{
+			test: "two plugins remapped to same location will warn",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:      "dummy2",
+					target:    configtypes.TargetK8s,
+					invokedAs: []string{"dummy"},
+					aliases:   []string{"dum"},
+				},
+				fakePluginRemapAttributes{
+					name:      "dummy3",
+					target:    configtypes.TargetK8s,
+					invokedAs: []string{"dummy"},
+					aliases:   []string{"dum"},
+				},
+			},
+			args:     []string{"dummy", "say", "hello"},
+			expected: []string{"hello", "Warning, multiple command groups are being remapped to the same command names : \"dummy, dummy\""},
+		},
+		{
+			test: "mapping plugins when conditional on active contexts",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				fakePluginRemapAttributes{
+					name:                 "dummy2",
+					target:               configtypes.TargetK8s,
+					invokedAs:            []string{"dummy"},
+					aliases:              []string{"dum"},
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
+				},
+			},
+			activeContextType: configtypes.ContextTypeTanzu,
+			args:              []string{},
+			expected:          []string{"dummy2 commands"},
+			unexpected:        []string{"dummy commands"},
+		},
+		{
+			test: "no mapping if active context not one of supportContextType list",
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				fakePluginRemapAttributes{
+					name:                 "dummy2",
+					target:               configtypes.TargetK8s,
+					invokedAs:            []string{"dummy"},
+					aliases:              []string{"dum"},
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
+				},
+			},
+			activeContextType: configtypes.ContextTypeK8s,
+			args:              []string{},
+			expected:          []string{"dummy commands"},
+			unexpected:        []string{"dummy2 commands"},
+		},
+		{
+			test: "deeper mapping is possible",
+			// ... but only in the sense that the plugin's commands are
+			// invocable at the mapped depth
+			pluginVariants: []fakePluginRemapAttributes{
+				fakePluginRemapAttributes{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				fakePluginRemapAttributes{
+					name:      "deeper",
+					target:    configtypes.TargetK8s,
+					invokedAs: []string{"kubernetes dummy deeper"},
+				},
+			},
+			args:     []string{"kubernetes", "dummy", "deeper", "say", "hello"},
+			expected: []string{"hello"},
+		},
+	}
+
+	for _, spec := range tests {
+		env := setupTestCLIEnvironment(t)
+		defer tearDownTestCLIEnvironment(env)
+
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			r, w, err := os.Pipe()
+			if err != nil {
+				t.Error(err)
+			}
+			c := make(chan []byte)
+			go readOutput(t, r, c)
+
+			// Set up for our test
+			stdout := os.Stdout
+			stderr := os.Stderr
+			defer func() {
+				os.Stdout = stdout
+				os.Stderr = stderr
+			}()
+			os.Stdout = w
+			os.Stderr = w
+
+			assert.Nil(err)
+
+			if spec.activeContextType != "" {
+				err = config.SetContext(&configtypes.Context{Name: "test-context", ContextType: spec.activeContextType}, true)
+				assert.Nil(err)
+			}
+
+			for _, p := range spec.pluginVariants {
+				pi := setupFakePluginInfo(p, env.cacheDir)
+				err = setupFakePlugin(env.cacheDir, pi.Name, pi.Version, pi.Group, 0, pi.Target, 0, pi.Hidden, pi.Aliases)
+
+				assert.Nil(err)
+
+				cc, err := catalog.NewContextCatalogUpdater("")
+				assert.Nil(err)
+				err = cc.Upsert(pi)
+				cc.Unlock()
+				assert.Nil(err)
+			}
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+
+			w.Close()
+			got := <-c
+
+			assert.Equal(spec.expectedFailure, err != nil)
+			for _, expected := range spec.expected {
+				assert.Contains(string(got), expected)
+			}
+			for _, unexpected := range spec.unexpected {
+				assert.NotContains(string(got), unexpected)
+			}
+		})
+	}
+}
