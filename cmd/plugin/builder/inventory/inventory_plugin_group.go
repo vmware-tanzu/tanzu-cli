@@ -81,7 +81,7 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*pl
 		plugin.Version = strings.TrimSpace(plugin.Version)
 
 		if plugin.Version == "" {
-			return nil, errors.Errorf("invalid plugin version %q for plugin %q, target %q. plugin version cannot be empty for plugin group", plugin.Version, plugin.Name, plugin.Target)
+			return nil, errors.Errorf("invalid version for plugin %q, target %q. plugin version cannot be empty for plugin group", plugin.Name, plugin.Target)
 		}
 		pge := plugininventory.PluginGroupPluginEntry{
 			PluginIdentifier: plugininventory.PluginIdentifier{
