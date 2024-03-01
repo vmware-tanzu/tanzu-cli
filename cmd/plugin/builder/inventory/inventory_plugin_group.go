@@ -7,6 +7,7 @@ package inventory
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -64,8 +65,8 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*pl
 	pg := plugininventory.PluginGroup{
 		Vendor:      ipuo.Vendor,
 		Publisher:   ipuo.Publisher,
-		Name:        ipuo.GroupName,
-		Description: ipuo.Description,
+		Name:        strings.TrimSpace(ipuo.GroupName),
+		Description: strings.TrimSpace(ipuo.Description),
 		Hidden:      ipuo.DeactivatePluginGroup,
 		Versions:    make(map[string][]*plugininventory.PluginGroupPluginEntry, 0),
 	}
@@ -77,9 +78,14 @@ func (ipuo *InventoryPluginGroupUpdateOptions) getPluginGroupFromManifest() (*pl
 
 	var plugins []*plugininventory.PluginGroupPluginEntry
 	for _, plugin := range pluginGroupManifest.Plugins {
+		plugin.Version = strings.TrimSpace(plugin.Version)
+
+		if plugin.Version == "" {
+			return nil, errors.Errorf("invalid version for plugin %q, target %q. plugin version cannot be empty for plugin group", plugin.Name, plugin.Target)
+		}
 		pge := plugininventory.PluginGroupPluginEntry{
 			PluginIdentifier: plugininventory.PluginIdentifier{
-				Name:    plugin.Name,
+				Name:    strings.TrimSpace(plugin.Name),
 				Target:  types.Target(plugin.Target),
 				Version: plugin.Version,
 			},
