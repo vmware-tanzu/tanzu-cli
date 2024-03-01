@@ -87,6 +87,80 @@ func (s *TestPluginSupplier) GetInstalledPlugins() ([]*cli.PluginInfo, error) {
 	return s.pluginInfos, nil
 }
 
+// testCLIEnvironment captures information needed to reset the top level "target" commands,
+// clean up config and unset envvars
+type testCLIEnvironment struct {
+	cacheDir     string
+	configFile   string
+	configFileNG string
+	envVars      []string
+}
+
+// helper to set up a clean environment to creat a root CLI command
+func setupTestCLIEnvironment(t *testing.T) testCLIEnvironment {
+	dir, err := os.MkdirTemp("", "tanzu-cli-root-cmd")
+	assert.Nil(t, err)
+	os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
+
+	// Setup a temporary configuration.  This means no
+	// plugin source will be available which will prevent
+	// trying to install the essential plugins.
+	// This speeds up the test.
+	configFile, _ := os.CreateTemp("", "config")
+	os.Setenv("TANZU_CONFIG", configFile.Name())
+
+	configFileNG, _ := os.CreateTemp("", "config_ng")
+	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+
+	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
+	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
+
+	// Start each test with the defaults of the target commands
+	// and reset the help flag in case it was set
+	tmcCmd.ResetCommands()
+	tmcCmd.Hidden = false
+	helpFlag := tmcCmd.Flags().Lookup("help")
+	if helpFlag != nil {
+		_ = helpFlag.Value.Set("false")
+	}
+	k8sCmd.ResetCommands()
+	k8sCmd.Hidden = false
+	helpFlag = k8sCmd.Flags().Lookup("help")
+	if helpFlag != nil {
+		_ = helpFlag.Value.Set("false")
+	}
+	opsCmd.ResetCommands()
+	opsCmd.Hidden = false
+	helpFlag = opsCmd.Flags().Lookup("help")
+	if helpFlag != nil {
+		_ = helpFlag.Value.Set("false")
+	}
+
+	return testCLIEnvironment{
+		cacheDir:     dir,
+		configFile:   configFile.Name(),
+		configFileNG: configFileNG.Name(),
+		envVars: []string{
+			"TEST_CUSTOM_CATALOG_CACHE_DIR",
+			"TANZU_CONFIG",
+			"TANZU_CONFIG_NEXT_GEN",
+			"TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER",
+			"TANZU_CLI_EULA_PROMPT_ANSWER",
+		},
+	}
+}
+
+// helper to clean up CLI environment
+func tearDownTestCLIEnvironment(env testCLIEnvironment) {
+	os.RemoveAll(env.cacheDir)
+	os.RemoveAll(env.configFile)
+	os.RemoveAll(env.configFileNG)
+
+	for _, envVar := range env.envVars {
+		os.Unsetenv(envVar)
+	}
+}
+
 func TestRootCmdWithNoAdditionalPlugins(t *testing.T) {
 	assert := assert.New(t)
 	rootCmd, err := NewRootCmd()
@@ -282,25 +356,8 @@ func TestSubcommands(t *testing.T) {
 	}
 
 	for _, spec := range tests {
-		dir, err := os.MkdirTemp("", "tanzu-cli-root-cmd")
-		assert.Nil(t, err)
-		defer os.RemoveAll(dir)
-		os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
-
-		// Setup a temporary configuration.  This means no
-		// plugin source will be available which will prevent
-		// trying to install the essential plugins.
-		// This speeds up the test.
-		configFile, _ := os.CreateTemp("", "config")
-		os.Setenv("TANZU_CONFIG", configFile.Name())
-		defer os.RemoveAll(configFile.Name())
-
-		configFileNG, _ := os.CreateTemp("", "config_ng")
-		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
-		defer os.RemoveAll(configFileNG.Name())
-
-		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
-		os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
+		env := setupTestCLIEnvironment(t)
+		defer tearDownTestCLIEnvironment(env)
 
 		var completionType uint8
 		t.Run(spec.test, func(t *testing.T) {
@@ -323,7 +380,7 @@ func TestSubcommands(t *testing.T) {
 			os.Stdout = w
 			os.Stderr = w
 
-			err = setupFakePlugin(dir, spec.plugin, spec.version, spec.cmdGroup, completionType, spec.target, spec.postInstallResult, spec.hidden, spec.aliases)
+			err = setupFakePlugin(env.cacheDir, spec.plugin, spec.version, spec.cmdGroup, completionType, spec.target, spec.postInstallResult, spec.hidden, spec.aliases)
 			assert.Nil(err)
 
 			pi := &cli.PluginInfo{
@@ -332,7 +389,7 @@ func TestSubcommands(t *testing.T) {
 				Group:            spec.cmdGroup,
 				Aliases:          []string{},
 				Hidden:           spec.hidden,
-				InstallationPath: filepath.Join(dir, fmt.Sprintf("%s_%s", spec.plugin, string(spec.target))),
+				InstallationPath: filepath.Join(env.cacheDir, fmt.Sprintf("%s_%s", spec.plugin, string(spec.target))),
 				Target:           spec.target,
 			}
 			cc, err := catalog.NewContextCatalogUpdater("")
@@ -358,11 +415,6 @@ func TestSubcommands(t *testing.T) {
 				assert.NotContains(string(got), spec.unexpected)
 			}
 		})
-		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
-		os.Unsetenv("TANZU_CONFIG")
-		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
-		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 	}
 }
 
@@ -677,46 +729,8 @@ func TestTargetCommands(t *testing.T) {
 	}
 
 	for _, spec := range tests {
-		dir, err := os.MkdirTemp("", "tanzu-cli-root-cmd")
-		assert.Nil(t, err)
-		defer os.RemoveAll(dir)
-		os.Setenv("TEST_CUSTOM_CATALOG_CACHE_DIR", dir)
-
-		// Setup a temporary configuration.  This means no
-		// plugin source will be available which will prevent
-		// trying to install the essential plugins.
-		// This speeds up the test.
-		configFile, _ := os.CreateTemp("", "config")
-		os.Setenv("TANZU_CONFIG", configFile.Name())
-		defer os.RemoveAll(configFile.Name())
-
-		configFileNG, _ := os.CreateTemp("", "config_ng")
-		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
-		defer os.RemoveAll(configFileNG.Name())
-
-		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
-		os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
-
-		// Start each test with the defaults of the target commands
-		// and reset the help flag in case it was set
-		tmcCmd.ResetCommands()
-		tmcCmd.Hidden = false
-		helpFlag := tmcCmd.Flags().Lookup("help")
-		if helpFlag != nil {
-			_ = helpFlag.Value.Set("false")
-		}
-		k8sCmd.ResetCommands()
-		k8sCmd.Hidden = false
-		helpFlag = k8sCmd.Flags().Lookup("help")
-		if helpFlag != nil {
-			_ = helpFlag.Value.Set("false")
-		}
-		opsCmd.ResetCommands()
-		opsCmd.Hidden = false
-		helpFlag = opsCmd.Flags().Lookup("help")
-		if helpFlag != nil {
-			_ = helpFlag.Value.Set("false")
-		}
+		env := setupTestCLIEnvironment(t)
+		defer tearDownTestCLIEnvironment(env)
 
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
@@ -749,10 +763,10 @@ func TestTargetCommands(t *testing.T) {
 					Version:          "v0.1.0",
 					Aliases:          []string{},
 					Hidden:           false,
-					InstallationPath: filepath.Join(dir, fmt.Sprintf("%s_%s", pluginName, string(target))),
+					InstallationPath: filepath.Join(env.cacheDir, fmt.Sprintf("%s_%s", pluginName, string(target))),
 					Target:           target,
 				}
-				err = setupFakePlugin(dir, pi.Name, pi.Version, pi.Group, 0, pi.Target, 0, pi.Hidden, pi.Aliases)
+				err = setupFakePlugin(env.cacheDir, pi.Name, pi.Version, pi.Group, 0, pi.Target, 0, pi.Hidden, pi.Aliases)
 				assert.Nil(err)
 
 				cc, err := catalog.NewContextCatalogUpdater("")
@@ -779,26 +793,14 @@ func TestTargetCommands(t *testing.T) {
 				assert.NotContains(string(got), unexpected)
 			}
 		})
-		os.Unsetenv("TEST_CUSTOM_CATALOG_CACHE_DIR")
-		os.Unsetenv("TANZU_CONFIG")
-		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-		os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
-		os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 	}
 }
 
 func TestEnvVarsSet(t *testing.T) {
-	assert := assert.New(t)
+	env := setupTestCLIEnvironment(t)
+	defer tearDownTestCLIEnvironment(env)
 
-	// Create test configuration files
-	configFile, _ := os.CreateTemp("", "config")
-	os.Setenv("TANZU_CONFIG", configFile.Name())
-	defer os.RemoveAll(configFile.Name())
-	configFileNG, _ := os.CreateTemp("", "config_ng")
-	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
-	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
-	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
-	defer os.RemoveAll(configFileNG.Name())
+	assert := assert.New(t)
 
 	err := config.ConfigureFeatureFlags(constants.DefaultCliFeatureFlags)
 	assert.Nil(err)
@@ -823,13 +825,6 @@ func TestEnvVarsSet(t *testing.T) {
 	assert.Nil(err)
 	// Make sure the variable is now set during the call to the CLI
 	assert.Equal(envVarValue, os.Getenv(envVarName))
-
-	// Cleanup
-	os.Unsetenv("TANZU_CONFIG")
-	os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-	os.Unsetenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER")
-	os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
-	os.Unsetenv(envVarName)
 }
 
 func setupFakePlugin(dir, pluginName, _ string, commandGroup plugin.CmdGroup, completionType uint8, target configtypes.Target, postInstallResult uint8, hidden bool, aliases []string) error {
