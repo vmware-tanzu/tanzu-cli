@@ -1130,9 +1130,7 @@ func TestPluginLevelRemapping(t *testing.T) {
 			unexpected:        []string{"dummy2 commands"},
 		},
 		{
-			test: "deeper mapping is possible",
-			// ... but only in the sense that the plugin's commands are
-			// invocable at the mapped depth
+			test: "nesting plugin within another plugin is not supported",
 			pluginVariants: []fakePluginRemapAttributes{
 				fakePluginRemapAttributes{
 					name:    "dummy",
@@ -1146,7 +1144,7 @@ func TestPluginLevelRemapping(t *testing.T) {
 				},
 			},
 			args:     []string{"kubernetes", "dummy", "deeper", "say", "hello"},
-			expected: []string{"hello"},
+			expected: []string{"Remap of plugin into command tree (dummy) associated with another plugin is not supported"},
 		},
 	}
 
