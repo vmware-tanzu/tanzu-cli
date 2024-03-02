@@ -143,6 +143,12 @@ func remapCommandTree(rootCmd *cobra.Command, plugins []cli.PluginInfo) {
 	cmdMap := buildReplacementMap(plugins)
 	for pathKey, cmd := range cmdMap {
 		matchedCmd, parentCmd := findSubCommandByPath(rootCmd, pathKey)
+
+		if parentCmd != nil && parentCmd.Annotations != nil && parentCmd.Annotations["type"] == common.CommandTypePlugin {
+			fmt.Fprintf(os.Stderr, "Remap of plugin into command tree (%s) associated with another plugin is not supported\n", parentCmd.Name())
+			continue
+		}
+
 		if matchedCmd == nil {
 			if parentCmd != nil {
 				parentCmd.AddCommand(cmd)
