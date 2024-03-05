@@ -108,6 +108,7 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 				// We therefore replace the existing command with the new command by removing the old and
 				// adding the new one.
 				maskedPluginsWithPluginOverlap = append(maskedPluginsWithPluginOverlap, matchedCmd.Name())
+
 				rootCmd.RemoveCommand(matchedCmd)
 				rootCmd.AddCommand(cmd)
 			} else if plugins[i].Name != "login" {
@@ -124,6 +125,7 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 	}
 
 	remapCommandTree(rootCmd, plugins)
+	updateTargetCommandGroupVisibility()
 
 	if len(maskedPluginsWithPluginOverlap) > 0 {
 		catalog.DeleteIncorrectPluginEntriesFromCatalog()
@@ -144,7 +146,7 @@ func remapCommandTree(rootCmd *cobra.Command, plugins []cli.PluginInfo) {
 	for pathKey, cmd := range cmdMap {
 		matchedCmd, parentCmd := findSubCommandByPath(rootCmd, pathKey)
 
-		if parentCmd != nil && parentCmd.Annotations != nil && parentCmd.Annotations["type"] == common.CommandTypePlugin {
+		if parentCmd != nil && isPluginCommand(parentCmd) {
 			fmt.Fprintf(os.Stderr, "Remap of plugin into command tree (%s) associated with another plugin is not supported\n", parentCmd.Name())
 			continue
 		}
@@ -156,8 +158,10 @@ func remapCommandTree(rootCmd *cobra.Command, plugins []cli.PluginInfo) {
 				fmt.Fprintf(os.Stderr, "Unable to remap %s at %q\n", cmd.Name(), pathKey)
 			}
 		} else {
-			parentCmd.RemoveCommand(matchedCmd)
-			parentCmd.AddCommand(cmd)
+			if parentCmd != nil {
+				parentCmd.RemoveCommand(matchedCmd)
+				parentCmd.AddCommand(cmd)
+			}
 		}
 	}
 }
@@ -186,6 +190,16 @@ func buildReplacementMap(plugins []cli.PluginInfo) map[string]*cobra.Command {
 	return result
 }
 
+// updateTargetCommandGroupVisibility hides commands associated with target
+// command group if latter did not acquire any child commands
+func updateTargetCommandGroupVisibility() {
+	for _, targetCmd := range []*cobra.Command{k8sCmd, tmcCmd, opsCmd} {
+		if len(targetCmd.Commands()) == 0 {
+			targetCmd.Hidden = true
+		}
+	}
+}
+
 // setupTargetPlugins sets up the commands for the plugins under the k8s and tmc targets
 func setupTargetPlugins() error {
 	mapTargetToCmd := map[configtypes.Target]*cobra.Command{
@@ -199,22 +213,21 @@ func setupTargetPlugins() error {
 		return fmt.Errorf("unable to find installed plugins: %w", err)
 	}
 
+	plugins, err := pluginsupplier.FilterPluginsByActiveContextType(installedPlugins)
+	if err != nil {
+		return err
+	}
+
 	// Insert the plugin commands under the appropriate target command
-	for i := range installedPlugins {
-		if targetCmd, exists := mapTargetToCmd[installedPlugins[i].Target]; exists {
-			cmd := cli.GetUnmappedCmdForPlugin(&installedPlugins[i])
+	for i := range plugins {
+		if targetCmd, exists := mapTargetToCmd[plugins[i].Target]; exists {
+			cmd := cli.GetUnmappedCmdForPlugin(&plugins[i])
 			if cmd != nil {
 				targetCmd.AddCommand(cmd)
 			}
 		}
 	}
 
-	// Hide the targets that currently have no plugins installed.
-	for _, targetCmd := range mapTargetToCmd {
-		if len(targetCmd.Commands()) == 0 {
-			targetCmd.Hidden = true
-		}
-	}
 	return nil
 }
 
