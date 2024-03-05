@@ -22,9 +22,9 @@ import (
 // the kubernetes group. Any remap location that points to one should also map
 // to the other to be consistent.
 // This function returns the alternate location, if applicable.
-func alternateRemapLocation(p *PluginInfo, location string) string {
+func alternateRemapLocation(p *PluginInfo, remapLocation string) string {
 	if p.Target == configtypes.TargetK8s {
-		cmdHierarchy := strings.Split(strings.TrimSpace(location), " ")
+		cmdHierarchy := strings.Split(remapLocation, " ")
 		if len(cmdHierarchy) == 1 {
 			return fmt.Sprintf("kubernetes %s", cmdHierarchy[0])
 		}
@@ -39,8 +39,9 @@ func alternateRemapLocation(p *PluginInfo, location string) string {
 func GetCommandMapForPlugin(p *PluginInfo) map[string]*cobra.Command {
 	cmdMap := map[string]*cobra.Command{}
 
-	for _, remapLocation := range p.InvokedAs {
-		cmdHierarchy := strings.Split(strings.TrimSpace(remapLocation), " ")
+	for _, invokedAsItem := range p.InvokedAs {
+		remapLocation := strings.TrimSpace(invokedAsItem)
+		cmdHierarchy := strings.Split(remapLocation, " ")
 
 		if len(cmdHierarchy) > 0 {
 			cmdMap[remapLocation] = getCmdForPluginEx(p, cmdHierarchy[len(cmdHierarchy)-1])
