@@ -740,6 +740,8 @@ github.com/vmware-tanzu/tanzu-plugin-runtime v1.2.0-dev.0.20240122211944-583955a
 github.com/vmware-tanzu/tanzu-plugin-runtime v1.2.0-dev.0.20240122215628-021d60b78abe h1:jlR24NEVKyBiTGlEtqWBSGULBqZe0LJd40VzybAStY0=
 github.com/vmware-tanzu/tanzu-plugin-runtime v1.2.0-dev.0.20240122215628-021d60b78abe/go.mod h1:M7WVZoItdyQp53tEprQIa6PZmhbrLe3CzuyQphWuRyI=
 github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0-alpha.0/go.mod h1:M7WVZoItdyQp53tEprQIa6PZmhbrLe3CzuyQphWuRyI=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0-alpha.1 h1:1Ny+ItzpVxzeMvhgd6GjYEylDc/eIZi1+UNk7IReyKY=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0-alpha.1/go.mod h1:5m73y796B4EoeXZtvkq8jbQPPQXeYkLPLS2BBbxZp7o=
 github.com/weppos/publicsuffix-go v0.20.1-0.20221031080346-e4081aa8a6de h1:eR9jm8DVMdrDUuVji4eOxPK4r/dANDlDBdISSUUV96s=
 github.com/weppos/publicsuffix-go v0.20.1-0.20221031080346-e4081aa8a6de/go.mod h1:g9GsAxnaxsUuTLZcQdYbi43vT2k9ubZGHsdCy819VLk=
 github.com/withfig/autocomplete-tools/integrations/cobra v1.2.1 h1:+dBg5k7nuTE38VVdoroRsT0Z88fmvdYrI2EjzJst35I=
