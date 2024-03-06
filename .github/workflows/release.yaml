@@ -116,9 +116,11 @@ jobs:
 
     - name: 'Identify New Contributors Section'
       id: get-new-contributors
+      env:
+        body: "${{ fromJson(steps.get-github-release-notes.outputs.data).body }}"
       run: |
         githubOutput="/tmp/${{ steps.time.outputs.time }}-github-output"
-        echo "${{ fromJson(steps.get-github-release-notes.outputs.data).body }}" > "$githubOutput"
+        echo "$body" > "$githubOutput"
 
     - name: Generate the release notes
       shell: bash
