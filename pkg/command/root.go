@@ -247,6 +247,8 @@ func InstallEssentialPlugins(cmd *cobra.Command) {
 		"tanzu pinniped-auth",
 		// Avoid trying to install essential plugins when user want to remove all plugins using tanzu plugin clean
 		"tanzu plugin clean",
+		// Avoid trying to install essential plugins when users initializes or update the plugin source information
+		"tanzu plugin source",
 	}
 	skipEssentials := false
 	for _, cmdPath := range skipCommandsForEssentials {
