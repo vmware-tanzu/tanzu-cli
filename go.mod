@@ -6,6 +6,8 @@ replace cloud.google.com/go => cloud.google.com/go v0.102.1
 
 replace github.com/vmware-tanzu/tanzu-cli/test/e2e/framework => ./test/e2e/framework
 
+replace github.com/vmware-tanzu/tanzu-plugin-runtime => github.com/anujc25/tanzu-plugin-runtime v0.0.0-20240307195649-fc031588c721
+
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/Masterminds/semver v1.5.0

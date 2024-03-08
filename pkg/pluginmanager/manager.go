@@ -175,11 +175,11 @@ func DiscoverServerPlugins() ([]discovery.Discovered, error) {
 	for _, context := range currentContextMap {
 		contexts = append(contexts, context)
 	}
-	return DiscoverServerPluginsForGivenContexts(contexts)
+	return discoverServerPluginsForGivenContexts(contexts)
 }
 
-// DiscoverServerPluginsForGivenContexts returns the available discovered plugins associated with specific contexts
-func DiscoverServerPluginsForGivenContexts(contexts []*configtypes.Context) ([]discovery.Discovered, error) {
+// discoverServerPluginsForGivenContexts returns the available discovered plugins associated with specific contexts
+func discoverServerPluginsForGivenContexts(contexts []*configtypes.Context) ([]discovery.Discovered, error) {
 	var plugins []discovery.Discovered
 	var errList []error
 	if len(contexts) == 0 {
@@ -477,14 +477,6 @@ func InstallStandalonePlugin(pluginName, version string, target configtypes.Targ
 	return installPlugin(pluginName, version, target, "")
 }
 
-// InstallPluginFromContext installs a plugin by name, version and target as a context-scope plugin.
-func InstallPluginFromContext(pluginName, version string, target configtypes.Target, contextName string) error {
-	if contextName == "" {
-		log.Warningf("Missing context name for a context-scope plugin: %s/%s/%s", pluginName, version, string(target))
-	}
-	return installPlugin(pluginName, version, target, contextName)
-}
-
 // installs a plugin by name, version and target.
 // If the contextName is not empty, it implies the plugin is a context-scope plugin, otherwise
 // we are installing a standalone plugin.
@@ -739,7 +731,7 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		// already local to the machine.
 		plugin = getPluginFromCache(p, version)
 		if p.ContextName == "" {
-			isPluginAlreadyInstalled = pluginsupplier.IsStandalonePluginInstalled(p.Name, p.Target, version)
+			isPluginAlreadyInstalled = pluginsupplier.IsPluginInstalled(p.Name, p.Target, version)
 		}
 	}
 
@@ -1125,10 +1117,14 @@ func SyncPlugins() error {
 	if err != nil {
 		errList = append(errList, err)
 	}
-	err = InstallDiscoveredContextPlugins(plugins)
-	if err != nil {
-		errList = append(errList, err)
+
+	for i := range plugins {
+		err = InstallStandalonePlugin(plugins[i].Name, plugins[i].RecommendedVersion, plugins[i].Target)
+		if err != nil {
+			errList = append(errList, err)
+		}
 	}
+
 	return kerrors.NewAggregate(errList)
 }
 
@@ -1140,44 +1136,15 @@ func DiscoverPluginsForContextType(contextType configtypes.ContextType) ([]disco
 	if ctx == nil {
 		return nil, fmt.Errorf(errorNoActiveContexForGivenContextType, contextType)
 	}
-	log.Infof("Checking for required plugins for context '%s'...", ctx.Name)
-	return DiscoverServerPluginsForGivenContexts([]*configtypes.Context{ctx})
+	log.Infof("Fetching recommended plugins for active context '%s'...", ctx.Name)
+	return discoverServerPluginsForGivenContexts([]*configtypes.Context{ctx})
 }
 
 // UpdatePluginsInstallationStatus updates the installation status of the given plugins
 func UpdatePluginsInstallationStatus(plugins []discovery.Discovered) {
-	if installedPlugins, err := pluginsupplier.GetInstalledServerPlugins(); err == nil {
+	if installedPlugins, err := pluginsupplier.GetInstalledPlugins(); err == nil {
 		setAvailablePluginsStatus(plugins, installedPlugins)
 	}
-}
-
-// InstallDiscoveredContextPlugins installs the given context scope plugins
-func InstallDiscoveredContextPlugins(plugins []discovery.Discovered) error {
-	var errList []error
-	var err error
-	installed := false
-	UpdatePluginsInstallationStatus(plugins)
-	for idx := range plugins {
-		if plugins[idx].Status == common.PluginStatusNotInstalled || plugins[idx].Status == common.PluginStatusUpdateAvailable {
-			installed = true
-			p := plugins[idx]
-			err = InstallPluginFromContext(p.Name, p.RecommendedVersion, p.Target, p.ContextName)
-			if err != nil {
-				errList = append(errList, err)
-			}
-		}
-	}
-	err = kerrors.NewAggregate(errList)
-	if err != nil {
-		return err
-	}
-
-	if !installed {
-		log.Info("All required plugins are already installed and up-to-date")
-	} else {
-		log.Info("Successfully installed all required plugins")
-	}
-	return nil
 }
 
 // InstallPluginsFromLocalSource installs plugin from local source directory

@@ -274,18 +274,23 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	// Sync all required plugins
-	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
-
+	if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
+		log.Warningf("unable to automatically sync the plugins recommended by the active context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
+	}
 	return nil
 }
 
 // syncContextPlugins syncs the plugins for the given context type
 // if listPlugins is true, it will list the plugins that will be installed for the given context type
-func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType, ctxName string, listPlugins bool) error {
+func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType, ctxName string) error {
 	plugins, err := pluginmanager.DiscoverPluginsForContextType(contextType)
-	errList := make([]error, 0)
 	if err != nil {
-		errList = append(errList, err)
+		return err
+	}
+
+	if len(plugins) == 0 {
+		log.Success("No recommended plugins found.")
+		return nil
 	}
 
 	// update plugins installation status
@@ -294,40 +299,45 @@ func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType,
 	// sort the plugins based on the plugin name
 	sort.Sort(discovery.DiscoveredSorter(plugins))
 
-	// list plugins only if listPlugins is true and there are plugins to be installed
-	if listPlugins {
-		pluginsNeedstoBeInstalled := 0
-		for idx := range plugins {
-			if plugins[idx].Status == common.PluginStatusNotInstalled || plugins[idx].Status == common.PluginStatusUpdateAvailable {
-				pluginsNeedstoBeInstalled++
-			}
-		}
-		if pluginsNeedstoBeInstalled > 0 {
-			log.Infof("The following plugins will be installed for context '%s' of contextType '%s': ", ctxName, contextType)
-			displayUninstalledPluginsContentAsTable(plugins, cmd.ErrOrStderr())
+	pluginsNeedToBeInstalled := []discovery.Discovered{}
+	for idx := range plugins {
+		if plugins[idx].Status == common.PluginStatusNotInstalled || plugins[idx].Status == common.PluginStatusUpdateAvailable {
+			pluginsNeedToBeInstalled = append(pluginsNeedToBeInstalled, plugins[idx])
 		}
 	}
 
-	err = pluginmanager.InstallDiscoveredContextPlugins(plugins)
-	if err != nil {
-		errList = append(errList, err)
+	if len(pluginsNeedToBeInstalled) == 0 {
+		log.Success("All recommended plugins are already installed.")
+		return nil
+	}
+
+	errList := make([]error, 0)
+	log.Infof("Installing following plugins recommended by the context '%s':", ctxName)
+	displayToBeInstalledPluginsAsTable(plugins, cmd.ErrOrStderr())
+	for i := range pluginsNeedToBeInstalled {
+		err = pluginmanager.InstallStandalonePlugin(pluginsNeedToBeInstalled[i].Name, pluginsNeedToBeInstalled[i].RecommendedVersion, pluginsNeedToBeInstalled[i].Target)
+		if err != nil {
+			errList = append(errList, err)
+		}
 	}
 	err = kerrors.NewAggregate(errList)
-	if err != nil {
-		log.Warningf("unable to automatically sync the plugins from target context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
+	if err == nil {
+		log.Success("Successfully installed all recommended plugins.")
 	}
+
 	return err
 }
 
-// displayUninstalledPluginsContentAsTable takes a list of plugins and writes the uninstalled plugins as a table
-func displayUninstalledPluginsContentAsTable(plugins []discovery.Discovered, writer io.Writer) {
-	outputUninstalledPlugins := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Version")
+// displayToBeInstalledPluginsAsTable takes a list of plugins and displays the plugin info as a table
+func displayToBeInstalledPluginsAsTable(plugins []discovery.Discovered, writer io.Writer) {
+	outputPlugins := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Installed", "Recommended")
+	outputPlugins.MarkDynamicKeys("Installed")
 	for i := range plugins {
 		if plugins[i].Status == common.PluginStatusNotInstalled || plugins[i].Status == common.PluginStatusUpdateAvailable {
-			outputUninstalledPlugins.AddRow(plugins[i].Name, plugins[i].Target, plugins[i].RecommendedVersion)
+			outputPlugins.AddRow(plugins[i].Name, plugins[i].Target, plugins[i].InstalledVersion, plugins[i].RecommendedVersion)
 		}
 	}
-	outputUninstalledPlugins.Render()
+	outputPlugins.Render()
 }
 
 func isGlobalContext(endpoint string) bool {
@@ -954,7 +964,7 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 		return errors.New(invalidTargetErrorForContextCommands)
 	}
 
-	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
+	if isTableOutputFormat() {
 		displayContextListOutputWithDynamicColumns(cfg, cmd.OutOrStdout(), showAllColumns)
 	} else {
 		displayContextListOutputListView(cfg, cmd.OutOrStdout())
@@ -1100,20 +1110,14 @@ func deleteCtx(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	installed, _, _, _ := getInstalledAndMissingContextPlugins() //nolint:dogsled
-	log.Infof("Deleting entry for context '%s'", name)
+
 	err = config.RemoveContext(name)
 	if err != nil {
 		return err
 	}
 
-	// Sort the installed plugins by name
-	sort.Sort(discovery.DiscoveredSorter(installed))
-
-	// List the plugins that are being deactivated
-	listDeactivatedPlugins(installed, name)
 	deleteKubeconfigContext(ctx)
-
+	log.Successf("Successfully deleted context %q", name)
 	return nil
 }
 
@@ -1148,7 +1152,7 @@ var useCtxCmd = &cobra.Command{
 	RunE:              useCtx,
 }
 
-func useCtx(cmd *cobra.Command, args []string) error {
+func useCtx(cmd *cobra.Command, args []string) error { //nolint:gocyclo
 	var ctx *configtypes.Context
 	var err error
 
@@ -1198,8 +1202,9 @@ func useCtx(cmd *cobra.Command, args []string) error {
 	log.Infof("Successfully activated context '%s' of type '%s'%s.", ctxName, ctx.ContextType, suffixString)
 
 	// Sync all required plugins
-	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
-
+	if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
+		log.Warningf("unable to automatically sync the plugins recommended by the active context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
+	}
 	return nil
 }
 
@@ -1241,27 +1246,23 @@ func unsetCtx(_ *cobra.Command, args []string) error {
 }
 
 func unsetGivenContext(name string, contextType configtypes.ContextType) error {
-	var unset bool
-	installed, _, _, _ := getInstalledAndMissingContextPlugins() //nolint:dogsled
 	currentCtxMap, err := config.GetAllActiveContextsMap()
 	if contextType != "" && name != "" {
 		ctx, ok := currentCtxMap[contextType]
 		if ok && ctx.Name == name {
 			err = config.RemoveActiveContext(contextType)
-			unset = true
 		} else {
 			return errors.Errorf(contextNotExistsForContextType, name, contextType)
 		}
 	} else if contextType != "" {
-		ctx, ok := currentCtxMap[contextType]
+		_, ok := currentCtxMap[contextType]
 		if ok {
-			name = ctx.Name
 			err = config.RemoveActiveContext(contextType)
-			unset = true
 		} else {
 			log.Warningf(noActiveContextExistsForContextType, contextType)
 		}
 	} else if name != "" {
+		var unset bool
 		for ct, ctx := range currentCtxMap {
 			if ctx.Name == name {
 				contextType = ct
@@ -1274,27 +1275,7 @@ func unsetGivenContext(name string, contextType configtypes.ContextType) error {
 			return errors.Errorf(contextNotActiveOrNotExists, name)
 		}
 	}
-	if err != nil {
-		return err
-	} else if unset {
-		log.Outputf(contextForContextTypeSetInactive, name, contextType)
-
-		// Sort the installed plugins by name
-		sort.Sort(discovery.DiscoveredSorter(installed))
-
-		// List the plugins that are being deactivated
-		listDeactivatedPlugins(installed, name)
-	}
-	return nil
-}
-
-// listDeactivatedPlugins stdout the plugins that are being deactivated
-func listDeactivatedPlugins(deactivatedPlugins []discovery.Discovered, ctxName string) {
-	for i := range deactivatedPlugins {
-		if (deactivatedPlugins)[i].ContextName == ctxName {
-			log.Outputf(deactivatingPlugin, (deactivatedPlugins)[i].Name, deactivatedPlugins[i].InstalledVersion, ctxName)
-		}
-	}
+	return err
 }
 
 func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.Writer) {
@@ -1804,4 +1785,8 @@ func mapTanzuEndpointToTMCEndpoint(tanzuEndpoint string) string {
 		return ""
 	}
 	return tmcEndpoint
+}
+
+func isTableOutputFormat() bool {
+	return outputFormat == "" || outputFormat == string(component.TableOutputType)
 }

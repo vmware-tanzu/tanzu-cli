@@ -48,18 +48,11 @@ var availablePlugins = []plugininventory.PluginIdentifier{
 var installedStandalonePlugins = []plugininventory.PluginIdentifier{
 	{Name: "management-cluster", Target: configtypes.TargetK8s, Version: "v0.1.0"},
 	{Name: "secret", Target: configtypes.TargetK8s, Version: "v0.3.0"},
+	{Name: "cluster", Target: configtypes.TargetK8s, Version: "v0.0.1"},
+	{Name: "feature", Target: configtypes.TargetK8s, Version: "v0.0.2"},
 
 	{Name: "management-cluster", Target: configtypes.TargetTMC, Version: "v0.0.1"},
-}
-
-var installedContextPlugins = map[string][]plugininventory.PluginIdentifier{
-	"myK8sCtx": {
-		{Name: "cluster", Target: configtypes.TargetK8s, Version: "v0.0.1"},
-		{Name: "feature", Target: configtypes.TargetK8s, Version: "v0.0.2"},
-	},
-	"myTMCCtx": {
-		{Name: "cluster", Target: configtypes.TargetTMC, Version: "v0.0.5"},
-	},
+	{Name: "cluster", Target: configtypes.TargetTMC, Version: "v0.0.5"},
 }
 
 const createGroupsStmt = `
@@ -255,36 +248,6 @@ func setupTestPluginCatalog(t *testing.T) {
 		assert.Nil(t, err)
 	}
 	cc.Unlock()
-
-	for ctxName, plugins := range installedContextPlugins {
-		cc, err := catalog.NewContextCatalogUpdater(ctxName)
-		assert.Nil(t, err)
-		assert.NotNil(t, cc)
-
-		var target configtypes.Target
-		for _, plugin := range plugins {
-			entry := cli.PluginInfo{
-				Name:             plugin.Name,
-				Target:           plugin.Target,
-				Version:          plugin.Version,
-				Description:      fmt.Sprintf("Plugin %s/%s description", plugin.Name, plugin.Target),
-				InstallationPath: "/path/" + string(plugin.Target) + "/" + plugin.Name,
-			}
-
-			err = cc.Upsert(&entry)
-			assert.Nil(t, err)
-
-			target = plugin.Target
-		}
-
-		err = configlib.SetContext(&configtypes.Context{
-			Name:   ctxName,
-			Target: target,
-		}, true)
-		assert.Nil(t, err)
-
-		cc.Unlock()
-	}
 }
 
 func setupPluginSourceForTesting(t *testing.T) func() {
