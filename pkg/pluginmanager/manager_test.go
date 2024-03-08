@@ -409,12 +409,9 @@ func Test_InstallStandalonePlugin(t *testing.T) {
 	}
 
 	// Verify installed plugins
-	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
+	installedStandalonePlugins, err := pluginsupplier.GetInstalledPlugins()
 	assertions.Nil(err)
 	assertions.Equal(len(expectedInstalledStandalonePlugins), len(installedStandalonePlugins))
-	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
-	assertions.Nil(err)
-	assertions.Equal(0, len(installedServerPlugins))
 
 	for i := 0; i < len(expectedInstalledStandalonePlugins); i++ {
 		pd := findPluginInfo(installedStandalonePlugins, expectedInstalledStandalonePlugins[i].Name, expectedInstalledStandalonePlugins[i].Target)
@@ -446,7 +443,7 @@ func Test_InstallPluginsFromGroup(t *testing.T) {
 	assertions.Nil(err)
 	assertions.Equal(groupID, fullGroupID)
 
-	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
+	installedStandalonePlugins, err := pluginsupplier.GetInstalledPlugins()
 	assertions.Nil(err)
 	assertions.Equal(1, len(installedStandalonePlugins))
 	pd := findPluginInfo(installedStandalonePlugins, "management-cluster", configtypes.TargetK8s)
@@ -462,7 +459,7 @@ func Test_InstallPluginsFromGroup(t *testing.T) {
 	assertions.Nil(err)
 	assertions.Equal(groupID+":v2.2.0", fullGroupID)
 
-	installedStandalonePlugins, err = pluginsupplier.GetInstalledStandalonePlugins()
+	installedStandalonePlugins, err = pluginsupplier.GetInstalledPlugins()
 	assertions.Nil(err)
 	assertions.Equal(2, len(installedStandalonePlugins))
 	pd = findPluginInfo(installedStandalonePlugins, "management-cluster", configtypes.TargetK8s)
@@ -479,7 +476,7 @@ func Test_InstallPluginsFromGroup(t *testing.T) {
 	assertions.Nil(err)
 	assertions.Equal(groupID, fullGroupID)
 
-	installedStandalonePlugins, err = pluginsupplier.GetInstalledStandalonePlugins()
+	installedStandalonePlugins, err = pluginsupplier.GetInstalledPlugins()
 	assertions.Nil(err)
 	assertions.Equal(4, len(installedStandalonePlugins))
 	pd = findPluginInfo(installedStandalonePlugins, "management-cluster", configtypes.TargetK8s)
@@ -503,7 +500,7 @@ func Test_InstallPluginsFromGroup(t *testing.T) {
 	assertions.Nil(err)
 	assertions.Equal(groupID+":v2.1.0", fullGroupID)
 
-	installedStandalonePlugins, err = pluginsupplier.GetInstalledStandalonePlugins()
+	installedStandalonePlugins, err = pluginsupplier.GetInstalledPlugins()
 	assertions.Nil(err)
 	assertions.Equal(4, len(installedStandalonePlugins))
 	pd = findPluginInfo(installedStandalonePlugins, "management-cluster", configtypes.TargetK8s)
@@ -591,7 +588,7 @@ func Test_InstallPlugin_InstalledPlugins_From_LocalSource(t *testing.T) {
 	err = InstallPluginsFromLocalSource("login", "v0.2.0", configtypes.TargetUnknown, localPluginSourceDir, false)
 	assertions.Nil(err)
 	// Verify installed plugin
-	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
+	installedStandalonePlugins, err := pluginsupplier.GetInstalledPlugins()
 	assertions.Nil(err)
 	assertions.Equal(1, len(installedStandalonePlugins))
 	assertions.Equal("login", installedStandalonePlugins[0].Name)
@@ -599,12 +596,9 @@ func Test_InstallPlugin_InstalledPlugins_From_LocalSource(t *testing.T) {
 	// Try installing cluster plugin from local source directory
 	err = InstallPluginsFromLocalSource("cluster", "v0.2.0", configtypes.TargetTMC, localPluginSourceDir, false)
 	assertions.Nil(err)
-	installedStandalonePlugins, err = pluginsupplier.GetInstalledStandalonePlugins()
+	installedStandalonePlugins, err = pluginsupplier.GetInstalledPlugins()
 	assertions.Nil(err)
 	assertions.Equal(2, len(installedStandalonePlugins))
-	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
-	assertions.Nil(err)
-	assertions.Equal(0, len(installedServerPlugins))
 
 	// Try installing a plugin from incorrect local path
 	err = InstallPluginsFromLocalSource("cluster", "v0.2.0", configtypes.TargetTMC, "fakepath", false)
@@ -769,15 +763,6 @@ func Test_SyncPlugins(t *testing.T) {
 	// There is an error for the kubernetes discovery since we don't have a cluster
 	// but other server plugins will be found, so we use those
 	assertions.Contains(err.Error(), `Failed to load Kubeconfig file from "config"`)
-
-	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
-	assertions.Nil(err)
-	assertions.Equal(len(installedServerPlugins), len(serverPlugins))
-
-	for _, isp := range installedServerPlugins {
-		p := findDiscoveredPlugin(serverPlugins, isp.Name, isp.Target)
-		assertions.NotNil(p)
-	}
 }
 
 func Test_setAvailablePluginsStatus(t *testing.T) {
@@ -904,13 +889,10 @@ func Test_InstallPluginsFromLocalSourceWithLegacyDirectoryStructure(t *testing.T
 	assertions.Nil(err)
 
 	// Verify installed plugin
-	installedStandalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
+	installedStandalonePlugins, err := pluginsupplier.GetInstalledPlugins()
 	assertions.Nil(err)
 	assertions.Equal(2, len(installedStandalonePlugins))
 	assertions.ElementsMatch([]string{"bar", "foo"}, []string{installedStandalonePlugins[0].Name, installedStandalonePlugins[1].Name})
-	installedServerPlugins, err := pluginsupplier.GetInstalledServerPlugins()
-	assertions.Nil(err)
-	assertions.Equal(0, len(installedServerPlugins))
 }
 
 func Test_VerifyRegistry(t *testing.T) {

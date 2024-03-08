@@ -44,7 +44,7 @@ func TestPluginList(t *testing.T) {
 			plugins:         []string{},
 			args:            []string{"plugin", "list"},
 			expectedFailure: false,
-			expected:        "NAME DESCRIPTION TARGET VERSION STATUS",
+			expected:        "NAME DESCRIPTION TARGET INSTALLED STATUS",
 		},
 		{
 			test:            "With empty config file(no discovery sources added) and when one additional plugin installed",
@@ -53,7 +53,7 @@ func TestPluginList(t *testing.T) {
 			targets:         []configtypes.Target{configtypes.TargetK8s},
 			args:            []string{"plugin", "list"},
 			expectedFailure: false,
-			expected:        "NAME DESCRIPTION TARGET VERSION STATUS foo some foo description kubernetes v0.1.0 installed",
+			expected:        "NAME DESCRIPTION TARGET INSTALLED STATUS foo some foo description kubernetes v0.1.0 installed",
 		},
 		{
 			test:            "With empty config file(no discovery sources added) and when more than one plugin is installed",
@@ -62,7 +62,7 @@ func TestPluginList(t *testing.T) {
 			targets:         []configtypes.Target{configtypes.TargetTMC, configtypes.TargetK8s},
 			args:            []string{"plugin", "list"},
 			expectedFailure: false,
-			expected:        "NAME DESCRIPTION TARGET VERSION STATUS bar some bar description kubernetes v0.2.0 installed foo some foo description mission-control v0.1.0 installed",
+			expected:        "NAME DESCRIPTION TARGET INSTALLED STATUS bar some bar description kubernetes v0.2.0 installed foo some foo description mission-control v0.1.0 installed",
 		},
 		{
 			test:            "when json output is requested",
@@ -71,7 +71,7 @@ func TestPluginList(t *testing.T) {
 			targets:         []configtypes.Target{configtypes.TargetK8s},
 			args:            []string{"plugin", "list", "-o", "json"},
 			expectedFailure: false,
-			expected:        `[ { "context": "", "description": "some foo description", "name": "foo", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
+			expected:        `[ { "active": true, "context": "", "description": "some foo description", "installed": "v0.1.0", "name": "foo", "recommended": "", "status": "installed", "target": "kubernetes", "version": "v0.1.0" } ]`,
 		},
 		{
 			test:            "when yaml output is requested",
@@ -80,7 +80,7 @@ func TestPluginList(t *testing.T) {
 			targets:         []configtypes.Target{configtypes.TargetK8s},
 			args:            []string{"plugin", "list", "-o", "yaml"},
 			expectedFailure: false,
-			expected:        `- context: "" description: some foo description name: foo status: installed target: kubernetes version: v0.1.0`,
+			expected:        `- active: true context: "" description: some foo description installed: v0.1.0 name: foo recommended: "" status: installed target: kubernetes version: v0.1.0`,
 		},
 		{
 			test:            "plugin describe json output requested",

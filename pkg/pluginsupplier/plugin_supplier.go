@@ -5,54 +5,33 @@
 package pluginsupplier
 
 import (
-	"os"
 	"slices"
-	"strconv"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
-// GetInstalledPlugins return the installed plugins( both standalone and server plugins )
+// GetInstalledPlugins return the installed plugins
 func GetInstalledPlugins() ([]cli.PluginInfo, error) {
-	plugins, err := GetInstalledServerPlugins()
-	if err != nil {
-		return nil, err
-	}
-	standalonePlugins, err := GetInstalledStandalonePlugins()
-	if err != nil {
-		return nil, err
-	}
-	plugins = append(plugins, standalonePlugins...)
+	// Migrate context-scoped plugins as standalone plugin if required
+	// TODO(anujc): Think on how to invoke this function just once after the newer version
+	// of the CLI gets installed as we just need to do this migration once
+	catalog.MigrateContextPluginsAsStandaloneIfNeeded()
 
-	return plugins, nil
-}
-
-// GetInstalledStandalonePlugins returns the installed standalone plugins.
-func GetInstalledStandalonePlugins() ([]cli.PluginInfo, error) {
-	standalonePlugins, _, err := getInstalledStandaloneAndServerPlugins()
+	// Get all the standalone plugins found in the catalog
+	standAloneCatalog, err := catalog.NewContextCatalog("")
 	if err != nil {
 		return nil, err
 	}
-	return standalonePlugins, nil
-}
-
-// GetInstalledServerPlugins returns the installed server plugins.
-func GetInstalledServerPlugins() ([]cli.PluginInfo, error) {
-	_, serverPlugins, err := getInstalledStandaloneAndServerPlugins()
-	if err != nil {
-		return nil, err
-	}
-	return serverPlugins, nil
+	return standAloneCatalog.List(), nil
 }
 
 // FilterPluginsByActiveContextType will exclude any plugin with an explicit
 // setting of supportedContextType that does not match the type of any active CLI context
-// Separating this conditional check so GetInstalledStandalonePlugins can
-// continue to return all standalone plugins regardless of supportedContextType
+// Separating this conditional check so GetInstalledPlugins can
+// continue to return all installed plugins regardless of supportedContextType
 func FilterPluginsByActiveContextType(plugins []cli.PluginInfo) (result []cli.PluginInfo, err error) {
 	activeContextMap, err := configlib.GetAllActiveContextsMap()
 	if err != nil {
@@ -74,90 +53,33 @@ func FilterPluginsByActiveContextType(plugins []cli.PluginInfo) (result []cli.Pl
 	return result, nil
 }
 
-// IsStandalonePluginInstalled returns true if standalone plugin is already installed
-func IsStandalonePluginInstalled(name string, target configtypes.Target, version string) bool {
-	// Check if the standalone plugin is already installed, if installed skip the installation of the plugin
-	installedStandalonePlugins, err := GetInstalledStandalonePlugins()
-	if err == nil {
-		for i := range installedStandalonePlugins {
-			if installedStandalonePlugins[i].Name == name &&
-				installedStandalonePlugins[i].Target == target &&
-				installedStandalonePlugins[i].Version == version {
-				return true
-			}
+// IsPluginActive returns true if specified plugin is active
+func IsPluginActive(pi *cli.PluginInfo) bool {
+	if len(pi.SupportedContextType) == 0 {
+		return true
+	}
+
+	activeContextMap, _ := configlib.GetAllActiveContextsMap()
+	for ctxType := range activeContextMap {
+		if slices.Contains(pi.SupportedContextType, ctxType) {
+			return true
 		}
 	}
 	return false
 }
 
-func getInstalledStandaloneAndServerPlugins() (standalonePlugins, serverPlugins []cli.PluginInfo, err error) {
-	// Get all the standalone plugins found in the catalog
-	standAloneCatalog, err := catalog.NewContextCatalog("")
-	if err != nil {
-		return nil, nil, err
-	}
-	standalonePlugins = standAloneCatalog.List()
-
-	// Get all the server plugins found in the catalog
-	serverNames, err := configlib.GetAllActiveContextsList()
-	if err != nil {
-		return nil, nil, err
-	}
-	for _, serverName := range serverNames {
-		if serverName != "" {
-			serverCatalog, err := catalog.NewContextCatalog(serverName)
-			if err != nil {
-				return nil, nil, err
-			}
-			serverPlugins = append(serverPlugins, serverCatalog.List()...)
-		}
-	}
-
-	// If the same plugin is present both as standalone and
-	// as a server plugin we need to select which one to use
-	// based on the TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS variable
-	standalonePlugins, serverPlugins = filterIdenticalStandaloneAndServerPlugins(standalonePlugins, serverPlugins)
-	return standalonePlugins, serverPlugins, nil
-}
-
-// Remove an installed standalone plugin if it is also installed as a server plugin,
-// or vice versa if the TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS variable is enabled
-func filterIdenticalStandaloneAndServerPlugins(standalonePlugins, serverPlugins []cli.PluginInfo) (installedStandalone, installedServer []cli.PluginInfo) {
-	standaloneOverServerPlugins, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableStandaloneOverContextPlugins))
-
-	if !standaloneOverServerPlugins {
-		installedServer = serverPlugins
-
-		for i := range standalonePlugins {
-			found := false
-			for j := range serverPlugins {
-				if standalonePlugins[i].Name == serverPlugins[j].Name && standalonePlugins[i].Target == serverPlugins[j].Target {
-					found = true
-					break
-				}
-			}
-			if !found {
-				// No server plugin of the same name/target so we keep the standalone plugin
-				installedStandalone = append(installedStandalone, standalonePlugins[i])
-			}
-		}
-	} else {
-		installedStandalone = standalonePlugins
-
-		for i := range serverPlugins {
-			found := false
-			for j := range standalonePlugins {
-				if serverPlugins[i].Name == standalonePlugins[j].Name && serverPlugins[i].Target == standalonePlugins[j].Target {
-					found = true
-					break
-				}
-			}
-			if !found {
-				// No standalone plugin of the same name/target so we keep the server plugin
-				installedServer = append(installedServer, serverPlugins[i])
+// IsPluginInstalled returns true if plugin is already installed
+func IsPluginInstalled(name string, target configtypes.Target, version string) bool {
+	// Check if the plugin is already installed, if installed skip the installation of the plugin
+	installedPlugins, err := GetInstalledPlugins()
+	if err == nil {
+		for i := range installedPlugins {
+			if installedPlugins[i].Name == name &&
+				installedPlugins[i].Target == target &&
+				installedPlugins[i].Version == version {
+				return true
 			}
 		}
 	}
-
-	return installedStandalone, installedServer
+	return false
 }
