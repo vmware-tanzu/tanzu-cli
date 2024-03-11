@@ -520,7 +520,7 @@ func displayInstalledPlugins(installedPlugins []cli.PluginInfo, recommendedConte
 				target:      string(recommendedContextPlugins[index].Target),
 				installed:   "",
 				recommended: recommendedContextPlugins[index].RecommendedVersion,
-				status:      common.PluginStatusNotInstalled,
+				status:      common.PluginStatusRecommendInstall,
 				active:      false,
 			}
 			plugins = append(plugins, p)
