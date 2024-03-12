@@ -1247,33 +1247,33 @@ func unsetCtx(_ *cobra.Command, args []string) error {
 
 func unsetGivenContext(name string, contextType configtypes.ContextType) error {
 	currentCtxMap, err := config.GetAllActiveContextsMap()
-	if contextType != "" && name != "" {
+	if err != nil {
+		return err
+	}
+
+	if contextType != "" {
 		ctx, ok := currentCtxMap[contextType]
-		if ok && ctx.Name == name {
-			err = config.RemoveActiveContext(contextType)
-		} else {
+		if !ok {
+			return errors.Errorf(noActiveContextExistsForContextType, contextType)
+		}
+		if name != "" && ctx.Name != name {
 			return errors.Errorf(contextNotExistsForContextType, name, contextType)
 		}
-	} else if contextType != "" {
-		_, ok := currentCtxMap[contextType]
-		if ok {
-			err = config.RemoveActiveContext(contextType)
-		} else {
-			log.Warningf(noActiveContextExistsForContextType, contextType)
-		}
 	} else if name != "" {
-		var unset bool
 		for ct, ctx := range currentCtxMap {
 			if ctx.Name == name {
 				contextType = ct
-				err = config.RemoveActiveContext(contextType)
-				unset = true
 				break
 			}
 		}
-		if !unset {
+		if contextType == "" {
 			return errors.Errorf(contextNotActiveOrNotExists, name)
 		}
+	}
+
+	err = config.RemoveActiveContext(contextType)
+	if err == nil {
+		log.Outputf(contextForContextTypeSetInactive, name, contextType)
 	}
 	return err
 }
