@@ -11,6 +11,8 @@ type PluginInfo struct {
 	Scope       string `json:"scope"`
 	Status      string `json:"status"`
 	Version     string `json:"version"`
+	Installed   string `json:"installed"`
+	Recommended string `json:"recommended"`
 	Context     string `json:"context"`
 }
 
