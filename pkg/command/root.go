@@ -319,10 +319,15 @@ func InstallEssentialPlugins(cmd *cobra.Command) {
 		// get to see the prompts and the kubectl command execution just gets stuck, and it
 		// is very hard for users to figure out what is going wrong
 		"tanzu pinniped-auth",
+
+		// Avoid trying to install essential plugins for below plugin commands
+
 		// Avoid trying to install essential plugins when user want to remove all plugins using tanzu plugin clean
 		"tanzu plugin clean",
 		// Avoid trying to install essential plugins when users initializes or update the plugin source information
 		"tanzu plugin source",
+		// Avoid trying to install essential plugins when user tries to install a plugin
+		"tanzu plugin uninstall",
 	}
 	skipEssentials := false
 	for _, cmdPath := range skipCommandsForEssentials {
