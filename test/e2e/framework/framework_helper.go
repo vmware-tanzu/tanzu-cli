@@ -83,7 +83,11 @@ func PluginListToMap(pluginsList []*PluginInfo) map[string]*PluginInfo {
 
 // GetMapKeyForPlugin takes the plugin and returns the map key for the plugin
 func GetMapKeyForPlugin(pluginsList *PluginInfo) string {
-	return fmt.Sprintf(PluginKey, pluginsList.Name, pluginsList.Target, pluginsList.Version)
+	if pluginsList.Version != "" {
+		return fmt.Sprintf(PluginKey, pluginsList.Name, pluginsList.Target, pluginsList.Version)
+	} else {
+		return fmt.Sprintf(PluginKey, pluginsList.Name, pluginsList.Target, pluginsList.Recommended)
+	}
 }
 
 // LegacyPluginListToMap converts the given PluginInfo slice to map type, key is combination  of plugin's name_target_version and value is PluginInfo
