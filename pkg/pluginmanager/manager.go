@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/Masterminds/semver"
@@ -56,7 +57,32 @@ const (
 	errorNoActiveContexForGivenContextType = "there is no active context for the given context type `%v`"
 )
 
+var totalPluginsToInstall = 0
+var pluginNumberBeingInstalled = 1
 var execCommand = exec.Command
+var spinner component.OutputWriterSpinner
+
+func init() {
+	// Initialize global spinner
+	spinner = component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr))
+	runtime.SetFinalizer(spinner, func(s component.OutputWriterSpinner) {
+		if s != nil {
+			s.StopSpinner()
+		}
+	})
+}
+
+func StopSpinner() {
+	if spinner != nil {
+		spinner.StopSpinner()
+	}
+}
+
+// ResetPluginInstallationCounts resets the total number of plugins to install and the number of plugins installed
+func ResetPluginInstallationCounts() {
+	SetTotalPluginsToInstall(0)
+	SetPluginBeingInstalledCount(1)
+}
 
 type DeletePluginOptions struct {
 	Target      configtypes.Target
@@ -472,7 +498,28 @@ func InitializePlugin(plugin *cli.PluginInfo) error {
 
 // InstallStandalonePlugin installs a plugin by name, version and target as a standalone plugin.
 func InstallStandalonePlugin(pluginName, version string, target configtypes.Target) error {
+	defer StopSpinner()
 	return installPlugin(pluginName, version, target, "")
+}
+
+// SetTotalPluginsToInstall sets the total number of plugins to install
+func SetTotalPluginsToInstall(total int) {
+	totalPluginsToInstall = total
+}
+
+// SetPluginBeingInstalledCount sets the number of plugins installed already
+func SetPluginBeingInstalledCount(count int) {
+	pluginNumberBeingInstalled = count
+}
+
+// GetPluginBeingInstalledCount returns the number of plugin being installed
+func GetPluginBeingInstalledCount() int {
+	return pluginNumberBeingInstalled
+}
+
+// IncrementPluginsInstalledCount increments the number of plugins installed
+func IncrementPluginsInstalledCount(count int) {
+	pluginNumberBeingInstalled += count
 }
 
 // installs a plugin by name, version and target.
@@ -560,7 +607,7 @@ func installPlugin(pluginName, version string, target configtypes.Target, contex
 	if len(matchedPlugins) == 1 {
 		return installOrUpgradePlugin(&matchedPlugins[0], matchedPlugins[0].RecommendedVersion, false)
 	}
-
+	// there can be only one plugin with the same name and target, so we can safely return the first one
 	for i := range matchedPlugins {
 		if matchedPlugins[i].Target == target {
 			return installOrUpgradePlugin(&matchedPlugins[i], matchedPlugins[i].RecommendedVersion, false)
@@ -592,29 +639,35 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 	// from the database
 	groupIDAndVersion = fmt.Sprintf("%s-%s/%s:%s", pg.Vendor, pg.Publisher, pg.Name, pg.RecommendedVersion)
 	log.Infof("Installing plugins from plugin group '%s'", groupIDAndVersion)
-
 	return InstallPluginsFromGivenPluginGroup(pluginName, groupIDAndVersion, pg)
 }
 
 // InstallPluginsFromGivenPluginGroup installs either the specified plugin or all plugins from given plugin group plugins.
 func InstallPluginsFromGivenPluginGroup(pluginName, groupIDAndVersion string, pg *plugininventory.PluginGroup) (string, error) {
 	numErrors := 0
-	numInstalled := 0
 	mandatoryPluginsExist := false
 	pluginExist := false
+
+	pluginsToInstall := make([]*plugininventory.PluginGroupPluginEntry, 0)
 	for _, plugin := range pg.Versions[pg.RecommendedVersion] {
 		if pluginName == cli.AllPlugins || pluginName == plugin.Name {
 			pluginExist = true
 			if plugin.Mandatory {
 				mandatoryPluginsExist = true
-				err := InstallStandalonePlugin(plugin.Name, plugin.Version, plugin.Target)
-				if err != nil {
-					numErrors++
-					log.Warningf("unable to install plugin '%s': %v", plugin.Name, err.Error())
-				} else {
-					numInstalled++
-				}
+				pluginsToInstall = append(pluginsToInstall, plugin) // Add mandatory plugin to the slice
 			}
+		}
+	}
+	SetTotalPluginsToInstall(len(pluginsToInstall))
+	SetPluginBeingInstalledCount(1)
+	defer StopSpinner()
+	defer ResetPluginInstallationCounts()
+	for _, plugin := range pluginsToInstall {
+		err := InstallStandalonePlugin(plugin.Name, plugin.Version, plugin.Target)
+		if err != nil {
+			numErrors++
+		} else {
+			IncrementPluginsInstalledCount(1)
 		}
 	}
 
@@ -633,7 +686,7 @@ func InstallPluginsFromGivenPluginGroup(pluginName, groupIDAndVersion string, pg
 		return groupIDAndVersion, fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupIDAndVersion)
 	}
 
-	if numInstalled == 0 {
+	if GetPluginBeingInstalledCount() == 0 {
 		return groupIDAndVersion, fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
 	}
 
@@ -704,7 +757,7 @@ func getPluginInstallationMessage(p *discovery.Discovered, version string, isPlu
 			installingMsg = fmt.Sprintf("Installing plugin '%v:%v' %v(from cache)", p.Name, version, withTarget)
 			installedMsg = fmt.Sprintf("Installed plugin '%v:%v' %v(from cache)", p.Name, version, withTarget)
 		} else {
-			installingMsg = fmt.Sprintf("Plugin '%v:%v' %vis already installed. Reinitializing...", p.Name, version, withTarget)
+			installingMsg = fmt.Sprintf("Already installed : Plugin '%v:%v' %v", p.Name, version, withTarget)
 			installedMsg = fmt.Sprintf("Reinitialized plugin '%v:%v' %v", p.Name, version, withTarget)
 		}
 	} else {
@@ -734,25 +787,27 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 	}
 
 	// Log message based on different installation conditions
-	installingMsg, installedMsg, errMsg := getPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
+	installingMsg, _, errMsg := getPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
 
-	var spinner component.OutputWriterSpinner
+	installingMsg = fmt.Sprintf("[%v/%v] %v", pluginNumberBeingInstalled, totalPluginsToInstall, installingMsg)
+	errMsg = fmt.Sprintf("[%v/%v] %v", pluginNumberBeingInstalled, totalPluginsToInstall, errMsg)
+	numPluginsInstalled := fmt.Sprintf("%d plugins installed out of %d", pluginNumberBeingInstalled, totalPluginsToInstall)
+	numPluginsInstalledWithLog := fmt.Sprintf("%s%s", log.GetLogTypeIndicator(log.LogTypeERROR), numPluginsInstalled)
+	errMsg = fmt.Sprintf("%s\n%s", errMsg, numPluginsInstalledWithLog)
 
 	// Initialize the spinner if the spinner is allowed
-	if component.IsTTYEnabled() {
-		// Initialize the spinner
-		spinner = component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr),
-			component.WithSpinnerText(installingMsg),
-			component.WithSpinnerStarted())
+	if component.IsTTYEnabled() && spinner != nil {
+		spinner.SetText(installingMsg)
 		spinner.SetFinalText(errMsg, log.LogTypeERROR)
-		defer spinner.StopSpinner()
+		spinner.StartSpinner()
 	} else {
 		log.Info(installingMsg)
 	}
 
 	pluginErr := verifyInstallAndInitializePlugin(plugin, p, version, installTestPlugin)
 	if pluginErr == nil && spinner != nil {
-		spinner.SetFinalText(installedMsg, log.LogTypeINFO)
+		// unset the final text to avoid the spinner from showing the final text
+		spinner.SetFinalText("", "")
 	}
 	return pluginErr
 }
@@ -1104,7 +1159,6 @@ func InstallPluginsFromLocalSource(pluginName, version string, target configtype
 	if err != nil {
 		return errors.Wrap(err, "unable to discover plugins")
 	}
-
 	var errList []error
 
 	var matchedPlugins []discovery.Discovered
@@ -1128,20 +1182,28 @@ func InstallPluginsFromLocalSource(pluginName, version string, target configtype
 		return errors.Errorf("unable to find plugin '%v' matching version '%v'", pluginName, version)
 	}
 
+	defer StopSpinner()
 	if len(matchedPlugins) == 1 {
 		return installOrUpgradePlugin(&matchedPlugins[0], version, installTestPlugin)
 	}
 
+	var pluginsToInstall []*discovery.Discovered
 	for i := range matchedPlugins {
 		// Install all plugins otherwise include all matching plugins
 		if pluginName == cli.AllPlugins || matchedPlugins[i].Target == target {
-			err = installOrUpgradePlugin(&matchedPlugins[i], version, installTestPlugin)
-			if err != nil {
-				errList = append(errList, err)
-			}
+			plugin := matchedPlugins[i]
+			pluginsToInstall = append(pluginsToInstall, &plugin)
 		}
 	}
-
+	SetTotalPluginsToInstall(len(pluginsToInstall))
+	SetPluginBeingInstalledCount(1)
+	defer ResetPluginInstallationCounts()
+	for _, plugin := range pluginsToInstall {
+		err = installOrUpgradePlugin(plugin, version, installTestPlugin)
+		if err != nil {
+			errList = append(errList, err)
+		}
+	}
 	err = kerrors.NewAggregate(errList)
 	if err != nil {
 		return err
