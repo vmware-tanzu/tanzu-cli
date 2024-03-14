@@ -58,6 +58,8 @@ const (
 	errorNoActiveContexForGivenContextType = "there is no active context for the given context type `%v`"
 )
 
+var totalPluginsToInstall = 0
+var pluginsInstalled = 0
 var execCommand = exec.Command
 
 type DeletePluginOptions struct {
@@ -609,22 +611,28 @@ func InstallPluginsFromGroup(pluginName, groupIDAndVersion string, options ...Pl
 // InstallPluginsFromGivenPluginGroup installs either the specified plugin or all plugins from given plugin group plugins.
 func InstallPluginsFromGivenPluginGroup(pluginName, groupIDAndVersion string, pg *plugininventory.PluginGroup) (string, error) {
 	numErrors := 0
-	numInstalled := 0
 	mandatoryPluginsExist := false
 	pluginExist := false
+	pluginsInstalled = 0
+
+	pluginsToInstall := make([]*plugininventory.PluginGroupPluginEntry, 0)
 	for _, plugin := range pg.Versions[pg.RecommendedVersion] {
 		if pluginName == cli.AllPlugins || pluginName == plugin.Name {
 			pluginExist = true
 			if plugin.Mandatory {
 				mandatoryPluginsExist = true
-				err := InstallStandalonePlugin(plugin.Name, plugin.Version, plugin.Target)
-				if err != nil {
-					numErrors++
-					log.Warningf("unable to install plugin '%s': %v", plugin.Name, err.Error())
-				} else {
-					numInstalled++
-				}
+				pluginsToInstall = append(pluginsToInstall, plugin) // Add mandatory plugin to the slice
 			}
+		}
+	}
+	totalPluginsToInstall = len(pluginsToInstall)
+	for _, plugin := range pluginsToInstall {
+		err := InstallStandalonePlugin(plugin.Name, plugin.Version, plugin.Target)
+		if err != nil {
+			numErrors++
+			log.Warningf("unable to install plugin '%s': %v", plugin.Name, err.Error())
+		} else {
+			pluginsInstalled++
 		}
 	}
 
@@ -643,7 +651,7 @@ func InstallPluginsFromGivenPluginGroup(pluginName, groupIDAndVersion string, pg
 		return groupIDAndVersion, fmt.Errorf("could not install %d plugin(s) from group '%s'", numErrors, groupIDAndVersion)
 	}
 
-	if numInstalled == 0 {
+	if pluginsInstalled == 0 {
 		return groupIDAndVersion, fmt.Errorf("plugin '%s' is not part of the group '%s'", pluginName, groupIDAndVersion)
 	}
 
@@ -744,7 +752,10 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 	}
 
 	// Log message based on different installation conditions
-	installingMsg, installedMsg, errMsg := getPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
+	installingMsg, _, errMsg := getPluginInstallationMessage(p, version, plugin != nil, isPluginAlreadyInstalled)
+
+	installingMsg = fmt.Sprintf("[%v/%v] %v", pluginsInstalled, totalPluginsToInstall, installingMsg)
+	errMsg = fmt.Sprintf("[%v/%v] %v", pluginsInstalled, totalPluginsToInstall, errMsg)
 
 	var spinner component.OutputWriterSpinner
 
@@ -762,8 +773,7 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		// Initialize the spinner
 		spinner = component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr),
 			component.WithSpinnerText(installingMsg),
-			component.WithSpinnerStarted(),
-			component.WithSpinnerFinalText(installedMsg, log.LogTypeINFO))
+			component.WithSpinnerStarted())
 
 		defer spinner.StopSpinner()
 
@@ -1154,29 +1164,45 @@ func UpdatePluginsInstallationStatus(plugins []discovery.Discovered) {
 // InstallDiscoveredContextPlugins installs the given context scope plugins
 func InstallDiscoveredContextPlugins(plugins []discovery.Discovered) error {
 	var errList []error
-	var err error
-	installed := false
+
+	// Slice to capture plugins to install
+	var pluginsToInstall []discovery.Discovered
+
 	UpdatePluginsInstallationStatus(plugins)
+
+	// Capture plugins that need install/update
 	for idx := range plugins {
-		if plugins[idx].Status == common.PluginStatusNotInstalled || plugins[idx].Status == common.PluginStatusUpdateAvailable {
-			installed = true
-			p := plugins[idx]
-			err = InstallPluginFromContext(p.Name, p.RecommendedVersion, p.Target, p.ContextName)
-			if err != nil {
-				errList = append(errList, err)
-			}
+		if plugins[idx].Status == common.PluginStatusNotInstalled ||
+			plugins[idx].Status == common.PluginStatusUpdateAvailable {
+			pluginsToInstall = append(pluginsToInstall, plugins[idx])
 		}
 	}
-	err = kerrors.NewAggregate(errList)
+	totalPluginsToInstall = len(pluginsToInstall)
+	// Now install captured plugins
+	for idx := range pluginsToInstall {
+		err := InstallPluginFromContext(pluginsToInstall[idx].Name, pluginsToInstall[idx].RecommendedVersion, pluginsToInstall[idx].Target, pluginsToInstall[idx].ContextName)
+		if err != nil {
+			errList = append(errList, err)
+		} else {
+			pluginsInstalled++
+		}
+	}
+
+	// Aggregate errors
+	err := kerrors.NewAggregate(errList)
 	if err != nil {
 		return err
 	}
 
-	if !installed {
+	// Output install status
+	if len(pluginsToInstall) == 0 {
 		log.Info("All required plugins are already installed and up-to-date")
+	} else if pluginsInstalled == totalPluginsToInstall {
+		log.Infof("Successfully installed all required %v plugins", pluginsInstalled)
 	} else {
-		log.Info("Successfully installed all required plugins")
+		log.Infof("Successfully installed %v of %v required plugins", pluginsInstalled, totalPluginsToInstall)
 	}
+
 	return nil
 }
 
