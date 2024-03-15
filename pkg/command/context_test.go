@@ -48,6 +48,7 @@ const (
 	testContextName                      = "test-context"
 	testEndpoint                         = "test.tanzu.cloud.vmware.com"
 	testProject                          = "test-project"
+	testProjectID                        = "test-project-id"
 	testSpace                            = "test-space"
 	testClustergroup                     = "test-clustergroup"
 )
@@ -600,13 +601,14 @@ clusterOpts:
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("space cannot be set without project name. Please provide project name also using --project option"))
 		})
-		It("should update the tanzu context active resource to project given project name and also update the kubeconfig cluster URL accordingly", func() {
+		It("should update the tanzu context active resource to project given project(name and ID) and also update the kubeconfig cluster URL accordingly", func() {
 			tanzuContext.GlobalOpts.Auth.Expiration = time.Now().Add(-time.Hour)
 
 			err = config.SetContext(tanzuContext, false)
 			Expect(err).To(BeNil())
 
 			projectStr = testProject
+			projectIDStr = testProjectID
 			err = setTanzuCtxActiveResource(cmd, []string{testContextName})
 			Expect(err).To(BeNil())
 
@@ -618,11 +620,12 @@ clusterOpts:
 			Expect(err).To(BeNil())
 			Expect(kubeconfig.Clusters["tanzu-cli-mytanzu/current"].Server).To(Equal(tanzuContext.ClusterOpts.Endpoint + "/project/" + testProject))
 		})
-		It("should update the tanzu context active resource to space given project and space names and also update the kubeconfig cluster URL accordingly", func() {
+		It("should update the tanzu context active resource to space given project(name and ID) and space names and also update the kubeconfig cluster URL accordingly", func() {
 			err = config.SetContext(tanzuContext, false)
 			Expect(err).To(BeNil())
 
 			projectStr = testProject
+			projectIDStr = testProjectID
 			spaceStr = testSpace
 			err = setTanzuCtxActiveResource(cmd, []string{testContextName})
 			Expect(err).To(BeNil())
@@ -640,6 +643,7 @@ clusterOpts:
 			Expect(err).To(BeNil())
 
 			projectStr = testProject
+			projectIDStr = testProjectID
 			spaceStr = ""
 			clustergroupStr = testClustergroup
 			err = setTanzuCtxActiveResource(cmd, []string{testContextName})
