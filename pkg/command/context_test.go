@@ -354,8 +354,8 @@ clusterOpts:
 			unattended = true
 			err = deleteCtx(cmd, []string{"fake-mc"})
 			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).ToNot(ContainSubstring("Deleting the context entry from the config will remove it from the list of tracked contexts. You will need to use `tanzu context create` to re-create this context. Are you sure you want to continue?"))
 			Expect(err.Error()).To(ContainSubstring("context fake-mc not found"))
-
 		})
 		It("should delete context successfully if the config file has contexts available", func() {
 			err = deleteCtx(cmd, []string{existingContext})
