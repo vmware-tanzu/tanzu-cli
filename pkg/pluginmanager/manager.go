@@ -10,8 +10,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
@@ -748,13 +750,34 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 
 	// Initialize the spinner if the spinner is allowed
 	if component.IsTTYEnabled() {
+		// Create a channel to receive OS signals
+		signalChannel := make(chan os.Signal, 1)
+		// Register the channel to receive interrupt signals (e.g., Ctrl+C)
+		signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
+		defer func() {
+			signal.Stop(signalChannel)
+			close(signalChannel)
+		}()
+
 		// Initialize the spinner
 		spinner = component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr),
 			component.WithSpinnerText(installingMsg),
 			component.WithSpinnerStarted(),
-			component.WithSpinnerFinalText(installedMsg, log.LogTypeINFO),
-			component.WithSpinnerErrorText(errMsg))
+			component.WithSpinnerFinalText(installedMsg, log.LogTypeINFO))
+
 		defer spinner.StopSpinner()
+
+		// Start a goroutine that listens for interrupt signals
+		go func(s component.OutputWriterSpinner) {
+			sig := <-signalChannel
+			if sig != nil {
+				if s != nil {
+					s.SetFinalText(errMsg, log.LogTypeERROR)
+					s.StopSpinner()
+				}
+				os.Exit(128 + int(sig.(syscall.Signal)))
+			}
+		}(spinner)
 	} else {
 		log.Info(installingMsg)
 	}
