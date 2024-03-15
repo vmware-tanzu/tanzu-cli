@@ -19,8 +19,8 @@ type PluginBasicOps interface {
 	ListPlugins(opts ...E2EOption) ([]*PluginInfo, string, string, error)
 	// ListInstalledPlugins lists all installed plugins
 	ListInstalledPlugins(opts ...E2EOption) ([]*PluginInfo, error)
-	// ListPluginsForGivenContext lists all plugins for a given context and either installed only or all
-	ListPluginsForGivenContext(context string, installedOnly bool, opts ...E2EOption) ([]*PluginInfo, error)
+	// ListRecommendedPluginsFromActiveContext lists all recommended plugins for the active context
+	ListRecommendedPluginsFromActiveContext(installedOnly bool, opts ...E2EOption) ([]*PluginInfo, error)
 	// SearchPlugins searches all plugins for given filter (keyword|regex) by running 'tanzu plugin search' command
 	SearchPlugins(filter string, opts ...E2EOption) ([]*PluginInfo, string, string, error)
 	// InstallPlugin installs given plugin and flags
@@ -150,21 +150,21 @@ func (po *pluginCmdOps) ListInstalledPlugins(opts ...E2EOption) ([]*PluginInfo, 
 	return installedPlugins, err
 }
 
-func (po *pluginCmdOps) ListPluginsForGivenContext(context string, installedOnly bool, opts ...E2EOption) ([]*PluginInfo, error) {
+func (po *pluginCmdOps) ListRecommendedPluginsFromActiveContext(installedOnly bool, opts ...E2EOption) ([]*PluginInfo, error) {
 	plugins, _, _, err := ExecuteCmdAndBuildJSONOutput[PluginInfo](po.cmdExe, ListPluginsCmdWithJSONOutputFlag, opts...)
-	contextSpecificPlugins := make([]*PluginInfo, 0)
+	recommendedPlugins := make([]*PluginInfo, 0)
 	for i := range plugins {
-		if plugins[i].Context == context {
+		if plugins[i].Recommended != "" {
 			if installedOnly {
-				if plugins[i].Status == Installed || plugins[i].Status == UpdateAvailable {
-					contextSpecificPlugins = append(contextSpecificPlugins, plugins[i])
+				if plugins[i].Status == Installed || plugins[i].Status == UpdateAvailable || plugins[i].Status == RecommendUpdate {
+					recommendedPlugins = append(recommendedPlugins, plugins[i])
 				}
 			} else {
-				contextSpecificPlugins = append(contextSpecificPlugins, plugins[i])
+				recommendedPlugins = append(recommendedPlugins, plugins[i])
 			}
 		}
 	}
-	return contextSpecificPlugins, err
+	return recommendedPlugins, err
 }
 
 func (po *pluginCmdOps) Sync(opts ...E2EOption) (string, string, error) {

@@ -6,11 +6,13 @@ package common
 
 // Plugin status and scope constants
 const (
-	PluginStatusInstalled       = "installed"
-	PluginStatusNotInstalled    = "not installed"
-	PluginStatusUpdateAvailable = "update available"
-	PluginScopeStandalone       = "Standalone"
-	PluginScopeContext          = "Context"
+	PluginStatusInstalled        = "installed"
+	PluginStatusNotInstalled     = "not installed"
+	PluginStatusRecommendInstall = "install recommended"
+	PluginStatusRecommendUpdate  = "update recommended"
+	PluginStatusUpdateAvailable  = "update available"
+	PluginScopeStandalone        = "Standalone"
+	PluginScopeContext           = "Context"
 )
 
 // DiscoveryType constants

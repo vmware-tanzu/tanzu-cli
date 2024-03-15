@@ -4,6 +4,7 @@
 package catalog
 
 import (
+	configlib "github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
@@ -42,5 +43,31 @@ func DeleteIncorrectPluginEntriesFromCatalog() {
 		}
 	}
 
+	_ = saveCatalogCache(c, lockedFile)
+}
+
+// MigrateContextPluginsAsStandaloneIfNeeded updates the catalog cache to move all the
+// context-scoped plugins associated with the active context as standalone plugins
+// and removes the context-scoped plugin mapping from the catalog cache.
+// This is to ensure backwards compatibility when user migrates from pre v1.3 version of
+// the CLI, the context-scoped plugins are still gets shown as installed
+func MigrateContextPluginsAsStandaloneIfNeeded() {
+	activeContexts, err := configlib.GetAllActiveContextsList()
+	if err != nil || len(activeContexts) == 0 {
+		return
+	}
+
+	c, lockedFile, err := getCatalogCache(true)
+	if err != nil {
+		return
+	}
+	defer lockedFile.Close()
+
+	for _, ac := range activeContexts {
+		for pluginKey, installPath := range c.ServerPlugins[ac] {
+			c.StandAlonePlugins.Add(pluginKey, installPath)
+		}
+		delete(c.ServerPlugins, ac)
+	}
 	_ = saveCatalogCache(c, lockedFile)
 }

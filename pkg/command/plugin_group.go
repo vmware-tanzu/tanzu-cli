@@ -134,7 +134,7 @@ func newGetCmd() *cobra.Command {
 				log.Warningf("unexpectedly found %d entries for group %q. Using the first one", len(groups), gID)
 			}
 
-			if outputFormat == "" || outputFormat == string(component.TableOutputType) {
+			if isTableOutputFormat() {
 				displayGroupContentAsTable(groups[0], specifiedVersion, outputFormat, true, showNonMandatory, cmd.OutOrStdout())
 			} else {
 				displayGroupContentAsList(groups[0], cmd.OutOrStdout())
@@ -161,7 +161,7 @@ func displayGroupsFound(groups []*plugininventory.PluginGroup, writer io.Writer)
 	}
 	output.Render()
 
-	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
+	if isTableOutputFormat() {
 		fmt.Fprintln(writer)
 		fmt.Fprintln(writer, groupSearchShowDetailsMsg)
 	}
@@ -177,7 +177,7 @@ func displayGroupDetails(groups []*plugininventory.PluginGroup, writer io.Writer
 	}
 
 	// For the table format, we will use individual yaml output for each group
-	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
+	if isTableOutputFormat() {
 		first := true
 		for _, pg := range groups {
 			if !first {

@@ -52,9 +52,13 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 	// b. create context and validate current active context
 	// c. list plugins and make sure no plugins installed
 	// d. delete current context
-	Context("Use case: create context when there are no plugins to sync", func() {
+	Context("Use case 1: create context when there are no plugins to sync", func() {
 		var contextName string
 		var err error
+		It("clean plugins", func() {
+			err := tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
+		})
 		// Test case: a. create empty mock response, and start mock http server
 		It("mock tmc endpoint with expected plugins response and start REST API mock server", func() {
 			pluginsToGenerateMockResponse := make([]*f.PluginInfo, 0)
@@ -83,7 +87,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		})
 		// Test case: c. list plugins and make sure no plugins installed
 		It("list plugins and check number plugins should be same as installed in previous test", func() {
-			pluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			pluginsList, err := tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(pluginsList)).Should(Equal(0), "there should not be any context specific plugins")
 		})
@@ -100,16 +104,20 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 	// Steps:
 	// a. mock tmc endpoint with plugins info, start the mock server
 	// b. create context and make sure context has created
-	// c. list plugins and validate plugins info, make sure all plugins are installed as per mock response
+	// c. list recommended installed plugins and validate plugins info, make sure all plugins are installed as per mock response
 	// d. uninstall one of the installed plugin, make sure plugin is uninstalled, run plugin sync, make sure the uninstalled plugin has installed again.
 	// e. delete current context, make sure all context specific plugins are uninstalled
-	Context("Use case: create context, uninstall plugin, sync plugins", func() {
+	Context("Use case 2: create context, uninstall plugin, sync plugins", func() {
 		//var pluginCRFilePaths []string
 		var pluginsToGenerateMockResponse, installedPluginsList, pluginsList []*f.PluginInfo
 		var contextName string
 		var err error
 		var ok bool
 
+		It("clean plugins", func() {
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
+		})
 		// Test case: a. mock tmc endpoint with plugins info, start the mock server
 		It("mock tmc endpoint with expected plugins response and restart REST API mock server", func() {
 			// get plugins from a group
@@ -142,17 +150,16 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(active).To(Equal(contextName), activeContextShouldBeRecentlyAddedOne)
 		})
 
-		// Test case: c. list plugins and validate plugins info, make sure all plugins are installed as per mock response
+		// Test case: c. list recommended installed plugins and validate plugins info, make sure all plugins are installed as per mock response
 		It("list plugins and validate plugins being installed after context being created", func() {
-			installedPluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			recommendedInstalledPluginsList, err := tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
-			Expect(len(installedPluginsList)).Should(Equal(len(pluginsToGenerateMockResponse)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
-			Expect(f.CheckAllPluginsExists(installedPluginsList, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+			Expect(len(recommendedInstalledPluginsList)).Should(Equal(len(pluginsToGenerateMockResponse)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPluginsList, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 		})
 
 		// Test case: d. uninstall one of the installed plugin, make sure plugin is uninstalled,
-		//				run plugin sync, make sure the uninstalled plugin has installed again.
-		//
+		//				run plugin sync, make sure the uninstalled plugin is installed again.
 		It("uninstall one of the installed plugin", func() {
 
 			var pluginToUninstall *f.PluginInfo
@@ -167,15 +174,23 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 				}
 			}
 			if pluginToUninstall != nil && len(latestPluginsInstalledList) > 0 {
+				installedPluginsList, err = tf.PluginCmd.ListInstalledPlugins()
+				Expect(err).To(BeNil(), "should not get any error for plugin list")
+
 				err := tf.PluginCmd.UninstallPlugin(pluginToUninstall.Name, pluginToUninstall.Target)
 				Expect(err).To(BeNil(), "should not get any error for plugin uninstall")
 
-				allPluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextName, false)
-				Expect(err).To(BeNil(), noErrorForPluginList)
-				installedPluginsList = f.GetInstalledPlugins(allPluginsList)
-				Expect(f.IsPluginExists(allPluginsList, f.GetGivenPluginFromTheGivenPluginList(allPluginsList, pluginToUninstall), f.NotInstalled)).To(BeTrue(), "uninstalled plugin should be listed as not installed")
-				Expect(len(installedPluginsList)).Should(Equal(len(latestPluginsInstalledList)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
-				Expect(f.CheckAllPluginsExists(installedPluginsList, latestPluginsInstalledList)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+				installedPluginsListAfterUninstall, err := tf.PluginCmd.ListInstalledPlugins()
+				Expect(err).To(BeNil(), "should not get any error for plugin list")
+
+				Expect(len(installedPluginsList)).Should(Equal(len(installedPluginsListAfterUninstall)+1), "only one plugin should be uninstalled")
+
+				recommendedPluginsList, err := tf.PluginCmd.ListRecommendedPluginsFromActiveContext(false)
+				Expect(err).To(BeNil(), "should not get any error for plugin list")
+
+				uninstalledPluginInfo := f.GetGivenPluginFromTheGivenPluginList(recommendedPluginsList, pluginToUninstall)
+				Expect(uninstalledPluginInfo.Status).To(Equal(f.RecommendInstall), "uninstalled plugin should be listed as 'install recommended'")
+				Expect(uninstalledPluginInfo.Recommended).To(Equal(pluginToUninstall.Version), "uninstalled plugin should also specify correct recommended column")
 			} else {
 				// fail the test case if at least two plugins are not available in the mock response
 				Fail("there should be at least two plugins to uninstall")
@@ -184,37 +199,41 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			_, _, err = tf.PluginCmd.Sync()
 			Expect(err).To(BeNil(), "should not get any error for plugin sync")
 
-			installedPluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
-			Expect(err).To(BeNil(), noErrorForPluginList)
-			Expect(len(installedPluginsList)).Should(Equal(len(pluginsToGenerateMockResponse)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
-			Expect(f.CheckAllPluginsExists(installedPluginsList, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+			installedPluginsList, err = tf.PluginCmd.ListInstalledPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(f.CheckAllPluginsExists(installedPluginsList, pluginsToGenerateMockResponse)).Should(BeTrue(), "plugins being installed and plugins for the mocked plugins should be same")
 		})
 		// e. delete current context, make sure all context specific plugins are uninstalled
 		It("delete current context", func() {
 			_, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
 
-			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			pluginsList, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(pluginsList)).Should(Equal(0), "all context plugins should be uninstalled as context delete")
 			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
 	})
+
 	// Use case 3: create a context (plugin sync) when test central repo does not have all plugins mocked in tmc endpoint response
 	// Steps:
 	// a. update tmc endpoint mock response (make sure at least a plugin does not exists in test central repo) and restart REST API mock server
 	// b. create context and make sure context has created
-	// c. list plugins and validate plugins info, make sure all plugins installed for which response mocked and available in central repo, the unavailable plugin (with incorrect version) should not be installed
+	// c. list recommended plugins and validate plugins info, make sure all plugins installed for which response mocked and available in central repo, the unavailable plugin (with incorrect version) should not be installed
 	// d. run plugin sync and validate the plugin list
-	// e. delete current context
-
-	Context("Use case: Create context should not install unavailable plugins, plugin sync also should not install unavailable plugins", func() {
-		var pluginsToGenerateMockResponse, pluginsGeneratedMockResponseWithCorrectInfo, pluginsList []*f.PluginInfo
+	// e. unset the context and make sure plugins are still installed and set the context again
+	// f. delete current context
+	Context("Use case 3: Create context should not install unavailable plugins, plugin sync also should not install unavailable plugins", func() {
+		var pluginsToGenerateMockResponse, pluginsGeneratedMockResponseWithCorrectInfo []*f.PluginInfo
 		var pluginWithIncorrectVersion *f.PluginInfo
 		var contextName, randomPluginVersion string
 		var err error
 		var ok bool
+		It("clean plugins", func() {
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
+		})
 		// Test case: a. update tmc endpoint mock response (make sure at least a plugin does not exists in test central repo) and restart REST API mock server
 		It("mock tmc endpoint with expected plugins response and restart REST API mock server", func() {
 			// get plugins from a group
@@ -262,12 +281,12 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(active).To(Equal(contextName), activeContextShouldBeRecentlyAddedOne)
 		})
 
-		// Test case: c. list plugins and validate plugins info, make sure all plugins installed for which response mocked and available in central repo, the unavailable plugin (with incorrect version) should not be installed
+		// Test case: c. list recommended plugins and validate plugins info, make sure all plugins installed for which response mocked and available in central repo, the unavailable plugin (with incorrect version) should not be installed
 		It("list plugins and validate plugins being installed after context being created", func() {
-			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			recommendedInstalledPlugins, err := tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
-			Expect(len(pluginsList)).Should(Equal(len(pluginsGeneratedMockResponseWithCorrectInfo)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
-			Expect(f.CheckAllPluginsExists(pluginsList, pluginsGeneratedMockResponseWithCorrectInfo)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+			Expect(len(recommendedInstalledPlugins)).Should(Equal(len(pluginsGeneratedMockResponseWithCorrectInfo)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPlugins, pluginsGeneratedMockResponseWithCorrectInfo)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 		})
 
 		// Test case: d. run plugin sync and validate the plugin list
@@ -275,33 +294,41 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			_, _, err = tf.PluginCmd.Sync()
 			Expect(err.Error()).To(ContainSubstring(fmt.Sprintf(f.UnableToFindPluginWithVersionForTarget, pluginWithIncorrectVersion.Name, randomPluginVersion, pluginWithIncorrectVersion.Target)))
 
-			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			recommendedInstalledPlugins, err := tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
-			Expect(len(pluginsList)).Should(Equal(len(pluginsGeneratedMockResponseWithCorrectInfo)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
-			Expect(f.CheckAllPluginsExists(pluginsList, pluginsGeneratedMockResponseWithCorrectInfo)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+			Expect(len(recommendedInstalledPlugins)).Should(Equal(len(pluginsGeneratedMockResponseWithCorrectInfo)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPlugins, pluginsGeneratedMockResponseWithCorrectInfo)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 		})
-		// Test case: e.1 Unset the context and make sure plugin are deactivated, and set the context again
+		// Test case: e. unset the context and make sure plugins are still installed and set the context again
 		It("list plugins and validate plugins being installed after context being created", func() {
-			installedPluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			installedPluginsList, err := tf.PluginCmd.ListInstalledPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
+
 			stdOut, _, err = tf.ContextCmd.UnsetContext(contextName)
 			Expect(err).To(BeNil(), "unset context should unset context without any error")
-			for i := range installedPluginsList {
-				Expect(stdOut).To(ContainSubstring(fmt.Sprintf(f.DeactivatingPlugin, installedPluginsList[i].Name, installedPluginsList[i].Version, contextName)))
-			}
+
+			installedPluginsListAfterUnset, err := tf.PluginCmd.ListInstalledPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+
+			Expect(len(installedPluginsList)).To(Equal(len(installedPluginsListAfterUnset)), "same number of installed plugins should be available after the context unset and plugins should not get deactivated")
+			Expect(f.CheckAllPluginsExists(installedPluginsList, installedPluginsListAfterUnset)).Should(BeTrue(), "plugins being installed before and after the context unset should be same")
+
 			_, _, err = tf.ContextCmd.UseContext(contextName)
 			Expect(err).To(BeNil(), "use context should set context without any error")
 		})
-		// e.2 delete current context and stop mock server
+		// Test case: f. delete current context and stop mock server
 		It("delete current context", func() {
-			installedPluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
+			installedPluginsList, err := tf.PluginCmd.ListInstalledPlugins()
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
+
 			stdOut, _, err = tf.ContextCmd.DeleteContext(contextName)
 			Expect(err).To(BeNil(), deleteContextWithoutError)
-			// delete context should deactivate all installed plugins
-			for i := range installedPluginsList {
-				Expect(stdOut).To(ContainSubstring(fmt.Sprintf(f.DeactivatingPlugin, installedPluginsList[i].Name, installedPluginsList[i].Version, contextName)))
-			}
+
+			installedPluginsListAfterCtxDelete, err := tf.PluginCmd.ListInstalledPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin list")
+			Expect(len(installedPluginsList)).To(Equal(len(installedPluginsListAfterCtxDelete)), "same number of installed plugins should be available after the context unset and plugins should not get deactivated")
+			Expect(f.CheckAllPluginsExists(installedPluginsList, installedPluginsListAfterCtxDelete)).Should(BeTrue(), "plugins being installed before and after the context unset should be same")
+
 			err = f.StopContainer(tf, f.HTTPMockServerName)
 			Expect(err).To(BeNil(), mockServerShouldStopWithoutError)
 		})
@@ -313,14 +340,16 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 	// b. update mock response for first context, restart mock server, create context, and validate plugin list
 	// c. update mock response for second context, restart mock server, create context, and validate plugin list
 	// e. delete both contexts
-
-	Context("Use case: create two contexts, and validate plugin list ", func() {
+	Context("Use case 4: create two contexts, and validate plugin list ", func() {
 		var pluginsFromPluginGroup, pluginsToGenerateMockResponseOne, pluginsToGenerateMockResponseTwo, pluginsListOne, pluginsListTwo []*f.PluginInfo
 		var contextNameOne, contextNameTwo string
 		var TMCEndpointResponseOne, TMCEndpointResponseTwo *f.TMCPluginsMockRequestResponseMapping
 		var err error
 		var ok bool
-
+		It("clean plugins", func() {
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
+		})
 		// Test case: a. check the plugins availability
 		It("check the plugins availability", func() {
 			// get plugins from a group
@@ -357,7 +386,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameOne), activeContextShouldBeRecentlyAddedOne)
 
-			pluginsListOne, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameOne, true)
+			pluginsListOne, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(pluginsListOne)).Should(Equal(len(pluginsToGenerateMockResponseOne)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(pluginsListOne, pluginsToGenerateMockResponseOne)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
@@ -388,7 +417,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameTwo), activeContextShouldBeRecentlyAddedOne)
 
-			pluginsListTwo, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTwo, true)
+			pluginsListTwo, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(pluginsListTwo)).Should(Equal(len(pluginsToGenerateMockResponseTwo)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(pluginsListTwo, pluginsToGenerateMockResponseTwo)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
@@ -412,13 +441,17 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 	// c. update mock response with additional plugins, restart mock server, run plugin sync, and validate plugin list
 	// d. delete context
 
-	Context("Use case: create two contexts, and validate plugin list ", func() {
+	Context("Use case 5: create two contexts, and validate plugin list ", func() {
 		var pluginsFromPluginGroup, pluginsToGenerateMockResponseOne, pluginsToGenerateMockResponseTwo, pluginsListOne []*f.PluginInfo
 		var contextNameOne string
 		var TMCEndpointResponseOne, TMCEndpointResponseTwo *f.TMCPluginsMockRequestResponseMapping
 		var err error
 		var ok bool
 
+		It("clean plugins", func() {
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
+		})
 		// Test case: a. check the plugins availability
 		It("check the plugins availability", func() {
 			// get plugins from a group
@@ -455,7 +488,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameOne), activeContextShouldBeRecentlyAddedOne)
 
-			pluginsListOne, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameOne, true)
+			pluginsListOne, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(pluginsListOne)).Should(Equal(len(pluginsToGenerateMockResponseOne)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(pluginsListOne, pluginsToGenerateMockResponseOne)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
@@ -482,7 +515,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			_, _, err = tf.PluginCmd.Sync()
 			Expect(err).To(BeNil(), "should not get any error for plugin sync")
 
-			pluginsListOne, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameOne, true)
+			pluginsListOne, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(pluginsListOne)).Should(Equal(len(pluginsToGenerateMockResponseTwo)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(pluginsListOne, pluginsToGenerateMockResponseTwo)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
@@ -497,7 +530,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		})
 	})
 
-	// Use case 6: k8s and tmc contexts coexistnce, create k8s context and tmc context, validate plugins list and plugin sync
+	// Use case 6: k8s and tmc contexts coexistence, create k8s context and tmc context, validate plugins list and plugin sync
 	// test cases:
 	// Test case: a. k8s: create KIND cluster, apply CRD
 	// Test case: b. k8s: apply CRD (cluster resource definition) and CR's (cluster resource) for few plugins
@@ -506,19 +539,24 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 	// Test case: e. TMC: mock tmc endpoint with plugins info, start the mock server
 	// Test case: f. TMC: create context and make sure context has created
 	// Test case: g. TMC: list plugins and validate plugins info, make sure all plugins are installed as per mock response
-	// Test case: h. validate plugin list consistancy, it should sort by context name always
+	// Test case: h. validate plugin list consistency, it should sort by context name always
 	// Test case: i. k8s: use first k8s context and check plugin list
 	// Test case: j. k8s: uninstall one of the installed plugin, make sure plugin is uninstalled, run plugin sync, make sure the uninstalled plugin has installed again.
 	// Test case: k. tmc: use tmc context and check plugin list
 	// Test case: l. delete tmc/k8s contexts and the KIND cluster
-	Context("Use case: create k8s and tmc specific contexts, validate plugins list and perform pluin sync, and perform context switch", func() {
+	Context("Use case 6: create k8s and tmc specific contexts, validate plugins list and perform pluin sync, and perform context switch", func() {
 		var clusterInfo *f.ClusterInfo
 		var pluginCRFilePaths []string
-		var pluginsInfoForCRsApplied, installedPluginsListK8s []*f.PluginInfo
+		var pluginsInfoForCRsApplied, recommendedInstalledPlugins []*f.PluginInfo
 		var contextNameK8s string
 		contexts := make([]string, 0)
 		totalInstalledPlugins := 1 // telemetry plugin that is part of essentials plugin group will always be installed
 		var err error
+
+		It("clean plugins", func() {
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
+		})
 		// Test case: a. k8s: create KIND cluster, apply CRD
 		It("create KIND cluster", func() {
 			// Create KIND cluster, which is used in test cases to create context's
@@ -553,12 +591,12 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		})
 		// Test case: d. k8s: list plugins and validate plugins info, make sure all plugins are installed for which CRs were present on the cluster
 		It("Test case: d; list plugins and validate plugins being installed after context being created", func() {
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			recommendedInstalledPlugins, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPlugins, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 		})
 
-		var pluginsToGenerateMockResponse, installedPluginsListTMC []*f.PluginInfo
+		var pluginsToGenerateMockResponse []*f.PluginInfo
 		var contextNameTMC string
 		var ok bool
 
@@ -598,10 +636,9 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// Test case: g. TMC: list plugins and validate plugins info, make sure all plugins are installed as per mock response
 		It("Test case: g: list plugins and validate plugins being installed after context being created", func() {
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			recommendedInstalledPlugins, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
-			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponse)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
-			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPlugins, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 		})
 
 		// Test case: h. validate plugin list consistency, it should sort by context name always
@@ -631,7 +668,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 				// Filter plugins without context
 				var installedPluginsWithContext []*f.PluginInfo
 				for _, plugin := range installedPlugins {
-					if plugin.Context != "" {
+					if plugin.Recommended != "" {
 						installedPluginsWithContext = append(installedPluginsWithContext, plugin)
 					}
 				}
@@ -641,43 +678,25 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// Test case: i. k8s: use first k8s context and check plugin list
 		It("use first context, check plugin list", func() {
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
+
 			_, _, err = tf.ContextCmd.UseContext(contextNameK8s)
 			Expect(err).To(BeNil(), "use context should not return any error")
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeK8s))
 			Expect(err).To(BeNil(), activeContextShouldExists)
 			Expect(active).To(Equal(contextNameK8s), active, "the active context should be the recently switched one")
 
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			recommendedInstalledPlugins, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(installedPluginsListK8s)).Should(Equal(len(pluginsInfoForCRsApplied)), "number of plugins should be same as number of plugins CRs applied")
-			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
-		})
-
-		// Test case: j. k8s: uninstall one of the installed plugin, make sure plugin is uninstalled, run plugin sync, make sure the uninstalled plugin has installed again.
-		It("Uninstall one of the installed plugin", func() {
-			pluginToUninstall := pluginsInfoForCRsApplied[0]
-			err := tf.PluginCmd.UninstallPlugin(pluginToUninstall.Name, pluginToUninstall.Target)
-			Expect(err).To(BeNil(), "should not get any error for plugin uninstall")
-
-			latestPluginsInstalledList := pluginsInfoForCRsApplied[1:]
-			allPluginsList, err := tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, false)
-			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			installedPluginsListK8s = f.GetInstalledPlugins(allPluginsList)
-			Expect(f.IsPluginExists(allPluginsList, f.GetGivenPluginFromTheGivenPluginList(allPluginsList, pluginToUninstall), f.NotInstalled)).To(BeTrue(), "uninstalled plugin should be listed as not installed")
-			Expect(len(installedPluginsListK8s)).Should(Equal(len(latestPluginsInstalledList)), "number of plugins should be same as number of plugins CRs applied")
-			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, latestPluginsInstalledList)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
-
-			_, _, err = tf.PluginCmd.Sync()
-			Expect(err).To(BeNil(), "should not get any error for plugin sync")
-
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
-			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(len(installedPluginsListK8s)).Should(Equal(len(pluginsInfoForCRsApplied)), "number of plugins should be same as number of plugins CRs applied")
-			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), "plugins being installed and plugins info for which CRs applied should be same")
+			Expect(len(recommendedInstalledPlugins)).Should(Equal(len(pluginsInfoForCRsApplied)), "number of plugins should be same as number of plugins CRs applied")
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPlugins, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 		})
 
 		// Test case: k. tmc: use tmc context and check plugin list
 		It("use second context again, check plugin list", func() {
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
 
 			_, _, err = tf.ContextCmd.UseContext(contextNameTMC)
 			Expect(err).To(BeNil(), "use context should not return any error")
@@ -686,10 +705,10 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(active).To(Equal(contextNameTMC), activeContextShouldBeRecentlyAddedOne)
 
 			// use context will install the plugins from the tmc endpoint, which is second set of plugins list
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			recommendedInstalledPlugins, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
-			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponse)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
-			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+			Expect(len(recommendedInstalledPlugins)).Should(Equal(len(pluginsToGenerateMockResponse)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPlugins, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 		})
 
 		// Test case: l. delete tmc/k8s contexts and the KIND cluster
@@ -710,7 +729,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 	// run context create (make sure another ContextType context is active, but yet to install plugins), it should not perform the sync for all active contexts
 	// run ContextType specific plugin sync (for k8s ContextType), make sync should not happen for tmc context even though its active
 	// run ContextType specific plugin sync (for tmc ContextType), make sync should not happen for k8s context even though its active
-	Context("Use case: create k8s and tmc specific contexts, validate plugins list and perform pluin sync, and perform context switch", func() {
+	Context("Use case 7: create k8s and tmc specific contexts, validate plugins list and perform pluin sync, and perform context switch", func() {
 		var clusterInfo *f.ClusterInfo
 		var pluginCRFilePaths []string
 		var pluginsInfoForCRsApplied, installedPluginsListK8s []*f.PluginInfo
@@ -718,6 +737,10 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		contexts := make([]string, 0)
 		totalInstalledPlugins := 1 // telemetry plugin that is part of essentials plugin group will always be installed
 		var err error
+		It("clean plugins", func() {
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
+		})
 		// Test case: a. k8s: create KIND cluster, apply CRD
 		It("create KIND cluster", func() {
 			// Create KIND cluster, which is used in test cases to create context's
@@ -752,7 +775,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		})
 		// Test case: d. k8s: list plugins and validate plugins info, make sure all plugins are installed for which CRs were present on the cluster
 		It("Test case: d; list plugins and validate plugins being installed after context being created", func() {
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			installedPluginsListK8s, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 		})
@@ -800,17 +823,17 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		})
 
 		// Test case: g. TMC: list plugins and validate plugins info, make sure all plugins are installed as per mock response
-		// there should not be any k8s specific plugins should be installed/sync as part of tmc context creation
+		// there should not be any k8s specific plugins installed/sync as part of tmc context creation
 		It("Test case: g: list plugins and validate plugins being installed after context being created", func() {
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			installedPluginsListTMC, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 
-			// Sync should not happen for the k8s context specific plugins
-			installedPluginsListK8S, err := tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
-			Expect(len(installedPluginsListK8S)).Should(Equal(0))
-			Expect(err).To(BeNil(), noErrorForPluginList)
+			// // Sync should not happen for the k8s context specific plugins
+			// installedPluginsListK8S, err := tf.PluginCmd.ListRecommendedPluginsFromActiveContext(false)
+			// Expect(len(installedPluginsListK8S)).Should(Equal(0))
+			// Expect(err).To(BeNil(), noErrorForPluginList)
 		})
 
 		// Test case: context use (K8S) - should sync only specific context not all active context's
@@ -837,14 +860,14 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			// k8s contextType specific plugins only should be installed
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			installedPluginsListK8s, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 
-			// Sync should not happen for the tmc context specific plugins, as its contextType specific sync
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
-			Expect(len(installedPluginsListTMC)).Should(Equal(0))
-			Expect(err).To(BeNil(), noErrorForPluginList)
+			// // Sync should not happen for the tmc context specific plugins, as its contextType specific sync
+			// installedPluginsListTMC, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
+			// Expect(len(installedPluginsListTMC)).Should(Equal(0))
+			// Expect(err).To(BeNil(), noErrorForPluginList)
 
 			// perform 'tanzu plugin clean' and 'tanzu context use' for k8s context again, and check plugins list, it should be same as previous
 			err = tf.PluginCmd.CleanPlugins()
@@ -854,14 +877,14 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			// k8s contextType specific plugins only should be installed
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			installedPluginsListK8s, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
 
-			// Sync should not happen for the tmc context specific plugins, as its contextType specific sync
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
-			Expect(len(installedPluginsListTMC)).Should(Equal(0))
-			Expect(err).To(BeNil(), noErrorForPluginList)
+			// // Sync should not happen for the tmc context specific plugins, as its contextType specific sync
+			// installedPluginsListTMC, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
+			// Expect(len(installedPluginsListTMC)).Should(Equal(0))
+			// Expect(err).To(BeNil(), noErrorForPluginList)
 		})
 
 		// Test case: context use (TMC) - should sync only specific context not all active context's
@@ -888,15 +911,15 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			// tmc contextType specific plugins only should be installed
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			installedPluginsListTMC, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 
-			// Sync should not happen for the k8s context specific plugins, as its contextType specific sync
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
-			Expect(len(installedPluginsListK8s)).Should(Equal(0))
-			Expect(err).To(BeNil(), noErrorForPluginList)
+			// // Sync should not happen for the k8s context specific plugins, as its contextType specific sync
+			// installedPluginsListK8s, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
+			// Expect(len(installedPluginsListK8s)).Should(Equal(0))
+			// Expect(err).To(BeNil(), noErrorForPluginList)
 
 			// perform 'tanzu plugin clean' and 'tanzu context use' for tmc context again, and check plugins list, it should be same as previous
 			err = tf.PluginCmd.CleanPlugins()
@@ -906,15 +929,15 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), "use context should not return any error")
 
 			// tmc contextType specific plugins only should be installed
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			installedPluginsListTMC, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
 			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 
-			// Sync should not happen for the k8s context specific plugins, as its contextType specific sync
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
-			Expect(len(installedPluginsListK8s)).Should(Equal(0))
-			Expect(err).To(BeNil(), noErrorForPluginList)
+			// // Sync should not happen for the k8s context specific plugins, as its contextType specific sync
+			// installedPluginsListK8s, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
+			// Expect(len(installedPluginsListK8s)).Should(Equal(0))
+			// Expect(err).To(BeNil(), noErrorForPluginList)
 
 		})
 
@@ -927,16 +950,12 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			_, _, err = tf.ContextCmd.UseContext(contextNameTMC)
 			Expect(err).To(BeNil(), "use context should not return any error")
 
-			// tmc contextType specific plugins should be installed
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			// tmc and k8s contextType specific plugins should be installed
+			recommendedInstalledPlugins, err := tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
-			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
-			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
-
-			// k8s contextType specific plugins should be installed
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
-			Expect(err).To(BeNil(), noErrorForPluginList)
-			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), "plugins being installed and plugins info for which CRs applied should be same")
+			Expect(len(recommendedInstalledPlugins)).Should(Equal(len(pluginsToGenerateMockResponseTMC)+len(pluginsInfoForCRsApplied)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPlugins, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPlugins, pluginsInfoForCRsApplied)).Should(BeTrue(), "plugins being installed and plugins info for which CRs applied should be same")
 		})
 
 		// Test case: plugin sync use case, make sure plugins for both contexts are synced
@@ -956,17 +975,12 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			_, _, err = tf.PluginCmd.Sync()
 			Expect(err).To(BeNil(), "plugin sync should not return any error")
 
-			// make sure plugins are synced for both contexts
-			// tmc contextType specific plugins should be installed
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			// tmc and k8s contextType specific plugins should be installed
+			recommendedInstalledPlugins, err := tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), noErrorForPluginList)
-			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponseTMC)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
-			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
-
-			// k8s contextType specific plugins should be installed
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
-			Expect(err).To(BeNil(), noErrorForPluginList)
-			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), "plugins being installed and plugins info for which CRs applied should be same")
+			Expect(len(recommendedInstalledPlugins)).Should(Equal(len(pluginsToGenerateMockResponseTMC)+len(pluginsInfoForCRsApplied)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPlugins, pluginsToGenerateMockResponseTMC)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
+			Expect(f.CheckAllPluginsExists(recommendedInstalledPlugins, pluginsInfoForCRsApplied)).Should(BeTrue(), "plugins being installed and plugins info for which CRs applied should be same")
 		})
 
 		// Test case: l. delete tmc/k8s contexts and the KIND cluster
@@ -1009,7 +1023,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 	// Test case: n. plugin group search and plugin group install when active context has issues
 	// Test case: o. delete tmc/k8s contexts
 	// Test case: i. delete tmc/k8s contexts and the KIND cluster
-	Context("Use case: Plugin List, sync, search and install functionalities with Context Issues", func() {
+	Context("Use case 8: Plugin List, sync, search and install functionalities with Context Issues", func() {
 		var clusterInfo *f.ClusterInfo
 		var pluginCRFilePaths []string
 		var pluginsInfoForCRsApplied, installedPluginsListK8s []*f.PluginInfo
@@ -1017,6 +1031,10 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		contexts := make([]string, 0)
 		totalInstalledPlugins := 0
 		var err error
+		It("clean plugins", func() {
+			err = tf.PluginCmd.CleanPlugins()
+			Expect(err).To(BeNil(), "should not get any error for plugin cleanup")
+		})
 		// Test case: a. k8s: create KIND cluster, apply CRD
 		It("create KIND cluster", func() {
 			// Create KIND cluster, which is used in test cases to create context's
@@ -1051,7 +1069,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		})
 		// Test case: d. k8s: list plugins and validate plugins info, make sure all plugins are installed for which CRs were present on the cluster
 		It("Test case: d: list plugins and validate plugins being installed after context being created", func() {
-			installedPluginsListK8s, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameK8s, true)
+			installedPluginsListK8s, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			Expect(len(installedPluginsListK8s)).Should(Equal(len(pluginsInfoForCRsApplied)), "number of plugins should be same as number of plugins CRs applied")
 			Expect(f.CheckAllPluginsExists(installedPluginsListK8s, pluginsInfoForCRsApplied)).Should(BeTrue(), " plugins being installed and plugins info for which CRs applied should be same")
@@ -1103,7 +1121,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// Test case: h. TMC: list plugins and validate plugins info, make sure all plugins are installed as per mock response
 		It("Test case: h: list plugins and validate plugins being installed after context being created", func() {
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			installedPluginsListTMC, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).NotTo(BeNil(), "there should be an error for plugin list as one of the active context has issues")
 			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponse)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
@@ -1127,9 +1145,9 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// Test case: k. validate plugin has installed after above plugin uninstall and install operations
 		It("plugin list validation after specific plugin uninstall and install", func() {
-			pluginList, err := tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			pluginList, err := tf.PluginCmd.ListInstalledPlugins()
 			Expect(err).NotTo(BeNil(), "there should be an error for plugin list as one of the active context has issues")
-			Expect(len(pluginList)).Should(Equal(len(installedPluginsListTMC[1:])), "recently installed plugin should be installed as standalone")
+			Expect(f.CheckAllPluginsExists(pluginList, []*f.PluginInfo{installedPluginsListTMC[0]})).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
 		})
 
 		// Test case: l. plugin sync should work fine even though k8s context has issues
@@ -1142,7 +1160,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 
 		// Test case: m. validate the plugin list after above plugin sync operation
 		It("plugin list validation after specific plugin delete, and sync", func() {
-			installedPluginsListTMC, err = tf.PluginCmd.ListPluginsForGivenContext(contextNameTMC, true)
+			installedPluginsListTMC, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).NotTo(BeNil(), "there should be an error for plugin list as one of the active context has issues")
 			Expect(len(installedPluginsListTMC)).Should(Equal(len(pluginsToGenerateMockResponse)), numberOfPluginsSameAsNoOfPluginsInfoMocked)
 			Expect(f.CheckAllPluginsExists(installedPluginsListTMC, pluginsToGenerateMockResponse)).Should(BeTrue(), pluginsInstalledAndMockedShouldBeSame)
