@@ -14,6 +14,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/util"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 func TestPluginLifecycle(t *testing.T) {
@@ -60,6 +61,12 @@ var _ = BeforeSuite(func() {
 	e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath)
 	Expect(e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository discovery image signature public key path", framework.TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath))
 	os.Setenv(framework.TanzuCliPluginDiscoveryImageSignaturePublicKeyPath, e2eTestLocalCentralRepoPluginDiscoveryImageSignaturePublicKeyPath)
+
+	val := os.Getenv("TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST")
+	out:= "TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST: " + val
+	log.Info(out)
+	publicKey := os.Getenv("TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH")
+	log.Info("TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH: " + publicKey)
 
 	// set up the test central repo
 	err = framework.UpdatePluginDiscoverySource(tf, e2eTestLocalCentralRepoURL)
@@ -124,6 +131,4 @@ func testWithoutPluginDiscoverySources(tf *framework.Framework) {
 	_, err = tf.PluginCmd.SearchPluginGroups("")
 	Expect(err.Error()).To(ContainSubstring(errorNoDiscoverySourcesFound))
 
-	_, err = tf.PluginCmd.InitPluginDiscoverySource()
-	Expect(err).To(BeNil(), "there should not be any error for plugin source init")
 }

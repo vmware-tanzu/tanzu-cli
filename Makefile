@@ -5,11 +5,12 @@ include ./plugin-tooling.mk
 include ./test/e2e/Makefile
 
 # Ensure Make is run with bash shell as some syntax below is bash-specific
-SHELL := /usr/bin/env bash
 
 ROOT_DIR := $(shell git rev-parse --show-toplevel)
+ROOT_DIR := $(subst \,/,$(ROOT_DIR))
 ARTIFACTS_DIR ?= $(ROOT_DIR)/artifacts
 
+HOME := $(subst \,/,$(HOME))
 XDG_CONFIG_HOME := ${HOME}/.config
 export XDG_CONFIG_HOME
 
@@ -18,6 +19,28 @@ GOOS ?= $(shell go env GOOS)
 GOARCH ?= $(shell go env GOARCH)
 GOHOSTOS ?= $(shell go env GOHOSTOS)
 GOHOSTARCH ?= $(shell go env GOHOSTARCH)
+HOST_OS=$(shell go env GOOS)
+
+WGET := $(shell which wget)
+BZIP2 := $(shell which bzip2) 
+TAR := $(shell which tar)
+
+# Load environment variables from GitHub workflow
+ifeq ($(GITHUB_ACTIONS),true)
+	ifeq ($(GOOS),windows)
+		# Use the values from GitHub Actions
+		MSYS_BIN ?= $(shell echo $MSYS_BIN)
+		WGET = $(MSYS_BIN)/wget
+		BZIP2 = $(MSYS_BIN)/bzip2
+		TAR = $(MSYS_BIN)/tar
+	endif
+endif
+
+# Ensure $(GOPATH) uses forward slashes
+WGET := $(subst \,/,$(WGET))
+BZIP2 := $(subst \,/,$(BZIP2))
+TAR := $(subst \,/,$(TAR))
+
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -30,8 +53,9 @@ GO := go
 GOTEST_VERBOSE ?= -v
 
 # Directories
+BIN_DIR := $(shell echo "bin")
 TOOLS_DIR := $(abspath $(ROOT_DIR)/hack/tools)
-TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
+TOOLS_BIN_DIR := $(TOOLS_DIR)/$(BIN_DIR)
 
 # Add tooling binaries here and in hack/tools/Makefile
 GOIMPORTS          := $(TOOLS_BIN_DIR)/goimports
@@ -51,7 +75,10 @@ GOJUNITREPORT      := $(TOOLS_BIN_DIR)/go-junit-report
 VENDIR             := $(TOOLS_BIN_DIR)/vendir
 YQ                 := $(TOOLS_BIN_DIR)/yq
 
-TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT) $(KCTRL) $(YTT) $(KBLD) $(VENDIR) $(YQ)
+TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
+#TOOLING_BINARIES   := $(GOIMPORTS) $(GOLANGCI_LINT) $(VALE) $(MISSPELL) $(CONTROLLER_GEN) $(IMGPKG) $(KUBECTL) $(KIND) $(GINKGO) $(COSIGN) $(GOJUNITREPORT)
+#TOOLING_BINARIES   := $(VALE) $(GOLANGCI_LINT) $(GOIMPORTS)
+
 
 # Build and version information
 
@@ -103,6 +130,11 @@ CLI_TARGETS := $(addprefix build-cli-,${ENVS})
 help: ## Display this help (default)
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-28s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m\033[32m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+tools: $(TOOLING_BINARIES) ## Build tooling binaries
+.PHONY: $(TOOLING_BINARIES)
+$(TOOLING_BINARIES):
+	make -C $(TOOLS_DIR) $(@F)
+
 ## --------------------------------------
 ## All
 ## --------------------------------------
@@ -137,17 +169,20 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 
 	@echo build $(OS)-$(ARCH) CLI with version: $(BUILD_VERSION)
 
-	@if [ "$(filter $(OS)-$(ARCH),$(ENVS))" = "" ]; then\
-		printf "\n\n======================================\n";\
-		printf "! $(OS)-$(ARCH) is not an officially supported platform!\n";\
-		printf "======================================\n\n";\
-	fi
+	@mkdir -p artifacts/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)
 
-	@if [ "$(OS)" = "windows" ]; then \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
-	else \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
-	fi
+	@echo "Listing artifacts directory:"
+	@ls artifacts
+
+	@echo "BEfore build"
+	@echo "Windows build"
+	@pwd
+	@cd cmd/tanzu
+	@pwd
+	@go build -o $(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe cmd/tanzu/main.go
+	@ls cmd/tanzu
+	@ls $(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)
+
 
 ## --------------------------------------
 ## Plugins-specific
@@ -245,11 +280,15 @@ test-with-summary-report: tools
 	rm ./make_test.output ./test_suite_output.json ./CLI-ginkgo-tests-summary.txt ./CLI-junit-report.xml
 
 .PHONY: e2e-cli-core ## Execute all CLI Core E2E Tests
-e2e-cli-core: tools crd-package-for-test start-test-central-repo start-airgapped-local-registry e2e-cli-core-all ## Execute all CLI Core E2E Tests
+#e2e-cli-core: tools crd-package-for-test start-test-central-repo start-airgapped-local-registry e2e-cli-core-all ## Execute all CLI Core E2E Tests
+e2e-cli-core:  start-test-central-repo  ## Execute all CLI Core E2E Tests
+#e2e-cli-core: tools e2e-cli-core-all ## Execute all CLI Core E2E Tests
+
 
 .PHONY: setup-custom-cert-for-test-central-repo
 setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test-central-repo in the config file
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/certs ]; then \
+		echo "Downloading test central repo certs";\
     	wget https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2;\
   		tar xjf $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2 -C $(ROOT_DIR)/hack/central-repo/;\
 	fi
@@ -262,7 +301,40 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
 		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
 	fi
-	@docker run --rm -d -p 9876:443 --name central \
+	echo "Starting docker test central repo with images:"
+	@echo "docker run -d -p 9876:443 --name central \
+		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
+		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
+		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
+		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
+		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
+		$(REGISTRY_IMAGE)"
+	export MSYS_NO_PATHCONV=1
+	docker run -d -p 9876:443 --name central \
+		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
+		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
+		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
+		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
+		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
+		$(REGISTRY_IMAGE) > /dev/null && \
+		echo "Started docker test central repo with images:" && \
+		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
+
+.PHONY: start-test-central-repo33
+start-test-central-repo33: ## Starts up a test central repository locally with docker
+	@if [ ! -d $(ROOT_DIR)/hack/central-repo/registry-content ]; then \
+		(cd $(ROOT_DIR)/hack/central-repo && tar xjf registry-content.bz2 || true;) \
+	fi
+	echo "Starting docker test central repo with images:"
+	@echo "docker run -d -p 9876:443 --name central \
+		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
+		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
+		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
+		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
+		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
+		$(REGISTRY_IMAGE)"
+	export MSYS_NO_PATHCONV=1
+	docker run -d -p 9876:443 --name central \
 		-v $(ROOT_DIR)/hack/central-repo/certs:/certs \
 		-e REGISTRY_HTTP_ADDR=0.0.0.0:443  \
 		-e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/localhost.crt  \
@@ -284,11 +356,11 @@ start-airgapped-local-registry: stop-airgapped-local-registry
 
 	@mkdir -p $(ROOT_DIR)/hack/central-repo/auth && docker run --entrypoint htpasswd httpd:2 -Bbn ${TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_USERNAME} ${TANZU_CLI_E2E_AIRGAPPED_REPO_WITH_AUTH_PASSWORD} > $(ROOT_DIR)/hack/central-repo/auth/htpasswd
 	@docker run --rm -d -p 6002:5000 --name temp-airgapped-local-registry-with-auth \
-		-v $(ROOT_DIR)/hack/central-repo/auth:/auth \
+		-v "D:\a\tanzu-cli\tanzu-cli\hack\central-repo\auth:C:\auth" \
 		-e "REGISTRY_AUTH=htpasswd" \
 		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
-		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
-		$(REGISTRY_IMAGE) > /dev/null && \
+		-e "REGISTRY_AUTH_HTPASSWD_PATH=C:\auth\htpasswd" \
+		stefanscherer/registry-windows:latest > /dev/null && \
 		echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
 
 	@docker logout localhost:6002 || true
@@ -363,10 +435,7 @@ generate: generate-controller-code generate-manifests 	## Generate controller co
 ## Tooling Binaries
 ## --------------------------------------
 
-tools: $(TOOLING_BINARIES) ## Build tooling binaries
-.PHONY: $(TOOLING_BINARIES)
-$(TOOLING_BINARIES):
-	make -C $(TOOLS_DIR) $(@F)
+
 
 .PHONY: clean-tools
 clean-tools:

@@ -17,7 +17,7 @@ export GOPROXY
 
 # Directories.
 ROOT_DIR:=$(shell git rev-parse --show-toplevel)
-BIN_DIR := bin
+BIN_DIR := $(shell echo "bin")
 
 # Host information.
 HOST_OS=$(shell go env GOOS)
@@ -58,6 +58,31 @@ VENDIR             := $(BIN_DIR)/vendir
 YTT                := $(BIN_DIR)/ytt
 YQ                 := $(BIN_DIR)/yq
 
+# Vale's release URL.
+# if OS is Windows then url looks like htps://github.com/errata-ai/vale/releases/download/v2.4.0/vale_2.4.0_Windows_64-bit.zip
+# if OS is Linux then url looks like htps://github.com/errata-ai/vale/releases/download/v2.4.0/vale_2.4.0_Linux_64-bit.tar.gz
+VAL_URL := https://github.com/errata-ai/vale/releases/download/v$(VALE_VERSION)/vale_$(VALE_VERSION)_$(shell echo $(HOST_OS) | \
+		sed 's,darwin,macOS,g'| sed 's,linux,Linux,g'| sed 's,windows,Windows,g')_$(shell echo $(HOST_ARCH) | sed 's,amd64,64-bit,g')$(shell echo $(HOST_OS) | \
+		sed 's,darwin,.tar.gz,g'| sed 's,linux,.tar.gz,g'| sed 's,windows,.zip,g')
+
+ifeq ($(GITHUB_ACTIONS),true)
+    # Use the values from GitHub Actions
+    GOPATH := $(shell echo $$GOPATH)
+    GOBIN := $(shell echo $$GOBIN)
+else
+    # Use the system's GOPATH and GOBIN; if they're not set, use defaults
+    GOPATH ?= $(HOME)/go
+    GOBIN ?= $(GOPATH)/bin
+endif
+
+
+# Normalize $(ROOT_DIR) and ensure no double slashes before appending
+GOBIN := $(patsubst %/,%,$(subst \,/,${ROOT_DIR}))/hack/tools/$(BIN_DIR)
+
+# Ensure $(GOPATH) uses forward slashes
+GOPATH := $(subst \,/,$(GOPATH))
+
+
 ## --------------------------------------
 ## Help
 ## --------------------------------------
@@ -72,38 +97,41 @@ help: ## Display this help
 goimports: $(GOIMPORTS) ## Install goimports
 $(GOIMPORTS):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install golang.org/x/tools/cmd/goimports@v$(GOIMPORTS_VERSION)
+	GOBIN=$(GOBIN) go install golang.org/x/tools/cmd/goimports@v$(GOIMPORTS_VERSION)
 
 golangci-lint: $(GOLANGCI_LINT) ## Install golangci-lint
 $(GOLANGCI_LINT):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v$(GOLANGCI_LINT_VERSION)
+	GOBIN=$(GOBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v$(GOLANGCI_LINT_VERSION)
 
 vale: $(VALE)
 $(VALE):
 	mkdir -p $(BIN_DIR)
-	# vale uses 'macOS' for darwin, 'Linux' for linux, '64-bit' for amd64 (yet arm64 remains unchanged)
-	# for its release asset naming, so manually map them
-	curl -sfL https://github.com/errata-ai/vale/releases/download/v$(VALE_VERSION)/vale_$(VALE_VERSION)_$(shell echo $(HOST_OS) | \
-		sed 's,darwin,macOS,g'| sed 's,linux,Linux,g')_$(shell echo $(HOST_ARCH) | sed 's,amd64,64-bit,g').tar.gz | tar -xz -C /tmp/
-	mv /tmp/vale $(@)
-	chmod a+x $(@)
+	curl -sLf $(VAL_URL) -o /tmp/vale.zip && \
+	if [ "$(HOST_OS)" = "windows" ]; then \
+		unzip -o -d /tmp/ /tmp/vale.zip; \
+		mv /tmp/vale.exe $(@); \
+		chmod a+x $(@); \
+	else \
+		tar -xzf /tmp/vale.zip -C /tmp/; \
+		mv /tmp/vale $(@); \
+		chmod a+x $(@); \
+	fi
 
 controller-gen: $(CONTROLLER_GEN) ## Build controller-gen
 $(CONTROLLER_GEN):
 	mkdir -p $(BIN_DIR)
-	#go build -tags=tools -o $@ sigs.k8s.io/controller-tools/cmd/controller-gen
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_TOOLS_VERSION)
+	GOBIN=$(GOBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v$(CONTROLLER_TOOLS_VERSION)
 
 cosign: $(COSIGN) ## Install cosign
 $(COSIGN):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/sigstore/cosign/v2/cmd/cosign@v$(COSIGN_VERSION)
+	GOBIN=$(GOBIN) go install github.com/sigstore/cosign/v2/cmd/cosign@v$(COSIGN_VERSION)
 
 misspell: $(MISSPELL) ## Install misspell
 $(MISSPELL):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install  github.com/client9/misspell/cmd/misspell@v$(MISSPELL_VERSION)
+	GOBIN=$(GOBIN) go install  github.com/client9/misspell/cmd/misspell@v$(MISSPELL_VERSION)
 
 imgpkg: $(IMGPKG) ## Install imgpkg 
 $(IMGPKG):
@@ -167,12 +195,12 @@ $(KIND):
 ginkgo: $(GINKGO) ## Install ginkgo
 $(GINKGO):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
+	GOBIN=$(GOBIN) go install github.com/onsi/ginkgo/v2/ginkgo@$(GINKGO_VERSION)
 
 go-junit-report: $(GOJUNITREPORT) ## Install go-junit-report
 $(GOJUNITREPORT):
 	mkdir -p $(BIN_DIR)
-	GOBIN=$(ROOT_DIR)/hack/tools/$(BIN_DIR) go install github.com/jstemmer/go-junit-report@latest
+	GOBIN=$(GOBIN) go install github.com/jstemmer/go-junit-report@latest
 
 ## --------------------------------------
 ## Cleanup

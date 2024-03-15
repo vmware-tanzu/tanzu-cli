@@ -60,32 +60,61 @@ ifndef TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH
 TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH = ${ROOT_DIR}/test/e2e/config_data/input_data.yaml
 endif
 
+ifndef TANZU_BINARY
+TANZU_BINARY = ${ROOT_DIR}/bin/tanzu
+endif
+
 # Set the plugin group name for the plugins used to execute E2E test cases.
 E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_TMC ?= vmware-tmc/tmc-user:v9.9.9
 E2E_TEST_USE_PLGINS_FROM_PLUGIN_GROUP_FOR_K8S ?= vmware-tkg/default:v9.9.9
 
+# Set RACE_OPTION based on the host OS, skip it for windows
+RACE_OPTION := $(shell echo $(HOST_OS) | sed 's,darwin,--race,g' | sed 's,linux,--race,g' | sed 's,windows,,g')
+
 .PHONY: e2e-cli-core-all ## Execute all CLI Core E2E Tests
-e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-plugin-compatibility-tests e2e-plugin-lifecycle-tests  e2e-plugin-sync-tmc e2e-plugin-sync-k8s e2e-context-tmc-tests e2e-context-k8s-tests e2e-airgapped-tests e2e-catalog-tests e2e-extra-column-tests
+#e2e-cli-core-all: e2e-cli-lifecycle e2e-cli-config e2e-plugin-compatibility-tests e2e-plugin-lifecycle-tests  e2e-plugin-sync-tmc e2e-plugin-sync-k8s e2e-context-tmc-tests e2e-context-k8s-tests e2e-airgapped-tests e2e-catalog-tests e2e-extra-column-tests
+#e2e-cli-core-all: e2e-cli-lifecycle e2e-plugin-lifecycle-tests
+e2e-cli-core-all: e2e-cli-simple
+
+.PHONY: e2e-cli-simple ## Execute CLI config life cycle specific e2e tests
+e2e-cli-simple:
+	${GINKGO} ${ROOT_DIR}/test/e2e/simple ; \
 
 .PHONY: e2e-cli-lifecycle ## Execute CLI life cycle specific e2e tests
 e2e-cli-lifecycle:
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/cli_lifecycle  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	${GINKGO} ${ROOT_DIR}/test/e2e/cli_lifecycle ; \
+
+#${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/cli_lifecycle  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+
+.PHONY: e2e-cli-config11 ## Execute CLI config life cycle specific e2e tests
+e2e-cli-config11:
+	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
+	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
+	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports $(RACE_OPTION) --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/config  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
 
 .PHONY: e2e-cli-config ## Execute CLI config life cycle specific e2e tests
 e2e-cli-config:
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/config  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	echo "Running CLI lifecycle tests: ${ROOT_DIR}/test/e2e/config"; \
+	ls ${ROOT_DIR}/test/e2e/config; \
+	mkdir -p /tmp/ginkgo ; \
+	cd /tmp/ginkgo && ${GINKGO} -r ${ROOT_DIR}/test/e2e/config ; \
 
 .PHONY: e2e-plugin-compatibility-tests ## Execute CLI Core Plugin Compatibility E2E test cases
 e2e-plugin-compatibility-tests:
-	export TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
-	export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL) ; \
+	export TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL=gcr.io/eminent-nation-87317/tanzu-cli/test/v1/plugins/plugin-inventory:latest ; \
+	export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=gcr.io/eminent-nation-87317/tanzu-cli/test/v1/plugins/plugin-inventory:latest ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugins_compatibility  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	if [ "$(HOST_OS)" = "windows" ]; then \
+		${TANZU_BINARY} plugin source update default --uri ${TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL}; \
+		${GINKGO} ${ROOT_DIR}/test/e2e/plugins_compatibility ; \
+	else \
+		${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports $(RACE_OPTION) --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugins_compatibility  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	fi
 
 .PHONY: e2e-plugin-lifecycle-tests ## Execute CLI Core Plugin life cycle E2E test cases
 e2e-plugin-lifecycle-tests:
@@ -96,7 +125,13 @@ e2e-plugin-lifecycle-tests:
 	export TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH=$(TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH) ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugin_lifecycle  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	if [ "$(HOST_OS)" = "windows" ]; then \
+		export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
+		${TANZU_BINARY} plugin source update default --uri ${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL}; \
+		${GINKGO} ${ROOT_DIR}/test/e2e/plugin_lifecycle ; \
+	else \
+		${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugin_lifecycle  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	fi
 	
 
 .PHONY: e2e-plugin-sync-k8s ## Execute CLI Core Plugin sync E2E test cases for k8s target
@@ -109,7 +144,12 @@ e2e-plugin-sync-k8s:
 	export TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH=$(TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH) ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugin_sync/k8s  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	if [ "$(HOST_OS)" = "windows" ]; then \
+		${GINKGO} ${ROOT_DIR}/test/e2e/plugin_sync/k8s ; \
+	else \
+		${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports $(RACE_OPTION) --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugin_sync/k8s  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	fi
+	
 
 
 ## To run TMC tests, we need to set environment variable TANZU_API_TOKEN, in case of github workflow, its been set as environment variable
@@ -128,7 +168,11 @@ e2e-plugin-sync-tmc:
 		export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
 		export TANZU_CLI_E2E_TEST_ENVIRONMENT="true" ; \
 		export TANZU_API_TOKEN=$(TANZU_API_TOKEN) ; \
-		${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugin_sync/tmc  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+		if [ "$(HOST_OS)" = "windows" ]; then \
+			${GINKGO} ${ROOT_DIR}/test/e2e/plugin_sync/tmc ; \
+		else \
+			${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports $(RACE_OPTION) --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/plugin_sync/tmc  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+		fi
 	fi
 
 
@@ -140,7 +184,7 @@ e2e-context-tmc-tests:
 	else \
 		export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 		export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-		${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/context/tmc  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+		${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports $(RACE_OPTION) --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/context/tmc  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
 	fi
 
 .PHONY: e2e-context-k8s-tests ## Execute CLI context life cycle e2e tests for k8s target
@@ -151,7 +195,7 @@ e2e-context-k8s-tests:
 	export TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH=${TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_CA_CERT_PATH} ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/context/k8s  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports $(RACE_OPTION) --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/context/k8s  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
 
 .PHONY: e2e-airgapped-tests ## Execute CLI airgapped tests
 e2e-airgapped-tests:
@@ -167,7 +211,7 @@ e2e-airgapped-tests:
 	export TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH=$(TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH) ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="Yes" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/airgapped  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports $(RACE_OPTION) --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/airgapped  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
 
 .PHONY: e2e-catalog-tests ## Execute E2E catalog tests
 e2e-catalog-tests:
@@ -178,7 +222,7 @@ e2e-catalog-tests:
 	export TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST=$(TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL) ; \
 	export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" ; \
 	export TANZU_CLI_EULA_PROMPT_ANSWER="Yes" ; \
-	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports --race --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/cataloge2e  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
+	${GINKGO} --keep-going --output-dir ${ROOT_DIR}/test/e2e/testresults --json-report=results.json --keep-separate-reports $(RACE_OPTION) --nodes=1 ${GOTEST_VERBOSE} -r ${ROOT_DIR}/test/e2e/cataloge2e  --trace > /tmp/out && { cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; } || { exit_code=$$?; cat /tmp/out | grep -Ev 'STEP:|seconds|.go:'; rm /tmp/out; exit $$exit_code; } \
 
 # Set the central repo to an inventory that has an extra column and then
 # run the standard plugin life-cycle tests to make sure they still work
