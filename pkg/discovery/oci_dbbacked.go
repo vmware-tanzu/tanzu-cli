@@ -23,6 +23,9 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
+// centralConfigFileName is the name of the central config file
+const centralConfigFileName = "central_config.yaml"
+
 // DBBackedOCIDiscovery is an artifact discovery utilizing an OCI image
 // which contains an SQLite database describing the content of the plugin
 // discovery.
@@ -211,9 +214,9 @@ func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 		return err
 	}
 
-	// download plugin inventory image to get the 'plugin_inventory.db'
-	// also handle the air-gapped scenario where additional plugin inventory metadata image is present
-	err = od.downloadInventoryDatabase()
+	// download the central repository image to get the 'plugin_inventory.db' and `central_config.yaml` files.
+	// Also handle the air-gapped scenario where additional plugin inventory metadata image is present
+	err = od.downloadCentralRepositoryData()
 	if err != nil {
 		return err
 	}
@@ -247,13 +250,14 @@ func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
 	return nil
 }
 
-// downloadInventoryDatabase downloads plugin inventory image to get the 'plugin_inventory.db'
+// downloadCentralRepositoryData downloads the central repository OCI image to get the
+// 'plugin_inventory.db' and 'central_config.yaml' files
 //
 // Additional check for airgapped environment as below:
 // Also check if plugin inventory metadata image is present or not. if present, downloads the inventory
 // metadata image to get the 'plugin_inventory_metadata.db' and update the 'plugin_inventory.db'
 // based on the 'plugin_inventory_metadata.db'
-func (od *DBBackedOCIDiscovery) downloadInventoryDatabase() error {
+func (od *DBBackedOCIDiscovery) downloadCentralRepositoryData() error {
 	tempDir1, err := os.MkdirTemp("", "")
 	if err != nil {
 		return errors.Wrap(err, "unable to create temp directory")
@@ -265,17 +269,42 @@ func (od *DBBackedOCIDiscovery) downloadInventoryDatabase() error {
 	defer os.RemoveAll(tempDir1)
 	defer os.RemoveAll(tempDir2)
 
-	// Download the plugin inventory image and save to tempDir1
+	// Download the central repo OCI image and save it to tempDir1
 	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(od.image, tempDir1); err != nil {
 		return errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
 	}
 
-	inventoryDBFilePath := filepath.Join(tempDir1, plugininventory.SQliteDBFileName)
-	metadataDBFilePath := filepath.Join(tempDir2, plugininventory.SQliteInventoryMetadataDBFileName)
+	od.setupCentralConfig(tempDir1)
 
-	// Download the plugin inventory metadata image if exists and save to tempDir2
+	return od.setupPluginInventory(tempDir1, tempDir2)
+}
+
+func (od *DBBackedOCIDiscovery) setupCentralConfig(sourceDir string) {
+	// Copy the central config file from the temp directory to pluginDataDir
+	sourceCentralConfigPath := filepath.Join(sourceDir, centralConfigFileName)
+	destCentralConfigPath := filepath.Join(od.pluginDataDir, centralConfigFileName)
+
+	// Since the central config file is optional, check if it is present in the downloaded OCI image.
+	if _, err := os.Stat(sourceCentralConfigPath); os.IsNotExist(err) {
+		// The file does not exist, remove any old one from the cache
+		// that might be there from a previous discovery.
+		_ = os.Remove(destCentralConfigPath)
+	} else {
+		// The file exists, copy it to the pluginDataDir
+		if err = utils.CopyFile(sourceCentralConfigPath, destCentralConfigPath); err != nil {
+			// Don't fail just log a warning, as the central config file is not critical.
+			log.V(6).Warningf("unable to copy central config file: %v", err)
+		}
+	}
+}
+
+func (od *DBBackedOCIDiscovery) setupPluginInventory(inventoryDir, metadataDir string) error {
+	inventoryDBFilePath := filepath.Join(inventoryDir, plugininventory.SQliteDBFileName)
+	metadataDBFilePath := filepath.Join(metadataDir, plugininventory.SQliteInventoryMetadataDBFileName)
+
+	// Download the plugin inventory metadata image if exists and save to metadataDir
 	pluginInventoryMetadataImage, _ := airgapped.GetPluginInventoryMetadataImage(od.image)
-	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(pluginInventoryMetadataImage, tempDir2); err == nil {
+	if err := carvelhelpers.DownloadImageAndSaveFilesToDir(pluginInventoryMetadataImage, metadataDir); err == nil {
 		// Update the plugin inventory database (plugin_inventory.db) based on the plugin
 		// inventory metadata database (plugin_inventory_metadata.db)
 		err = plugininventory.NewSQLiteInventoryMetadata(metadataDBFilePath).UpdatePluginInventoryDatabase(inventoryDBFilePath)
