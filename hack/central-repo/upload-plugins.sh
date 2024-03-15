@@ -63,7 +63,7 @@ if [ $# -gt 0 ]; then
     usage
 fi
 
-repoBasePath=host.docker.internal:9876/tanzu-cli/plugins
+# The names for the different images part of the test repo
 smallImage=central:small
 largeImage=central:large
 sanboxImage1=sandbox1:small
@@ -72,26 +72,43 @@ smallAirgappedImage=airgapped:small
 largeAirgappedImage=airgapped:large
 smallImageUsingSHAs=shas:small
 extraColumn=extra:small
-database=/tmp/plugin_inventory.db
+
+# Constants
+repoBasePath=host.docker.internal:9876/tanzu-cli/plugins
+imageContentPath=/tmp/tanzu-test-central-repo
+database=$imageContentPath/plugin_inventory.db
+centralConfigFile=$imageContentPath/central_config.yaml
 publisher="vmware/tkg"
+
+resetImageContentDir() {
+    # Use a two step rm -rf so that we don't risk deleting the wrong thing
+    # This avoids a potential issue if the imageContentPath is empty or corrupt
+    [ -d $imageContentPath ] && mv $imageContentPath $imageContentPath.old
+    rm -rf "${imageContentPath}.old"
+    mkdir -p $imageContentPath
+}
+
+# Start clean
+resetImageContentDir
 
 # Push an empty image
 echo "======================================"
 echo "Creating an empty test Central Repository: $repoBasePath/central:empty"
 echo "======================================"
-rm -f $database
 touch $database
-${dry_run} imgpkg push -i $repoBasePath/central:empty -f $database  --registry-verify-certs=false
+${dry_run} imgpkg push -i $repoBasePath/central:empty -f $imageContentPath  --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/central:empty
 
-
-# Push an image with an empty table
+# Push an image with an empty table and central config file
 echo "======================================"
 echo "Creating a test Central Repository with no entries: $repoBasePath/central:emptytable"
 echo "======================================"
 # Create db table
 cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
-${dry_run} imgpkg push -i $repoBasePath/central:emptytable -f $database --registry-verify-certs=false
+# Create empty central config file
+touch $centralConfigFile
+# Push and sign the image which will contain both the DB and the central config file
+${dry_run} imgpkg push -i $repoBasePath/central:emptytable -f $imageContentPath --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/central:emptytable
 
 addPlugin() {
@@ -192,6 +209,38 @@ addGroup() {
     fi
 }
 
+createCentralConfigFile() {
+    local centralCfgFile=$1
+
+    echo "Creating central config file $centralCfgFile"
+    # Create some content that is rich enough to write
+    # different types of tests
+    cat <<EOF > $centralConfigFile
+cli.core.testconfig-42: 42
+cli.core.testconfig-yaml:
+  clientOptions:
+    features:
+        cluster:
+            allow-legacy-cluster: "false"
+        global:
+            context-aware-cli-for-plugins: "true"
+    env:
+        VAR1: value1
+        VAR2: value2
+  cli:
+    ceipOptIn: "true"
+    eulaStatus: accepted
+    discoverySources:
+        - oci:
+            name: default
+            image: localhost:9876/tanzu-cli/plugins/central:small
+    cliId: af66f434-4e86-4616-b0cc-fd565abce12b
+    telemetry:
+        source: /tmp/.config/tanzu-cli-telemetry/cli_metrics.db
+cli.core.cli_recommended_versions: v2.1.0-alpha.2,v2.0.2,v1.5.0-beta.0,v1.4.4,,v1.3.3,v1.2.2,v1.1.1,v0.90.0
+EOF
+}
+
 k8sPlugins=(cluster feature management-cluster package secret kubernetes-release telemetry)
 tmcPlugins=(account apply audit cluster clustergroup data-protection ekscluster events iam
             inspection integration management-cluster policy workspace helm secret
@@ -203,28 +252,42 @@ pluginUsingSha=(plugin-with-sha)
 multiversionPlugins=(cluster package secret)
 
 defaultDB=$database
+defaultCentralConfigFile=$centralConfigFile
+defaultImageContentPath=$imageContentPath
 # Build two DBs with the same set of plugins and groups, except one DB will have
 # an extra column in both tables.  We do this in a loop to make sure both DB have
 # the exact same set of plugins, so we can run the same tests on both.
 for db in small extra; do
     if [ $db = extra ]; then
-        # Use a special DB for the extra-column tests
-        mkdir -p /tmp/extra
-        database=/tmp/extra/plugin_inventory.db
-        # Reset the special DB
-        rm -f $database
+        # Use a special directory for the extra-column tests
+        imageContentPath=${defaultImageContentPath}-extra
+        # Set the new location for the DB and central config file
+        database=$imageContentPath/plugin_inventory.db
+        centralConfigFile=$imageContentPath/central_config.yaml
+        # Clean any old directory and create the new one
+        resetImageContentDir
+
+        # Create the special DB
         touch $database
         # Create the DB tables with the extra column
         cat $ROOT_DIR/create_tables_extra.sql | sqlite3 -batch $database
 
         image=$repoBasePath/$extraColumn
         extra="extra value"
-        
+
+        # Nothing special to do for the central config file since it
+        # is the same for both images
+
         echo "======================================"
         echo "Creating a test Central Repository as an extracolumn build: $image"
         echo "======================================"
     else
+        # Note that we don't call resetImageContentDir because we
+        # need to keep the previous content which comes from previous steps above
+        imageContentPath=$defaultImageContentPath
         database=$defaultDB
+        centralConfigFile=$defaultCentralConfigFile
+
         image=$repoBasePath/$smallImage
         extra=""
 
@@ -232,7 +295,6 @@ for db in small extra; do
         echo "Creating small test Central Repository: $image"
         echo "======================================"
     fi
-
 
     for name in ${globalPlugins[*]}; do
         addPlugin $name global true
@@ -279,13 +341,17 @@ for db in small extra; do
         done
     done
 
+    createCentralConfigFile $centralConfigFile
+
     # Push small inventory file
-    ${dry_run} imgpkg push -i $image -f $database --registry-verify-certs=false
+    ${dry_run} imgpkg push -i $image -f $imageContentPath --registry-verify-certs=false
     ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $image
 done
 
-# Use the default DB to continue the setup
+# Reset to the default settings to continue the setup
+imageContentPath=$defaultImageContentPath
 database=$defaultDB
+centralConfigFile=$defaultCentralConfigFile
 extra=""
 
 echo "======================================"
@@ -311,17 +377,18 @@ for (( idx=1; idx<=$numPluginsToCreate; idx++ )); do
 done
 
 # Push large inventory file
-${dry_run} imgpkg push -i $repoBasePath/$largeImage -f $database --registry-verify-certs=false
+${dry_run} imgpkg push -i $repoBasePath/$largeImage -f $imageContentPath --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$largeImage
 
 # Create an additional image as if it was a sandbox build
 echo "======================================"
 echo "Creating a first test Central Repository as a sandbox build: $repoBasePath/$sanboxImage1"
 echo "======================================"
-# Reset the DB
-rm -f $database
-touch $database
+
+resetImageContentDir
+
 # Create the DB table
+touch $database
 cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 
 # Create a new version of the plugins for the sandbox repo
@@ -339,18 +406,21 @@ for name in ${opsPlugins[*]}; do
     addPlugin $name operations true v11.11.11
 done
 
+createCentralConfigFile $centralConfigFile
+
 # Push sanbox inventory file
-${dry_run} imgpkg push -i $repoBasePath/$sanboxImage1 -f $database --registry-verify-certs=false
+${dry_run} imgpkg push -i $repoBasePath/$sanboxImage1 -f $imageContentPath --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$sanboxImage1
 
 # Create a second additional image as if it was a sandbox build
 echo "======================================"
 echo "Creating a second test Central Repository as a sandbox build: $repoBasePath/$sanboxImage2"
 echo "======================================"
-# Reset the DB
-rm -f $database
-touch $database
+
+resetImageContentDir
+
 # Create the DB table
+touch $database
 cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 
 # Create a new version of the plugins for the sandbox repo
@@ -370,17 +440,20 @@ for name in ${opsPlugins[*]}; do
     addPlugin $name operations true v22.22.22
 done
 
+createCentralConfigFile $centralConfigFile
+
 # Push sandbox inventory file
-${dry_run} imgpkg push -i $repoBasePath/$sanboxImage2 -f $database --registry-verify-certs=false
+${dry_run} imgpkg push -i $repoBasePath/$sanboxImage2 -f $imageContentPath --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$sanboxImage2
 
 echo "======================================"
 echo "Creating small airgapped test Central Repository: $repoBasePath/$smallAirgappedImage"
 echo "======================================"
-# Reset the DB
-rm -f $database
-touch $database
+
+resetImageContentDir
+
 # Create the DB table
+touch $database
 cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 
 for name in ${globalPlugins[0]}; do
@@ -419,17 +492,20 @@ for name in ${pluginUsingSha[0]}; do
     addPlugin $name global true v9.9.9 useSha
 done
 
+createCentralConfigFile $centralConfigFile
+
 # Push airgapped inventory file
-${dry_run} imgpkg push -i $repoBasePath/$smallAirgappedImage -f $database --registry-verify-certs=false
+${dry_run} imgpkg push -i $repoBasePath/$smallAirgappedImage -f $imageContentPath --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$smallAirgappedImage
 
 echo "======================================"
 echo "Creating large airgapped test Central Repository: $repoBasePath/$largeAirgappedImage"
 echo "======================================"
-# Reset the DB
-rm -f $database
-touch $database
+
+resetImageContentDir
+
 # Create the DB table
+touch $database
 cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 
 for name in ${globalPlugins[*]}; do
@@ -468,17 +544,20 @@ for name in ${pluginUsingSha[*]}; do
     addPlugin $name global true v9.9.9 useSha
 done
 
+createCentralConfigFile $centralConfigFile
+
 # Push airgapped inventory file
-${dry_run} imgpkg push -i $repoBasePath/$largeAirgappedImage -f $database --registry-verify-certs=false
+${dry_run} imgpkg push -i $repoBasePath/$largeAirgappedImage -f $imageContentPath --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry  -y $repoBasePath/$largeAirgappedImage
 
 echo "======================================"
 echo "Creating small test Central Repository using SHAs: $repoBasePath/$smallImageUsingSHAs"
 echo "======================================"
-# Reset the DB
-rm -f $database
-touch $database
+
+resetImageContentDir
+
 # Create the DB table
+touch $database
 cat $ROOT_DIR/create_tables.sql | sqlite3 -batch $database
 
 for name in ${globalPlugins[0]}; do
@@ -505,8 +584,10 @@ for name in ${opsPlugins[0]}; do
     addPlugin $name operations true v9.9.9 useSha
 done
 
+createCentralConfigFile $centralConfigFile
+
 # Push airgapped inventory file
-${dry_run} imgpkg push -i $repoBasePath/$smallImageUsingSHAs -f $database --registry-verify-certs=false
+${dry_run} imgpkg push -i $repoBasePath/$smallImageUsingSHAs -f $imageContentPath --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$smallImageUsingSHAs
 
-rm -f $database
+resetImageContentDir
