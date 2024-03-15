@@ -1089,16 +1089,17 @@ func deleteCtx(_ *cobra.Command, args []string) error {
 		name = args[0]
 	}
 
+	ctx, err := config.GetContext(name)
+	if err != nil {
+		return err
+	}
+
 	if !unattended {
 		isAborted := component.AskForConfirmation("Deleting the context entry from the config will remove it from the list of tracked contexts. " +
 			"You will need to use `tanzu context create` to re-create this context. Are you sure you want to continue?")
 		if isAborted != nil {
 			return nil
 		}
-	}
-	ctx, err := config.GetContext(name)
-	if err != nil {
-		return err
 	}
 	installed, _, _, _ := getInstalledAndMissingContextPlugins() //nolint:dogsled
 	log.Infof("Deleting entry for context '%s'", name)
