@@ -50,8 +50,8 @@ var (
 	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify, showAllColumns              bool
 	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath string
 
-	projectStr, spaceStr, clustergroupStr string
-	contextTypeStr                        string
+	projectStr, projectIDStr, spaceStr, clustergroupStr string
+	contextTypeStr                                      string
 )
 
 const (
@@ -1504,6 +1504,7 @@ func newUpdateCtxCmd() *cobra.Command {
 		Hidden: true,
 	}
 	tanzuActiveResourceCmd.Flags().StringVarP(&projectStr, "project", "", "", "project name to be set as active")
+	tanzuActiveResourceCmd.Flags().StringVarP(&projectIDStr, "project-id", "", "", "project ID to be set as active")
 	tanzuActiveResourceCmd.Flags().StringVarP(&spaceStr, "space", "", "", "space name to be set as active")
 	tanzuActiveResourceCmd.Flags().StringVarP(&clustergroupStr, "clustergroup", "", "", "clustergroup name to be set as active")
 
@@ -1531,6 +1532,7 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	if spaceStr != "" && clustergroupStr != "" {
 		return errors.Errorf("either space or clustergroup can be set as active resource. Please provide either --space or --clustergroup option")
 	}
+	// TODO(prkalle): Add condition to check projectID is also set if project name set
 	if projectStr == "" && spaceStr != "" {
 		return errors.Errorf("space cannot be set without project name. Please provide project name also using --project option")
 	}
@@ -1549,6 +1551,7 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 		ctx.AdditionalMetadata = make(map[string]interface{})
 	}
 	ctx.AdditionalMetadata[config.ProjectNameKey] = projectStr
+	ctx.AdditionalMetadata[config.ProjectIDKey] = projectIDStr
 	ctx.AdditionalMetadata[config.SpaceNameKey] = spaceStr
 	ctx.AdditionalMetadata[config.ClusterGroupNameKey] = clustergroupStr
 	err = config.SetContext(ctx, false)
