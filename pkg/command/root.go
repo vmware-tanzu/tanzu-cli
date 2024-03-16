@@ -255,8 +255,8 @@ func newRootCmd() *cobra.Command {
 				}
 			}
 
-			// Prompt user for EULA agreement if necessary
 			if !shouldSkipPrompts(cmd) {
+				// Prompt user for EULA agreement if necessary
 				if err := cliconfig.ConfigureEULA(false); err != nil {
 					return err
 				}
@@ -265,17 +265,17 @@ func newRootCmd() *cobra.Command {
 					fmt.Fprintf(os.Stderr, "The Tanzu CLI is only usable with reduced functionality until the General Terms are agreed to.\nPlease use `tanzu config eula show` to review the terms, or `tanzu config eula accept` to accept them directly\n")
 					return errors.New("terms not accepted")
 				}
-			}
 
-			// Prompt for CEIP agreement
-			if !shouldSkipPrompts(cmd) {
+				// Prompt for CEIP agreement
 				if err := cliconfig.ConfigureCEIPOptIn(); err != nil {
 					return err
 				}
 			}
 
 			// Install or update essential plugins
-			InstallEssentialPlugins(cmd)
+			if !shouldSkipEssentialPlugins(cmd) {
+				installEssentialPlugins()
+			}
 
 			setupActiveHelp(cmd, args)
 
@@ -302,42 +302,12 @@ func setLoggerVerbosity() {
 	}
 }
 
-func InstallEssentialPlugins(cmd *cobra.Command) {
-	skipCommandsForEssentials := []string{
-		// The shell completion setup is not interactive, so it should not trigger a prompt
-		"tanzu __complete",
-		"tanzu completion",
-		// Common first command to run,
-		"tanzu version",
-		// It would be a chicken and egg issue if user tries to set CEIP configuration
-		// using "tanzu config set env.TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER yes"
-		"tanzu config set",
-		// Auto prompting when running these commands is confusing
-		"tanzu config eula",
-		"tanzu ceip-participation set",
-		// This command is being invoked by the kubectl exec binary where the user doesn't
-		// get to see the prompts and the kubectl command execution just gets stuck, and it
-		// is very hard for users to figure out what is going wrong
-		"tanzu pinniped-auth",
-		// Avoid trying to install essential plugins when user want to remove all plugins using tanzu plugin clean
-		"tanzu plugin clean",
-		// Avoid trying to install essential plugins when users initializes or update the plugin source information
-		"tanzu plugin source",
-	}
-	skipEssentials := false
-	for _, cmdPath := range skipCommandsForEssentials {
-		if strings.HasPrefix(cmd.CommandPath(), cmdPath) {
-			skipEssentials = true
-			break
-		}
-	}
-	if !skipEssentials {
-		// Refresh the database
-		_ = discovery.RefreshDatabase()
+func installEssentialPlugins() {
+	_ = discovery.RefreshDatabase()
 
-		// Check if essential plugins are installed and up to date if not Install or Upgrade the Essential plugins
-		_, _ = pluginmanager.InstallPluginsFromEssentialPluginGroup()
-	}
+	// Check if all essential plugins are installed and up to date
+	// if not install or upgrade them
+	_, _ = pluginmanager.InstallPluginsFromEssentialPluginGroup()
 }
 
 func handleTargetHelp(cmd *cobra.Command, args []string) {
@@ -525,6 +495,35 @@ func shouldSkipPrompts(cmd *cobra.Command) bool {
 		"tanzu pinniped-auth",
 	}
 	return isSkipCommand(skipCommands, cmd.CommandPath())
+}
+
+func shouldSkipEssentialPlugins(cmd *cobra.Command) bool {
+	skipCommandsForEssentials := []string{
+		// The shell completion logic is not interactive, so it should not trigger
+		// the installation of essential plugins which would print messages to the user
+		// and break shell completion
+		"tanzu __complete",
+		"tanzu completion",
+		// Common first command to run
+		"tanzu version",
+
+		"tanzu config set",
+
+		"tanzu config eula",
+		"tanzu ceip-participation set",
+		// This command is being invoked by the kubectl exec binary where the user doesn't
+		// get to see the output so it is better to avoid prinint essential plugins
+		// installation messages
+		"tanzu pinniped-auth",
+		// Avoid trying to install essential plugins when the user wants to remove all plugins.
+		// The plugin clean command would just uninstall the essential plugins we just installed
+		"tanzu plugin clean",
+		// Avoid trying to install essential plugins when the user initializes or updates the plugin
+		// source information since the essential plugins installation would use the old plugin source
+		"tanzu plugin source",
+	}
+
+	return isSkipCommand(skipCommandsForEssentials, cmd.CommandPath())
 }
 
 // Execute executes the CLI.
