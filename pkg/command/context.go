@@ -747,7 +747,9 @@ func doCSPAPITokenAuthAndUpdateContext(c *configtypes.Context, apiTokenValue str
 	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
 	a.Expiration = expiresAt
 	c.GlobalOpts.Auth = a
-	c.AdditionalMetadata = make(map[string]interface{})
+	if c.AdditionalMetadata == nil {
+		c.AdditionalMetadata = make(map[string]interface{})
+	}
 
 	return claims, nil
 }
