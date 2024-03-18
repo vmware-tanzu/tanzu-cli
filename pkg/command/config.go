@@ -145,6 +145,9 @@ func setConfiguration(pathParam, value string) error {
 		if len(paramArray) != 3 {
 			return errors.New("unable to parse config path parameter into three parts [" + strings.Join(paramArray, ".") + "]  (was expecting 'features.<plugin>.<feature>'")
 		}
+		if value != "true" && value != "false" { //nolint:goconst
+			return errors.New("invalid value provided only boolean true or false are accepted")
+		}
 		return configlib.SetFeature(paramArray[1], paramArray[2], value)
 	case ConfigLiteralEnv:
 		if len(paramArray) != 2 {
