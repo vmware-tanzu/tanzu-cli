@@ -69,6 +69,62 @@ func TestConfigEnv(t *testing.T) {
 	}
 }
 
+// TestConfigFeatureFlags validates functionality when normal env path argument is provided.
+func TestConfigFeatureFlags(t *testing.T) {
+	tests := []struct {
+		name   string
+		key    string
+		value  string
+		errStr string
+	}{
+		{
+			name:  "should set valid feature flag",
+			key:   "features.global.foo",
+			value: "true",
+		},
+		{
+			name:   "should not set invalid feature flag value",
+			key:    "features.global.foo",
+			value:  "bar",
+			errStr: "invalid value provided only boolean true or false are accepted",
+		},
+		{
+			name:   "should not set invalid feature flag key 1",
+			key:    "features.global",
+			value:  "false",
+			errStr: "unable to parse config path parameter into three parts [features.global]  (was expecting 'features.<plugin>.<feature>'",
+		},
+		{
+			name:   "should not set invalid feature flag key 2",
+			key:    "features",
+			value:  "false",
+			errStr: "unable to parse config path parameter into parts [features]  (was expecting 'features.<plugin>.<feature>' or 'env.<env_variable>')",
+		},
+		{
+			name:   "should not set invalid feature flag key 3",
+			key:    "feature",
+			value:  "false",
+			errStr: "unable to parse config path parameter into parts [feature]  (was expecting 'features.<plugin>.<feature>' or 'env.<env_variable>')",
+		},
+		{
+			name:   "should not set invalid key anv value",
+			key:    "",
+			value:  "",
+			errStr: "unable to parse config path parameter into parts []  (was expecting 'features.<plugin>.<feature>' or 'env.<env_variable>')",
+		},
+	}
+	for _, spec := range tests {
+		t.Run(spec.name, func(t *testing.T) {
+			err := setConfiguration(spec.key, spec.value)
+			if spec.errStr != "" {
+				assert.Equal(t, spec.errStr, err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestCompletionConfig(t *testing.T) {
 	// Setup a temporary configuration
 	configFile, err := os.CreateTemp("", "config")
