@@ -7,6 +7,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"io"
+	"os"
 
 	"github.com/cppforlife/go-cli-ui/ui"
 	regname "github.com/google/go-containerregistry/pkg/name"
@@ -221,6 +222,18 @@ func (r *registry) CopyImageFromTar(sourceTarFile, destImageRepo string) error {
 			Insecure:    r.opts.Insecure,
 		}
 	}
+	originalStdout := os.Stderr
+	pr, pw, pipeErr := os.Pipe()
+	if pipeErr != nil {
+		return pipeErr
+	}
+	defer func() {
+		pr.Close()
+		pw.Close()
+		os.Stderr = originalStdout
+	}()
+	os.Stderr = pw
+
 	err := copyOptions.Run()
 	if err != nil {
 		return err
