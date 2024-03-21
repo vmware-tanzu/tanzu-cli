@@ -773,8 +773,9 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 		defer func() {
 			signal.Stop(signalChannel)
 			close(signalChannel)
+			spinner.StopSpinner()
+			component.StopAllSpinners()
 		}()
-		defer spinner.StopSpinner()
 	} else {
 		log.Info(installingMsg)
 	}
