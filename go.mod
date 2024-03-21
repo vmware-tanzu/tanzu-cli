@@ -6,10 +6,6 @@ replace cloud.google.com/go => cloud.google.com/go v0.102.1
 
 replace github.com/vmware-tanzu/tanzu-cli/test/e2e/framework => ./test/e2e/framework
 
-//replace github.com/vmware-tanzu/tanzu-plugin-runtime => ../../runtime-code/tanzu-plugin-runtime
-
-//replace github.com/vmware-tanzu/tanzu-plugin-runtime => v1.3.0-dev.0.20240321213409-329469f6da53
-
 require (
 github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686
 	github.com/AlecAivazis/survey/v2 v2.3.6
@@ -46,7 +42,6 @@ github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-2023052314561
 	github.com/vmware-tanzu/carvel-imgpkg v0.36.1
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-cli/test/e2e/framework v0.0.0-00010101000000-000000000000
-	//github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0-dev.0.20240302001423-9b6a526ce007
 	github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0-dev.0.20240321213409-329469f6da53
 	go.pinniped.dev v0.20.0
 	golang.org/x/mod v0.12.0
