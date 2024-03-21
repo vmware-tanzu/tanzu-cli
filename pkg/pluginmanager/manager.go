@@ -13,7 +13,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
@@ -756,38 +755,26 @@ func installOrUpgradePlugin(p *discovery.Discovered, version string, installTest
 
 	installingMsg = fmt.Sprintf("[%v/%v] %v", pluginsInstalled, totalPluginsToInstall, installingMsg)
 	errMsg = fmt.Sprintf("[%v/%v] %v", pluginsInstalled, totalPluginsToInstall, errMsg)
-
+	errorMsgAfterSpinnerStop := fmt.Sprintf("%d plugins installed out of %d", pluginsInstalled, totalPluginsToInstall)
 	var spinner component.OutputWriterSpinner
 
 	// Initialize the spinner if the spinner is allowed
 	if component.IsTTYEnabled() {
-		// Create a channel to receive OS signals
-		signalChannel := make(chan os.Signal, 1)
-		// Register the channel to receive interrupt signals (e.g., Ctrl+C)
-		signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
-		defer func() {
-			signal.Stop(signalChannel)
-			close(signalChannel)
-		}()
-
 		// Initialize the spinner
 		spinner = component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr),
 			component.WithSpinnerText(installingMsg),
 			component.WithSpinnerStarted())
 
-		defer spinner.StopSpinner()
+		// Create a channel to receive OS signals
+		signalChannel := make(chan os.Signal, 1)
+		// Initialize the signal catcher
+		go utils.SignalCatcherInitialization(signalChannel, spinner, errMsg, log.LogTypeERROR, errorMsgAfterSpinnerStop)
 
-		// Start a goroutine that listens for interrupt signals
-		go func(s component.OutputWriterSpinner) {
-			sig := <-signalChannel
-			if sig != nil {
-				if s != nil {
-					s.SetFinalText(errMsg, log.LogTypeERROR)
-					s.StopSpinner()
-				}
-				os.Exit(128 + int(sig.(syscall.Signal)))
-			}
-		}(spinner)
+		defer func() {
+			signal.Stop(signalChannel)
+			close(signalChannel)
+		}()
+		defer spinner.StopSpinner()
 	} else {
 		log.Info(installingMsg)
 	}
