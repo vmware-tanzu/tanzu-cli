@@ -25,6 +25,7 @@ var _ = Describe("metrics helper tests", func() {
 	)
 	const (
 		testProjectName      = "project-A"
+		testProjectID        = "project-A-ID"
 		testSpaceName        = "space-A"
 		testClusterGroupName = "clustergroup-A"
 	)
@@ -85,6 +86,7 @@ var _ = Describe("metrics helper tests", func() {
 
 			// when tanzu context has active project
 			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
+			ctx.AdditionalMetadata[configlib.ProjectIDKey] = testProjectID
 			ctx.AdditionalMetadata[configlib.SpaceNameKey] = ""
 			ctx.AdditionalMetadata[configlib.ClusterGroupNameKey] = ""
 			err = configlib.SetContext(ctx, true)
@@ -96,6 +98,7 @@ var _ = Describe("metrics helper tests", func() {
 
 			// when tanzu context has active space
 			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
+			ctx.AdditionalMetadata[configlib.ProjectIDKey] = testProjectID
 			ctx.AdditionalMetadata[configlib.SpaceNameKey] = testSpaceName
 			ctx.AdditionalMetadata[configlib.ClusterGroupNameKey] = ""
 			err = configlib.SetContext(ctx, true)
@@ -103,6 +106,7 @@ var _ = Describe("metrics helper tests", func() {
 
 			// when tanzu context has active clustergroup
 			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
+			ctx.AdditionalMetadata[configlib.ProjectIDKey] = testProjectID
 			ctx.AdditionalMetadata[configlib.SpaceNameKey] = ""
 			ctx.AdditionalMetadata[configlib.ClusterGroupNameKey] = testClusterGroupName
 			err = configlib.SetContext(ctx, true)

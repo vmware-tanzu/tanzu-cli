@@ -1532,15 +1532,8 @@ var tanzuActiveResourceCmd = &cobra.Command{
 func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	name := args[0]
 
-	if spaceStr != "" && clustergroupStr != "" {
-		return errors.Errorf("either space or clustergroup can be set as active resource. Please provide either --space or --clustergroup option")
-	}
-	// TODO(prkalle): Add condition to check projectID is also set if project name set
-	if projectStr == "" && spaceStr != "" {
-		return errors.Errorf("space cannot be set without project name. Please provide project name also using --project option")
-	}
-	if projectStr == "" && clustergroupStr != "" {
-		return errors.Errorf("clustergroup cannot be set without project name. Please provide project name also using --project option")
+	if err := validateActiveResourceOptions(); err != nil {
+		return err
 	}
 
 	ctx, err := config.GetContext(name)
@@ -1561,7 +1554,13 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed updating the context %q with the active tanzu resource")
 	}
-	err = updateTanzuContextKubeconfig(ctx, projectStr, spaceStr, clustergroupStr)
+	// TODO (prkalle): Adding this fallback logic to support the backward compatibility. This should be updated to use projectID for official release
+	// If the projectIDStr is set it would be used for kubeconfig generation, else use the project name
+	projectVal := projectStr
+	if projectIDStr != "" {
+		projectVal = projectIDStr
+	}
+	err = updateTanzuContextKubeconfig(ctx, projectVal, spaceStr, clustergroupStr)
 	if err != nil {
 		return errors.Wrap(err, "failed to update the tanzu context kubeconfig")
 	}
@@ -1569,7 +1568,26 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	return nil
 }
 
-func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, spaceName, clustergroupName string) error {
+func validateActiveResourceOptions() error {
+	if spaceStr != "" && clustergroupStr != "" {
+		return errors.Errorf("either space or clustergroup can be set as active resource. Please provide either --space or --clustergroup option")
+	}
+
+	// TODO(prkalle): Need to update the checks to make project ID and project Name mandatory for official release
+	if (projectStr == "" && projectIDStr == "") && spaceStr != "" {
+		// TODO(prkalle): update the error message later for official release to use --project and --project-id options to set the project
+		return errors.Errorf("space cannot be set without project. Please set the project")
+	}
+
+	if (projectStr == "" && projectIDStr == "") && clustergroupStr != "" {
+		// TODO(prkalle): update the error message later for official release to use --project and --project-id options to set the project
+		return errors.Errorf("clustergroup cannot be set without project. Please set the project")
+	}
+
+	return nil
+}
+
+func updateTanzuContextKubeconfig(cliContext *configtypes.Context, project, spaceName, clustergroupName string) error {
 	kcfg, err := clientcmd.LoadFromFile(cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "unable to load kubeconfig")
@@ -1580,7 +1598,7 @@ func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, 
 		return errors.Errorf("kubecontext %q doesn't exist", cliContext.ClusterOpts.Context)
 	}
 	cluster := kcfg.Clusters[kubeContext.Cluster]
-	cluster.Server = prepareClusterServerURL(cliContext, projectName, spaceName, clustergroupName)
+	cluster.Server = prepareClusterServerURL(cliContext, project, spaceName, clustergroupName)
 	err = clientcmd.WriteToFile(*kcfg, cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "failed to update the context kubeconfig file")
@@ -1588,12 +1606,12 @@ func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, 
 	return nil
 }
 
-func prepareClusterServerURL(context *configtypes.Context, projectName, spaceName, clustergroupName string) string {
+func prepareClusterServerURL(context *configtypes.Context, project, spaceName, clustergroupName string) string {
 	serverURL := context.ClusterOpts.Endpoint
-	if projectName == "" {
+	if project == "" {
 		return serverURL
 	}
-	serverURL = serverURL + "/project/" + projectName
+	serverURL = serverURL + "/project/" + project
 
 	if spaceName != "" {
 		return serverURL + "/space/" + spaceName

@@ -58,10 +58,16 @@ func hashString(str string) string {
 }
 
 func computeEndpointSHAForTanzuContext(ctx *configtypes.Context) string {
-	// returns SHA256 of concatenated string of Endpoint and orgId/ProjectName/SpaceName
+	// use projectID if not empty, else use projectName
+	projectVal := stringValue(ctx.AdditionalMetadata[configlib.ProjectNameKey])
+	projectID := stringValue(ctx.AdditionalMetadata[configlib.ProjectIDKey])
+	if projectID != "" {
+		projectVal = projectID
+	}
+	// returns SHA256 of concatenated string of Endpoint and orgId/Project/SpaceName
 	return hashString(ctx.GlobalOpts.Endpoint +
 		stringValue(ctx.AdditionalMetadata[configlib.OrgIDKey]) +
-		stringValue(ctx.AdditionalMetadata[configlib.ProjectNameKey]) +
+		projectVal +
 		stringValue(ctx.AdditionalMetadata[configlib.SpaceNameKey]) +
 		stringValue(ctx.AdditionalMetadata[configlib.ClusterGroupNameKey]))
 }
