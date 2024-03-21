@@ -6,7 +6,12 @@ replace cloud.google.com/go => cloud.google.com/go v0.102.1
 
 replace github.com/vmware-tanzu/tanzu-cli/test/e2e/framework => ./test/e2e/framework
 
+//replace github.com/vmware-tanzu/tanzu-plugin-runtime => ../../runtime-code/tanzu-plugin-runtime
+
+//replace github.com/vmware-tanzu/tanzu-plugin-runtime => v1.3.0-dev.0.20240321213409-329469f6da53
+
 require (
+github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/Masterminds/semver v1.5.0
 	github.com/adrg/xdg v0.4.0
@@ -41,8 +46,8 @@ require (
 	github.com/vmware-tanzu/carvel-imgpkg v0.36.1
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-cli/test/e2e/framework v0.0.0-00010101000000-000000000000
-	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686
-	github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0-dev.0.20240318165331-8d6ca07d5468
+	//github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0-dev.0.20240302001423-9b6a526ce007
+	github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0-dev.0.20240321213409-329469f6da53
 	go.pinniped.dev v0.20.0
 	golang.org/x/mod v0.12.0
 	golang.org/x/oauth2 v0.8.0
@@ -208,6 +213,7 @@ require (
 	github.com/vmware-tanzu/carvel-vendir v0.26.0 // indirect
 	github.com/vmware-tanzu/tanzu-framework/apis/core v0.0.0-20230419030809-7081502ebf68 // indirect
 	github.com/vmware-tanzu/tanzu-framework/apis/run v0.0.0-20230419030809-7081502ebf68 // indirect
+	github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0-dev.0.20240321213409-329469f6da53 // indirect
 	github.com/xanzy/go-gitlab v0.83.0 // indirect
 	go.mongodb.org/mongo-driver v1.11.3 // indirect
 	go.opentelemetry.io/otel v1.15.0 // indirect
