@@ -4,7 +4,9 @@
 package airgapped
 
 import (
+	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -16,6 +18,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -55,6 +58,12 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 		return errors.Wrap(err, "error while parsing plugin migration manifest")
 	}
 
+	totalNumberOfImages := len(manifest.ImagesToCopy)
+	imagesCompletedUpload := 0
+
+	var uploadingMessage, uploadedMessage, errMessage string
+	var spinner component.OutputWriterSpinner
+
 	// Iterate through all the images and publish them to the remote repository
 	for _, ic := range manifest.ImagesToCopy {
 		imageTar := filepath.Join(pluginBundleDir, ic.SourceTarFilePath)
@@ -62,12 +71,30 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 		if err != nil {
 			return errors.Wrap(err, "error while constructing the repo image path")
 		}
-		log.Infof("---------------------------")
-		log.Infof("uploading image %q", repoImagePath)
+		uploadingMessage = fmt.Sprintf("[%v/%v] uploading image %s", imagesCompletedUpload, totalNumberOfImages, repoImagePath)
+		errMessage = fmt.Sprintf("[%v/%v] failed to upload image %s", imagesCompletedUpload, totalNumberOfImages, repoImagePath)
+		uploadedMessage = fmt.Sprintf("[%v/%v] uploaded image %s", imagesCompletedUpload+1, totalNumberOfImages, repoImagePath)
+		spinner = component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr),
+			component.WithSpinnerText(uploadingMessage),
+			component.WithSpinnerStarted(), component.WithSpinnerFinalText(uploadedMessage, log.LogTypeINFO))
+
+		signalChannel := make(chan os.Signal, 1)
+		defer func() {
+			signal.Stop(signalChannel)
+			close(signalChannel)
+			spinner.StopSpinner()
+			component.StopAllSpinners()
+		}()
+		// Initialize the signal catcher
+		go utils.SignalCatcherInitialization(signalChannel, spinner, errMessage, log.LogTypeERROR, "")
+		
+		//log.Infof("---------------------------")
+		//log.Infof("uploading image %q", repoImagePath)
 		err = o.ImageProcessor.CopyImageFromTar(imageTar, repoImagePath)
 		if err != nil {
 			return errors.Wrap(err, "error while uploading image")
 		}
+		imagesCompletedUpload++
 	}
 	log.Infof("---------------------------")
 	log.Infof("---------------------------")
