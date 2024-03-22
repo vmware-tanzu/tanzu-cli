@@ -26,11 +26,23 @@ func VerifyInventoryImageSignature(image string) error {
 	}
 
 	if sigVerifyErr := verifyInventoryImageSignature(image, cosignVerifier); sigVerifyErr != nil {
-		log.Warningf("Unable to verify the plugins discovery image signature: %v", sigVerifyErr)
+		// Print the message directly to stderr without using the log library
+		// to make sure the user sees the error message even if the logs are disabled
+		msg := fmt.Sprintf("Unable to verify the plugins discovery image signature: %v", sigVerifyErr)
+		fmt.Fprintf(os.Stderr, "%s%s\n", log.GetLogTypeIndicator(log.LogTypeWARN), msg)
+
 		// TODO(pkalle): Update the message to convey user to check if they could use the latest public key after we get details of the well known location of the public key
-		errMsg := fmt.Sprintf("Fatal, plugins discovery image signature verification failed. The `tanzu` CLI can not ensure the integrity of the plugins to be installed. To ignore this validation please append %q to the comma-separated list in the environment variable %q.  This is NOT RECOMMENDED and could put your environment at risk!",
+		msg = fmt.Sprintf("Fatal, plugins discovery image signature verification failed. The `tanzu` CLI can not ensure the integrity of the plugins to be installed. To ignore this validation please append %q to the comma-separated list in the environment variable %q.  This is NOT RECOMMENDED and could put your environment at risk!",
 			image, constants.PluginDiscoveryImageSignatureVerificationSkipList)
-		log.Fatal(nil, errMsg)
+
+		// Print the error message directly to stderr without using the log library
+		// to make sure the user sees the error message even if the logs are disabled
+		// If not, this situation becomes impossible to debug when it happens during
+		// the installation of the essential plugins which turn off the logs.
+		fmt.Fprintf(os.Stderr, "%s%s\n", log.GetLogTypeIndicator(log.LogTypeERROR), msg)
+		// Forcibly exit instead of returning an error to guarantee we don't install plugins
+		// from an untrusted source.
+		os.Exit(1)
 	}
 	return nil
 }
