@@ -248,7 +248,3 @@ bash-5.1$ tanzu context
 Notice that the input `TANZU_API_TOKEN=12345` preceding the `tanzu` command is not re-printed, however
 it is still present and will take effect if the command is executed.  Pressing `<TAB>` again will often
 correct the situation but when it does not, you can simply refresh your shell display (e.g., `^L`).
-
-```bash
-export TANZU_ACTIVE_HELP=0
-```

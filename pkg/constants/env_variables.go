@@ -41,6 +41,7 @@ const (
 	SkipUpdateKubeconfigOnContextUse = "TANZU_CLI_SKIP_UPDATE_KUBECONFIG_ON_CONTEXT_USE"
 
 	// Control the different ActiveHelp options
+	// If set to 0, Cobra will automatically deactivate all ActiveHelp for the CLI
 	ConfigVariableActiveHelp = "TANZU_ACTIVE_HELP"
 
 	// Change the default value of the plugin inventory cache TTL
