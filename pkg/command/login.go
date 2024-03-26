@@ -4,434 +4,142 @@
 package command
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
-	"os"
-	"sort"
 	"strings"
-	"time"
 
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
-	tkgauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/tkg"
-	kubecfg "github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
-var (
-	name, server string
-)
+var loginEndpoint string
 
 var loginCmd = &cobra.Command{
 	Use:     "login",
-	Short:   "Login to the platform",
+	Short:   "Login to Tanzu Application Platform",
 	Aliases: []string{"lo", "logins"},
 	Annotations: map[string]string{
 		"group": string(plugin.SystemCmdGroup),
 	},
-	RunE: login,
+	ValidArgsFunction: noMoreCompletions,
+	RunE:              login,
 }
 
 func init() {
-	loginCmd.Flags().StringVar(&endpoint, "endpoint", "", "endpoint to login to")
-	loginCmd.Flags().StringVar(&name, "name", "", "name of the server")
-	loginCmd.Flags().StringVar(&apiToken, "apiToken", "", "API token for global login")
-	loginCmd.Flags().StringVar(&server, "server", "", "login to the given server")
-	loginCmd.Flags().StringVar(&kubeConfig, "kubeconfig", "", "path to kubeconfig management cluster. Valid only if user doesn't choose 'endpoint' option.(See [*])")
-	loginCmd.Flags().StringVar(&kubeContext, "context", "", "the context in the kubeconfig to use for management cluster. Valid only if user doesn't choose 'endpoint' option.(See [*]) ")
-	loginCmd.Flags().BoolVar(&stderrOnly, "stderr-only", false, "send all output to stderr rather than stdout")
-	loginCmd.Flags().BoolVar(&forceCSP, "force-csp", false, "force the endpoint to be logged in as a csp server")
+	// "endpoint" variable from context.go cannot be used as default value varies for login command
+	loginCmd.Flags().StringVar(&loginEndpoint, "endpoint", "https://api.tanzu.cloud.vmware.com", "endpoint to login to")
+	utils.PanicOnErr(loginCmd.RegisterFlagCompletionFunc("endpoint", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return cobra.AppendActiveHelp(nil, "Please enter the endpoint for which to create the context"), cobra.ShellCompDirectiveNoFileComp
+	}))
+	loginCmd.Flags().StringVar(&apiToken, "api-token", "", "API token for the SaaS login")
+	utils.PanicOnErr(loginCmd.RegisterFlagCompletionFunc("api-token", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return cobra.AppendActiveHelp(nil, fmt.Sprintf("Please enter your api-token (you can instead set the variable %s)", config.EnvAPITokenKey)), cobra.ShellCompDirectiveNoFileComp
+	}))
 	loginCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
 	loginCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
 	loginCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
-	loginCmd.Flags().MarkHidden("stderr-only") //nolint
-	loginCmd.Flags().MarkHidden("force-csp")   //nolint
-	loginCmd.Flags().MarkHidden("staging")     //nolint
+	utils.PanicOnErr(loginCmd.Flags().MarkHidden("api-token"))
+	utils.PanicOnErr(loginCmd.Flags().MarkHidden("staging"))
 	loginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 	loginCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
 
-	// TODO: Update the plugin-runtime library with the new format and use the library method
-	msg := fmt.Sprintf("this was done in the %q release, it will be removed following the deprecation policy (6 months). Use the %q command instead.\n", "v0.90.0", "context")
-	loginCmd.Deprecated = msg
-
 	loginCmd.Example = `
-    # Login to TKG management cluster using endpoint
-    tanzu login --endpoint "https://login.example.com"  --name mgmt-cluster
+    # Login to Tanzu
+    tanzu login
 
-    #  Login to TKG management cluster by using the provided CA Bundle for TLS verification:
-    tanzu login --endpoint https://k8s.example.com[:port] --endpoint-ca-certificate /path/to/ca/ca-cert
+    # Login to Tanzu using non-default endpoint
+    tanzu login --endpoint "https://login.example.com"
 
-    # Login to TKG management cluster by explicit request to skip TLS verification, which is insecure:
-    tanzu login --endpoint https://k8s.example.com[:port] --insecure-skip-tls-verify
+    #  Login to Tanzu by using the provided CA Bundle for TLS verification:
+    tanzu login --endpoint https://test.example.com[:port] --endpoint-ca-certificate /path/to/ca/ca-cert
 
-    # Login to TKG management cluster by using kubeconfig path and context for the management cluster
-    tanzu login --kubeconfig path/to/kubeconfig --context path/to/context --name mgmt-cluster
+    # Login to Tanzu by explicit request to skip TLS verification (this is insecure)::
+    tanzu login --endpoint https://test.example.com[:port] --insecure-skip-tls-verify
 
-    # Login to TKG management cluster by using default kubeconfig path and context for the management cluster
-    tanzu login  --context path/to/context --name mgmt-cluster
-
-    # Login to an existing server
-    tanzu login --server mgmt-cluster
-
-    Note: To create Mission Control (TMC) contexts, an API Key is required. The API Key value can
-    be provided with the environment variable TANZU_API_TOKEN or can be entered as input while
-    creating the context.
-
-    [*] : Users have two options to login to TKG. They can choose the login endpoint option
-    by providing 'endpoint', or can choose to use the kubeconfig for the management cluster by
-    providing 'kubeconfig' and 'context'. If only '--context' is set and '--kubeconfig' is not,
-    the $KUBECONFIG env variable will be used and, if the $KUBECONFIG env is also not set, the
-    default kubeconfig file ($HOME/.kube/config) will be used.`
+    Note:
+       To login to Tanzu an API Key is optional. If provided using the TANZU_API_TOKEN environment
+       variable, it will be used. Otherwise, the CLI will attempt to log in interactively to the user's default Cloud Services
+       organization. You can override or choose a custom organization by setting the TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID
+       environment variable with the custom organization ID value. More information regarding organizations in Cloud Services
+       and how to obtain the organization ID can be found at
+       https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html
+       Also, more information on logging into Tanzu Application SaaS platform and using
+       interactive login in terminal based hosts (without browser) can be found at
+       https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/quickstart/quickstart.md#logging-into-tanzu-application-platform
+`
 }
 
-func login(_ *cobra.Command, _ []string) (err error) {
-	cfg, err := config.GetClientConfig()
+func login(cmd *cobra.Command, _ []string) (err error) {
+	// assign the loginEndpoint to context endpoint option variable
+	endpoint = loginEndpoint
+
+	// generate random context name to skip the prompts and later update the
+	// context name with organization name acquired after successful authentication
+	ctxName = uuid.New().String()
+	ctx, err := createContextUsingContextType(contextTanzu)
 	if err != nil {
 		return err
 	}
 
-	newServerSelector := "+ new server"
-	var serverTarget *configtypes.Server //nolint:staticcheck // Deprecated
-	if name != "" {
-		serverTarget, err = createNewServer()
-		if err != nil {
-			return err
-		}
-	} else if server == "" {
-		serverTarget, err = getServerTarget(cfg, newServerSelector)
-		if err != nil {
-			return err
-		}
-	} else {
-		serverTarget, err = config.GetServer(server) //nolint:staticcheck // Deprecated
-		if err != nil {
-			return err
-		}
-	}
-
-	if server == newServerSelector {
-		serverTarget, err = createNewServer()
-		if err != nil {
-			return err
-		}
-	}
-
-	if serverTarget.Type == configtypes.GlobalServerType { //nolint:staticcheck // Deprecated
-		err = globalLoginUsingServer(serverTarget)
-	} else {
-		err = managementClusterLogin(serverTarget)
-	}
-
+	err = globalTanzuLogin(ctx, prepareTanzuContextName)
 	if err != nil {
 		return err
 	}
 
-	// Sync all required plugins
-	if err = pluginmanager.SyncPlugins(); err != nil {
-		log.Warning("unable to automatically sync the plugins from target server. Please run 'tanzu plugin sync' command to sync plugins manually")
-	}
-
-	return nil
-}
-
-func getServerTarget(cfg *configtypes.ClientConfig, newServerSelector string) (*configtypes.Server, error) { //nolint:staticcheck // Deprecated
-	promptOpts := getPromptOpts()
-	servers := map[string]*configtypes.Server{} //nolint:staticcheck // Deprecated
-	for _, server := range cfg.KnownServers {   //nolint:staticcheck // Deprecated
-		if server.Type != configtypes.GlobalServerType && server.Type != configtypes.ManagementClusterServerType { //nolint:staticcheck // Deprecated
-			continue
-		}
-		ep, err := config.EndpointFromServer(server) //nolint:staticcheck // Deprecated
-		if err != nil {
-			return nil, err
-		}
-
-		s := rpad(server.Name, 20)
-		s = fmt.Sprintf("%s(%s)", s, ep)
-		servers[s] = server
-	}
-	if endpoint == "" {
-		endpoint, _ = os.LookupEnv(config.EnvEndpointKey)
-	}
-	// If there are no existing servers
-	if len(servers) == 0 {
-		return createNewServer()
-	}
-	serverKeys := getKeysFromServerMap(servers)
-	serverKeys = append(serverKeys, newServerSelector)
-	servers[newServerSelector] = &configtypes.Server{} //nolint:staticcheck // Deprecated
-	err := component.Prompt(
-		&component.PromptConfig{
-			Message: "Select a server",
-			Options: serverKeys,
-			Default: serverKeys[0],
-		},
-		&server,
-		promptOpts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return servers[server], nil
-}
-
-func getKeysFromServerMap(m map[string]*configtypes.Server) []string { //nolint:staticcheck // Deprecated
-	keys := make([]string, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
-func isGlobalServer(endpoint string) bool {
-	if strings.Contains(endpoint, knownGlobalHost) {
-		return true
-	}
-	if forceCSP {
-		return true
-	}
-	return false
-}
-
-func createNewServer() (server *configtypes.Server, err error) { //nolint:staticcheck // Deprecated
-	// user provided command line options to create a server using kubeconfig[optional] and context
-	if kubeContext != "" {
-		return createServerWithKubeconfig()
-	}
-	// user provided command line options to create a server using endpoint
-	if endpoint != "" {
-		return createServerWithEndpoint()
-	}
-	promptOpts := getPromptOpts()
-
-	var loginType string
-
-	err = component.Prompt(
-		&component.PromptConfig{
-			Message: "Select login type",
-			Options: []string{"Server endpoint", "Local kubeconfig"},
-			Default: "Server endpoint",
-		},
-		&loginType,
-		promptOpts...,
-	)
-	if err != nil {
-		return server, err
-	}
-
-	if loginType == "Server endpoint" {
-		return createServerWithEndpoint()
-	}
-
-	return createServerWithKubeconfig()
-}
-
-func createServerWithKubeconfig() (server *configtypes.Server, err error) { //nolint:staticcheck // Deprecated
-	promptOpts := getPromptOpts()
-	if kubeConfig == "" && kubeContext == "" {
-		err = component.Prompt(
-			&component.PromptConfig{
-				Message: "Enter path to kubeconfig (if any)",
-			},
-			&kubeConfig,
-			promptOpts...,
-		)
-		if err != nil {
-			return server, err
-		}
-	}
-	kubeConfig = strings.TrimSpace(kubeConfig)
-	if kubeConfig == "" {
-		kubeConfig = kubecfg.GetDefaultKubeConfigFile()
-	}
-
-	if kubeConfig != "" && kubeContext == "" {
-		err = component.Prompt(
-			&component.PromptConfig{
-				Message: "Enter kube context to use",
-			},
-			&kubeContext,
-			promptOpts...,
-		)
-		if err != nil {
-			return server, err
-		}
-	}
-	kubeContext = strings.TrimSpace(kubeContext)
-	if name == "" {
-		err = component.Prompt(
-			&component.PromptConfig{
-				Message: "Give the server a name",
-			},
-			&name,
-			promptOpts...,
-		)
-		if err != nil {
-			return server, err
-		}
-	}
-	name = strings.TrimSpace(name)
-	nameExists, err := config.ServerExists(name) //nolint:staticcheck // Deprecated
-	if err != nil {
-		return server, err
-	}
-	if nameExists {
-		err := fmt.Errorf("server %q already exists", name)
-		return server, err
-	}
-
-	endpointType := configtypes.ManagementClusterServerType //nolint:staticcheck // Deprecated
-
-	server = &configtypes.Server{ //nolint:staticcheck // Deprecated
-		Name: name,
-		Type: endpointType,
-		ManagementClusterOpts: &configtypes.ManagementClusterServer{ //nolint:staticcheck // Deprecated
-			Path:     kubeConfig,
-			Context:  kubeContext,
-			Endpoint: endpoint},
-	}
-	return server, err
-}
-
-func createServerWithEndpoint() (server *configtypes.Server, err error) { //nolint:staticcheck // Deprecated
-	promptOpts := getPromptOpts()
-	if endpoint == "" {
-		err = component.Prompt(
-			&component.PromptConfig{
-				Message: "Enter server endpoint",
-			},
-			&endpoint,
-			promptOpts...,
-		)
-		if err != nil {
-			return server, err
-		}
-	}
-	endpoint = strings.TrimSpace(endpoint)
-	if name == "" {
-		err = component.Prompt(
-			&component.PromptConfig{
-				Message: "Give the server a name",
-			},
-			&name,
-			promptOpts...,
-		)
-		if err != nil {
-			return server, err
-		}
-	}
-	name = strings.TrimSpace(name)
-	nameExists, err := config.ServerExists(name) //nolint:staticcheck // Deprecated
-	if err != nil {
-		return server, err
-	}
-	if nameExists {
-		err := fmt.Errorf("server %q already exists", name)
-		return server, err
-	}
-	if isGlobalServer(endpoint) {
-		server = &configtypes.Server{ //nolint:staticcheck // Deprecated
-			Name:       name,
-			Type:       configtypes.GlobalServerType, //nolint:staticcheck // Deprecated
-			GlobalOpts: &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
-		}
-	} else {
-		tkf := NewTKGKubeconfigFetcher(endpoint, endpointCACertPath, skipTLSVerify)
-		kubeConfig, kubeContext, err = tkf.GetPinnipedKubeconfig()
-		if err != nil {
-			return server, err
-		}
-
-		server = &configtypes.Server{ //nolint:staticcheck // Deprecated
-			Name: name,
-			Type: configtypes.ManagementClusterServerType, //nolint:staticcheck // Deprecated
-			ManagementClusterOpts: &configtypes.ManagementClusterServer{ //nolint:staticcheck // Deprecated
-				Path:     kubeConfig,
-				Context:  kubeContext,
-				Endpoint: endpoint},
-		}
-	}
-	return server, err
-}
-
-func globalLoginUsingServer(s *configtypes.Server) (err error) { //nolint:staticcheck // Deprecated
-	a := configtypes.GlobalServerAuth{}
-	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
-
-	issuer := csp.ProdIssuer
-	if staging {
-		issuer = csp.StgIssuer
-	}
-	if apiTokenExists {
-		log.Info("API token env var is set")
-	} else {
-		fmt.Fprintln(os.Stderr)
-		log.Info("The API key can be provided by setting the TANZU_API_TOKEN environment variable")
-		apiTokenValue, err = promptAPIToken("TMC")
-		if err != nil {
-			return err
-		}
-	}
-	token, err := csp.GetAccessTokenFromAPIToken(apiTokenValue, issuer)
-	if err != nil {
-		return err
-	}
-	claims, err := csp.ParseToken(&oauth2.Token{AccessToken: token.AccessToken})
-	if err != nil {
-		return err
-	}
-
-	a.Issuer = issuer
-
-	a.UserName = claims.Username
-	a.Permissions = claims.Permissions
-	a.AccessToken = token.AccessToken
-	a.IDToken = token.IDToken
-	a.RefreshToken = apiTokenValue
-	a.Type = "api-token"
-
-	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
-	a.Expiration = expiresAt
-
-	if s != nil && s.GlobalOpts != nil {
-		s.GlobalOpts.Auth = a
-	}
-
-	err = config.PutServer(s, true) //nolint:staticcheck // Deprecated
-	if err != nil {
-		return err
-	}
-
-	fmt.Println()
-	log.Success("successfully logged into global control plane")
-	return nil
-}
-
-func managementClusterLogin(s *configtypes.Server) error { //nolint:staticcheck // Deprecated
-	if s != nil && s.ManagementClusterOpts != nil && s.ManagementClusterOpts.Path != "" && s.ManagementClusterOpts.Context != "" {
-		_, err := tkgauth.GetServerKubernetesVersion(s.ManagementClusterOpts.Path, s.ManagementClusterOpts.Context)
-		if err != nil {
-			err := fmt.Errorf("failed to login to the management cluster %s, %v", s.Name, err)
-			log.Error(err, "")
-			return err
-		}
-		err = config.PutServer(s, true) //nolint:staticcheck // Deprecated
-		if err != nil {
-			return err
-		}
-
-		log.Successf("successfully logged in to management cluster using the kubeconfig %s", s.Name)
+	// if user performs re-login having an existing context with active resource set to project/space/clustergroup
+	// update the kubeconfig because "globalTanzuLogin" updates the kubeconfig to point to organization only,
+	if err := updateKubeConfigForContext(ctx); err != nil {
 		return nil
 	}
 
-	return fmt.Errorf("not yet implemented")
+	// Sync all required plugins
+	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
+
+	return nil
+}
+
+func updateKubeConfigForContext(c *configtypes.Context) error {
+	projNameStr := getString(c.AdditionalMetadata[config.ProjectNameKey])
+	projIDStr := getString(c.AdditionalMetadata[config.ProjectIDKey])
+	spaceNameStr := getString(c.AdditionalMetadata[config.SpaceNameKey])
+	clusterGroupNameNameStr := getString(c.AdditionalMetadata[config.ClusterGroupNameKey])
+
+	projectVal := getProjectValueForKubeconfig(projNameStr, projIDStr)
+	return updateTanzuContextKubeconfig(c, projectVal, spaceNameStr, clusterGroupNameNameStr)
+}
+
+func getString(data interface{}) string {
+	if _, ok := data.(string); !ok {
+		return ""
+	}
+	return data.(string)
+}
+
+// prepareTanzuContextName returns the context name given organization name,endpoint and staging details
+// pre-req orgName and endpoint is non-empty string
+func prepareTanzuContextName(orgName, endpoint string, isStaging bool) string {
+	contextName := strings.Replace(orgName, " ", "_", -1)
+	if isStaging {
+		contextName += "-staging"
+	}
+
+	if endpoint != defaultTanzuEndpoint {
+		// append just 8 chars of sha to the context name
+		contextName += fmt.Sprintf("-%s", hashString(endpoint)[:8])
+	}
+	return contextName
+}
+
+func hashString(str string) string {
+	h := sha256.New()
+	h.Write([]byte(str))
+	return hex.EncodeToString(h.Sum(nil))
 }

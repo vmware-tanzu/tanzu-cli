@@ -264,7 +264,7 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 		err = k8sLogin(ctx)
 	} else if ctx.ContextType == configtypes.ContextTypeTanzu {
 		// Tanzu control plane login
-		err = globalTanzuLogin(ctx)
+		err = globalTanzuLogin(ctx, nil)
 	} else {
 		err = globalLogin(ctx)
 	}
@@ -281,6 +281,8 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 
 // syncContextPlugins syncs the plugins for the given context type
 // if listPlugins is true, it will list the plugins that will be installed for the given context type
+//
+//nolint:unparam
 func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType, ctxName string, listPlugins bool) error {
 	plugins, err := pluginmanager.DiscoverPluginsForContextType(contextType)
 	errList := make([]error, 0)
@@ -617,70 +619,111 @@ func globalLogin(c *configtypes.Context) (err error) {
 	}
 
 	// format
-	fmt.Println()
+	fmt.Fprintln(os.Stderr)
 	log.Success("successfully created a TMC context")
 	return nil
 }
 
-func globalTanzuLogin(c *configtypes.Context) error {
-	var claims *csp.Claims
-	var err error
-	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
-	// Use API Token login flow if TANZU_API_TOKEN environment variable is set, else fall back to default interactive login flow
-	if apiTokenExists {
-		log.Info("API token env var is set")
-		claims, err = doCSPAPITokenAuthAndUpdateContext(c, apiTokenValue)
-	} else {
-		claims, err = doCSPInteractiveLoginAndUpdateContext(c)
-	}
-	if err != nil {
-		return err
-	}
-	c.AdditionalMetadata[config.OrgIDKey] = claims.OrgID
-
-	kubeCfg, kubeCtx, serverEndpoint, err := tanzuauth.GetTanzuKubeconfig(c, endpoint, claims.OrgID, endpointCACertPath, skipTLSVerify)
+func globalTanzuLogin(c *configtypes.Context, generateContextNameFunc func(orgName, endpoint string, isStaging bool) string) error {
+	claims, err := doCSPAuthentication(c)
 	if err != nil {
 		return err
 	}
 
-	c.ClusterOpts.Path = kubeCfg
-	c.ClusterOpts.Context = kubeCtx
-	c.ClusterOpts.Endpoint = serverEndpoint
-
-	err = config.AddContext(c, true)
+	orgName, err := getCSPOrganizationName(c, claims)
 	if err != nil {
 		return err
 	}
+	// update the context name using the context name generator
+	if generateContextNameFunc != nil {
+		c.Name = generateContextNameFunc(orgName, endpoint, staging)
+	}
+
+	// update the context metadata
+	if err := updateTanzuContextMetadata(c, claims.OrgID, orgName); err != nil {
+		return err
+	}
+
+	// Fetch the tanzu kubeconfig and update context
+	if err := updateContextWithTanzuKubeconfig(c, endpoint, claims.OrgID, endpointCACertPath, skipTLSVerify); err != nil {
+		return err
+	}
+
+	// Add the context to configuration
+	if err := config.AddContext(c, true); err != nil {
+		return err
+	}
+
 	// update the current context in the kubeconfig file after creating the context
-	err = syncCurrentKubeContext(c)
-	if err != nil {
+	if err := syncCurrentKubeContext(c); err != nil {
 		return errors.Wrap(err, "unable to update current kube context")
 	}
 
 	// format
-	fmt.Println()
-	orgName := getCSPOrgName(c, claims)
-	// If the orgName fetching API fails(corner case), we only print the tanzu context creation success message
-	msg := "Successfully created a tanzu context"
-	if orgName != "" {
-		msg = fmt.Sprintf("Successfully logged into '%s' organization and created a tanzu context", orgName)
-	}
-	log.Success(msg)
+	fmt.Fprintln(os.Stderr)
+	log.Successf("Successfully logged into '%s' organization and created a tanzu context", orgName)
 	return nil
 }
 
-// getCSPOrgName returns the CSP Org name using the orgID from the claims.
+// updateTanzuContextMetadata updates the context additional metadata
+func updateTanzuContextMetadata(c *configtypes.Context, orgID, orgName string) error {
+	exists, err := config.ContextExists(c.Name)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		c.AdditionalMetadata[config.OrgIDKey] = orgID
+		c.AdditionalMetadata[config.OrgNameKey] = orgName
+		return nil
+	}
+	// This is possible only for contexts created using "tanzu login" command because
+	// "tanzu context create" command doesn't allow user to create duplicate contexts
+	existingContext, err := config.GetContext(c.Name)
+	if err != nil {
+		return err
+	}
+	// If the context exists with the same name, honor the users current context additional metadata
+	// which includes the org/project/space details.
+	c.AdditionalMetadata = existingContext.AdditionalMetadata
+
+	return nil
+}
+
+// getCSPOrganizationName returns the CSP Org name using the orgID from the claims.
 // It will return empty string if API fails
-func getCSPOrgName(c *configtypes.Context, claims *csp.Claims) string {
+func getCSPOrganizationName(c *configtypes.Context, claims *csp.Claims) (string, error) {
 	issuer := csp.ProdIssuer
 	if staging {
 		issuer = csp.StgIssuer
 	}
 	orgName, err := csp.GetOrgNameFromOrgID(claims.OrgID, c.GlobalOpts.Auth.AccessToken, issuer)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return orgName
+	return orgName, nil
+}
+
+func updateContextWithTanzuKubeconfig(c *configtypes.Context, ep, orgID, epCACertPath string, skipTLSVerify bool) error {
+	kubeCfg, kubeCtx, orgEndpoint, err := tanzuauth.GetTanzuKubeconfig(c, ep, orgID, epCACertPath, skipTLSVerify)
+	if err != nil {
+		return err
+	}
+	c.ClusterOpts.Path = kubeCfg
+	c.ClusterOpts.Context = kubeCtx
+	// for "tanzu" context ClusterOpts.Endpoint would always be pointing to UCP organization endpoint
+	c.ClusterOpts.Endpoint = orgEndpoint
+
+	return nil
+}
+
+func doCSPAuthentication(c *configtypes.Context) (*csp.Claims, error) {
+	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
+	// Use API Token login flow if TANZU_API_TOKEN environment variable is set, else fall back to default interactive login flow
+	if apiTokenExists {
+		log.Info("API token env var is set")
+		return doCSPAPITokenAuthAndUpdateContext(c, apiTokenValue)
+	}
+	return doCSPInteractiveLoginAndUpdateContext(c)
 }
 
 func doCSPInteractiveLoginAndUpdateContext(c *configtypes.Context) (claims *csp.Claims, err error) {
@@ -1567,18 +1610,25 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed updating the context %q with the active tanzu resource")
 	}
-	// TODO (prkalle): Adding this fallback logic to support the backward compatibility. This should be updated to use projectID for official release
-	// If the projectIDStr is set it would be used for kubeconfig generation, else use the project name
-	projectVal := projectStr
-	if projectIDStr != "" {
-		projectVal = projectIDStr
-	}
+	projectVal := getProjectValueForKubeconfig(projectStr, projectIDStr)
 	err = updateTanzuContextKubeconfig(ctx, projectVal, spaceStr, clustergroupStr)
 	if err != nil {
 		return errors.Wrap(err, "failed to update the tanzu context kubeconfig")
 	}
 
 	return nil
+}
+
+// getProjectValueForKubeconfig return the project value to be used for UCP kubeconfig generation.
+//
+// Note: This method can be removed for official release as projectID would be used for kubeconfig generation.
+func getProjectValueForKubeconfig(projectName, projectID string) string {
+	// TODO (prkalle): Adding this fallback logic to support the backward compatibility. This should be updated to use projectID for official release
+	// If the projectIDStr is set it would be used for kubeconfig generation, else use the project name
+	if projectID != "" {
+		return projectID
+	}
+	return projectName
 }
 
 func validateActiveResourceOptions() error {
