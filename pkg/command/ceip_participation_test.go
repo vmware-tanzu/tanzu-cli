@@ -41,7 +41,7 @@ var _ = Describe("ceip-participation command tests", func() {
 			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
 			os.RemoveAll(tkgConfigFile.Name())
 			os.RemoveAll(tkgConfigFileNG.Name())
-			resetLoginCommandFlags()
+			resetContextCommandFlags()
 		})
 		Context("ceip-participation set to true", func() {
 			It("ceip-participation set should be successful and get should return status as 'Opt-in' status", func() {
