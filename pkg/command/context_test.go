@@ -672,6 +672,7 @@ clusterOpts:
 	})
 
 	Describe("tanzu context unset", func() {
+		var name string
 		cmd := &cobra.Command{}
 		BeforeEach(func() {
 			targetStr = ""
