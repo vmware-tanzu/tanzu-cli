@@ -49,6 +49,9 @@ const (
 	// ConfigVariablePluginDBCacheRefreshThresholdSeconds Change the default value of db cache refresh threshold
 	ConfigVariablePluginDBCacheRefreshThresholdSeconds = "TANZU_CLI_PLUGIN_DB_CACHE_REFRESH_THRESHOLD_SECONDS"
 
+	// ConfigVariableRecommendVersionDelayDays Change the default value of the delay between printing a recommended version message
+	ConfigVariableRecommendVersionDelayDays = "TANZU_CLI_RECOMMEND_VERSION_DELAY_DAYS"
+
 	// CSPLoginOrgID overrides the CSP default OrgID to which the user logs into, using CLI interactive login flow
 	// Note: More information regarding the CSP organizations can be found at
 	// https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html
