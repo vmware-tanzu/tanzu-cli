@@ -67,6 +67,46 @@ To run e2e tests for the repository:
 make e2e-cli-core
 ```
 
+### Environment variables for testing the CLI
+
+Some test options affecting the CLI are only available through the use of environment
+variables.  These variables are only meant to be used during testing and are not subject
+to the CLI's backwards-compatibility policy, i.e., they could be changed or removed at any time.
+These variables can be set in the shell or using `tanzu config set env.<VAR> <VALUE>`
+(see [the documentation about this command](../full/README.md#cli-configuration)).
+Below is the list of these variables:
+
+| Environment Variable | Description | Value |
+| -------------------- | ----------- | ----- |
+| `SQL_STATEMENTS_LOG_FILE` | Specifies a log file where SQL commands will be logged when _modifying_ the plugin inventory database.  This is done when publishing plugins using the `builder` plugin. | A file name with its path |
+| `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` | Specifies test plugin repositories to use as a supplement to the production Central Repository of plugins. Ignored if `TANZU_CLI_PRIVATE_PLUGIN_DISCOVERY_IMAGES` is set. | Comma-separated list of test plugin repository URIs| |
+| `TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_NAME` | Override the default name (`vmware-tanzucli/essentials`) of the Essential Plugins group.  Should not be needed. | Group name |
+| `TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_VERSION` | Specify a fixed version to use for the Essential Plugins group instead of the latest.  Should not be needed. | Group version |
+| `TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY` | Instruct the CLI to treat deactivated plugins as if they were active | `1` or `true` to use deactivated plugin, `0`, `false`, `""` or unset not to use them |
+| `TANZU_CLI_E2E_TEST_BINARY_PATH` | Specifies the CLI binary to use for E2E tests.  Defaults to `tanzu` as found on `$PATH`. | The path including the binary to the CLI  |
+| `TANZU_CLI_PLUGIN_DB_CACHE_REFRESH_THRESHOLD_SECONDS` | Overrides the default threshold at which point the plugin inventory will be automatically refreshed.  Default: 24 hours. | Threshold in seconds |
+| `TANZU_CLI_PLUGIN_DB_CACHE_TTL_SECONDS` | Overrides the default 30 minute delay in which the plugin inventory cache is used without checking if it should be refreshed. | Delay in seconds |
+| `TANZU_CLI_PLUGIN_DISCOVERY_PATH_FOR_TANZU_CONTEXT` | Allows testing the preliminary context-scoped plugin support for a Tanzu context type. | The path portion of the URI to use for discovery of context-scoped plugins on a Tanzu context |
+| `TANZU_CLI_SHOW_PLUGIN_INSTALLATION_LOGS` | Allows to print plugin installation logs during the Essential Plugins installation. |  `1` or `true` to print the logs, `0`, `false`, `""` or unset not to print them |
+| `TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS` | Tells the CLI to use any standalone plugins currently installed even if the same plugin is also installed as context-scoped.  This allows to test new plugin versions locally. |  `1` or `true` to use standalone plugins before context-scoped plugins, `0`, `false`, `""` or unset to prioritize context-scoped plugins |
+| `TANZU_CLI_SUPERCOLLIDER_ENVIRONMENT` | Specifies the use of the staging super collider environment instead of the production environment. | `"staging"` |
+| `TANZU_CLI_TMC_UNSTABLE_URL` | Specifies the endpoint for the TMC cluster to use in E2E tests. | The URI of the endpoint |
+| `TANZU_CONFIG` | Use a different `config.yaml` file. | Full path to the new config file |
+| `TANZU_CONFIG_METADATA` | Use a different `.config-metadata.yaml` file. | Full path to the new config-metadata file|
+| `TANZU_CONFIG_NEXT_GEN` | Use a different `config-ng.yaml` fil.e | Full path to the new config-ng file |
+| `TEST_CUSTOM_CATALOG_CACHE_DIR` | Use a different directory for the `catalog.yaml` plugin catalog cache file. | Full path of the directory |
+| `TEST_CUSTOM_DATA_STORE_FILE` | Use a different `.data-store.yaml` file | Full path of the new file |
+| `TEST_CUSTOM_PLUGIN_COMMAND_TREE_CACHE_DIR` | Use a different directory for the command-tree information used for telemetry. | Full path to the new directory |
+| `TEST_TANZU_CLI_USE_DB_CACHE_ONLY` | Always use the plugin inventory cache, never try to refresh it. |  `1` or `true` to always use the cache, `0`, `false`, `""` to properly refresh the cache when needed |
+| `TZ_ENFORCE_TEST_PLUGIN` | Prevent the installation of a plugin that does not provide a corresponding `test` plugin. | `1` to require plugins to have a `test` plugin, any other value or unset for the `test` plugin to be optional |
+
+The following other variables are used internally through the `Makefile` for E2E tests:
+
+- `TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR`
+- `TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR`
+- `TANZU_CLI_E2E_INPUT_CONFIG_DATA_FILE_PATH`
+- `TANZU_CLI_E2E_TEST_ENVIRONMENT`
+
 ### Debugging
 
 By default the CLI is built without debug symbols to reduce its binary size;
