@@ -1014,6 +1014,24 @@ func TestPluginLevelRemapping(t *testing.T) {
 			expected: []string{"hello", "the alias dum is duplicated across plugins: dummy, dummy3"},
 		},
 		{
+			test: "plugin replaces another if former maps to an alias of the latter",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "bars",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"bar"},
+				},
+				{
+					name:      "bar2",
+					target:    configtypes.TargetK8s,
+					invokedAs: []string{"bar"},
+				},
+			},
+			args:       []string{""},
+			expected:   []string{"bar2 commands"},
+			unexpected: []string{"bars commands"},
+		},
+		{
 			test: "two plugins sharing aliases does not show duplicate warning if one replaces another",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
