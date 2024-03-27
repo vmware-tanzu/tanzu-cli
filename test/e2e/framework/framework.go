@@ -96,7 +96,7 @@ func init() {
 	os.Setenv("HOME", TestDirPath)
 	TestHomeDir = TestDirPath
 	TestPluginsDirPath = filepath.Join(TestDirPath, TestPluginsDir)
-	TanzuFolderPath = filepath.Join(filepath.Join(TestDirPath, ConfigFolder), TanzuFolder)
+	TanzuFolderPath = filepath.Join(TestDirPath, ConfigFolder, TanzuFolder)
 	ConfigFilePath = filepath.Join(TanzuFolderPath, ConfigFile)
 	ConfigNGFilePath = filepath.Join(TanzuFolderPath, ConfigNGFile)
 	TanzuBinary = os.Getenv(TanzuCLIE2ETestBinaryPath)
@@ -105,7 +105,7 @@ func init() {
 		TanzuBinary = TanzuPrefix
 	}
 	// Create a directory (if not exists) $HOME/.tanzu-cli-e2e/.config/tanzu-plugins/discovery/standalone
-	TestStandalonePluginsPath = filepath.Join(filepath.Join(filepath.Join(filepath.Join(TestDirPath, ConfigFolder), TanzuPluginsFolder), "discovery"), "standalone")
+	TestStandalonePluginsPath = filepath.Join(TestDirPath, ConfigFolder, TanzuPluginsFolder, "discovery", "standalone")
 	_ = CreateDir(TestStandalonePluginsPath)
 	// Create a directory (if not exists) $HOME/.tanzu-cli-e2e/temp
 	_ = CreateDir(FullPathForTempDir)

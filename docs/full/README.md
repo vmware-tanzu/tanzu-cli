@@ -211,7 +211,7 @@ Signature verification could fail in the scenarios below:
    suppress this warning by setting the environment variable `TANZU_CLI_SUPPRESS_SKIP_SIGNATURE_VERIFICATION_WARNING`
    to `true`.
 
-## Autocompletion support
+## Autocompletion Support
 
 The Tanzu CLI supports shell autocompletion for the `bash`, `zsh`, `fish` and `powershell` shells.
 Please refer to the [autocompletion quickstart section](../quickstart/quickstart.md#install-autocompletion-scripts-for-your-shell)
@@ -252,3 +252,15 @@ correct the situation but when it does not, you can simply refresh your shell di
 ```bash
 export TANZU_ACTIVE_HELP=0
 ```
+
+## Auto-detection and notification of new CLI releases
+
+The CLI will periodically verify if new releases of the CLI itself are available.
+The CLI will print a notification to the user to indicate whenever a new minor or patch release
+is available to be installed.  This notification will be printed at most once a day until the
+CLI is upgraded.  The interval between such notifications can be changed by setting the
+`TANZU_CLI_RECOMMEND_VERSION_DELAY_DAYS` variable to the desired amount of days.  Setting this
+variable to `0` will turn off such notifications.
+
+Note that special consideration must be given for this feature to work in an internet-restricted environment.
+Please refer to [this section](../quickstart/install.md#updating-the-central-configuration) of the documentation.
