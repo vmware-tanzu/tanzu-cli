@@ -28,8 +28,9 @@ make gomod
 The location of the directories used by the CLI are:
 
 1. to store plugin binaries: `<XDG_DATA_HOME>/tanzu-cli`
-1. to store the plugin catalog as well as the plugin inventory DB cache: `$HOME/.cache/tanzu`
-1. to store configuration files: `$HOME/.config/tanzu`
+1. to store the plugin catalog: `$HOME/.cache/tanzu`
+1. to store the plugin inventory DB cache and the central configuration file: `$HOME/.cache/tanzu/plugin_inventory/<discovery>`
+1. to store configuration files as well as the data store file: `$HOME/.config/tanzu`
 1. to store the telemetry DB: `$HOME/.config/tanzu-cli-telemetry`
 
 ## Source Code Structure
@@ -40,6 +41,17 @@ Running `make build-all` will build the CLI and any plugins in this repository
 unlike `make build` which only builds the CLI.
 
 `cmd/plugin/builder`: code location for the builder plugin
+
+### Data Store
+
+The CLI has a key/value data store in the form of the yaml file `$HOME/.config/tanzu/.data_store.yaml`.
+Unlike the configuration files found in the same directory, the data store is for internal CLI use and
+not meant to be seen/modified by the user.  It can be used by the CLI to store certain information
+and read it back.  For example the feature that notifies the user of a new release of the CLI uses the data store
+to store a timestamp of the last time the user was notified so that such notifications can be limited to once a day.
+
+The `datastore.GetDataStoreValue(key, &value)`, `datastore.SetDataStoreValue(key value)` and
+`datastore.DeleteDataStoreValue(key)` API can be used to make use of the CLI data store.
 
 ### Tests
 
@@ -73,6 +85,34 @@ with different Tanzu products. To install a plugin, the CLI uses an OCI
 discovery source, which contains the inventory of plugins. For the
 implementation details of the OCI discovery solution, please refer to the
 [Centralized Discovery](centralized_plugin_discovery.md) document.
+
+## Central Configuration
+
+The "Central Configuration" refers to an asynchronously updatable, centrally-hosted CLI configuration.
+Deployed CLIs regularly read this Central Configuration and can take action on specific changes.
+Publishing changes to the Central Configuration allows to modify the behavior of existing CLI
+binaries without requiring a new release.
+
+Currently, the CLI uses the Central Configuration to check if a new version of the CLI itself has
+been released and in such a case notifies the user.  This implies that upon each new release of the CLI,
+the newly released version number is added to the Central Configuration for existing CLIs to detect.
+
+The Central Configuration is stored in a `central_config.yaml` file that is bundled in the same OCI image
+as the database of the central repository of plugins.  On the user's machine, the Central Configuration file
+benefits from the automatic refresh of this OCI image and the `central_config.yaml` file is stored in the
+same location as the database of plugins, e.g., `$HOME/.cache/tanzu/plugin_inventory/default/central_config.yaml`.
+
+### Using the Central Configuration
+
+The Central Configuration is a list of key/value pairs where the key is a string and the value is any structure
+that is valid yaml.  To read the Central Configuration the `CentralConfig` interface should be used as follows:
+
+```go
+  discoverySource, err := config.GetCLIDiscoverySource("default")
+  reader := centralconfig.NewCentralConfigReader(discoverySource)
+  var myValue myValueType
+  err = reader.GetCentralConfigEntry("myStringKey", &myValue)
+```
 
 ## Deprecation of existing functionality
 

@@ -118,3 +118,245 @@ func TestIsNewVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestIsPreRelease(t *testing.T) {
+	tests := []struct {
+		name    string
+		version string
+		want    bool
+	}{
+		{
+			name:    "Major version",
+			version: "v3.0.0",
+			want:    false,
+		},
+		{
+			name:    "Minor version",
+			version: "v2.2.0",
+			want:    false,
+		},
+		{
+			name:    "Patch version",
+			version: "v1.1.1",
+			want:    false,
+		},
+		{
+			name:    "Alpha 0 version",
+			version: "v1.3.0-alpha.0",
+			want:    true,
+		},
+		{
+			name:    "Alpha 1 version",
+			version: "v1.3.5-alpha.1",
+			want:    true,
+		},
+		{
+			name:    "Beta version",
+			version: "v1.3.0-beta.0",
+			want:    true,
+		},
+		{
+			name:    "RC version",
+			version: "v1.3.0-rc.0",
+			want:    true,
+		},
+		{
+			name:    "RC caps version",
+			version: "v1.3.0-RC.0",
+			want:    true,
+		},
+		{
+			name:    "Invalid version",
+			version: "invalid-version",
+			want:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsPreRelease(tt.version); got != tt.want {
+				t.Errorf("IsPreRelease() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsSameMajor(t *testing.T) {
+	tests := []struct {
+		name     string
+		version1 string
+		version2 string
+		want     bool
+	}{
+		{
+			name:     "Same version",
+			version1: "v1.0.0",
+			version2: "v1.0.0",
+			want:     true,
+		},
+		{
+			name:     "Same minor",
+			version1: "v1.1.1",
+			version2: "v1.1.0",
+			want:     true,
+		},
+		{
+			name:     "Same major",
+			version1: "v1.1.1",
+			version2: "v1.0.0",
+			want:     true,
+		},
+		{
+			name:     "Different major",
+			version1: "v2.0.0",
+			version2: "v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "Different major with minor and patch",
+			version1: "v2.2.2",
+			version2: "v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "Different major with 0",
+			version1: "v0.90.0",
+			version2: "v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "Same major with 0",
+			version1: "v0.90.1",
+			version2: "v0.90.0",
+			want:     true,
+		},
+		{
+			name:     "Invalid version",
+			version1: "invalid",
+			version2: "v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "Invalid version reversed",
+			version1: "v1.0.0",
+			version2: "invalid",
+			want:     false,
+		},
+		{
+			name:     "Same major with pre-release",
+			version1: "v1.3.0-alpha.1",
+			version2: "v1.3.0-beta.1",
+			want:     true,
+		},
+		{
+			name:     "Same major with one as pre-release",
+			version1: "v1.3.0-alpha.1",
+			version2: "v1.4.1",
+			want:     true,
+		},
+		{
+			name:     "Different major with same pre-release",
+			version1: "v2.3.0-alpha.1",
+			version2: "v1.3.0-alpha.1",
+			want:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsSameMajor(tt.version1, tt.version2); got != tt.want {
+				t.Errorf("IsSameMajor() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsSameMinor(t *testing.T) {
+	tests := []struct {
+		name     string
+		version1 string
+		version2 string
+		want     bool
+	}{
+		{
+			name:     "Same version",
+			version1: "v1.0.0",
+			version2: "v1.0.0",
+			want:     true,
+		},
+		{
+			name:     "Same minor",
+			version1: "v1.1.1",
+			version2: "v1.1.0",
+			want:     true,
+		},
+		{
+			name:     "Same major",
+			version1: "v1.1.1",
+			version2: "v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "Different minor",
+			version1: "v1.1.0",
+			version2: "v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "Same minor with different major",
+			version1: "v2.2.2",
+			version2: "v1.2.2",
+			want:     false,
+		},
+		{
+			name:     "Different minor with 0",
+			version1: "v0.90.0",
+			version2: "v0.91.0",
+			want:     false,
+		},
+		{
+			name:     "Same major with 0",
+			version1: "v1.90.0",
+			version2: "v0.90.0",
+			want:     false,
+		},
+		{
+			name:     "Invalid version",
+			version1: "invalid",
+			version2: "v1.0.0",
+			want:     false,
+		},
+		{
+			name:     "Invalid version reversed",
+			version1: "v1.0.0",
+			version2: "invalid",
+			want:     false,
+		},
+		{
+			name:     "Same minor with pre-release",
+			version1: "v1.3.0-alpha.1",
+			version2: "v1.3.0-beta.1",
+			want:     true,
+		},
+		{
+			name:     "Same minor with one as pre-release",
+			version1: "v1.3.0-alpha.1",
+			version2: "v1.3.1",
+			want:     true,
+		},
+		{
+			name:     "Different minor with same pre-release",
+			version1: "v1.4.0-alpha.1",
+			version2: "v1.3.0-alpha.1",
+			want:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsSameMinor(tt.version1, tt.version2); got != tt.want {
+				t.Errorf("IsSameMinor() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
