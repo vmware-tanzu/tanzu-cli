@@ -15,6 +15,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/airgapped"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier"
@@ -22,9 +23,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
-
-// centralConfigFileName is the name of the central config file
-const centralConfigFileName = "central_config.yaml"
 
 // DBBackedOCIDiscovery is an artifact discovery utilizing an OCI image
 // which contains an SQLite database describing the content of the plugin
@@ -281,8 +279,8 @@ func (od *DBBackedOCIDiscovery) downloadCentralRepositoryData() error {
 
 func (od *DBBackedOCIDiscovery) setupCentralConfig(sourceDir string) {
 	// Copy the central config file from the temp directory to pluginDataDir
-	sourceCentralConfigPath := filepath.Join(sourceDir, centralConfigFileName)
-	destCentralConfigPath := filepath.Join(od.pluginDataDir, centralConfigFileName)
+	sourceCentralConfigPath := filepath.Join(sourceDir, centralconfig.CentralConfigFileName)
+	destCentralConfigPath := filepath.Join(od.pluginDataDir, centralconfig.CentralConfigFileName)
 
 	// Since the central config file is optional, check if it is present in the downloaded OCI image.
 	if _, err := os.Stat(sourceCentralConfigPath); os.IsNotExist(err) {

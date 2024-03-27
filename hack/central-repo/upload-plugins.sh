@@ -216,28 +216,42 @@ createCentralConfigFile() {
     # Create some content that is rich enough to write
     # different types of tests
     cat <<EOF > $centralConfigFile
-cli.core.testconfig-42: 42
-cli.core.testconfig-yaml:
-  clientOptions:
-    features:
-        cluster:
-            allow-legacy-cluster: "false"
-        global:
-            context-aware-cli-for-plugins: "true"
-    env:
-        VAR1: value1
-        VAR2: value2
-  cli:
-    ceipOptIn: "true"
-    eulaStatus: accepted
-    discoverySources:
-        - oci:
-            name: default
-            image: localhost:9876/tanzu-cli/plugins/central:small
-    cliId: af66f434-4e86-4616-b0cc-fd565abce12b
-    telemetry:
-        source: /tmp/.config/tanzu-cli-telemetry/cli_metrics.db
-cli.core.cli_recommended_versions: v2.1.0-alpha.2,v2.0.2,v1.5.0-beta.0,v1.4.4,,v1.3.3,v1.2.2,v1.1.1,v0.90.0
+cli.core.cli_recommended_versions: 
+- version: v2.1.0-alpha.2
+- version: v2.0.2
+- version: v1.5.0-beta.0
+- version: v1.4.4
+- version: v1.3.3
+- version: v1.2.2
+- version: v1.1.1
+- version: v0.90.0
+cli.core.some-string: "the meaning of life, the universe, and everything"
+cli.core.some-int: 42
+cli.core.some-bool: true
+cli.core.some-yaml:
+  # This chunk of yaml will be parsed automatically
+  description: Build Tanzu components
+  target: global
+  version: v1.2.0
+  buildSHA: f3abe62e  # This is a comment
+  group: Admin
+cli.core.some-yaml-as-a-string: |-
+  # This chunk of yaml will NOT be parsed automatically
+  # because of the use of the |- operator
+  # It will be kept as a string.  The caller
+  # can parse it into its own yaml object
+  description: Another
+  target: global
+  version: v1.8.0
+  buildSHA: f3abe62e  # This is a comment
+  group: Build
+cli.core.some-json-as-a-string: |- 
+    {
+        "this": "json",
+        "data": "will not be parsed"
+        "but" : "will be returned as a string"
+        "which": "the caller can parse itself"
+    }
 EOF
 }
 
