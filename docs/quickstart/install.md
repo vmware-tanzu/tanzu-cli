@@ -503,13 +503,24 @@ private plugin discovery source. Verify that plugins are discoverable by
 running the `tanzu plugin search`, `tanzu plugin group search`, and
 `tanzu plugin install` commands.
 
+#### Updating the Central Configuration
+
+The "Central Configuration" refers to an asynchronously updatable, centrally-hosted CLI configuration.
+Deployed CLIs regularly read this Central Configuration and take action on specific changes.
+
+To get the latest version of the Central Configuration in an air-gapped/internet-restricted environment, the
+operator can run `tanzu plugin download-bundle/upload-bundle` specifying any plugin group to fetch and then
+upload the latest configuration.  This can be done periodically or whenever the operator wants the latest state
+of the Central Configuration.
+
+Trick: use the very small `vmware-tanzucli/essentials` plugin group if you only want to update the Central Configuration,
+i.e, `tanzu plugin download-bundle --group vmware-tanzucli/essentials --to-tar update_config.tar`
+
 ### Interacting with a central repository hosted on a registry with self-signed CA or with expired CA
 
 If a user has configured a central repository on a custom registry (e.g. air-gaped environment) with a self-signed CA or
-if the
-registry CA
-certificate is expired, the user can execute the `tanzu config cert` family of commands to configure the certificate for
-the registry host.
+if the registry CA certificate is expired, the user can execute the `tanzu config cert` family of commands to configure
+the certificate for the registry host.
 
 ```shell
 

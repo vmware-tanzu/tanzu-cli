@@ -24,6 +24,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/recommendedversion"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/telemetry"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 
@@ -282,6 +283,10 @@ func newRootCmd() *cobra.Command {
 			return nil
 		},
 		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			if !shouldSkipVersionCheck(cmd) {
+				recommendedversion.CheckRecommendedCLIVersion(cmd)
+			}
+
 			// Ensure mutual exclusion in current contexts just in case if any plugins with old
 			// plugin-runtime sets k8s context as current when tanzu context is already set as current
 			return utils.EnsureMutualExclusiveCurrentContexts()
@@ -524,6 +529,20 @@ func shouldSkipEssentialPlugins(cmd *cobra.Command) bool {
 	}
 
 	return isSkipCommand(skipCommandsForEssentials, cmd.CommandPath())
+}
+
+// shouldSkipVersionCheck checks if the CLI recommended version check should be skipped
+// for the specified command
+func shouldSkipVersionCheck(cmd *cobra.Command) bool {
+	skipVersionCheckCommands := []string{
+		// The shell completion logic is not interactive, so it should not trigger
+		// extra printouts to the user for recommending a new version of the CLI
+		"tanzu __complete",
+		"tanzu completion",
+		// Common first command to run, let's not recommend a new version of the CLI
+		"tanzu version",
+	}
+	return isSkipCommand(skipVersionCheckCommands, cmd.CommandPath())
 }
 
 // Execute executes the CLI.
