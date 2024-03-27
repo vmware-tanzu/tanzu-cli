@@ -360,6 +360,18 @@ var opsCmd = &cobra.Command{
 	},
 }
 
+func matchOnCommandNameAndAliases(cmd *cobra.Command, value string) bool {
+	if cmd.Name() == value {
+		return true
+	}
+	for _, alias := range cmd.Aliases {
+		if alias == value {
+			return true
+		}
+	}
+	return false
+}
+
 func findSubCommand(rootCmd, subCmd *cobra.Command) *cobra.Command {
 	arrSubCmd := rootCmd.Commands()
 	for i := range arrSubCmd {
@@ -370,14 +382,17 @@ func findSubCommand(rootCmd, subCmd *cobra.Command) *cobra.Command {
 	return nil
 }
 
-func findSubCommandByHierarchy(cmd *cobra.Command, hierarchy []string) (*cobra.Command, *cobra.Command) {
+func findSubCommandByHierarchy(cmd *cobra.Command, hierarchy []string, matcher func(*cobra.Command, string) bool) (*cobra.Command, *cobra.Command) {
 	childCmds := cmd.Commands()
 	for i := range childCmds {
-		if childCmds[i].Name() == hierarchy[0] {
-			if len(hierarchy) == 1 {
+		if len(hierarchy) == 1 {
+			if matcher(childCmds[i], hierarchy[0]) {
 				return childCmds[i], childCmds[i].Parent()
 			}
-			return findSubCommandByHierarchy(childCmds[i], hierarchy[1:])
+		} else {
+			if childCmds[i].Name() == hierarchy[0] {
+				return findSubCommandByHierarchy(childCmds[i], hierarchy[1:], matcher)
+			}
 		}
 	}
 	if len(hierarchy) == 1 {
@@ -393,7 +408,7 @@ func findSubCommandByPath(rootCmd *cobra.Command, path string) (*cobra.Command, 
 
 	cmdHierarchy := strings.Split(path, " ")
 	if len(cmdHierarchy) > 0 {
-		cmd, cmdParent = findSubCommandByHierarchy(rootCmd, cmdHierarchy)
+		cmd, cmdParent = findSubCommandByHierarchy(rootCmd, cmdHierarchy, matchOnCommandNameAndAliases)
 	}
 
 	return cmd, cmdParent
