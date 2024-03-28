@@ -145,6 +145,8 @@ func Test_createAndListDiscoverySources(t *testing.T) {
 	testSource2 := "localhost:9876/tanzu-cli/plugins/sandbox1:small"
 	os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, testSource1+","+testSource2)
 
+	rootCmd, err = NewRootCmd()
+	assert.Nil(err)
 	rootCmd.SetArgs([]string{"plugin", "source", "list"})
 	b = bytes.NewBufferString("")
 	rootCmd.SetOut(b)

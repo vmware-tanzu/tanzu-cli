@@ -208,8 +208,9 @@ Available input components:
 
 ### Feedback principles
 
-Useful for everyone, critical to the usability of screen-readers and automation
-Support verbosity flags (`-v`, `--verbose`).
+`--verbose` The global --verbose flag is meant to be automatically honoured by plugins when called through the tanzu CLI.
+
+For this to work plugins are expected to use the `github.com/vmware-tanzu/tanzu-plugin-runtime/log` package.
 
 `--format` to define preferred output
 
