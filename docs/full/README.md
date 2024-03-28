@@ -151,6 +151,33 @@ To deactivate a plugin feature, run:
 Where PLUGIN is the name of the CLI plugin. For example, cluster or
 management-cluster. FEATURE is the name of the feature that you want to deactivate.
 
+### Environment variables affecting the CLI
+
+Some options affecting the CLI are only available through the use of environment
+variables.  Below is the list of such variables:
+
+| Environment Variable | Description | Value |
+| -------------------- | ----------- | ----- |
+| `NO_COLOR` | Turns off color and special formatting in CLI output. May affect other programs. | Any value to activate, `""` or unset to deactivate |
+| `PROXY_CA_CERT` | Custom CA certificate for a proxy that needs to be used by the CLI. | Base64 value of the proxy CA certificate |
+| `TANZU_ACTIVE_HELP` | Deactivate some ActiveHelp messages. | `0` to deactivate all ActiveHelp messages, `no_short_help` to deactivate the short help string from ActiveHelp, `""` or unset to allow all ActiveHelp messages |
+| `TANZU_API_TOKEN` | Specifies the token to be used for the creation of a Tanzu context. If not used, the CLI will attempt to log in interactively using a browser. Also used to specify the token for the creation of TMC contexts. Note that a Tanzu token and a TMC token are not the same value. | Token string |
+| `TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER` | Automatically answer the Customer Experience Improvement Program (ceip) prompt. | `Yes` to agree to participate, `No` to decline |
+| `TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID` | Specifies the Cloud Services organization to use for the interactive login during the creation of a Tanzu context. | Organization ID string |
+| `TANZU_CLI_EULA_PROMPT_ANSWER` | Automatically answer the End User License Agreement prompt. | `Yes` to agree to the terms, `No` to decline |
+| `TANZU_CLI_LOG_LEVEL`  | Used to increase the amount of logging during troubleshooting.  This variable is not yet respected by plugins but is respected by the CLI core commands. | `0` to `9` |
+| `TANZU_CLI_NO_COLOR` | Turns off color and special formatting in CLI output.  This variable is not respected by all plugins and `NO_COLOR` is currently preferred. | Any value to activate, `""` or unset to deactivate |
+| `TANZU_CLI_OAUTH_LOCAL_LISTENER_PORT` | For hosts without a browser, this variable can be used to specify a port to use for a local listener automatically started by the CLI. Users can use SSH port forwarding to forward the port on their own machine to the port of the local listener.  This will allow using the browser of the user's machine. | An unused TCP port number |
+| `TANZU_CLI_PINNIPED_AUTH_LOGIN_SKIP_BROWSER` | If set to any value, the browser will not be used when pinniped authentication is triggered. | Any value to activate, `""` or unset to deactivate |
+| `TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH` | Override the plugin inventory verification key. Should not be necessary. Will only be used in the very rare case of a change of signature keys which will be specified clearly in the documentation. | The replacement public key provided by VMware |
+| `TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_VERIFICATION_SKIP_LIST` | Used to skip signature verification of custom discovery URIs when doing plugin discovery/installation.  Its use could put your environment at risk. | Comma-separated list of plugin discovery URIs that should not be verified |
+| `TANZU_CLI_PRIVATE_PLUGIN_DISCOVERY_IMAGES` | Deprecated. Specifies private plugin repositories to use as a supplement to the production Central Repository of plugins. | Comma-separated list of private plugin repository URIs |
+| `TANZU_CLI_RECOMMEND_VERSION_DELAY_DAYS` | Override the default delay (24 hours) between notifications that a new CLI version is available for upgrade (available since CLI v1.3.0). | Delay in days |
+| `TANZU_CLI_SHOW_TELEMETRY_CONSOLE_LOGS` | Print telemetry logs (defaults to off). | `1` or `true` to print, `0`, `false`, `""` or unset not to print |
+| `TANZU_CLI_SKIP_UPDATE_KUBECONFIG_ON_CONTEXT_USE` | Do not synchronize the active Kubernetes context when the Tanzu context is changed. | `1` or `true` to skip, `0`, `false`, `""` or unset to do the synchronization |
+| `TANZU_CLI_SUPPRESS_SKIP_SIGNATURE_VERIFICATION_WARNING` | Suppress the warning message that some plugin discoveries are not being verified due to the use of `TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_ SIGNATURE_VERIFICATION_SKIP_LIST`.  The use of this variable should be avoided as it can put your environment at risk. | `1`, `true` to suppress, `0`, `false`, `""` or unset to allow the message |
+| `TANZU_ENDPOINT` | Specifies the endpoint to login into for the `login` command when the `--server` and `--endpoint` flags are not specified. | Endpoint URI |
+
 ## Common plugin commands
 
 There is a small set of commands that every plugin provides. These commands are
