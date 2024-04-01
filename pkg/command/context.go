@@ -1154,11 +1154,6 @@ func deleteCtx(_ *cobra.Command, args []string) error {
 		}
 	}
 
-	ctx, err = config.GetContext(name)
-	if err != nil {
-		return err
-	}
-
 	err = config.RemoveContext(name)
 	if err != nil {
 		return err
