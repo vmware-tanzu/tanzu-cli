@@ -75,12 +75,17 @@ type PluginInfo struct {
 	DefaultFeatureFlags map[string]bool `json:"defaultFeatureFlags" yaml:"defaultFeatureFlags"`
 
 	// InvokedAs provides a specific mapping to how any command provided by this plugin should be invoked as.
-	// EXPERIMENTAL: subject to change prior to the next official minor release
+	// OBSOLETE: will be removed prior to the next official minor release
 	InvokedAs []string `json:"invokedAs,omitempty" yaml:"invokedAs,omitempty"`
 
 	// SupportedContextType specifies one of more ContextType that this plugin will specifically apply to.
 	// EXPERIMENTAL: subject to change prior to the next official minor release
 	SupportedContextType []configtypes.ContextType `json:"supportedContextType,omitempty" yaml:"supportedContextType,omitempty"`
+
+	// CommandMap specifies one or more CommandMapEntry's and describes how one
+	// or more parts of the plugin's command tree will be remapped in the Tanzu CLI
+	// EXPERIMENTAL: subject to change prior to the next official minor release
+	CommandMap []plugin.CommandMapEntry `json:"commandMap,omitempty" yaml:"commandMap,omitempty"`
 }
 
 // PluginInfoSorter sorts PluginInfo objects.
