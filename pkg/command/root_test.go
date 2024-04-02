@@ -51,12 +51,14 @@ say() { shift && echo $@; }
 shout() { shift && echo $@ "!!"; }
 post-install() { exit %d; }
 bad() { echo "bad command failed"; exit 1; }
+show-invoke-context() { echo "args = ($@), context is (${TANZU_CLI_INVOKED_GROUP}):(${TANZU_CLI_INVOKED_COMMAND}):(${TANZU_CLI_COMMAND_MAPPED_FROM})"; exit 0; }
 
 case "$1" in
     info)  $1 "$@";;
     say)   $1 "$@";;
     shout) $1 "$@";;
     bad)   $1 "$@";;
+    show-invoke-context) $1 "$@";;
     post-install)  $1 "$@";;
     *) cat << EOF
 %s functionality
@@ -68,6 +70,7 @@ Available Commands:
   say     Say a phrase
   shout   Shout a phrase
   bad     (non-working)
+  show-invoke-context Shows invocation details
 EOF
        exit 0
        ;;
@@ -1010,6 +1013,7 @@ type fakePluginRemapAttributes struct {
 	supportedContextType []configtypes.ContextType
 	invokedAs            []string
 	aliases              []string
+	commandMap           []plugin.CommandMapEntry
 }
 
 func setupFakePluginInfo(p fakePluginRemapAttributes, pluginDir string) *cli.PluginInfo {
@@ -1033,6 +1037,7 @@ func setupFakePluginInfo(p fakePluginRemapAttributes, pluginDir string) *cli.Plu
 		Target:               p.target,
 		InvokedAs:            []string{},
 		SupportedContextType: []configtypes.ContextType{},
+		CommandMap:           p.commandMap,
 	}
 
 	if len(p.invokedAs) != 0 {
@@ -1047,8 +1052,8 @@ func setupFakePluginInfo(p fakePluginRemapAttributes, pluginDir string) *cli.Plu
 	return pi
 }
 
-// Tests behavior of command tree with plugins remapped (at a plugin level)
-func TestPluginLevelRemapping(t *testing.T) {
+// Tests behavior of command tree with commands remapped at plugin and command level
+func TestCommandRemapping(t *testing.T) {
 	tests := []struct {
 		test              string
 		pluginVariants    []fakePluginRemapAttributes
@@ -1268,33 +1273,6 @@ func TestPluginLevelRemapping(t *testing.T) {
 			expected: []string{"No plugins are currently installed for the \"mission-control\" target"},
 		},
 		{
-			test: "with supportedContextType and no invokedAs, command is hidden at target when no active context",
-			pluginVariants: []fakePluginRemapAttributes{
-				{
-					name:                 "dummy2",
-					target:               configtypes.TargetTMC,
-					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTMC},
-					aliases:              []string{"dum"},
-				},
-			},
-			args:     []string{"mission-control"},
-			expected: []string{"No plugins are currently installed for the \"mission-control\" target"},
-		},
-		{
-			test: "with supportedContextType set, target not shown at top level when no active context",
-			pluginVariants: []fakePluginRemapAttributes{
-				{
-					name:                 "dummy2",
-					target:               configtypes.TargetTMC,
-					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTMC},
-					aliases:              []string{"dum"},
-				},
-			},
-			activeContextType: configtypes.ContextTypeTanzu,
-			args:              []string{},
-			unexpected:        []string{"mission-control"},
-		},
-		{
 			test: "mapping plugins when conditional on active contexts",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
@@ -1353,6 +1331,530 @@ func TestPluginLevelRemapping(t *testing.T) {
 			args:     []string{"kubernetes", "dummy", "deeper", "say", "hello"},
 			expected: []string{"Remap of plugin into command tree (dummy) associated with another plugin is not supported"},
 		},
+		// ---------- test mapping with CommandMapEntry directives
+		{
+			test: "one mapped k8s plugin",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args:     []string{"dummy", "say", "hello"},
+			expected: []string{"hello"},
+		},
+		{
+			test: "once mapped, command using original plugin name is not accessible",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args:            []string{"dummy2"},
+			expectedFailure: true,
+		},
+		{
+			test: "two plugins share aliases shows duplicate warning",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:    "dummy2",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy3",
+						},
+					},
+				},
+			},
+			args:     []string{"dummy3", "say", "hello"},
+			expected: []string{"hello", "the alias dum is duplicated across plugins: dummy, dummy3"},
+		},
+		{
+			test: "plugin replaces another if former maps to an alias of the latter",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "bars",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"bar"},
+				},
+				{
+					name:   "bar2",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "bar",
+						},
+					},
+				},
+			},
+			args:       []string{""},
+			expected:   []string{"bar2 commands"},
+			unexpected: []string{"bars commands"},
+		},
+		{
+			test: "two plugins sharing aliases does not show duplicate warning if one replaces another",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:    "dummy2",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args:       []string{"dummy", "say", "hello"},
+			expected:   []string{"hello"},
+			unexpected: []string{"duplicated across plugins"},
+		},
+		{
+			test: "two plugins sharing aliases does not show duplicate warning if one is explicitly removed",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:    "dummy2",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy3",
+							Overrides:              "dummy",
+						},
+					},
+				},
+			},
+			args:       []string{"dummy3", "say", "hello"},
+			expected:   []string{"hello"},
+			unexpected: []string{"duplicated across plugins"},
+		},
+		{
+			test: "create deeper subcommand via mapping is valid as long as parent exists",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "operations dummy",
+						},
+					},
+				},
+			},
+			args:     []string{"operations", "dummy", "say", "hello"},
+			expected: []string{"hello"},
+		},
+		{
+			test: "k8s-target plugins also maps to kubernetes command group",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args:     []string{"kubernetes", "dummy", "say", "hello"},
+			expected: []string{"hello"},
+		},
+		{
+			test: "k8s-target plugins remapping in kubernetes command group also remap top-level command group",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "kubernetes dummy",
+						},
+					},
+				},
+			},
+			args:     []string{"dummy", "say", "hello"},
+			expected: []string{"hello"},
+		},
+		{
+			test: "map to deeper subcommand is invalid if parent missing",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "nonexistentprefix dummy",
+						},
+					},
+				},
+			},
+			args:            []string{"nonexistentprefix", "dummy"},
+			expectedFailure: true,
+		},
+		{
+			test: "one mapped tmc plugin",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetTMC,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "mission-control dummy",
+						},
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args:     []string{"mission-control", "dummy", "say", "hello"},
+			expected: []string{"hello"},
+		},
+		{
+			test: "two plugins remapped to same location will warn",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy2",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+				{
+					name:    "dummy3",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args:     []string{"dummy", "say", "hello"},
+			expected: []string{"hello", "Warning, multiple command groups are being remapped to the same command names : \"dummy, dummy\""},
+		},
+		{
+			test: "mapped plugin with supportedContextType, command is hidden at target when no active context",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:                 "dummy2",
+					target:               configtypes.TargetK8s,
+					aliases:              []string{"dum"},
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args:     []string{"kubernetes"},
+			expected: []string{"No plugins are currently installed for the \"kubernetes\" target"},
+		},
+		{
+			test: "mapped plugin is only one for target, top level should show target",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy2",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args:     []string{""},
+			expected: []string{"kubernetes"},
+		},
+		{
+			test: "mapped plugin is only one for target with no active context for type hides target",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy2",
+					target:  configtypes.TargetTMC,
+					aliases: []string{"dum"},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args:     []string{"mission-control"},
+			expected: []string{"No plugins are currently installed for the \"mission-control\" target"},
+		},
+		{
+			test: "with supportedContextType and no invokedAs, command is hidden at target when no active context",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:                 "dummy2",
+					target:               configtypes.TargetTMC,
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTMC},
+					aliases:              []string{"dum"},
+				},
+			},
+			args:     []string{"mission-control"},
+			expected: []string{"No plugins are currently installed for the \"mission-control\" target"},
+		},
+		{
+			test: "with supportedContextType set, target not shown at top level when no active context",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:                 "dummy2",
+					target:               configtypes.TargetTMC,
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTMC},
+					aliases:              []string{"dum"},
+				},
+			},
+			activeContextType: configtypes.ContextTypeTanzu,
+			args:              []string{},
+			unexpected:        []string{"mission-control"},
+		},
+		{
+			test: "mapping plugins when conditional on active contexts",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:                 "dummy2",
+					target:               configtypes.TargetK8s,
+					aliases:              []string{"dum"},
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			activeContextType: configtypes.ContextTypeTanzu,
+			args:              []string{},
+			expected:          []string{"dummy2 commands"},
+			unexpected:        []string{"dummy commands"},
+		},
+		{
+			test: "no mapping if active context not one of supportContextType list",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:                 "dummy2",
+					target:               configtypes.TargetK8s,
+					aliases:              []string{"dum"},
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			activeContextType: configtypes.ContextTypeK8s,
+			args:              []string{},
+			expected:          []string{"dummy commands"},
+			unexpected:        []string{"dummy2 commands"},
+		},
+		{
+			test: "nesting plugin within another plugin is not supported",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:   "deeper",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "kubernetes dummy deeper",
+						},
+					},
+				},
+			},
+			args:     []string{"kubernetes", "dummy", "deeper", "say", "hello"},
+			expected: []string{"Remap of plugin into command tree (dummy) associated with another plugin is not supported"},
+		},
+		// --- Command level mapping tests
+		{
+			test: "command-level: plugin command is mapped to top level appears at top level",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "topshout",
+							SourceCommandPath:      "shout",
+							Description:            "extracted shout command",
+						},
+					},
+				},
+			},
+			args:     []string{},
+			expected: []string{"topshout", "extracted shout command"},
+		},
+		{
+			test: "command-level: plugin command mapped to top level fails when not invoked with destination command name",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "topshout",
+							SourceCommandPath:      "shout",
+							Description:            "extracted shout command",
+						},
+					},
+				},
+			},
+			args:            []string{"shout", "hello"},
+			expectedFailure: true,
+		},
+		{
+			test: "command-level: plugin command is mapped to top level fails when not using destination command",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "topshout",
+							SourceCommandPath:      "shout",
+							Description:            "extracted shout command",
+						},
+					},
+				},
+			},
+			args:     []string{"topshout", "hello"},
+			expected: []string{"hello !!"},
+		},
+		{
+			test: "command-level: invocation details available when plugin command is mapped to xxtop level",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "invoke-info",
+							SourceCommandPath:      "show-invoke-context",
+							Description:            "Shows invocation details",
+						},
+					},
+				},
+			},
+			args:     []string{"invoke-info", "arg1", "arg2"},
+			expected: []string{"args = (show-invoke-context arg1 arg2), context is ():(invoke-info):(show-invoke-context)"},
+		},
+		{
+			test: "command-level: invocation details available when plugin command is mapped to deeper level",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "plugin source invoke-info",
+							SourceCommandPath:      "show-invoke-context",
+							Description:            "Shows invocation details",
+						},
+					},
+				},
+			},
+			args:     []string{"plugin", "source", "invoke-info", "arg1", "arg2"},
+			expected: []string{"args = (show-invoke-context arg1 arg2), context is (plugin source):(invoke-info):(show-invoke-context)"},
+		},
+		{
+			test: "command-level: subcommand replaces another top-level command group",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:   "dummy2",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+							SourceCommandPath:      "show-invoke-context",
+							Description:            "Shows invocation details",
+						},
+					},
+				},
+			},
+			args:     []string{"dummy", "arg1", "arg2"},
+			expected: []string{"args = (show-invoke-context arg1 arg2), context is ():(dummy):(show-invoke-context)"},
+		},
+		{
+			test: "command-level: subcommand replaces another subcommand of another plugin group is not allowed",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:   "dummy2",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy say",
+							SourceCommandPath:      "show-invoke-context",
+							Description:            "Shows invocation details",
+						},
+					},
+				},
+			},
+			args:     []string{"dummy", "arg1", "arg2"},
+			expected: []string{"Remap of plugin into command tree (dummy) associated with another plugin is not supported"},
+		},
 	}
 
 	for _, spec := range tests {
@@ -1401,6 +1903,9 @@ func TestPluginLevelRemapping(t *testing.T) {
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 
+			os.Unsetenv("TANZU_CLI_INVOKED_GROUP")
+			os.Unsetenv("TANZU_CLI_INVOKED_COMMAND")
+			os.Unsetenv("TANZU_CLI_COMMAND_MAPPED_FROM")
 			err = rootCmd.Execute()
 
 			w.Close()
