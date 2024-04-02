@@ -14,6 +14,7 @@ import (
 
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 )
@@ -35,19 +36,49 @@ func alternateRemapLocation(p *PluginInfo, remapLocation string) string {
 	return ""
 }
 
+func hierarchyFromPath(cmdPath string) []string {
+	return strings.Fields(cmdPath)
+}
+
+func pathFromHierarchy(hierarchy []string) string {
+	return strings.Join(hierarchy, " ")
+}
+
 // GetCommandMapForPlugin returns how the plugin's commands should be mapped
 func GetCommandMapForPlugin(p *PluginInfo) map[string]*cobra.Command {
 	cmdMap := map[string]*cobra.Command{}
 
-	for _, invokedAsItem := range p.InvokedAs {
-		remapLocation := strings.TrimSpace(invokedAsItem)
-		cmdHierarchy := strings.Split(remapLocation, " ")
+	for i := range p.CommandMap {
+		mapEntry := p.CommandMap[i]
+		cmdHierarchy := hierarchyFromPath(mapEntry.DestinationCommandPath)
 
 		if len(cmdHierarchy) > 0 {
-			cmdMap[remapLocation] = getCmdForPluginEx(p, cmdHierarchy[len(cmdHierarchy)-1])
+			dstPath := pathFromHierarchy(cmdHierarchy)
+			cmdMap[dstPath] = getCmdForPluginEx(p, cmdHierarchy[len(cmdHierarchy)-1], &mapEntry)
+			if alternateLocation := alternateRemapLocation(p, dstPath); alternateLocation != "" {
+				cmdMap[alternateLocation] = cmdMap[dstPath]
+			}
 		}
-		if alternateLocation := alternateRemapLocation(p, remapLocation); alternateLocation != "" {
-			cmdMap[alternateLocation] = cmdMap[remapLocation]
+	}
+
+	// identify commands for removal
+	for _, mapEntry := range p.CommandMap {
+		if mapEntry.Overrides != "" {
+			cmdHierarchy := hierarchyFromPath(mapEntry.Overrides)
+
+			if len(cmdHierarchy) > 0 {
+				dstPathToRemove := pathFromHierarchy(cmdHierarchy)
+
+				// represents intention to explicitly remove part(s) of the CLI command tree
+				if _, ok := cmdMap[dstPathToRemove]; !ok {
+					cmdMap[dstPathToRemove] = nil
+				}
+				if alternateLocation := alternateRemapLocation(p, dstPathToRemove); alternateLocation != "" {
+					if _, ok := cmdMap[alternateLocation]; !ok {
+						cmdMap[alternateLocation] = nil
+					}
+				}
+			}
 		}
 	}
 
@@ -56,28 +87,56 @@ func GetCommandMapForPlugin(p *PluginInfo) map[string]*cobra.Command {
 
 // GetCmdForPlugin returns a cobra command for the plugin.
 func GetCmdForPlugin(p *PluginInfo) *cobra.Command {
-	return getCmdForPluginEx(p, p.Name)
+	return getCmdForPluginEx(p, p.Name, nil)
 }
 
 // GetUnmappedCmdForPlugin returns a cobra command for the plugin unless there
 // are remapping directives in the plugin info, in which case it will return
 // nil instead.
 func GetUnmappedCmdForPlugin(p *PluginInfo) *cobra.Command {
-	if len(p.InvokedAs) > 0 {
-		return nil
+	for _, mapEntry := range p.CommandMap {
+		// this is a plugin level map
+		if mapEntry.SourceCommandPath == "" {
+			return nil
+		}
 	}
-	return getCmdForPluginEx(p, p.Name)
+	return GetCmdForPlugin(p)
 }
 
 // getCmdForPluginEx returns a cobra command for the plugin.
-func getCmdForPluginEx(p *PluginInfo, cmdGroupName string) *cobra.Command {
+func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMapEntry) *cobra.Command { //nolint:funlen
+	var srcHierarchy, dstHierarchy []string
+	aliases := p.Aliases
+	description := p.Description
+
+	if mapEntry != nil {
+		srcHierarchy = hierarchyFromPath(mapEntry.SourceCommandPath)
+		dstHierarchy = hierarchyFromPath(mapEntry.DestinationCommandPath)
+
+		// is not a toplevel command
+		if len(srcHierarchy) > 0 {
+			// TODO(vuil): support aliases for command-level mapped?
+			aliases = []string{}
+		}
+		if mapEntry.Description != "" {
+			description = mapEntry.Description
+		} else if len(srcHierarchy) > 0 {
+			// force a fallback to a generic description
+			description = fmt.Sprintf("%s %s functionality", p.Description, cmdName)
+		}
+	}
+
 	cmd := &cobra.Command{
-		Use:   cmdGroupName,
-		Short: p.Description,
+		Use:   cmdName,
+		Short: description,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(srcHierarchy) > 0 {
+				args = append(srcHierarchy, args...)
+			}
+
 			runner := NewRunner(p.Name, p.InstallationPath, args)
 			ctx := context.Background()
-			setupPluginEnv()
+			setupPluginEnv(srcHierarchy, dstHierarchy)
 			return runner.Run(ctx)
 		},
 		DisableFlagParsing: true,
@@ -88,7 +147,7 @@ func getCmdForPluginEx(p *PluginInfo, cmdGroupName string) *cobra.Command {
 			"pluginInstallationPath": p.InstallationPath,
 		},
 		Hidden:  p.Hidden,
-		Aliases: p.Aliases,
+		Aliases: aliases,
 	}
 
 	cmd.ValidArgsFunction = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -97,6 +156,9 @@ func getCmdForPluginEx(p *PluginInfo, cmdGroupName string) *cobra.Command {
 		//   :4
 		//   Completion ended with directive: ShellCompDirectiveNoFileComp
 		completion := []string{"__complete"}
+		if len(srcHierarchy) > 0 {
+			args = append(srcHierarchy, args...)
+		}
 		completion = append(completion, args...)
 		completion = append(completion, toComplete)
 
@@ -172,11 +234,21 @@ func getHelpArguments() []string {
 
 // setupPluginEnv prepares some extra environment variables
 // that communicate certain information to plugins.
-func setupPluginEnv() {
+func setupPluginEnv(srcHierarchy, dstHierarchy []string) {
 	env := make(map[string]string, 10)
 
 	// The location of the tanzu binary
 	env["TANZU_BIN"] = os.Args[0]
+
+	// Information provided when command invocation is via a mapped command
+	numParts := len(dstHierarchy)
+	if numParts > 0 {
+		env["TANZU_CLI_INVOKED_COMMAND"] = dstHierarchy[numParts-1]
+		if numParts > 1 {
+			env["TANZU_CLI_INVOKED_GROUP"] = strings.Join(dstHierarchy[:numParts-1], " ")
+		}
+		env["TANZU_CLI_COMMAND_MAPPED_FROM"] = pathFromHierarchy(srcHierarchy)
+	}
 
 	for key, val := range env {
 		os.Setenv(key, val)

@@ -55,6 +55,23 @@ func init() {
 	signal.Notify(interruptChannel, syscall.SIGINT, syscall.SIGTERM)
 }
 
+// temporary function to still support invokedAs data by converting them to
+// CommandMapEntry's. Will remove its use before the next minor update, at
+// which point we will no longer recognized mapping information via invokedAs
+func convertInvokedAs(plugins []cli.PluginInfo) {
+	for i := range plugins {
+		for _, invokedAsPath := range (plugins)[i].InvokedAs {
+			for _, mapEntry := range (plugins)[i].CommandMap {
+				if mapEntry.DestinationCommandPath == invokedAsPath {
+					continue
+				}
+			}
+
+			(plugins)[i].CommandMap = append((plugins)[i].CommandMap, plugin.CommandMapEntry{DestinationCommandPath: invokedAsPath})
+		}
+	}
+}
+
 // NewRootCmd creates a root command.
 func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 	go interruptHandle()
@@ -94,10 +111,13 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 	if err != nil {
 		return nil, err
 	}
+
 	plugins, err := pluginsupplier.FilterPluginsByActiveContextType(allPlugins)
 	if err != nil {
 		return nil, err
 	}
+
+	convertInvokedAs(plugins)
 
 	telemetry.Client().SetInstalledPlugins(plugins)
 	if err = config.CopyLegacyConfigDir(); err != nil {
@@ -183,7 +203,9 @@ func remapCommandTree(rootCmd *cobra.Command, plugins []cli.PluginInfo) {
 		} else {
 			if parentCmd != nil {
 				parentCmd.RemoveCommand(matchedCmd)
-				parentCmd.AddCommand(cmd)
+				if cmd != nil {
+					parentCmd.AddCommand(cmd)
+				}
 			}
 		}
 	}
@@ -198,7 +220,9 @@ func buildReplacementMap(plugins []cli.PluginInfo) map[string]*cobra.Command {
 		for pathKey, newCmd := range cmdMap {
 			if _, ok := result[pathKey]; ok {
 				// Remapping a remapped command is unexpected! Note it and skip the attempt.
-				maskedRemappedPlugins = append(maskedRemappedPlugins, newCmd.Name())
+				if newCmd != nil {
+					maskedRemappedPlugins = append(maskedRemappedPlugins, newCmd.Name())
+				}
 			} else {
 				result[pathKey] = newCmd
 			}
@@ -240,6 +264,8 @@ func setupTargetPlugins() error {
 	if err != nil {
 		return err
 	}
+
+	convertInvokedAs(plugins)
 
 	// Insert the plugin commands under the appropriate target command
 	for i := range plugins {
