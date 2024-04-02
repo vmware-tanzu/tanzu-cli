@@ -559,3 +559,95 @@ functionality.
 
 For more details on the deprecation policy and process please refer to the
 [Deprecation document](../dev/deprecation.md).
+
+## Plugin Descriptor and support for command remapping
+
+The output of the plugin binary's `info` command reflects what is specified by
+in the plugin's [Plugin Descriptor](https://github.com/vmware-tanzu/tanzu-plugin-runtime/blob/main/plugin/types.go#L60)
+
+### CommandMap
+
+EXPERIMENTAL: subject to change prior to the next official minor release
+
+The descriptor now supports an additional field `commandMap` that customizes
+how plugin's commands are shown in the CLI's command tree. Most plugin authors
+should not need to provide the mapping fields.
+
+The command map specifies one or more CommandMapEntry's and describes how one
+or more parts of the plugin's command tree will be remapped in the Tanzu CLI
+
+Each CommandMapEntry has the following fields
+
+- SourceCommandPath: is a space-delimited path to the command relative to the root Command of this plugin, with the root Command's path being ""
+- DestinationCommandPath: is a space-delimited path to the command relative to the root Command of the Tanzu CLI that the command associated with SourceCommandPath should be mapped to and invocable by the user
+- Overrides: By default, the command previously situated at the DestinationCommandPath of the Tanzu CLI, if exist, will be the one overridden by this entry. If this mapping attempt in intended to override another part of the Tanzu CLI command tree, the override path should be used.
+- Description: Required when remapping a subcommand of this plugin outside of the plugin's command tree (e.g. whe elevating a plugin's subcommand to a top level command of the Tanzu CLI). This enables the CLI to provide better help information about the remapped command.
+
+Assume there is a plugin named foo with a non empty CommandMap
+
+### Rename the plugin command group for plugin
+
+```go
+        plugin.CommandMapEntry{
+            SourceCommandPath:      "",
+            DestinationCommandPath: "bar",
+        },
+```
+
+instead of every plugin command X be invocable via `tanzu foo X`, it is now
+invocable via `tanzu bar X`
+
+### Elevate subcommand to toplevel of Tanzu CLI command tree
+
+```go
+        plugin.CommandMapEntry{
+            SourceCommandPath:      "echo",
+            DestinationCommandPath: "echo",
+            Description:            "the echo command elevated to the top level",
+        },
+```
+
+instead of invoking `tanzu foo echo`, the command is now invocable via `tanzu echo`
+
+Note: if the intention is to "move" not "copy" the `tanzu foo echo` command,
+authors are advised to mark the echo Command as 'Hidden: true'
+
+### Hiding original plugin command group
+
+```go
+        plugin.CommandMapEntry{
+            SourceCommandPath:      "",
+            DestinationCommandPath: "",
+        },
+```
+
+All valid mappings requires that destination path should have a valid parent
+command in the Tanzu CLI command tree.
+As a special case, specifying both the source and destination command path as
+"" indicates that the CLI command mapping to the root command of the plugin
+will NOT be created. This could be useful when all the plugin's command have been
+elevated (see previous section) and nothing interesting should be invoked via
+`tanzu foo ...` anymore.
+
+### Reorganizing the plugin commands under a different category group for plugin
+
+```go
+        plugin.CommandMapEntry{
+            SourceCommandPath:      "",
+            DestinationCommandPath: "operations foo",
+        },
+```
+
+instead of every plugin command X be invocable via `tanzu foo X`, it is now
+invocable via `tanzu operations foo X`
+
+### SupportedContextType
+
+EXPERIMENTAL: subject to change prior to the next official minor release
+
+In some rare situations plugins might elect to conditionally activate based on
+the type of the CLI context that is currently active.
+
+SupportedContextType specifies one or more ContextType that this plugin will specifically apply to.
+When no context of matching type is active, the command tree specified by this plugin should be omitted.
+When unset, the plugin does not define any specific opinions on this aspect.
