@@ -1151,7 +1151,7 @@ var useCtxCmd = &cobra.Command{
 	RunE:              useCtx,
 }
 
-func useCtx(cmd *cobra.Command, args []string) error {
+func useCtx(cmd *cobra.Command, args []string) error { //nolint:gocyclo
 	var ctx *configtypes.Context
 	var err error
 
@@ -1182,10 +1182,14 @@ func useCtx(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	suffixString := ""
+	suffixString := fmt.Sprintf("Type: %s", ctx.ContextType)
 	if ctx.ContextType == configtypes.ContextTypeTanzu {
 		if project, exists := ctx.AdditionalMetadata[config.ProjectNameKey]; exists && project != "" {
-			suffixString += fmt.Sprintf("Project: %s", project)
+			suffixString += fmt.Sprintf(", Project: %s", project)
+		}
+		// expectation is user/plugin would set both project name and project ID together
+		if projectID, exists := ctx.AdditionalMetadata[config.ProjectIDKey]; exists && projectID != "" {
+			suffixString += fmt.Sprintf(" (%s)", projectID)
 		}
 		if space, exists := ctx.AdditionalMetadata[config.SpaceNameKey]; exists && space != "" {
 			suffixString += fmt.Sprintf(", Space: %s", space)
@@ -1195,10 +1199,10 @@ func useCtx(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if suffixString != "" {
-		suffixString = " (" + suffixString + ")"
+		suffixString = "(" + suffixString + ")"
 	}
 
-	log.Infof("Successfully activated context '%s' of type '%s'%s.", ctxName, ctx.ContextType, suffixString)
+	log.Infof("Activated context '%s' %s ", ctxName, suffixString)
 
 	// Sync all required plugins
 	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
@@ -1366,6 +1370,7 @@ type ContextListOutputRow struct {
 	IsActive       string
 	Type           string
 	Project        string
+	ProjectID      string
 	Space          string
 	ClusterGroup   string
 	Endpoint       string
@@ -1388,6 +1393,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 		path := NA
 		context := NA
 		project := NA
+		projectID := NA
 		space := NA
 		clustergroup := NA
 
@@ -1401,6 +1407,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 		case configtypes.ContextTypeTanzu:
 			tanzuContextExists = true
 			project = ""
+			projectID = ""
 			space = ""
 			clustergroup = ""
 			ep = ""
@@ -1413,6 +1420,9 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 			}
 			if ctx.AdditionalMetadata[config.ProjectNameKey] != nil {
 				project = ctx.AdditionalMetadata[config.ProjectNameKey].(string)
+			}
+			if ctx.AdditionalMetadata[config.ProjectIDKey] != nil {
+				projectID = ctx.AdditionalMetadata[config.ProjectIDKey].(string)
 			}
 			if ctx.AdditionalMetadata[config.SpaceNameKey] != nil {
 				space = ctx.AdditionalMetadata[config.SpaceNameKey].(string)
@@ -1427,7 +1437,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 				context = ctx.ClusterOpts.Context
 			}
 		}
-		row := ContextListOutputRow{ctx.Name, strconv.FormatBool(isCurrent), string(ctx.ContextType), project, space, clustergroup, ep, path, context}
+		row := ContextListOutputRow{ctx.Name, strconv.FormatBool(isCurrent), string(ctx.ContextType), project, projectID, space, clustergroup, ep, path, context}
 		rows = append(rows, row)
 	}
 
@@ -1438,6 +1448,9 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 		dynamicColumns = append(dynamicColumns, "ClusterGroup")
 	}
 	if showAllColumns {
+		if tanzuContextExists {
+			dynamicColumns = append(dynamicColumns, "ProjectID")
+		}
 		requiredColumns = append(requiredColumns, "Endpoint", "KubeconfigPath", "KubeContext")
 		requiredColumns = append(requiredColumns, dynamicColumns...)
 	}

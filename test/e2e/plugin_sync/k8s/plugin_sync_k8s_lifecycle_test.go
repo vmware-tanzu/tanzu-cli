@@ -292,7 +292,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		})
 
 		const (
-			ContextActivated         = "Successfully activated context '%s'"
+			ContextActivated         = "Activated context '%s' (Type: %s)"
 			PluginWillBeInstalled    = "The following plugins will be installed for context '%s' of contextType '%s':"
 			PluginsTableHeaderRegExp = "NAME\\s+TARGET\\s+VERSION"
 			PluginsRow               = "%s\\s+%s\\s+%s"
@@ -312,7 +312,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			Expect(err).To(BeNil(), "use context should set context without any error")
 			pluginsList, err = tf.PluginCmd.ListPluginsForGivenContext(contextName, true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
-			Expect(stdErr).To(ContainSubstring(fmt.Sprintf(ContextActivated, contextName)))
+			Expect(stdErr).To(ContainSubstring(fmt.Sprintf(ContextActivated, contextName, types.TargetK8s)))
 			Expect(stdErr).To(ContainSubstring(fmt.Sprintf(PluginWillBeInstalled, contextName, types.TargetK8s)))
 			Expect(stdErr).To(MatchRegexp(PluginsTableHeaderRegExp))
 			for i := range pluginsList {
