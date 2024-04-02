@@ -233,7 +233,7 @@ var _ = Describe("Test tanzu context command", func() {
 			columnsString := strings.Join(strings.Fields(lines[0]), " ")
 
 			Expect(err).To(BeNil())
-			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE PROJECT SPACE CLUSTERGROUP ENDPOINT KUBECONFIGPATH KUBECONTEXT"))
+			Expect(columnsString).To(Equal("NAME ISACTIVE TYPE PROJECT PROJECTID SPACE CLUSTERGROUP ENDPOINT KUBECONFIGPATH KUBECONTEXT"))
 		})
 
 		It("should not return tanzu related columns when not listing tanzu contexts without --wide", func() {
