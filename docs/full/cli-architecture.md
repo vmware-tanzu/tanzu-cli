@@ -172,7 +172,7 @@ Note: For backward compatibility reasons, one `mission-control` context can be a
 
 Target represents a group of Tanzu CLI Plugins that are of the same category (generally talking to similar endpoints) and are represented as the `tanzu <target-name> <plugin-name>` command.
   
-The Tanzu CLI supports three targets: `global`, `kubernetes` (alias `k8s`), and `mission-control` (alias `tmc`).
+The Tanzu CLI supports four targets: `global`, `kubernetes` (alias `k8s`), `mission-control` (alias `tmc`) and `operations` (alias `ops`).
 
 Each plugin is associated with one of the above targets. `global` is a special target that links the plugin under the root tanzu cli command.
 
@@ -181,6 +181,7 @@ Below are some examples of plugin invocation commands formed for different targe
 - PluginName: `foo`, Target: `kubernetes`, Command: `tanzu kubernetes foo`
 - PluginName: `bar`, Target: `mission-control`, Command: `tanzu mission-control bar`
 - PluginName: `baz`, Target: `global`, Command: `tanzu baz`
+- PluginName: `qux`, Target: `operations`, Command: `tanzu operations qux`
 
 For backward compatibility reasons, the plugins with the `kubernetes` target are also available under the root `tanzu` command along with the `tanzu kubernetes` command.
 
