@@ -175,3 +175,33 @@ func TestEnsureMutualExclusiveCurrentContexts(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, len(ccmap), 0)
 }
+
+func TestParsePluginID(t *testing.T) {
+	tests := []struct {
+		input           string
+		expectedName    string
+		expectedTarget  string
+		expectedVersion string
+	}{
+		{"app@kubernetes:v1.2.3", "app", "kubernetes", "v1.2.3"},
+		{"app:v1.2.3", "app", "", "v1.2.3"},
+		{"app", "app", "", ""},
+		{"", "", "", ""},
+	}
+
+	for _, test := range tests {
+		name, target, version := ParsePluginID(test.input)
+
+		if name != test.expectedName {
+			t.Errorf("For input '%s', expected name '%s', but got '%s'", test.input, test.expectedName, name)
+		}
+
+		if target != test.expectedTarget {
+			t.Errorf("For input '%s', expected target '%s', but got '%s'", test.input, test.expectedTarget, target)
+		}
+
+		if version != test.expectedVersion {
+			t.Errorf("For input '%s', expected version '%s', but got '%s'", test.input, test.expectedVersion, version)
+		}
+	}
+}

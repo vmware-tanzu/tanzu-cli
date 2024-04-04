@@ -18,7 +18,9 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/essentials"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -29,6 +31,7 @@ type DownloadPluginBundleOptions struct {
 	PluginInventoryImage string
 	ToTar                string
 	Groups               []string
+	Plugins              []string
 
 	DryRun         bool
 	ImageProcessor carvelhelpers.ImageOperationsImpl
@@ -134,7 +137,7 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 	selectedPluginEntries := []*plugininventory.PluginInventoryEntry{}
 
 	// If groups were not provided as argument select all available plugin groups and all available plugins
-	if len(o.Groups) == 0 {
+	if len(o.Groups) == 0 && len(o.Plugins) == 0 {
 		selectedPluginGroups, err = pi.GetPluginGroups(plugininventory.PluginGroupFilter{IncludeHidden: true}) // Include the hidden plugin groups during plugin migration
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "unable to read all plugin groups from database")
@@ -171,6 +174,21 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 			selectedPluginGroups = append(selectedPluginGroups, pluginGroups...)
 			selectedPluginEntries = append(selectedPluginEntries, pluginEntries...)
 		}
+	}
+
+	for _, pluginID := range o.Plugins {
+		pluginName, pluginTarget, pluginVersion := utils.ParsePluginID(pluginID)
+		pluginEntries, err := pi.GetPlugins(&plugininventory.PluginInventoryFilter{
+			Name:          pluginName,
+			Target:        configtypes.Target(pluginTarget),
+			Version:       pluginVersion,
+			IncludeHidden: true,
+		}) // Include the hidden plugins during plugin migration
+
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to read plugins from database")
+		}
+		selectedPluginEntries = append(selectedPluginEntries, pluginEntries...)
 	}
 
 	// Remove duplicate PluginInventoryEntries and PluginGroups from the selected list

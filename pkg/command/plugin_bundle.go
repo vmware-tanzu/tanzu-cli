@@ -25,6 +25,7 @@ type downloadPluginBundleOptions struct {
 	pluginDiscoveryOCIImage string
 	tarFile                 string
 	groups                  []string
+	plugins                 []string
 	dryRun                  bool
 }
 
@@ -42,7 +43,14 @@ func newDownloadBundlePluginCmd() *cobra.Command {
 to an internet-restricted environment. Please also see the "upload-bundle" command.`,
 		Example: `
     # Download a plugin bundle for a specific group version from the default discovery source
-    tanzu plugin download-bundle --to-tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz --group vmware-tkg/default:v1.0.0
+    tanzu plugin download-bundle --group vmware-tkg/default:v1.0.0 --to-tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz
+
+    # To download plugin bundle with specific plugin from the default discovery source
+    #     --plugin name                 : Downloads all available versions of the plugin for all matching targets.
+    #     --plugin name:version         : Downloads specified version of the plugin for all matching targets. Use 'latest' as version for latest available version
+    #     --plugin name@target:version  : Downloads specified version of the plugin for the specified target. Use 'latest' as version for latest available version
+    #     --plugin name@target          : Downloads all available versions of the plugin for the specified target.
+    tanzu plugin download-bundle --plugin cluster:v1.0.0 --to-tar /tmp/plugin_bundle_cluster.tar.gz
 
     # Download a plugin bundle with the entire plugin repository from a custom discovery source
     tanzu plugin download-bundle --image custom.registry.vmware.com/tkg/tanzu-plugins/plugin-inventory:latest --to-tar /tmp/plugin_bundle_complete.tar.gz`,
@@ -55,6 +63,7 @@ to an internet-restricted environment. Please also see the "upload-bundle" comma
 				PluginInventoryImage: dpbo.pluginDiscoveryOCIImage,
 				ToTar:                dpbo.tarFile,
 				Groups:               dpbo.groups,
+				Plugins:              dpbo.plugins,
 				DryRun:               dpbo.dryRun,
 				ImageProcessor:       carvelhelpers.NewImageOperationsImpl(),
 			}
@@ -72,6 +81,9 @@ to an internet-restricted environment. Please also see the "upload-bundle" comma
 	f.StringVarP(&dpbo.tarFile, "to-tar", "", "", "local tar file path to store the plugin images")
 	f.StringSliceVarP(&dpbo.groups, "group", "", []string{}, "only download the plugins specified in the plugin-group version (can specify multiple)")
 	utils.PanicOnErr(downloadBundleCmd.RegisterFlagCompletionFunc("group", completeGroupsAndVersionForBundleDownload))
+
+	f.StringSliceVarP(&dpbo.plugins, "plugin", "", []string{}, "only download plugins matching specified pluginID. Format: name/name:version/name@target:version (can specify multiple)")
+	utils.PanicOnErr(downloadBundleCmd.RegisterFlagCompletionFunc("plugin", cobra.NoFileCompletions)) // TODO: Implement Shell completion
 
 	f.BoolVarP(&dpbo.dryRun, "dry-run", "", false, "perform a dry run by listing the images to download without actually downloading them")
 	_ = downloadBundleCmd.Flags().MarkHidden("dry-run")

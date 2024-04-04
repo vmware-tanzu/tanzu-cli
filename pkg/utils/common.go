@@ -57,3 +57,18 @@ func PanicOnErr(err error) {
 
 	panic(err)
 }
+
+// ParsePluginID parses the plugin id and returns (name, target, version) strings
+func ParsePluginID(pluginID string) (string, string, string) {
+	var name, target, version string
+	parts := strings.Split(pluginID, ":")
+	if len(parts) > 1 {
+		version = parts[1]
+	}
+	parts = strings.Split(parts[0], "@")
+	name = parts[0]
+	if len(parts) > 1 {
+		target = parts[1]
+	}
+	return name, target, version
+}

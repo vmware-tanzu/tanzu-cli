@@ -15,10 +15,11 @@ type PluginInfo struct {
 }
 
 type PluginSearch struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Target      string `json:"target"`
-	Latest      string `json:"latest"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Target      string   `json:"target"`
+	Latest      string   `json:"latest"`
+	Versions    []string `json:"versions,omitempty"`
 }
 
 type PluginGroup struct {
