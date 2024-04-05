@@ -383,7 +383,7 @@ Those plugin installations can then be used with both legacy and new CLIs, if re
 
 ### Configuring the Registry and Proxy CA certificate
 
-Tanzu CLI would not be honoring existing environment variables `TKG_CUSTOM_IMAGE_REPOSITORY_CA_CERTIFICATE`
+Tanzu CLI will not honor the environment variables `TKG_CUSTOM_IMAGE_REPOSITORY_CA_CERTIFICATE`
 and `TKG_PROXY_CA_CERT`.
 If the user is interacting with a central repository hosted on a registry with self-signed CA, please
 refer to the section `Interacting with a central repository hosted on a registry with self-signed CA or with expired CA`
