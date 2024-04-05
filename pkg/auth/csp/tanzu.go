@@ -59,8 +59,10 @@ type cspLoginHandler struct {
 	token                 *oauth2.Token
 	refreshToken          string
 	orgID                 string
+	orgName               string
 	promptForValue        func(ctx context.Context, promptLabel string, out io.Writer) (string, error)
 	isTTY                 func(int) bool
+	callbackHandlerMutex  sync.Mutex
 }
 
 // LoginOption is an optional configuration for Login().
@@ -240,6 +242,20 @@ func (h *cspLoginHandler) runLocalListener(listener net.Listener) func() {
 }
 
 func (h *cspLoginHandler) callbackHandler(w http.ResponseWriter, r *http.Request) {
+	// Lock the mutex to ensure only one request can access/update shared state at a time
+	// Note: This should be remote corner case, but we have seen cases where Chrome browser redirects
+	// and make 2 back to back requests with the same URL before the local server is exited.
+	// In such scenario, the second request would be blocked till the prior request is finished
+	// and then gets unblocked to check if the prior request already acquired token, if so just
+	// return with empty message else let the request go through for token exchange and return
+	// the response which would fail anyway(context would be canceled for second request)
+	h.callbackHandlerMutex.Lock()
+	defer h.callbackHandlerMutex.Unlock()
+
+	// Check if token is already set by prior request
+	if h.token != nil {
+		return
+	}
 	// token exchange should be complete once this callback handler completes execution.
 	defer h.tokenExchangeComplete()
 	code := r.URL.Query().Get("code")
@@ -263,7 +279,11 @@ func (h *cspLoginHandler) callbackHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 	// best effort: get the organization name to show in the browser
-	orgName, _ := h.getOrganizationName()
+	h.orgName, _ = h.getOrganizationName()
+	printSuccessMessage(w, h.orgName)
+}
+
+func printSuccessMessage(w http.ResponseWriter, orgName string) {
 	msg := "You have successfully logged in!\n\nYou can now safely close this window"
 	if orgName != "" {
 		msg = fmt.Sprintf("You have successfully logged into '%s' organization!\n\nYou can now safely close this window", orgName)
