@@ -276,10 +276,6 @@ Notice that the input `TANZU_API_TOKEN=12345` preceding the `tanzu` command is n
 it is still present and will take effect if the command is executed.  Pressing `<TAB>` again will often
 correct the situation but when it does not, you can simply refresh your shell display (e.g., `^L`).
 
-```bash
-export TANZU_ACTIVE_HELP=0
-```
-
 ## Auto-detection and notification of new CLI releases
 
 The CLI will periodically verify if new releases of the CLI itself are available.
