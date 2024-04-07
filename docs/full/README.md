@@ -154,7 +154,9 @@ management-cluster. FEATURE is the name of the feature that you want to deactiva
 ### Environment variables affecting the CLI
 
 Some options affecting the CLI are only available through the use of environment
-variables.  Below is the list of such variables:
+variables.  These variables can be set in the shell or using `tanzu config set env.<VAR> <VALUE>`
+(see [the documentation about this command](../full/README.md#cli-configuration)).
+Below is the list of these variables:
 
 | Environment Variable | Description | Value |
 | -------------------- | ----------- | ----- |
