@@ -263,6 +263,8 @@ func printVersionRecommendations(writer io.Writer, currentVersion, _, minor, pat
 		}
 	}
 
+	fmt.Fprintf(writer, "\nPlease refer to these instructions for upgrading: https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/quickstart/install.md.\n")
+
 	delay := getRecommendationDelayInSeconds()
 	var delayStr string
 	if delay >= 60*60 {
