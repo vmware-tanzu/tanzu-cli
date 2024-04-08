@@ -577,6 +577,17 @@ imagesToCopy:
 			}
 		})
 
+		var _ = It("when specified plugin is invalid and does not exists, it should fail the download bundle command", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
+			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
+
+			// Provide multiple plugins
+			dpbo.Plugins = []string{"invalid"}
+			err := dpbo.DownloadPluginBundle()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("error while getting selected plugin and plugin group information: no plugins found for pluginID \"invalid\""))
+		})
+
 		var _ = It("when using --dry-run option, it should work and write the images yaml to the standard output", func() {
 			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
 			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)

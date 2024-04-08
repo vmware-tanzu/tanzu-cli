@@ -174,21 +174,14 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 			selectedPluginGroups = append(selectedPluginGroups, pluginGroups...)
 			selectedPluginEntries = append(selectedPluginEntries, pluginEntries...)
 		}
-	}
 
-	for _, pluginID := range o.Plugins {
-		pluginName, pluginTarget, pluginVersion := utils.ParsePluginID(pluginID)
-		pluginEntries, err := pi.GetPlugins(&plugininventory.PluginInventoryFilter{
-			Name:          pluginName,
-			Target:        configtypes.Target(pluginTarget),
-			Version:       pluginVersion,
-			IncludeHidden: true,
-		}) // Include the hidden plugins during plugin migration
-
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "unable to read plugins from database")
+		for _, pluginID := range o.Plugins {
+			pluginEntry, err := o.getPluginFromPluginID(pluginID, pi)
+			if err != nil {
+				return nil, nil, err
+			}
+			selectedPluginEntries = append(selectedPluginEntries, pluginEntry...)
 		}
-		selectedPluginEntries = append(selectedPluginEntries, pluginEntries...)
 	}
 
 	// Remove duplicate PluginInventoryEntries and PluginGroups from the selected list
@@ -196,6 +189,36 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 	selectedPluginGroups = plugininventory.RemoveDuplicatePluginGroups(selectedPluginGroups)
 
 	return selectedPluginEntries, selectedPluginGroups, nil
+}
+
+func (o *DownloadPluginBundleOptions) getPluginFromPluginID(pluginID string, pi plugininventory.PluginInventory) ([]*plugininventory.PluginInventoryEntry, error) {
+	pluginName, pluginTarget, pluginVersion := utils.ParsePluginID(pluginID)
+	if pluginVersion == "" {
+		pluginVersion = "latest"
+	}
+	pluginEntries, err := pi.GetPlugins(&plugininventory.PluginInventoryFilter{
+		Name:          pluginName,
+		Target:        configtypes.Target(pluginTarget),
+		Version:       pluginVersion,
+		IncludeHidden: true,
+	}) // Include the hidden plugins during plugin migration
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to read plugins from database")
+	}
+	if len(pluginEntries) == 0 {
+		return nil, errors.Errorf("no plugins found for pluginID %q", pluginID)
+	}
+
+	// If we get more than 1 pluginEntries, this means that provided pluginID matches with more than one plugin
+	// this most likely indicates that there are more than 1 plugin name with different target and we should throw an
+	// error in this scenario considering the ambiguity
+	if len(pluginEntries) > 1 {
+		return nil, errors.Errorf("more than one plugins found for pluginID '%s'. Please specify the uniquely identifiable pluginID in the form of 'name@target'", pluginID)
+	}
+
+	log.Infof("will be downloading the %q plugin individually", pluginID)
+
+	return pluginEntries, nil
 }
 
 func (o *DownloadPluginBundleOptions) getAllPluginGroupsAndPluginEntriesFromPluginGroupVersion(pgID string, pi plugininventory.PluginInventory) ([]*plugininventory.PluginGroup, []*plugininventory.PluginInventoryEntry, error) {

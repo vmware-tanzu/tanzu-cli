@@ -123,6 +123,63 @@ func TestCompletionPluginBundle(t *testing.T) {
 				"vmware-tkg/default:v1.1.1\n" +
 				":36\n",
 		},
+
+		{
+			test: "completion for the --plugin flag value for the plugin name part of the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--plugin", ""},
+			// This command should trigger downloading an OCI plugin inventory image
+			imageMustBeDownloaded: true,
+			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
+			expected: "cluster@kubernetes\n" +
+				"cluster@mission-control\n" +
+				"feature@kubernetes\n" +
+				"isolated-cluster@global\n" +
+				"login@global\n" +
+				"management-cluster@kubernetes\n" +
+				"management-cluster@mission-control\n" +
+				"package@kubernetes\n" +
+				"secret@kubernetes\n" +
+				":6\n",
+		},
+		{
+			test: "completion for the --plugin flag value for the plugin name part with partial name specified of the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--plugin", "clu"},
+			// This command should trigger downloading an OCI plugin inventory image
+			imageMustBeDownloaded: true,
+			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
+			expected: "cluster@kubernetes\n" +
+				"cluster@mission-control\n" +
+				":6\n",
+		},
+		{
+			test: "completion for the --plugin flag value for the version part of the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--plugin", "isolated-cluster@global:"},
+			// This command should trigger downloading an OCI plugin inventory image
+			imageMustBeDownloaded: true,
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "isolated-cluster@global:v1.3.0\n" +
+				"isolated-cluster@global:v1.2.3\n" +
+				":36\n",
+		},
+		{
+			test: "completion for the --plugin flag value for the version part of an invalid plugin name for the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--plugin", "invalid:"},
+			// This command should trigger downloading an OCI plugin inventory image
+			imageMustBeDownloaded: true,
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "_activeHelp_ There are no plugins matching: 'invalid'\n" +
+				":36\n",
+		},
+		{
+			test: "completion for the --plugin flag value for the plugin name of an invalid partial plugin name for the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--plugin", "invalid"},
+			// This command should trigger downloading an OCI plugin inventory image
+			imageMustBeDownloaded: true,
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "_activeHelp_ There are no plugins matching: 'invalid'\n" +
+				":36\n",
+		},
+
 		// ============================
 		// tanzu plugin upload-bundle
 		// ============================

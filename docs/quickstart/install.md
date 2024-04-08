@@ -447,13 +447,16 @@ If you do not specify a group's version, the latest version available for the gr
 tanzu plugin download-bundle --group vmware-tkg/default --to-tar /tmp/plugin_bundle_tkg_latest.tar.gz
 ```
 
-If you want to download a specific plugin, the `--plugin` flag can be used. Below are the support format for `--plugin` flag:
+If you want to download a specific plugin, the `--plugin` flag can be used. Using
+the `--plugin` flag is for cases where a plugin is not part of a plugin group,
+but that normally using `--group` is the recommended approach.
+Below are the supported formats for the `--plugin` flag:
 
 ```sh
---plugin name                 : Downloads all available versions of the plugin for all matching targets.
---plugin name:version         : Downloads specified version of the plugin for all matching targets. Use 'latest' as version for latest available version
---plugin name@target:version  : Downloads specified version of the plugin for the specified target. Use 'latest' as version for latest available version
---plugin name@target          : Downloads all available versions of the plugin for the specified target.
+--plugin name                 : Downloads the latest available version of the plugin for all matching targets.
+--plugin name:version         : Downloads the specified version of the plugin for all matching targets. Use 'latest' as version for latest available version
+--plugin name@target:version  : Downloads the specified version of the plugin for the specified target. Use 'latest' as version for latest available version
+--plugin name@target          : Downloads the latest available version of the plugin for the specified target.
 ```
 
 ```sh
