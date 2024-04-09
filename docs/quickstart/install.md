@@ -414,10 +414,10 @@ resulting images without authentication.
 To download plugins you will use the `tanzu plugin download-bundle` command and
 specify the different plugin groups or plugins relevant to your environment.
 
-This command will download the plugin bundle containing specified plugins and
-the plugin versions specified in the plugin group definition. The bundle will
-also include the plugin group definition itself if specified, so that it can be
-used for plugin installation by users.
+This command will download the plugin bundle containing the specified plugin
+versions as well as the plugin versions specified in the plugin group definition.
+The bundle will also include the plugin group definition itself if specified,
+so that it can be used for plugin installation by users.
 
 Note that the latest version of the `vmware-tanzucli/essentials` plugin group
 and the plugin versions it contains will automatically be included in any plugin
@@ -449,21 +449,21 @@ tanzu plugin download-bundle --group vmware-tkg/default --to-tar /tmp/plugin_bun
 
 If you want to download a specific plugin, the `--plugin` flag can be used. Using
 the `--plugin` flag is for cases where a plugin is not part of a plugin group,
-but that normally using `--group` is the recommended approach.
+however, when possible, using `--group` is the recommended approach.
 Below are the supported formats for the `--plugin` flag:
 
 ```sh
---plugin name                 : Downloads the latest available version of the plugin for all matching targets.
---plugin name:version         : Downloads the specified version of the plugin for all matching targets. Use 'latest' as version for latest available version
---plugin name@target:version  : Downloads the specified version of the plugin for the specified target. Use 'latest' as version for latest available version
+--plugin name                 : Downloads the latest available version of the plugin. (Returns an error if the specified plugin name is available across multiple targets)
+--plugin name:version         : Downloads the specified version of the plugin. (Returns an error if the specified plugin name is available across multiple targets)
+--plugin name@target:version  : Downloads the specified version of the plugin for the specified target.
 --plugin name@target          : Downloads the latest available version of the plugin for the specified target.
 ```
 
 ```sh
-# To download plugin bundle with all available versions 'cluster' plugin across all targets
+# To download plugin bundle with the latest available version of the 'cluster' plugin. (Returns an error if the specified plugin name is available across multiple targets)
 tanzu plugin download-bundle --plugin cluster --to-tar /tmp/plugin_bundle_cluster.tar.gz
 
-# To download plugin bundle with all available versions 'cluster' plugin for `kubernetes` target
+# To download plugin bundle with the latest available version of the 'cluster' plugin for `kubernetes` target
 tanzu plugin download-bundle --plugin cluster@kubernetes --to-tar /tmp/plugin_bundle_cluster.tar.gz
 
 # To download plugin bundle with v1.0.0 version of 'cluster' plugin for `kubernetes` target
@@ -473,7 +473,7 @@ tanzu plugin download-bundle --plugin cluster@kubernetes:v1.0.0 --to-tar /tmp/pl
 tanzu plugin download-bundle --plugin cluster@kubernetes:latest --to-tar /tmp/plugin_bundle_cluster.tar.gz
 ```
 
-Using `--group` and `--plugin` flag together are also supported and if specified the union of all the
+Using the `--group` and `--plugin` flags together is also supported.  In such a case the union of all the
 plugins and plugin-groups will be downloaded.
 
 To migrate plugins from a specific plugin repository and not use the default

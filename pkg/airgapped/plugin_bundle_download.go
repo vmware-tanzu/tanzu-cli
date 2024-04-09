@@ -194,11 +194,12 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 func (o *DownloadPluginBundleOptions) getPluginFromPluginID(pluginID string, pi plugininventory.PluginInventory) ([]*plugininventory.PluginInventoryEntry, error) {
 	pluginName, pluginTarget, pluginVersion := utils.ParsePluginID(pluginID)
 	if pluginVersion == "" {
-		pluginVersion = "latest"
+		pluginVersion = cli.VersionLatest
 	}
+
 	pluginEntries, err := pi.GetPlugins(&plugininventory.PluginInventoryFilter{
 		Name:          pluginName,
-		Target:        configtypes.Target(pluginTarget),
+		Target:        configtypes.StringToTarget(pluginTarget),
 		Version:       pluginVersion,
 		IncludeHidden: true,
 	}) // Include the hidden plugins during plugin migration

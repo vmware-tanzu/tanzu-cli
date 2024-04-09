@@ -45,10 +45,10 @@ to an internet-restricted environment. Please also see the "upload-bundle" comma
     # Download a plugin bundle for a specific group version from the default discovery source
     tanzu plugin download-bundle --group vmware-tkg/default:v1.0.0 --to-tar /tmp/plugin_bundle_vmware_tkg_default_v1.0.0.tar.gz
 
-    # To download plugin bundle with specific plugin from the default discovery source
-    #     --plugin name                 : Downloads the latest available version of the plugin for all matching targets.
-    #     --plugin name:version         : Downloads the specified version of the plugin for all matching targets. Use 'latest' as version for latest available version
-    #     --plugin name@target:version  : Downloads the specified version of the plugin for the specified target. Use 'latest' as version for latest available version
+    # To download plugin bundle with a specific plugin from the default discovery source
+    #     --plugin name                 : Downloads the latest available version of the plugin. (Returns an error if the specified plugin name is available across multiple targets)
+    #     --plugin name:version         : Downloads the specified version of the plugin. (Returns an error if the specified plugin name is available across multiple targets)
+    #     --plugin name@target:version  : Downloads the specified version of the plugin for the specified target.
     #     --plugin name@target          : Downloads the latest available version of the plugin for the specified target.
     tanzu plugin download-bundle --plugin cluster:v1.0.0 --to-tar /tmp/plugin_bundle_cluster.tar.gz
 
@@ -164,6 +164,30 @@ func completeUploadBundle(_ *cobra.Command, _ []string, _ string) ([]string, cob
 	return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
 }
 
+func completionDownloadInventoryImage() (string, error) {
+	// For a download-bundle, we cannot use the DB cache.  This is because
+	// the download-bundle does not use the configured plugin sources.  Instead it
+	// uses the repo specified by the `--image`` flag, or, without the `--image` flag,
+	// it uses the default central repo automatically.
+
+	// We start by downloading the inventory of the required repo.  This is not
+	// very fast, but there isn't much we can do about it.
+
+	var err error
+	tempDBDir, err := os.MkdirTemp("", "")
+	if err != nil {
+		return "", err
+	}
+
+	// Download the plugin inventory oci image to tempDBDir
+	inventoryFile := filepath.Join(tempDBDir, plugininventory.SQliteDBFileName)
+	if err := imageProcessorForDownloadBundleComp.DownloadImageAndSaveFilesToDir(dpbo.pluginDiscoveryOCIImage, filepath.Dir(inventoryFile)); err != nil {
+		return "", err
+	}
+
+	return inventoryFile, nil
+}
+
 func completeGroupVersionsForDownloadBundle(groups []*plugininventory.PluginGroup, id, _ string) []string {
 	var group *plugininventory.PluginGroup
 	for _, g := range groups {
@@ -195,30 +219,14 @@ func completeGroupVersionsForDownloadBundle(groups []*plugininventory.PluginGrou
 }
 
 func completionGetPluginGroupsForBundleDownload() ([]*plugininventory.PluginGroup, error) {
-	// For a download-bundle, we cannot use the DB cache.  This is because
-	// the download-bundle does not use the configured plugin sources.  Instead it
-	// uses the repo specified by the `--image`` flag, or, without the `--image` flag,
-	// it uses the default central repo automatically.
-
-	// We start by downloading the inventory of the required repo.  This is not
-	// very fast, but there isn't much we can do about it.
-
-	var err error
-	tempDBDir, err := os.MkdirTemp("", "")
+	inventoryFile, err := completionDownloadInventoryImage()
+	defer os.RemoveAll(inventoryFile)
 	if err != nil {
-		return nil, err
-	}
-	defer os.RemoveAll(tempDBDir)
-
-	// Download the plugin inventory oci image to tempDBDir
-	repoImage := dpbo.pluginDiscoveryOCIImage
-	inventoryFile := filepath.Join(tempDBDir, plugininventory.SQliteDBFileName)
-	if err := imageProcessorForDownloadBundleComp.DownloadImageAndSaveFilesToDir(repoImage, filepath.Dir(inventoryFile)); err != nil {
 		return nil, err
 	}
 
 	// Read the plugin inventory database to read the plugin groups it contains
-	pi := plugininventory.NewSQLiteInventory(inventoryFile, path.Dir(repoImage))
+	pi := plugininventory.NewSQLiteInventory(inventoryFile, path.Dir(dpbo.pluginDiscoveryOCIImage))
 	pluginGroups, err := pi.GetPluginGroups(plugininventory.PluginGroupFilter{IncludeHidden: true}) // Include the hidden plugin groups during plugin migration
 	if err != nil {
 		return nil, err
@@ -226,7 +234,7 @@ func completionGetPluginGroupsForBundleDownload() ([]*plugininventory.PluginGrou
 	return pluginGroups, err
 }
 
-func completeGroupsAndVersionForBundleDownload(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func completeGroupsAndVersionForBundleDownload(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) { //nolint:dupl
 	pluginGroups, err := completionGetPluginGroupsForBundleDownload()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
@@ -295,30 +303,14 @@ func completeVersionInPluginIDForDownloadBundle(plugins []*plugininventory.Plugi
 }
 
 func completionGetPluginsForBundleDownload() ([]*plugininventory.PluginInventoryEntry, error) {
-	// For a download-bundle, we cannot use the DB cache.  This is because
-	// the download-bundle does not use the configured plugin sources.  Instead it
-	// uses the repo specified by the `--image`` flag, or, without the `--image` flag,
-	// it uses the default central repo automatically.
-
-	// We start by downloading the inventory of the required repo.  This is not
-	// very fast, but there isn't much we can do about it.
-
-	var err error
-	tempDBDir, err := os.MkdirTemp("", "")
+	inventoryFile, err := completionDownloadInventoryImage()
+	defer os.RemoveAll(inventoryFile)
 	if err != nil {
 		return nil, err
 	}
-	defer os.RemoveAll(tempDBDir)
 
-	// Download the plugin inventory oci image to tempDBDir
-	repoImage := dpbo.pluginDiscoveryOCIImage
-	inventoryFile := filepath.Join(tempDBDir, plugininventory.SQliteDBFileName)
-	if err := imageProcessorForDownloadBundleComp.DownloadImageAndSaveFilesToDir(repoImage, filepath.Dir(inventoryFile)); err != nil {
-		return nil, err
-	}
-
-	// Read the plugin inventory database to read the plugin groups it contains
-	pi := plugininventory.NewSQLiteInventory(inventoryFile, path.Dir(repoImage))
+	// Read the plugin inventory database to read the plugins it contains
+	pi := plugininventory.NewSQLiteInventory(inventoryFile, path.Dir(dpbo.pluginDiscoveryOCIImage))
 	pluginEntries, err := pi.GetPlugins(&plugininventory.PluginInventoryFilter{IncludeHidden: true}) // Include the hidden plugin groups during plugin migration
 	if err != nil {
 		return nil, err
@@ -326,45 +318,38 @@ func completionGetPluginsForBundleDownload() ([]*plugininventory.PluginInventory
 	return pluginEntries, err
 }
 
-func completePluginIDForBundleDownload(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	PluginEntries, err := completionGetPluginsForBundleDownload()
+func completePluginIDForBundleDownload(_ *cobra.Command, _ []string, toComplete string) ([]string, cobra.ShellCompDirective) { //nolint:dupl
+	pluginEntries, err := completionGetPluginsForBundleDownload()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
-	if PluginEntries == nil {
+	if pluginEntries == nil {
 		comps := cobra.AppendActiveHelp(nil, fmt.Sprintf("There are no plugins in %s", dpbo.pluginDiscoveryOCIImage))
 		return comps, cobra.ShellCompDirectiveNoFileComp
 	}
 
 	if idx := strings.Index(toComplete, ":"); idx != -1 {
 		// The pluginID is already specified before the :
-		// so now we should complete the group version.
+		// so now we should complete the plugin version.
 		// Since more recent versions are more likely to be
 		// useful, we tell the shell to preserve the order
 		// using cobra.ShellCompDirectiveKeepOrder
 		pluginID := toComplete[:idx]
 		versionToComplete := toComplete[idx+1:]
 
-		return completeVersionInPluginIDForDownloadBundle(PluginEntries, pluginID, versionToComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
+		return completeVersionInPluginIDForDownloadBundle(pluginEntries, pluginID, versionToComplete), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
 	}
 
-	// Complete plugin group names
+	// Complete pluginIDs
 	var comps []string
-	for _, p := range PluginEntries {
-		id := plugininventory.PluginToID(p)
-		if strings.HasPrefix(id, toComplete) {
-			comps = append(comps, id)
-		}
-	}
-
-	if len(comps) == 0 {
-		return cobra.AppendActiveHelp(nil, fmt.Sprintf("There are no plugins matching: '%s'", toComplete)), cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveKeepOrder
+	for _, p := range pluginEntries {
+		comps = append(comps, fmt.Sprintf("%s\t%s", plugininventory.PluginToID(p), p.Description))
 	}
 
 	// Sort to allow for testing
 	sort.Strings(comps)
 
-	// Don't add a space after the group name so the uer can add a : if
+	// Don't add a space after the pluginID so the uer can add a : if
 	// they want to specify a version.
 	return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 }

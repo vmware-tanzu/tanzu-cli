@@ -130,25 +130,15 @@ func TestCompletionPluginBundle(t *testing.T) {
 			// This command should trigger downloading an OCI plugin inventory image
 			imageMustBeDownloaded: true,
 			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
-			expected: "cluster@kubernetes\n" +
-				"cluster@mission-control\n" +
-				"feature@kubernetes\n" +
-				"isolated-cluster@global\n" +
-				"login@global\n" +
-				"management-cluster@kubernetes\n" +
-				"management-cluster@mission-control\n" +
-				"package@kubernetes\n" +
-				"secret@kubernetes\n" +
-				":6\n",
-		},
-		{
-			test: "completion for the --plugin flag value for the plugin name part with partial name specified of the download-bundle command",
-			args: []string{"__complete", "plugin", "download-bundle", "--plugin", "clu"},
-			// This command should trigger downloading an OCI plugin inventory image
-			imageMustBeDownloaded: true,
-			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
-			expected: "cluster@kubernetes\n" +
-				"cluster@mission-control\n" +
+			expected: "cluster@kubernetes\tPlugin cluster/kubernetes description\n" +
+				"cluster@mission-control\tPlugin cluster/mission-control description\n" +
+				"feature@kubernetes\tPlugin feature/kubernetes description\n" +
+				"isolated-cluster@global\tPlugin isolated-cluster/global description\n" +
+				"login@global\tPlugin login/global description\n" +
+				"management-cluster@kubernetes\tPlugin management-cluster/kubernetes description\n" +
+				"management-cluster@mission-control\tPlugin management-cluster/mission-control description\n" +
+				"package@kubernetes\tPlugin package/kubernetes description\n" +
+				"secret@kubernetes\tPlugin secret/kubernetes description\n" +
 				":6\n",
 		},
 		{
@@ -164,15 +154,6 @@ func TestCompletionPluginBundle(t *testing.T) {
 		{
 			test: "completion for the --plugin flag value for the version part of an invalid plugin name for the download-bundle command",
 			args: []string{"__complete", "plugin", "download-bundle", "--plugin", "invalid:"},
-			// This command should trigger downloading an OCI plugin inventory image
-			imageMustBeDownloaded: true,
-			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
-			expected: "_activeHelp_ There are no plugins matching: 'invalid'\n" +
-				":36\n",
-		},
-		{
-			test: "completion for the --plugin flag value for the plugin name of an invalid partial plugin name for the download-bundle command",
-			args: []string{"__complete", "plugin", "download-bundle", "--plugin", "invalid"},
 			// This command should trigger downloading an OCI plugin inventory image
 			imageMustBeDownloaded: true,
 			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
