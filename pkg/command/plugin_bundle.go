@@ -180,12 +180,11 @@ func completionDownloadInventoryImage() (string, error) {
 	}
 
 	// Download the plugin inventory oci image to tempDBDir
-	inventoryFile := filepath.Join(tempDBDir, plugininventory.SQliteDBFileName)
-	if err := imageProcessorForDownloadBundleComp.DownloadImageAndSaveFilesToDir(dpbo.pluginDiscoveryOCIImage, filepath.Dir(inventoryFile)); err != nil {
+	if err := imageProcessorForDownloadBundleComp.DownloadImageAndSaveFilesToDir(dpbo.pluginDiscoveryOCIImage, tempDBDir); err != nil {
 		return "", err
 	}
 
-	return inventoryFile, nil
+	return tempDBDir, nil
 }
 
 func completeGroupVersionsForDownloadBundle(groups []*plugininventory.PluginGroup, id, _ string) []string {
@@ -219,11 +218,12 @@ func completeGroupVersionsForDownloadBundle(groups []*plugininventory.PluginGrou
 }
 
 func completionGetPluginGroupsForBundleDownload() ([]*plugininventory.PluginGroup, error) {
-	inventoryFile, err := completionDownloadInventoryImage()
-	defer os.RemoveAll(inventoryFile)
+	inventoryDBDir, err := completionDownloadInventoryImage()
+	defer os.RemoveAll(inventoryDBDir)
 	if err != nil {
 		return nil, err
 	}
+	inventoryFile := filepath.Join(inventoryDBDir, plugininventory.SQliteDBFileName)
 
 	// Read the plugin inventory database to read the plugin groups it contains
 	pi := plugininventory.NewSQLiteInventory(inventoryFile, path.Dir(dpbo.pluginDiscoveryOCIImage))
@@ -265,7 +265,7 @@ func completeGroupsAndVersionForBundleDownload(_ *cobra.Command, _ []string, toC
 	// Sort to allow for testing
 	sort.Strings(comps)
 
-	// Don't add a space after the group name so the uer can add a : if
+	// Don't add a space after the group name so the user can add a : if
 	// they want to specify a version.
 	return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 }
@@ -303,15 +303,16 @@ func completeVersionInPluginIDForDownloadBundle(plugins []*plugininventory.Plugi
 }
 
 func completionGetPluginsForBundleDownload() ([]*plugininventory.PluginInventoryEntry, error) {
-	inventoryFile, err := completionDownloadInventoryImage()
-	defer os.RemoveAll(inventoryFile)
+	inventoryDBDir, err := completionDownloadInventoryImage()
+	defer os.RemoveAll(inventoryDBDir)
 	if err != nil {
 		return nil, err
 	}
+	inventoryFile := filepath.Join(inventoryDBDir, plugininventory.SQliteDBFileName)
 
 	// Read the plugin inventory database to read the plugins it contains
 	pi := plugininventory.NewSQLiteInventory(inventoryFile, path.Dir(dpbo.pluginDiscoveryOCIImage))
-	pluginEntries, err := pi.GetPlugins(&plugininventory.PluginInventoryFilter{IncludeHidden: true}) // Include the hidden plugin groups during plugin migration
+	pluginEntries, err := pi.GetPlugins(&plugininventory.PluginInventoryFilter{IncludeHidden: true}) // Include the hidden plugin during plugin migration
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +350,7 @@ func completePluginIDForBundleDownload(_ *cobra.Command, _ []string, toComplete 
 	// Sort to allow for testing
 	sort.Strings(comps)
 
-	// Don't add a space after the pluginID so the uer can add a : if
+	// Don't add a space after the pluginID so the user can add a : if
 	// they want to specify a version.
 	return comps, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 }
