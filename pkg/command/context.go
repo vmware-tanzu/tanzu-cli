@@ -1246,7 +1246,7 @@ func useCtx(cmd *cobra.Command, args []string) error { //nolint:gocyclo
 		suffixString = "(" + suffixString + ")"
 	}
 
-	log.Infof("Activated context '%s' %s ", ctxName, suffixString)
+	log.Infof("Successfully activated context '%s' %s ", ctxName, suffixString)
 
 	// Sync all required plugins
 	if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
