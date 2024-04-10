@@ -66,4 +66,9 @@ const (
 	// If environment variable 'TANZU_CLI_PLUGIN_DISCOVERY_PATH_FOR_TANZU_CONTEXT' is not configured
 	// default discovery endpoint configured with TanzuContextPluginDiscoveryEndpointPath will be used
 	TanzuPluginDiscoveryPathforTanzuContext = "TANZU_CLI_PLUGIN_DISCOVERY_PATH_FOR_TANZU_CONTEXT"
+
+	// SkipPluginGroupVerificationOnPublish skips the plugin group verification of whether the plugins specified
+	// in the plugin-group are available in the database or not.
+	// Note: THIS SHOULD ONLY BE USED FOR TEST AND NON PRODUCTION ENVIRONMENTS.
+	SkipPluginGroupVerificationOnPublish = "TANZU_CLI_SKIP_PLUGIN_GROUP_VERIFICATION_ON_PUBLISH"
 )

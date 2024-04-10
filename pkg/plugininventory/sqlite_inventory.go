@@ -667,13 +667,19 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 	allowHiddenPlugins, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting))
 	for version, plugins := range pg.Versions {
 		for _, pi := range plugins {
-			// Verify that the plugin exists in the database before inserting it to the PluginGroup table.
-			// Allow including hidden plugins if the TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY is properly set.
-			pie, err := b.GetPlugins(&PluginInventoryFilter{Name: pi.Name, Target: pi.Target, Version: pi.Version, IncludeHidden: allowHiddenPlugins})
-			if err != nil {
-				return errors.Wrap(err, "error while verifying existence of the plugin in the database")
-			} else if len(pie) == 0 {
-				return errors.Errorf("specified plugin 'name:%s', 'target:%s', 'version:%s' is not present in the database", pi.Name, pi.Target, pi.Version)
+			// Skip plugin group verification. If TANZU_CLI_SKIP_PLUGIN_GROUP_VERIFICATION_ON_PUBLISH is set while publishing a plugin-group
+			// the plugin verification will be skipped in that case.
+			// Note: THIS SHOULD ONLY BE USED FOR TEST AND NON PRODUCTION ENVIRONMENTS.
+			skipPGVerification, _ := strconv.ParseBool(os.Getenv(constants.SkipPluginGroupVerificationOnPublish))
+			if !skipPGVerification {
+				// Verify that the plugin exists in the database before inserting it to the PluginGroup table.
+				// Allow including hidden plugins if the TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY is properly set.
+				pie, err := b.GetPlugins(&PluginInventoryFilter{Name: pi.Name, Target: pi.Target, Version: pi.Version, IncludeHidden: allowHiddenPlugins})
+				if err != nil {
+					return errors.Wrap(err, "error while verifying existence of the plugin in the database")
+				} else if len(pie) == 0 {
+					return errors.Errorf("specified plugin 'name:%s', 'target:%s', 'version:%s' is not present in the database", pi.Name, pi.Target, pi.Version)
+				}
 			}
 
 			row := groupDBRow{
