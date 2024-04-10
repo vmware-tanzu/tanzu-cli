@@ -286,6 +286,13 @@ func CheckAllPluginsExists(superList, subList []*PluginInfo) bool {
 		// }
 		_, ok := superSet[key]
 		if !ok {
+			for i := range superList {
+				log.Infof("SuperList: %v, %v, %v", superList[i].Name, superList[i].Target, superList[i].Version)
+			}
+			log.Infof("")
+			for i := range subList {
+				log.Infof("SubList: %v, %v, %v", subList[i].Name, subList[i].Target, subList[i].Version)
+			}
 			return false
 		}
 	}

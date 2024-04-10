@@ -150,6 +150,10 @@ func PluginGroupToID(pg *PluginGroup) string {
 	return fmt.Sprintf("%s-%s/%s", pg.Vendor, pg.Publisher, pg.Name)
 }
 
+func PluginToID(p *PluginInventoryEntry) string {
+	return fmt.Sprintf("%s@%s", p.Name, p.Target)
+}
+
 // PluginGroupIdentifierFromID converts a plugin group id into a
 // PluginGroupIdentifier structure.
 // A group id can be of the forms:
