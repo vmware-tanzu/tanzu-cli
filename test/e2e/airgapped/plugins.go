@@ -88,3 +88,11 @@ var essentialPlugins = []*framework.PluginInfo{
 var pluginsNotInAnyPGAndUsingSha = []*framework.PluginInfo{
 	{Name: "plugin-with-sha", Target: "global", Version: "v9.9.9", Description: "plugin-with-sha " + functionality},
 }
+
+// allExpectedPluginForPluginMigration when download-bundle is invoked with following pluginIDs
+// 'pinniped-auth', 'isolated-cluster@global:v9.9.9', 'clustergroup@operations'
+var allExpectedPluginForPluginMigration = []*framework.PluginInfo{
+	{Name: "isolated-cluster", Target: "global", Version: "v9.9.9", Description: "isolated-cluster " + functionality},
+	{Name: "pinniped-auth", Target: "global", Version: "v9.9.9", Description: "pinniped-auth " + functionality},
+	{Name: "clustergroup", Target: "operations", Version: "v9.9.9", Description: "clustergroup " + functionality},
+}

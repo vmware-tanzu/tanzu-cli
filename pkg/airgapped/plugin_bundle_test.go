@@ -203,6 +203,60 @@ imagesToCopy:
     - sourceTarFilePath: telemetry-global-darwin_amd64-v0.0.1.tar.gz
       relativeImagePath: /path/darwin/amd64/global/telemetry
 `
+	// Plugin bundle manifest file generated based on the above mentioned
+	// plugin entry in the inventory database with only foo plugin specified
+	pluginBundleManifestFooPluginOnlyString := `relativeInventoryImagePathWithTag: /plugin-inventory:latest
+inventoryMetadataImage:
+    sourceFilePath: plugin_inventory_metadata.db
+    relativeImagePathWithTag: /plugin-inventory-metadata:latest
+imagesToCopy:
+    - sourceTarFilePath: plugin-inventory-image.tar.gz
+      relativeImagePath: /plugin-inventory
+    - sourceTarFilePath: telemetry-global-darwin_amd64-v0.0.1.tar.gz
+      relativeImagePath: /path/darwin/amd64/global/telemetry
+    - sourceTarFilePath: foo-global-darwin_amd64-v0.0.2.tar.gz
+      relativeImagePath: /path/darwin/amd64/global/foo
+    - sourceTarFilePath: foo-global-linux_amd64-v0.0.2.tar.gz
+      relativeImagePath: /path/linux/amd64/global/foo
+`
+
+	// Plugin bundle manifest file generated based on the above mentioned
+	// plugin entry in the inventory database with only single plugin group and specific plugin specified
+	pluginBundleManifestDefaultGroupAndFooPluginOnlyString := `relativeInventoryImagePathWithTag: /plugin-inventory:latest
+inventoryMetadataImage:
+    sourceFilePath: plugin_inventory_metadata.db
+    relativeImagePathWithTag: /plugin-inventory-metadata:latest
+imagesToCopy:
+    - sourceTarFilePath: plugin-inventory-image.tar.gz
+      relativeImagePath: /plugin-inventory
+    - sourceTarFilePath: bar-kubernetes-darwin_amd64-v0.0.1.tar.gz
+      relativeImagePath: /path/darwin/amd64/kubernetes/bar
+    - sourceTarFilePath: telemetry-global-darwin_amd64-v0.0.1.tar.gz
+      relativeImagePath: /path/darwin/amd64/global/telemetry
+    - sourceTarFilePath: foo-global-darwin_amd64-v0.0.2.tar.gz
+      relativeImagePath: /path/darwin/amd64/global/foo
+    - sourceTarFilePath: foo-global-linux_amd64-v0.0.2.tar.gz
+      relativeImagePath: /path/linux/amd64/global/foo
+`
+
+	// Plugin bundle manifest file generated based on the above mentioned
+	// plugin entry in the inventory database with only foo and bar plugin specified
+	pluginBundleManifestFooAndBarPluginOnlyString := `relativeInventoryImagePathWithTag: /plugin-inventory:latest
+inventoryMetadataImage:
+    sourceFilePath: plugin_inventory_metadata.db
+    relativeImagePathWithTag: /plugin-inventory-metadata:latest
+imagesToCopy:
+    - sourceTarFilePath: plugin-inventory-image.tar.gz
+      relativeImagePath: /plugin-inventory
+    - sourceTarFilePath: telemetry-global-darwin_amd64-v0.0.1.tar.gz
+      relativeImagePath: /path/darwin/amd64/global/telemetry
+    - sourceTarFilePath: foo-global-darwin_amd64-v0.0.2.tar.gz
+      relativeImagePath: /path/darwin/amd64/global/foo
+    - sourceTarFilePath: foo-global-linux_amd64-v0.0.2.tar.gz
+      relativeImagePath: /path/linux/amd64/global/foo
+    - sourceTarFilePath: bar-kubernetes-darwin_amd64-v0.0.1.tar.gz
+      relativeImagePath: /path/darwin/amd64/kubernetes/bar
+`
 
 	// Configure the configuration before running the tests
 	BeforeEach(func() {
@@ -418,6 +472,120 @@ imagesToCopy:
 				exists := utils.PathExists(filepath.Join(tempDir, PluginBundleDirName, pi.SourceTarFilePath))
 				Expect(exists).To(BeTrue())
 			}
+		})
+
+		var _ = It("when group and plugin is specified and everything works as expected, it should download plugin bundle as tar file", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
+			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
+
+			// Provide a plugin group and a plugin
+			dpbo.Groups = []string{"fakevendor-fakepublisher/default:v1.0.0"}
+			dpbo.Plugins = []string{"foo"}
+			err := dpbo.DownloadPluginBundle()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that tar file was generated correctly with untar
+			tempDir, err := os.MkdirTemp("", "")
+			Expect(tempDir).ToNot(BeEmpty())
+			Expect(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir)
+
+			err = tarinator.UnTarinate(tempDir, dpbo.ToTar)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify the plugin bundle manifest file is accurate
+			bytes, err := os.ReadFile(filepath.Join(tempDir, PluginBundleDirName, PluginMigrationManifestFile))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(bytes)).To(Equal(pluginBundleManifestDefaultGroupAndFooPluginOnlyString))
+			manifest := &PluginMigrationManifest{}
+			err = yaml.Unmarshal(bytes, &manifest)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Iterate through all the images in the manifest and verify that all image archive
+			// files mentioned in the manifest exists in the bundle
+			for _, pi := range manifest.ImagesToCopy {
+				exists := utils.PathExists(filepath.Join(tempDir, PluginBundleDirName, pi.SourceTarFilePath))
+				Expect(exists).To(BeTrue())
+			}
+		})
+
+		var _ = It("when only one plugin is specified and everything works as expected, it should download plugin bundle as tar file", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
+			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
+
+			// Provide a plugin
+			dpbo.Plugins = []string{"foo"}
+			err := dpbo.DownloadPluginBundle()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that tar file was generated correctly with untar
+			tempDir, err := os.MkdirTemp("", "")
+			Expect(tempDir).ToNot(BeEmpty())
+			Expect(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir)
+
+			err = tarinator.UnTarinate(tempDir, dpbo.ToTar)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify the plugin bundle manifest file is accurate
+			bytes, err := os.ReadFile(filepath.Join(tempDir, PluginBundleDirName, PluginMigrationManifestFile))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(bytes)).To(Equal(pluginBundleManifestFooPluginOnlyString))
+			manifest := &PluginMigrationManifest{}
+			err = yaml.Unmarshal(bytes, &manifest)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Iterate through all the images in the manifest and verify that all image archive
+			// files mentioned in the manifest exists in the bundle
+			for _, pi := range manifest.ImagesToCopy {
+				exists := utils.PathExists(filepath.Join(tempDir, PluginBundleDirName, pi.SourceTarFilePath))
+				Expect(exists).To(BeTrue())
+			}
+		})
+
+		var _ = It("when multiple plugins are specified and everything works as expected, it should download plugin bundle as tar file", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
+			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
+
+			// Provide multiple plugins
+			dpbo.Plugins = []string{"foo@global:v0.0.2", "bar@kubernetes"}
+			err := dpbo.DownloadPluginBundle()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that tar file was generated correctly with untar
+			tempDir, err := os.MkdirTemp("", "")
+			Expect(tempDir).ToNot(BeEmpty())
+			Expect(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir)
+
+			err = tarinator.UnTarinate(tempDir, dpbo.ToTar)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify the plugin bundle manifest file is accurate
+			bytes, err := os.ReadFile(filepath.Join(tempDir, PluginBundleDirName, PluginMigrationManifestFile))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(bytes)).To(Equal(pluginBundleManifestFooAndBarPluginOnlyString))
+			manifest := &PluginMigrationManifest{}
+			err = yaml.Unmarshal(bytes, &manifest)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Iterate through all the images in the manifest and verify that all image archive
+			// files mentioned in the manifest exists in the bundle
+			for _, pi := range manifest.ImagesToCopy {
+				exists := utils.PathExists(filepath.Join(tempDir, PluginBundleDirName, pi.SourceTarFilePath))
+				Expect(exists).To(BeTrue())
+			}
+		})
+
+		var _ = It("when specified plugin is invalid and does not exists, it should fail the download bundle command", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
+			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
+
+			// Provide multiple plugins
+			dpbo.Plugins = []string{"invalid"}
+			err := dpbo.DownloadPluginBundle()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("error while getting selected plugin and plugin group information: no plugins found for pluginID \"invalid\""))
 		})
 
 		var _ = It("when using --dry-run option, it should work and write the images yaml to the standard output", func() {
