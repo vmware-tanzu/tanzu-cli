@@ -123,6 +123,44 @@ func TestCompletionPluginBundle(t *testing.T) {
 				"vmware-tkg/default:v1.1.1\n" +
 				":36\n",
 		},
+
+		{
+			test: "completion for the --plugin flag value for the plugin name part of the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--plugin", ""},
+			// This command should trigger downloading an OCI plugin inventory image
+			imageMustBeDownloaded: true,
+			// ":6" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveNoSpace
+			expected: "cluster@kubernetes\tPlugin cluster/kubernetes description\n" +
+				"cluster@mission-control\tPlugin cluster/mission-control description\n" +
+				"feature@kubernetes\tPlugin feature/kubernetes description\n" +
+				"isolated-cluster@global\tPlugin isolated-cluster/global description\n" +
+				"login@global\tPlugin login/global description\n" +
+				"management-cluster@kubernetes\tPlugin management-cluster/kubernetes description\n" +
+				"management-cluster@mission-control\tPlugin management-cluster/mission-control description\n" +
+				"package@kubernetes\tPlugin package/kubernetes description\n" +
+				"secret@kubernetes\tPlugin secret/kubernetes description\n" +
+				":6\n",
+		},
+		{
+			test: "completion for the --plugin flag value for the version part of the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--plugin", "isolated-cluster@global:"},
+			// This command should trigger downloading an OCI plugin inventory image
+			imageMustBeDownloaded: true,
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "isolated-cluster@global:v1.3.0\n" +
+				"isolated-cluster@global:v1.2.3\n" +
+				":36\n",
+		},
+		{
+			test: "completion for the --plugin flag value for the version part of an invalid plugin name for the download-bundle command",
+			args: []string{"__complete", "plugin", "download-bundle", "--plugin", "invalid:"},
+			// This command should trigger downloading an OCI plugin inventory image
+			imageMustBeDownloaded: true,
+			// ":36" is the value of the ShellCompDirectiveNoFileComp | ShellCompDirectiveKeepOrder
+			expected: "_activeHelp_ There are no plugins matching: 'invalid'\n" +
+				":36\n",
+		},
+
 		// ============================
 		// tanzu plugin upload-bundle
 		// ============================
