@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -21,6 +22,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/globalinit"
 )
 
 const (
@@ -789,6 +791,101 @@ func TestTargetCommands(t *testing.T) {
 			}
 			for _, unexpected := range spec.unexpected {
 				assert.NotContains(string(got), unexpected)
+			}
+		})
+	}
+}
+
+func TestGlobalInit(t *testing.T) {
+	tests := []struct {
+		test         string
+		args         []string
+		trigger      bool
+		initExpected bool
+	}{
+		{
+			test:         "global init for a command",
+			args:         []string{"plugin", "list"},
+			trigger:      true,
+			initExpected: true,
+		},
+		{
+			test:         "no global init for a command",
+			args:         []string{"plugin", "list"},
+			trigger:      false,
+			initExpected: false,
+		},
+		{
+			test:         "no global init for version",
+			args:         []string{"version"},
+			trigger:      true,
+			initExpected: false,
+		},
+		{
+			test:         "no global init for completion",
+			args:         []string{"completion", "bash"},
+			trigger:      true,
+			initExpected: false,
+		},
+		{
+			test:         "no global init for __complete",
+			args:         []string{"__complete", ""},
+			trigger:      true,
+			initExpected: false,
+		},
+	}
+
+	const initString = "INITIALIZER CALLED"
+	for _, spec := range tests {
+		env := setupTestCLIEnvironment(t)
+		defer tearDownTestCLIEnvironment(env)
+
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			r, w, err := os.Pipe()
+			if err != nil {
+				t.Error(err)
+			}
+			c := make(chan []byte)
+			go readOutput(t, r, c)
+
+			// Set up for our test
+			stdout := os.Stdout
+			stderr := os.Stderr
+			defer func() {
+				os.Stdout = stdout
+				os.Stderr = stderr
+			}()
+			os.Stdout = w
+			os.Stderr = w
+
+			// Setup the specified initializer trigger
+			globalinit.RegisterInitializer(
+				func() bool {
+					return spec.trigger
+				},
+				func(io.Writer) error {
+					fmt.Println(initString)
+					return nil
+				},
+			)
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+			rootCmd.SetArgs(spec.args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			w.Close()
+			got := <-c
+
+			if spec.initExpected {
+				assert.Contains(string(got), initString)
+			} else {
+				assert.NotContains(string(got), initString)
+				assert.NotContains(string(got), "The initialization encountered an error")
 			}
 		})
 	}
