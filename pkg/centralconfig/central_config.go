@@ -8,11 +8,9 @@ import (
 	"path/filepath"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
-
-// CentralConfigFileName is the name of the central config file
-const CentralConfigFileName = "central_config.yaml"
 
 // CentralConfig is used to interact with the central configuration.
 type CentralConfig interface {
@@ -28,7 +26,7 @@ type CentralConfig interface {
 // be used to read central configuration values.
 func NewCentralConfigReader(pd *types.PluginDiscovery) CentralConfig {
 	// The central config is stored in the cache
-	centralConfigFile := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, pd.OCI.Name, CentralConfigFileName)
+	centralConfigFile := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, pd.OCI.Name, constants.CentralConfigFileName)
 
 	return &centralConfigYamlReader{configFile: centralConfigFile}
 }

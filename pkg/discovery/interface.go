@@ -42,6 +42,7 @@ type GroupDiscovery interface {
 type DiscoveryOpts struct {
 	UseLocalCacheOnly       bool // UseLocalCacheOnly used to pull the plugin data from the cache
 	ForceRefresh            bool // ForceRefresh used to force a refresh of the plugin data
+	ForceInvalidation       bool // ForceInvalidation used to force invalidation of the plugin data
 	PluginDiscoveryCriteria *PluginDiscoveryCriteria
 	GroupDiscoveryCriteria  *GroupDiscoveryCriteria
 }
@@ -61,6 +62,14 @@ func WithUseLocalCacheOnly() DiscoveryOptions {
 func WithForceRefresh() DiscoveryOptions {
 	return func(o *DiscoveryOpts) {
 		o.ForceRefresh = true
+	}
+}
+
+// WithForceInvalidation used to force an invalidation of the plugin inventory data
+// to trigger a new download of the OCI image
+func WithForceInvalidation() DiscoveryOptions {
+	return func(o *DiscoveryOpts) {
+		o.ForceInvalidation = true
 	}
 }
 

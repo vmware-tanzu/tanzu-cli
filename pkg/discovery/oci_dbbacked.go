@@ -15,7 +15,6 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/airgapped"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier"
@@ -46,6 +45,9 @@ type DBBackedOCIDiscovery struct {
 	// forceRefresh enables to force the refresh of the cached inventory data,
 	// even if the cache TTL has not expired
 	forceRefresh bool
+	// forceInvalidation enables to force the invalidation of the cache which will
+	// in turn trigger a full download of the inventory data
+	forceInvalidation bool
 	// pluginDataDir is the location where the plugin data will be stored once
 	// extracted from the OCI image
 	pluginDataDir string
@@ -179,7 +181,7 @@ func (od *DBBackedOCIDiscovery) listGroupsFromInventory() ([]*plugininventory.Pl
 // fetchInventoryImage downloads the OCI image containing the information about the
 // inventory of this discovery and stores it in the cache directory.
 func (od *DBBackedOCIDiscovery) fetchInventoryImage() error {
-	if !od.forceRefresh && !od.cacheTTLExpired() {
+	if !od.forceInvalidation && !od.forceRefresh && !od.cacheTTLExpired() {
 		// If we refreshed the inventory image recently, don't refresh again.
 		// The inventory image does not need to be up-to-date by the second.
 		// This avoids uselessly refreshing for commands that are run close together.
@@ -272,21 +274,31 @@ func (od *DBBackedOCIDiscovery) downloadCentralRepositoryData() error {
 		return errors.Wrapf(err, "failed to download OCI image from discovery '%s'", od.Name())
 	}
 
-	od.setupCentralConfig(tempDir1)
+	err = od.setupPluginInventory(tempDir1, tempDir2)
+	if err == nil {
+		// Only setup the central config file after the plugin inventory has been setup so
+		// that we know the cache directory has been created.
+		od.setupCentralConfig(tempDir1)
+	}
 
-	return od.setupPluginInventory(tempDir1, tempDir2)
+	return err
 }
 
 func (od *DBBackedOCIDiscovery) setupCentralConfig(sourceDir string) {
 	// Copy the central config file from the temp directory to pluginDataDir
-	sourceCentralConfigPath := filepath.Join(sourceDir, centralconfig.CentralConfigFileName)
-	destCentralConfigPath := filepath.Join(od.pluginDataDir, centralconfig.CentralConfigFileName)
+	sourceCentralConfigPath := filepath.Join(sourceDir, constants.CentralConfigFileName)
+	destCentralConfigPath := filepath.Join(od.pluginDataDir, constants.CentralConfigFileName)
 
 	// Since the central config file is optional, check if it is present in the downloaded OCI image.
 	if _, err := os.Stat(sourceCentralConfigPath); os.IsNotExist(err) {
-		// The file does not exist, remove any old one from the cache
+		// The file does not exist, truncate any old one from the cache
 		// that might be there from a previous discovery.
-		_ = os.Remove(destCentralConfigPath)
+		// We still want to keep an empty file so that we know the central config file
+		// is missing for valid reasons and not because the cache was setup using an older CLI
+		// which didn't copy over the file.
+		if file, err := os.Create(destCentralConfigPath); err != nil {
+			file.Close()
+		}
 	} else {
 		// The file exists, copy it to the pluginDataDir
 		if err = utils.CopyFile(sourceCentralConfigPath, destCentralConfigPath); err != nil {
@@ -381,7 +393,7 @@ func (od *DBBackedOCIDiscovery) checkDigestFileExistence(hashHexVal, digestPrefi
 			os.Remove(filePath)
 		}
 	} else if len(matches) == 1 {
-		if matches[0] == correctHashFile {
+		if !od.forceInvalidation && matches[0] == correctHashFile {
 			if digestPrefix == "" {
 				// If the main digest has not changed it means we have the DB for this OCI image URI.
 				// Normally that implies the URI stored in the main digest file has not changed either.

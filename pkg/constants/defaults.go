@@ -37,4 +37,7 @@ const (
 	// Until then for testing purpose, user can overwrite this path using `TANZU_CLI_PLUGIN_DISCOVERY_PATH_FOR_TANZU_CONTEXT`
 	// environment variable
 	TanzuContextPluginDiscoveryEndpointPath = "/discovery"
+
+	// CentralConfigFileName is the name of the central config file
+	CentralConfigFileName = "central_config.yaml"
 )

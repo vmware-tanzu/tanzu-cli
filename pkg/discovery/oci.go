@@ -29,6 +29,7 @@ func NewOCIDiscovery(name, image string, options ...DiscoveryOptions) Discovery 
 		discovery.useLocalCacheOnly = true
 	}
 	discovery.forceRefresh = opts.ForceRefresh
+	discovery.forceInvalidation = opts.ForceInvalidation
 
 	return discovery
 }
@@ -49,6 +50,7 @@ func NewOCIGroupDiscovery(name, image string, options ...DiscoveryOptions) Group
 		discovery.useLocalCacheOnly = true
 	}
 	discovery.forceRefresh = opts.ForceRefresh
+	discovery.forceInvalidation = opts.ForceInvalidation
 
 	return discovery
 }
