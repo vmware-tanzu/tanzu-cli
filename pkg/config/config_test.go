@@ -5,6 +5,7 @@ package config
 
 import (
 	"os"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -17,6 +18,11 @@ var (
 )
 
 const envVar = "test-conf-env"
+
+func TestClient(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Config Suite")
+}
 
 var _ = Describe("config env variables", func() {
 	Context("get env from config", func() {
