@@ -1757,6 +1757,30 @@ func TestCommandRemapping(t *testing.T) {
 			args:     []string{"dummy", "arg1", "arg2"},
 			expected: []string{"Remap of plugin into command tree (dummy) associated with another plugin is not supported"},
 		},
+		{
+			test: "command-level: subcommand map entry's aliases are used",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:   "dummy2",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+							SourceCommandPath:      "show-invoke-context",
+							Description:            "Shows invocation details",
+							Aliases:                []string{"sic"},
+						},
+					},
+				},
+			},
+			args:     []string{"sic", "arg1", "arg2"},
+			expected: []string{"args = (show-invoke-context arg1 arg2), context is ():(dummy):(show-invoke-context)"},
+		},
 	}
 
 	for _, spec := range tests {

@@ -115,8 +115,7 @@ func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMa
 
 		// is not a toplevel command
 		if len(srcHierarchy) > 0 {
-			// TODO(vuil): support aliases for command-level mapped?
-			aliases = []string{}
+			aliases = mapEntry.Aliases
 		}
 		if mapEntry.Description != "" {
 			description = mapEntry.Description
