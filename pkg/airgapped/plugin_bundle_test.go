@@ -170,6 +170,17 @@ var _ = Describe("Unit tests for download and upload bundle", func() {
 		},
 	}
 
+	// Plugin bundle manifest file generated based on the use of the --refresh-configuration-only flag
+	// Only the OCI image is downloaded and no plugins are downloaded
+	pluginBundleManifestOCIImageOnlyString := `relativeInventoryImagePathWithTag: /plugin-inventory:latest
+inventoryMetadataImage:
+    sourceFilePath: plugin_inventory_metadata.db
+    relativeImagePathWithTag: /plugin-inventory-metadata:latest
+imagesToCopy:
+    - sourceTarFilePath: plugin-inventory-image.tar.gz
+      relativeImagePath: /plugin-inventory
+`
+
 	// Plugin bundle manifest file generated based on the above mentioned
 	// plugin entry in the inventory database
 	pluginBundleManifestCompleteRepositoryString := `relativeInventoryImagePathWithTag: /plugin-inventory:latest
@@ -411,6 +422,41 @@ imagesToCopy:
 			bytes, err := os.ReadFile(filepath.Join(tempDir, PluginBundleDirName, PluginMigrationManifestFile))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(bytes)).To(Equal(pluginBundleManifestCompleteRepositoryString))
+			manifest := &PluginMigrationManifest{}
+			err = yaml.Unmarshal(bytes, &manifest)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Iterate through all the images in the manifest and verify the all image archive
+			// files mentioned in the manifest exists in the bundle
+			for _, pi := range manifest.ImagesToCopy {
+				exists := utils.PathExists(filepath.Join(tempDir, PluginBundleDirName, pi.SourceTarFilePath))
+				Expect(exists).To(BeTrue())
+			}
+		})
+
+		var _ = It("when no group or plugin is specified and --refresh-configuration-only is used and everything works as expected, it should only download the OCI image", func() {
+			fakeImageOperations.DownloadImageAndSaveFilesToDirCalls(downloadInventoryImageAndSaveFilesToDirStub)
+			fakeImageOperations.CopyImageToTarCalls(copyImageToTarStub)
+
+			// Only refresh the OCI image, no new plugins
+			dpbo.RefreshConfigOnly = true
+
+			err := dpbo.DownloadPluginBundle()
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify that tar file was generated correctly with untar
+			tempDir, err := os.MkdirTemp("", "")
+			Expect(tempDir).ToNot(BeEmpty())
+			Expect(err).NotTo(HaveOccurred())
+			defer os.RemoveAll(tempDir)
+
+			err = tarinator.UnTarinate(tempDir, dpbo.ToTar)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Verify the plugin bundle manifest file is accurate
+			bytes, err := os.ReadFile(filepath.Join(tempDir, PluginBundleDirName, PluginMigrationManifestFile))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(bytes)).To(Equal(pluginBundleManifestOCIImageOnlyString))
 			manifest := &PluginMigrationManifest{}
 			err = yaml.Unmarshal(bytes, &manifest)
 			Expect(err).NotTo(HaveOccurred())

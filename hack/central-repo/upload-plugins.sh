@@ -37,6 +37,8 @@ echoImages() {
     echo "=> localhost:9876/tanzu-cli/plugins/airgapped:large"
     echo "    - all plugins matching product plugin names"
     echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
+    echo "=> localhost:9876/tanzu-cli/plugins2/airgapped:large"
+    echo "    - same as plugins/airgapped:large except with a different central config content"
     echo "=> localhost:9876/tanzu-cli/plugins/shas:small"
     echo "    - a small amount of plugins matching product plugin names"
     echo "    - contains only versions v0.0.1 and v9.9.9 of plugins and all of them can be installed"
@@ -211,13 +213,15 @@ addGroup() {
 
 createCentralConfigFile() {
     local centralCfgFile=$1
+    # This allows to change the content of the central config
+    local specialRecommendedVersion=${2:-"v2.1.0-alpha.2"}
 
     echo "Creating central config file $centralCfgFile"
     # Create some content that is rich enough to write
     # different types of tests
     cat <<EOF > $centralConfigFile
 cli.core.cli_recommended_versions: 
-- version: v2.1.0-alpha.2
+- version: $specialRecommendedVersion
 - version: v2.0.2
 - version: v1.5.0-beta.0
 - version: v1.4.4
@@ -564,6 +568,18 @@ createCentralConfigFile $centralConfigFile
 ${dry_run} imgpkg push -i $repoBasePath/$largeAirgappedImage -f $imageContentPath --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry  -y $repoBasePath/$largeAirgappedImage
 
+# Create a second large image with a different config file content
+airgapWithDiffConfigRepoBasePath=${repoBasePath}2
+echo "======================================"
+echo "Creating large airgapped test Central Repository with different config: $airgapWithDiffConfigRepoBasePath/$largeAirgappedImage"
+echo "======================================"
+
+createCentralConfigFile $centralConfigFile v2.1.0-beta.1
+
+# Push this second airgapped inventory file
+${dry_run} imgpkg push -i $airgapWithDiffConfigRepoBasePath/$largeAirgappedImage -f $imageContentPath --registry-verify-certs=false
+${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $airgapWithDiffConfigRepoBasePath/$largeAirgappedImage
+
 echo "======================================"
 echo "Creating small test Central Repository using SHAs: $repoBasePath/$smallImageUsingSHAs"
 echo "======================================"
@@ -600,7 +616,7 @@ done
 
 createCentralConfigFile $centralConfigFile
 
-# Push airgapped inventory file
+# Push shas inventory file
 ${dry_run} imgpkg push -i $repoBasePath/$smallImageUsingSHAs -f $imageContentPath --registry-verify-certs=false
 ${dry_run} cosign sign --key $ROOT_DIR/cosign-key-pair/cosign.key --allow-insecure-registry -y $repoBasePath/$smallImageUsingSHAs
 
