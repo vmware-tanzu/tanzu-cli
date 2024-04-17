@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 	pluginlifecyclee2e "github.com/vmware-tanzu/tanzu-cli/test/e2e/plugin_lifecycle"
@@ -23,10 +24,52 @@ const fileExists = "the file '%s' already exists"
 const showThrowErr = "should throw error for incorrect input path"
 
 var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-DownloadBundle-UploadBundle-Lifecycle]", func() {
+	Context("Download plugin bundle with only the OCI image, Upload plugin bundle to an empty repository and verify new central config data", func() {
+		// Test case: download plugin bundle for the OCI image only
+		It("download OCI image only", func() {
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{}, true, filepath.Join(tempDir, "plugin_bundle_include_image_only.tar.gz"))
+			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with only the OCI image")
+		})
+		// Test case: upload plugin bundle to the airgapped repository
+		It("upload plugin bundle to the airgapped repository", func() {
+			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_include_image_only.tar.gz"))
+			Expect(err).To(BeNil(), "should not get any error while uploading plugin bundle")
+		})
+
+		// Test case: validate that the updating the discovery source to point to new airgapped repository works
+		It("update discovery source to point to new airgapped repository discovery image", func() {
+			err := framework.UpdatePluginDiscoverySource(tf, e2eAirgappedCentralRepoImage)
+			Expect(err).To(BeNil(), "should not get any error for plugin source update")
+		})
+
+		// Test case: Validate there are no plugins nor plugin groups with `tanzu plugin search` and `tanzu plugin group search` output
+		It("validate no plugins nor plugin groups exists", func() {
+			// search plugin groups
+			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
+			Expect(len(pluginGroups)).To(Equal(0), "there should be no plugin groups")
+
+			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
+			Expect(len(pluginsSearchList)).To(Equal(0), "there should be no plugins")
+		})
+		It("validate the central config content is present", func() {
+			// Check that the central config file has content
+			// We do this brute force by checking the content of the central config file in the cache
+			centralConfigFile := filepath.Join(framework.TestHomeDir, ".cache", "tanzu", common.PluginInventoryDirName, "default", "central_config.yaml")
+
+			b, err := os.ReadFile(centralConfigFile)
+			Expect(err).To(BeNil())
+
+			Expect(b).To(ContainSubstring("v2.1.0-alpha.2"))
+			Expect(b).ToNot(ContainSubstring("v2.1.0-beta.1"))
+		})
+	})
 	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tkg/default:v0.0.1'", func() {
 		// Test case: download plugin bundle for plugin-group vmware-tkg/default:v0.0.1
 		It("download plugin bundle with specific plugin-group vmware-tkg/default:v0.0.1", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tkg/default:v0.0.1"}, []string{}, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-default-v0.0.1.tar.gz"))
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tkg/default:v0.0.1"}, []string{}, false, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-default-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
 		})
 
@@ -108,10 +151,92 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		})
 	})
 
+	Context("Download plugin bundle with only an updated OCI image, Upload plugin bundle on top of the existing content and verify new central config data and do some plugin lifecycle tests", func() {
+		// Test case: download updated OCI image
+		It("download an updated OCI image", func() {
+			// To simulate an updated OCI image, we are downloading a different image (notice "plugins2" in the path)
+			// but with the same plugin groups and plugins it is just the central config data that is different
+			similarImageButDifferentConfig := "localhost:9876/tanzu-cli/plugins2/airgapped:large"
+
+			originalSkip := os.Getenv(framework.TanzuCliPluginDiscoverySignatureVerificationSkipList)
+			err = os.Setenv(framework.TanzuCliPluginDiscoverySignatureVerificationSkipList, similarImageButDifferentConfig)
+			Expect(err).To(BeNil())
+
+			err := tf.PluginCmd.DownloadPluginBundle(similarImageButDifferentConfig, []string{}, []string{}, true, filepath.Join(tempDir, "plugin_bundle_update_image_only.tar.gz"))
+			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with no group or plugin specified")
+
+			err = os.Setenv(framework.TanzuCliPluginDiscoverySignatureVerificationSkipList, originalSkip)
+			Expect(err).To(BeNil())
+		})
+
+		// Test case: upload plugin bundle downloaded to the airgapped repository
+		It("upload plugin bundle with only the OCI image to the airgapped repository", func() {
+			// We are modifying the plugin source and the CLI will need to download the new DB.
+			// However, the CLI will only refresh the DB after the cache TTL has expired.
+			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepo, filepath.Join(tempDir, "plugin_bundle_update_image_only.tar.gz"))
+			Expect(err).To(BeNil(), "should not get any error while uploading plugin bundle with the new OCI image")
+
+			// Force a DB refresh by updating the plugin source
+			err = framework.UpdatePluginDiscoverySource(tf, e2eAirgappedCentralRepoImage)
+			Expect(err).To(BeNil(), "should not get any error for plugin source update")
+		})
+
+		It("validate the central config content has been updated", func() {
+			// Check that the central config file has content
+			// We do this brute force by checking the content of the central config file in the cache
+			centralConfigFile := filepath.Join(framework.TestHomeDir, ".cache", "tanzu", common.PluginInventoryDirName, "default", "central_config.yaml")
+
+			b, err := os.ReadFile(centralConfigFile)
+			Expect(err).To(BeNil())
+
+			Expect(b).ToNot(ContainSubstring("v2.1.0-alpha.2"))
+			Expect(b).To(ContainSubstring("v2.1.0-beta.1"))
+		})
+
+		It("validate the plugins that were there before still exist", func() {
+			// search plugin groups
+			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
+			// check all expected plugin groups are available in the `plugin group search` output from the airgapped repository
+			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/default", Latest: "v0.0.1", Description: "Desc for vmware-tkg/default:v0.0.1"}}
+			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
+
+			// search plugins and make sure correct number of plugins available
+			// check expected plugins are available in the `plugin search` output from the airgapped repository
+			expectedPlugins := pluginsForPGTKG001
+			expectedPlugins = append(expectedPlugins, essentialPlugins...) // Essential plugin will be always installed
+			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
+			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
+			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
+		})
+
+		// Test case: Validate that the plugins can be installed from the plugin-group
+		It("validate that plugins can be installed from group 'vmware-tkg/default:v0.0.1'", func() {
+			// All plugins should get installed from the group
+			_, _, err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/default:v0.0.1")
+			Expect(err).To(BeNil())
+
+			// Verify all plugins got installed with `tanzu plugin list`
+			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
+			Expect(err).To(BeNil())
+			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsForPGTKG001)).To(BeTrue())
+		})
+
+		// Test case: (Negative) try to install plugins that are not migrated to the airgapped repository
+		It("installing plugins that are not migrated to the airgapped repository should throw an error", func() {
+			// All plugins should get installed from the group
+			_, _, err = tf.PluginCmd.InstallPlugin("isolated-cluster", "", "")
+			Expect(err).NotTo(BeNil())
+			_, _, err = tf.PluginCmd.InstallPlugin("pinniped-auth", "", "")
+			Expect(err).NotTo(BeNil())
+		})
+	})
+
 	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tmc/tmc-user:v9.9.9'", func() {
 		// Test case: download plugin bundle for plugin-group vmware-tmc/tmc-user:v9.9.9
 		It("download plugin bundle for plugin-group vmware-tmc/tmc-user:v9.9.9", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tmc/tmc-user:v9.9.9"}, []string{}, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-default-v9.9.9.tar.gz"))
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tmc/tmc-user:v9.9.9"}, []string{}, false, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-default-v9.9.9.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
 		})
 
@@ -195,7 +320,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		// Note: we are passing same plugin group multiple times to make sure we test the conflicts in the plugin groups
 		// as well as plugins itself are handled properly while downloading and uploading bundle
 		It("download plugin bundle for plugin-group vmware-tmc/tmc-user:v0.0.1 and plugin isolated-cluster:v0.0.1", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tmc/tmc-user:v0.0.1", "vmware-tmc/tmc-user:v0.0.1"}, []string{"isolated-cluster:v0.0.1"}, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-v0.0.1.tar.gz"))
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tmc/tmc-user:v0.0.1", "vmware-tmc/tmc-user:v0.0.1"}, []string{"isolated-cluster:v0.0.1"}, false, filepath.Join(tempDir, "plugin_bundle_vmware-tmc-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
 		})
 
@@ -254,7 +379,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugins 'pinniped-auth', 'isolated-cluster@global:v9.9.9', 'clustergroup@operations' specified", func() {
 		// Test case: download plugin bundle for plugins: 'pinniped-auth', 'isolated-cluster@global:v9.9.9', 'clustergroup@operations'
 		It("download plugin bundle for plugins: 'pinniped-auth', 'isolated-cluster@global:v9.9.9', 'clustergroup@operations'", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{"pinniped-auth", "isolated-cluster@global:v9.9.9", "clustergroup@operations"}, filepath.Join(tempDir, "plugin_bundle_plugins_plugins.tar.gz"))
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{"pinniped-auth", "isolated-cluster@global:v9.9.9", "clustergroup@operations"}, false, filepath.Join(tempDir, "plugin_bundle_plugins_plugins.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
 		})
 
@@ -293,7 +418,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests without specifying any plugin group", func() {
 		// Test case: download the entire plugin bundle without specifying plugin group
 		It("download the entire plugin bundle without specifying plugin group", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{}, filepath.Join(tempDir, "plugin_bundle_complete.tar.gz"))
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{}, false, filepath.Join(tempDir, "plugin_bundle_complete.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle without specifying group")
 		})
 
@@ -362,7 +487,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			Expect(framework.CheckAllPluginsExists(installedPlugins, expectedPlugins)).To(BeTrue())
 		})
 
-		// Test case: validate thaa plugin using a sha can be installed
+		// Test case: validate that plugin using a sha can be installed
 		It("validate that a plugin using a sha can be installed", func() {
 			_, _, err := tf.PluginCmd.InstallPlugin("plugin-with-sha", "", "")
 			Expect(err).To(BeNil())
@@ -375,14 +500,14 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 
 		// Test case: (negative use case) empty path for --to-tar
 		It("plugin download-bundle when to-tar path is empty", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{}, "")
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{}, false, "")
 			Expect(err).NotTo(BeNil(), showThrowErr)
 			Expect(strings.Contains(err.Error(), "flag '--to-tar' is required")).To(BeTrue())
 		})
 		// Test case: (negative use case) directory name only for --to-tar
 		It("plugin download-bundle when to-tar path is a directory", func() {
 			// Attempt download bundle specifying directory as output
-			err = tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{}, tempDir)
+			err = tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{}, false, tempDir)
 
 			// Expect error and validate text
 			Expect(err).NotTo(BeNil())
@@ -390,7 +515,7 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		})
 		// Test case: (negative use case) current directory only for --to-tar
 		It("plugin download-bundle when to-tar path is current directory", func() {
-			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{}, ".")
+			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{}, []string{}, false, ".")
 			Expect(err).NotTo(BeNil(), showThrowErr)
 			Expect(strings.Contains(err.Error(), fmt.Sprintf(fileExists, "."))).To(BeTrue())
 		})

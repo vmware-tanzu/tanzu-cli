@@ -73,7 +73,7 @@ type PluginGroupOps interface {
 
 type PluginDownloadAndUploadOps interface {
 	// DownloadPluginBundle downloads the plugin inventory and plugin bundles to local tar file
-	DownloadPluginBundle(image string, groups []string, plugins []string, toTar string, opts ...E2EOption) error
+	DownloadPluginBundle(image string, groups []string, plugins []string, configOnly bool, toTar string, opts ...E2EOption) error
 
 	// UploadPluginBundle performs the uploading plugin bundle to the remote repository
 	// Based on the remote repository status, it setups a new discovery source endpoint
@@ -323,7 +323,7 @@ func (po *pluginCmdOps) RunPluginCmd(options string, opts ...E2EOption) (string,
 	return stdOut.String(), stdErr.String(), nil
 }
 
-func (po *pluginCmdOps) DownloadPluginBundle(image string, groups []string, plugins []string, toTar string, opts ...E2EOption) error {
+func (po *pluginCmdOps) DownloadPluginBundle(image string, groups []string, plugins []string, configOnly bool, toTar string, opts ...E2EOption) error {
 	downloadPluginBundle := PluginDownloadBundleCmd
 	if len(strings.TrimSpace(image)) > 0 {
 		downloadPluginBundle += " --image " + image
@@ -333,6 +333,10 @@ func (po *pluginCmdOps) DownloadPluginBundle(image string, groups []string, plug
 	}
 	if len(plugins) > 0 {
 		downloadPluginBundle += " --plugin " + strings.Join(plugins, ",")
+	}
+
+	if configOnly {
+		downloadPluginBundle += " --refresh-configuration-only"
 	}
 	downloadPluginBundle += " --to-tar " + strings.TrimSpace(toTar)
 
