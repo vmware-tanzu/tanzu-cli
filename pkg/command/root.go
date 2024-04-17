@@ -9,8 +9,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -27,6 +29,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/recommendedversion"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/telemetry"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -34,8 +37,26 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
+var interruptChannel = make(chan os.Signal, 1)
+
+// interruptHandle listens for Ctrl+C signal
+// stops all spinners and exits the CLI command prompt
+var interruptHandle = func() {
+	sig := <-interruptChannel
+	if sig != nil {
+		component.StopAllSpinners()
+	}
+	os.Exit(128 + int(sig.(syscall.Signal)))
+}
+
+// init registers the signal handler for SIGINT and SIGTERM
+func init() {
+	signal.Notify(interruptChannel, syscall.SIGINT, syscall.SIGTERM)
+}
+
 // NewRootCmd creates a root command.
 func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
+	go interruptHandle()
 	var rootCmd = newRootCmd()
 	uFunc := cli.NewMainUsage().UsageFunc()
 	rootCmd.SetUsageFunc(uFunc)
