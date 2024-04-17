@@ -32,9 +32,9 @@ type DownloadPluginBundleOptions struct {
 	ToTar                string
 	Groups               []string
 	Plugins              []string
-
-	DryRun         bool
-	ImageProcessor carvelhelpers.ImageOperationsImpl
+	RefreshConfigOnly    bool
+	DryRun               bool
+	ImageProcessor       carvelhelpers.ImageOperationsImpl
 }
 
 // DownloadPluginBundle download the plugin bundle based on provided plugin inventory image
@@ -138,18 +138,22 @@ func (o *DownloadPluginBundleOptions) getSelectedPluginInfo() ([]*plugininventor
 
 	// If groups were not provided as argument select all available plugin groups and all available plugins
 	if len(o.Groups) == 0 && len(o.Plugins) == 0 {
-		selectedPluginGroups, err = pi.GetPluginGroups(plugininventory.PluginGroupFilter{IncludeHidden: true}) // Include the hidden plugin groups during plugin migration
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "unable to read all plugin groups from database")
-		}
-		selectedPluginEntries, err = pi.GetPlugins(&plugininventory.PluginInventoryFilter{IncludeHidden: true}) // Include the hidden plugins during plugin migration
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "unable to read all plugins from database")
-		}
-		if len(selectedPluginEntries) == 1 {
-			log.Infof("will be downloading the one plugin from: %s", o.PluginInventoryImage)
+		if o.RefreshConfigOnly {
+			log.Infof("will only be downloading the latest plugin inventory OCI image and central configuration data")
 		} else {
-			log.Infof("will be downloading the %d plugins from: %s", len(selectedPluginEntries), o.PluginInventoryImage)
+			selectedPluginGroups, err = pi.GetPluginGroups(plugininventory.PluginGroupFilter{IncludeHidden: true}) // Include the hidden plugin groups during plugin migration
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "unable to read all plugin groups from database")
+			}
+			selectedPluginEntries, err = pi.GetPlugins(&plugininventory.PluginInventoryFilter{IncludeHidden: true}) // Include the hidden plugins during plugin migration
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "unable to read all plugins from database")
+			}
+			if len(selectedPluginEntries) == 1 {
+				log.Infof("will be downloading the one plugin from: %s", o.PluginInventoryImage)
+			} else {
+				log.Infof("will be downloading the %d plugins from: %s", len(selectedPluginEntries), o.PluginInventoryImage)
+			}
 		}
 	} else {
 		// If groups were provided as argument select only provided plugin groups and

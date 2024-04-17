@@ -26,6 +26,7 @@ type downloadPluginBundleOptions struct {
 	tarFile                 string
 	groups                  []string
 	plugins                 []string
+	refreshConfigOnly       bool
 	dryRun                  bool
 }
 
@@ -64,6 +65,7 @@ to an internet-restricted environment. Please also see the "upload-bundle" comma
 				ToTar:                dpbo.tarFile,
 				Groups:               dpbo.groups,
 				Plugins:              dpbo.plugins,
+				RefreshConfigOnly:    dpbo.refreshConfigOnly,
 				DryRun:               dpbo.dryRun,
 				ImageProcessor:       carvelhelpers.NewImageOperationsImpl(),
 			}
@@ -85,12 +87,19 @@ to an internet-restricted environment. Please also see the "upload-bundle" comma
 	f.StringSliceVarP(&dpbo.plugins, "plugin", "", []string{}, "only download plugins matching specified pluginID. Format: name/name:version/name@target:version (can specify multiple)")
 	utils.PanicOnErr(downloadBundleCmd.RegisterFlagCompletionFunc("plugin", completePluginIDForBundleDownload))
 
+	f.BoolVarP(&dpbo.refreshConfigOnly, "refresh-configuration-only", "", false, "only refresh the central configuration data")
+
 	f.BoolVarP(&dpbo.dryRun, "dry-run", "", false, "perform a dry run by listing the images to download without actually downloading them")
 	_ = downloadBundleCmd.Flags().MarkHidden("dry-run")
 
 	// TODO(khouzam): Once using Cobra 1.8, we can use MarkFlagsOneRequired.
 	// We can then adjust the shell completion as it will be handled by cobra
 	downloadBundleCmd.MarkFlagsMutuallyExclusive("to-tar", "dry-run")
+
+	// The --refresh-configuration-only flag is only needed when the operator does not
+	// want to include any new plugin or plugin group in the bundle.
+	downloadBundleCmd.MarkFlagsMutuallyExclusive("group", "refresh-configuration-only")
+	downloadBundleCmd.MarkFlagsMutuallyExclusive("plugin", "refresh-configuration-only")
 
 	return downloadBundleCmd
 }
