@@ -64,8 +64,12 @@ func computeEndpointSHAForTanzuContext(ctx *configtypes.Context) string {
 	if projectID != "" {
 		projectVal = projectID
 	}
+	endpoint := ""
+	if ctx.GlobalOpts != nil {
+		endpoint = ctx.GlobalOpts.Endpoint
+	}
 	// returns SHA256 of concatenated string of Endpoint and orgId/Project/SpaceName
-	return hashString(ctx.GlobalOpts.Endpoint +
+	return hashString(endpoint +
 		stringValue(ctx.AdditionalMetadata[configlib.OrgIDKey]) +
 		projectVal +
 		stringValue(ctx.AdditionalMetadata[configlib.SpaceNameKey]) +
@@ -75,6 +79,9 @@ func computeEndpointSHAForTanzuContext(ctx *configtypes.Context) string {
 func computeEndpointSHAForTMCContext(ctx *configtypes.Context) string {
 	// returns SHA256 of concatenated string of Endpoint and RefreshToken
 	// (usually RefreshToken is valid for long duration, hence it is considered for TMC Context uniqueness for telemetry)
+	if ctx.GlobalOpts == nil {
+		return ""
+	}
 	return hashString(ctx.GlobalOpts.Endpoint + ctx.GlobalOpts.Auth.RefreshToken)
 }
 

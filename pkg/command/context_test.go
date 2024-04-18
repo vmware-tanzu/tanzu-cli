@@ -446,6 +446,25 @@ clusterOpts:
 			Expect(err.Error()).To(ContainSubstring("context test-tanzu-context not found"))
 
 		})
+		It("should delete context successfully and should not return error if kubeconfig details are missing in the context", func() {
+			c, err := config.GetContext("test-tanzu-context")
+			Expect(err).To(BeNil())
+			c.ClusterOpts = nil
+
+			err = config.DeleteContext(c.Name)
+			Expect(err).To(BeNil())
+
+			err = config.AddContext(c, false)
+			Expect(err).To(BeNil())
+
+			err = deleteCtx(cmd, []string{"test-tanzu-context"})
+			Expect(err).To(BeNil())
+
+			err = getCtx(cmd, []string{"test-tanzu-context"})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("context test-tanzu-context not found"))
+
+		})
 	})
 
 	Describe("tanzu context get-token", func() {
