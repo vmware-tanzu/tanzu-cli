@@ -7,7 +7,6 @@
 package globalinit
 
 import (
-	"fmt"
 	"io"
 
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -49,10 +48,6 @@ func InitializationRequired() bool {
 
 // PerformInitializations run each initializer which which the trigger function returns true.
 func PerformInitializations(outStream io.Writer) error {
-	if !InitializationRequired() {
-		return fmt.Errorf("no initializations required")
-	}
-
 	var errorList []error
 	for _, i := range initializers {
 		if i.triggerFunc() {

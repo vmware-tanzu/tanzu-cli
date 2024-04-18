@@ -345,8 +345,7 @@ func checkGlobalInit(cmd *cobra.Command) {
 
 		err := globalinit.PerformInitializations(outStream)
 		if err != nil {
-			fmt.Fprintln(outStream, "The initialization encountered an error but the CLI remains functional.")
-			log.V(6).Warningf("Error initializing CLI: %v", err)
+			log.Warningf("The initialization encountered the following error: %v", err)
 		}
 
 		fmt.Fprintln(outStream)

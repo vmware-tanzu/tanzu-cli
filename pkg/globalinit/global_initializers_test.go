@@ -122,7 +122,7 @@ func TestPerformInitializations(t *testing.T) {
 			initFuncs: []func(io.Writer) error{
 				func(w io.Writer) error { fmt.Fprintln(w, "1"); return nil },
 			},
-			expectError:   true,
+			expectError:   false,
 			unexpectedOut: []string{"1", "2", "3"},
 		},
 		{
@@ -152,7 +152,7 @@ func TestPerformInitializations(t *testing.T) {
 				func(w io.Writer) error { fmt.Fprintln(w, "2"); return nil },
 				func(w io.Writer) error { fmt.Fprintln(w, "3"); return nil },
 			},
-			expectError:   true,
+			expectError:   false,
 			unexpectedOut: []string{"1", "2", "3"},
 		},
 		{
@@ -182,6 +182,21 @@ func TestPerformInitializations(t *testing.T) {
 			expectError:   true,
 			expectedOut:   []string{"1"},
 			unexpectedOut: []string{"2", "3"},
+		},
+		{
+			test: "init success and error",
+			triggerFuncs: []func() bool{
+				func() bool { return true },
+				func() bool { return true },
+				func() bool { return true },
+			},
+			initFuncs: []func(io.Writer) error{
+				func(w io.Writer) error { fmt.Fprintln(w, "1"); return nil },
+				func(w io.Writer) error { fmt.Fprintln(w, "2"); return fmt.Errorf("error") },
+				func(w io.Writer) error { fmt.Fprintln(w, "3"); return nil },
+			},
+			expectError: true,
+			expectedOut: []string{"1", "2", "3"},
 		},
 	}
 	for _, spec := range tests {

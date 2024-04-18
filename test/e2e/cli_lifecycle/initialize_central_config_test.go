@@ -41,41 +41,27 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Initialize-central-config
 			Expect(errStream).ToNot(ContainSubstring(initErrorStr))
 		})
 		It("initialization when config file is missing", func() {
-			err := deleteCentralConfigFile()
-			Expect(err).To(BeNil())
+			// We test the initializer twice to make sure that even if it ran once,
+			// it will run again if the central config file is missing again.
+			// This is to simulate if an older CLI version is used
+			// after the new CLI was run and the cache was cleaned up.
+			for i := 0; i < 2; i++ {
+				err := deleteCentralConfigFile()
+				Expect(err).To(BeNil())
 
-			// Run any command to see that the global initializer is triggered
-			_, _, errStream, err := tf.PluginCmd.ListPlugins()
-			Expect(err).To(BeNil())
-			Expect(errStream).To(ContainSubstring(initializationStr))
-			Expect(errStream).ToNot(ContainSubstring(initErrorStr))
+				// Run any command to see that the global initializer is triggered
+				_, _, errStream, err := tf.PluginCmd.ListPlugins()
+				Expect(err).To(BeNil())
+				Expect(errStream).To(ContainSubstring(initializationStr))
+				Expect(errStream).ToNot(ContainSubstring(initErrorStr))
 
-			// Run the command again to see that the global initializer is not triggered
-			// since the cache was fixed
-			_, _, errStream, err = tf.PluginCmd.ListPlugins()
-			Expect(err).To(BeNil())
-			Expect(errStream).ToNot(ContainSubstring(initializationStr))
-			Expect(errStream).ToNot(ContainSubstring(initErrorStr))
-		})
-		It("initialization when config file is missing a second time", func() {
-			// Test that if the central config file is missing again, the global initializer
-			// is triggered again.  This is to simulate if an older CLI version is used
-			// after the cache was cleaned up.
-			err := deleteCentralConfigFile()
-			Expect(err).To(BeNil())
-
-			// Run any command to see that the global initializer is triggered
-			_, _, errStream, err := tf.PluginCmd.ListPlugins()
-			Expect(err).To(BeNil())
-			Expect(errStream).To(ContainSubstring(initializationStr))
-			Expect(errStream).ToNot(ContainSubstring(initErrorStr))
-
-			// Run the command again to see that the global initializer is not triggered
-			// since the cache was fixed
-			_, _, errStream, err = tf.PluginCmd.ListPlugins()
-			Expect(err).To(BeNil())
-			Expect(errStream).ToNot(ContainSubstring(initializationStr))
-			Expect(errStream).ToNot(ContainSubstring(initErrorStr))
+				// Run the command again to see that the global initializer is not triggered
+				// since the cache was fixed
+				_, _, errStream, err = tf.PluginCmd.ListPlugins()
+				Expect(err).To(BeNil())
+				Expect(errStream).ToNot(ContainSubstring(initializationStr))
+				Expect(errStream).ToNot(ContainSubstring(initErrorStr))
+			}
 		})
 	})
 })
