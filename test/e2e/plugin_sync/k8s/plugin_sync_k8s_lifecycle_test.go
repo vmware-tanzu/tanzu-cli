@@ -316,7 +316,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 
 		const (
 			ContextActivated         = "Successfully activated context '%s'"
-			PluginWillBeInstalled    = "Installing following plugins recommended by the context '%s':"
+			PluginWillBeInstalled    = "Installing the following plugins recommended by context '%s':"
 			PluginsTableHeaderRegExp = "NAME\\s+TARGET\\s+INSTALLING"
 			PluginsRow               = "%s\\s+%s\\s+%s"
 			PluginInstalledRegExp    = "Installed plugin '%s:.+' with target '%s'|Reinitialized plugin '%s:.+' with target '%s'"
