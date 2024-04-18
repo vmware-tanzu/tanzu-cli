@@ -655,8 +655,11 @@ func globalTanzuLogin(c *configtypes.Context, generateContextNameFunc func(orgNa
 	}
 
 	// update the current context in the kubeconfig file after creating the context
-	if err := syncCurrentKubeContext(c); err != nil {
-		return errors.Wrap(err, "unable to update current kube context")
+	if c.ClusterOpts != nil {
+		err = syncCurrentKubeContext(c)
+		if err != nil {
+			return errors.Wrap(err, "unable to update current kube context")
+		}
 	}
 
 	// format
@@ -696,6 +699,9 @@ func getCSPOrganizationName(c *configtypes.Context, claims *csp.Claims) (string,
 	if staging {
 		issuer = csp.StgIssuer
 	}
+	if c.GlobalOpts == nil {
+		return "", errors.New("invalid context %q. Missing authorization fields")
+	}
 	orgName, err := csp.GetOrgNameFromOrgID(claims.OrgID, c.GlobalOpts.Auth.AccessToken, issuer)
 	if err != nil {
 		return "", err
@@ -707,6 +713,9 @@ func updateContextWithTanzuKubeconfig(c *configtypes.Context, ep, orgID, epCACer
 	kubeCfg, kubeCtx, orgEndpoint, err := tanzuauth.GetTanzuKubeconfig(c, ep, orgID, epCACertPath, skipTLSVerify)
 	if err != nil {
 		return err
+	}
+	if c.ClusterOpts == nil {
+		c.ClusterOpts = &configtypes.ClusterServer{}
 	}
 	c.ClusterOpts.Path = kubeCfg
 	c.ClusterOpts.Context = kubeCtx
@@ -942,7 +951,6 @@ func k8sLogin(c *configtypes.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "unable to update current kube context")
 		}
-
 		log.Successf("successfully created a kubernetes context using the kubeconfig %s", c.ClusterOpts.Path)
 		return nil
 	}
@@ -1168,6 +1176,9 @@ func deleteKubeconfigContext(ctx *configtypes.Context) {
 	// (Since the kubernetes context type can have kube context provided by the user, it may not be
 	// desired outcome for user if CLI deletes/cleanup kubeconfig provided by the user.)
 	if ctx.ContextType == configtypes.ContextTypeTanzu || isPinnipedEndpointContext(ctx) {
+		if ctx.ClusterOpts == nil {
+			return
+		}
 		log.Infof("Deleting kubeconfig context '%s' from the file '%s'", ctx.ClusterOpts.Context, ctx.ClusterOpts.Path)
 		if err := kubecfg.DeleteContextFromKubeConfig(ctx.ClusterOpts.Path, ctx.ClusterOpts.Context); err != nil {
 			log.Warningf("Failed to delete the kubeconfig context '%s' from the file '%s'", ctx.ClusterOpts.Context, ctx.ClusterOpts.Path)
@@ -1253,6 +1264,7 @@ func useCtx(cmd *cobra.Command, args []string) error { //nolint:gocyclo
 	return nil
 }
 
+// pre-reqs context.ClusterOpts is not nil
 func syncCurrentKubeContext(ctx *configtypes.Context) error {
 	if skipSync, _ := strconv.ParseBool(os.Getenv(constants.SkipUpdateKubeconfigOnContextUse)); skipSync {
 		return nil
@@ -1371,7 +1383,9 @@ func displayContextListOutputListView(cfg *configtypes.ClientConfig, writer io.W
 		var ep, path, context string
 		switch ctx.ContextType {
 		case configtypes.ContextTypeTMC:
-			ep = ctx.GlobalOpts.Endpoint
+			if ctx.GlobalOpts != nil {
+				ep = ctx.GlobalOpts.Endpoint
+			}
 		default:
 			if ctx.ClusterOpts != nil {
 				ep = ctx.ClusterOpts.Endpoint
@@ -1523,6 +1537,9 @@ func getToken(cmd *cobra.Command, args []string) error {
 	if ctx.ContextType != configtypes.ContextTypeTanzu {
 		return errors.Errorf("context %q is not of type tanzu", name)
 	}
+	if ctx.GlobalOpts == nil {
+		return errors.Errorf("invalid context %q . Missing the authorization fields in the context", name)
+	}
 	if csp.IsExpired(ctx.GlobalOpts.Auth.Expiration) {
 		_, err := csp.GetToken(&ctx.GlobalOpts.Auth)
 		if err != nil {
@@ -1651,6 +1668,9 @@ func validateActiveResourceOptions() error {
 }
 
 func updateTanzuContextKubeconfig(cliContext *configtypes.Context, project, spaceName, clustergroupName string) error {
+	if cliContext.ClusterOpts == nil {
+		return errors.New("invalid context. Kubeconfig details missing in the context")
+	}
 	kcfg, err := clientcmd.LoadFromFile(cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "unable to load kubeconfig")
@@ -1669,6 +1689,7 @@ func updateTanzuContextKubeconfig(cliContext *configtypes.Context, project, spac
 	return nil
 }
 
+// pre-reqs context.ClusterOpts is not nil
 func prepareClusterServerURL(context *configtypes.Context, project, spaceName, clustergroupName string) string {
 	serverURL := context.ClusterOpts.Endpoint
 	if project == "" {
