@@ -324,24 +324,36 @@ Switching to another context:
 [i] Successfully installed all required plugins
 
 > tanzu plugin list
-Standalone Plugins
-  NAME                DESCRIPTION                                                        TARGET      VERSION  STATUS
-  isolated-cluster    Prepopulating images/bundle for internet-restricted environments   global      v0.28.0  installed
-  pinniped-auth       Pinniped authentication operations (usually not directly invoked)  global      v0.28.0  installed
-  management-cluster  Kubernetes management cluster operations                           kubernetes  v0.28.0  installed
-  package             Tanzu package management                                           kubernetes  v0.28.0  installed
-  secret              Tanzu secret management                                            kubernetes  v0.28.0  installed
-  telemetry           configure cluster-wide settings for vmware tanzu telemetry         kubernetes  v0.28.0  installed
+  NAME                DESCRIPTION                                                        TARGET      INSTALLED  RECOMMENDED  STATUS
+  cluster             Kubernetes cluster operations                                      kubernetes  v0.28.0    v0.28.0      installed
+  feature             Operate on features and featuregates                               kubernetes  v0.28.0    v0.28.0      installed
+  kubernetes-release  Kubernetes release operations                                      kubernetes  v0.28.0    v0.28.0      installed
+  isolated-cluster    Prepopulating images/bundle for internet-restricted environments   global      v0.28.0                 installed
+  pinniped-auth       Pinniped authentication operations (usually not directly invoked)  global      v0.28.0                 installed
+  management-cluster  Kubernetes management cluster operations                           kubernetes  v0.28.0                 installed
+  package             Tanzu package management                                           kubernetes  v0.28.0                 installed
+  secret              Tanzu secret management                                            kubernetes  v0.28.0                 installed
+  telemetry           configure cluster-wide settings for vmware tanzu telemetry         kubernetes  v0.28.0                 installed
 
-Plugins from Context:  tkg-mgmt-vc
-  NAME                DESCRIPTION                           TARGET      VERSION  STATUS
-  cluster             Kubernetes cluster operations         kubernetes  v0.28.0  installed
-  feature             Operate on features and featuregates  kubernetes  v0.28.0  installed
-  kubernetes-release  Kubernetes release operations         kubernetes  v0.28.0  installed
 ```
 
+The way this type of plugin installation works is that The context you
+create or activate can recommend a list of plugins and their versions.
+When you create or activate a context, the Tanzu CLI fetches the list of
+recommended plugins and automatically tries to install these plugins to
+your machine. A `RECOMMENDED` column is shown as part of the
+`tanzu plugin list` output that specifies which plugins are recommended
+by the active context.
+
+For some reason, the auto-installation of the recommended plugins fails while
+creating or activating a context or an existing active context start recommending
+some newer versions of the plugins, you can check that with the `tanzu plugin list`
+output with the `STATUS` field mentioning `update needed` and a newer version in
+the `RECOMMENDED` column. You can run the `tanzu plugin sync` command
+to automatically install the recommended version of the plugins.
+
 To learn more about the plugins installed from context, please refer to
-[context-scoped plugin installation](../full/context-scoped-plugins.md).
+[context recommended plugin installation](../full/context-recommended-plugins.md).
 
 ## Notes to users of previous versions of the Tanzu CLI
 
