@@ -862,6 +862,7 @@ func TestGlobalInit(t *testing.T) {
 
 			// Setup the specified initializer trigger
 			globalinit.RegisterInitializer(
+				"initializer",
 				func() bool {
 					return spec.trigger
 				},

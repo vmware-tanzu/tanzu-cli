@@ -29,7 +29,7 @@ import (
 // present in the cache and if not, it invalidates the cache.
 
 func init() {
-	globalinit.RegisterInitializer(triggerForInventoryCacheInvalidation, invalidateInventoryCache)
+	globalinit.RegisterInitializer("Central Config Initializer", triggerForInventoryCacheInvalidation, invalidateInventoryCache)
 }
 
 // triggerForInventoryCacheInvalidation returns true if the central_config.yaml file is missing

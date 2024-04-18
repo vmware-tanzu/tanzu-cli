@@ -7,12 +7,18 @@
 package globalinit
 
 import (
+	"fmt"
 	"io"
 
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
+
+	"github.com/pkg/errors"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 type initializer struct {
+	name string
 	// The trigger functions are kept separate from the initialization functions
 	// for a couple of reasons:
 	// 1. The trigger functions can be used first to determine if the initialization
@@ -32,8 +38,8 @@ var (
 // The trigger function is used to determine if the initialization function should be run.
 // The initialization function is the function that will be run if the trigger function returns true.
 // The set of initializer triggers is checked whenever the CLI is run.
-func RegisterInitializer(trigger func() bool, initialization func(writer io.Writer) error) {
-	initializers = append(initializers, initializer{triggerFunc: trigger, initializationFunc: initialization})
+func RegisterInitializer(name string, trigger func() bool, initialization func(writer io.Writer) error) {
+	initializers = append(initializers, initializer{name: name, triggerFunc: trigger, initializationFunc: initialization})
 }
 
 // InitializationRequired checks if any of the registered initializers should be triggered.
@@ -51,8 +57,9 @@ func PerformInitializations(outStream io.Writer) error {
 	var errorList []error
 	for _, i := range initializers {
 		if i.triggerFunc() {
+			log.V(7).Infof("Running the '%s' global initializer", i.name)
 			if err := i.initializationFunc(outStream); err != nil {
-				errorList = append(errorList, err)
+				errorList = append(errorList, errors.Wrap(err, fmt.Sprintf("error running the '%s' global initializer", i.name)))
 			}
 		}
 	}

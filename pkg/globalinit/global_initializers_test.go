@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const initializerName = "my initializer"
+
 func TestRegisterInitializer(t *testing.T) {
 	tests := []struct {
 		test               string
@@ -30,10 +32,11 @@ func TestRegisterInitializer(t *testing.T) {
 
 			// Reset any previous initializers
 			initializers = nil
-
-			RegisterInitializer(spec.triggerFunc, spec.initializationFunc)
+			RegisterInitializer(initializerName, spec.triggerFunc, spec.initializationFunc)
 
 			assert.Equal(1, len(initializers))
+			assert.Equal(initializerName, initializers[0].name)
+
 			addr1 := fmt.Sprintf("%p", initializers[0].triggerFunc)
 			addr2 := fmt.Sprintf("%p", spec.triggerFunc)
 			assert.Equal(addr1, addr2)
@@ -85,7 +88,7 @@ func TestInitializationRequired(t *testing.T) {
 			initializers = nil
 
 			for _, triggerFunc := range spec.triggerFuncs {
-				RegisterInitializer(triggerFunc, func(io.Writer) error { return nil })
+				RegisterInitializer(initializerName, triggerFunc, func(io.Writer) error { return nil })
 			}
 
 			assert.Equal(spec.expected, InitializationRequired())
@@ -207,7 +210,7 @@ func TestPerformInitializations(t *testing.T) {
 			initializers = nil
 
 			for i := range spec.initFuncs {
-				RegisterInitializer(spec.triggerFuncs[i], spec.initFuncs[i])
+				RegisterInitializer(initializerName, spec.triggerFuncs[i], spec.initFuncs[i])
 			}
 
 			var buf bytes.Buffer
