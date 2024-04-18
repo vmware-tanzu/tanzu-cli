@@ -1073,35 +1073,6 @@ func doDeletePluginsFromCatalog(plugins []cli.PluginInfo) error {
 	return kerrors.NewAggregate(errList)
 }
 
-// SyncPlugins will install the plugins required by the current contexts.
-// If the central-repo is disabled, all discovered plugins will be installed.
-func SyncPlugins() error {
-	log.Info("Checking for required plugins...")
-	errList := make([]error, 0)
-	// We no longer sync standalone plugins.
-	// With a centralized approach to discovering plugins, synchronizing
-	// standalone plugins would install ALL plugins available for ALL
-	// products.
-	// Instead, we only synchronize any plugins that are specifically specified
-	// by the contexts.
-	//
-	// Note: to install all plugins for a specific product, plugin groups will
-	// need to be used.
-	plugins, err := DiscoverServerPlugins()
-	if err != nil {
-		errList = append(errList, err)
-	}
-
-	for i := range plugins {
-		err = InstallStandalonePlugin(plugins[i].Name, plugins[i].RecommendedVersion, plugins[i].Target)
-		if err != nil {
-			errList = append(errList, err)
-		}
-	}
-
-	return kerrors.NewAggregate(errList)
-}
-
 func DiscoverPluginsForContextType(contextType configtypes.ContextType) ([]discovery.Discovered, error) {
 	ctx, err := configlib.GetActiveContext(contextType)
 	if err != nil {

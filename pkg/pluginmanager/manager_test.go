@@ -756,13 +756,6 @@ func Test_SyncPlugins(t *testing.T) {
 		assertions.NotNil(p)
 		assertions.Equal(common.PluginStatusNotInstalled, p.Status)
 	}
-
-	// Sync all available plugins
-	err = SyncPlugins()
-	assertions.NotNil(err)
-	// There is an error for the kubernetes discovery since we don't have a cluster
-	// but other server plugins will be found, so we use those
-	assertions.Contains(err.Error(), `Failed to load Kubeconfig file from "config"`)
 }
 
 func Test_setAvailablePluginsStatus(t *testing.T) {

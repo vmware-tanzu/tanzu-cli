@@ -275,7 +275,7 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 
 	// Sync all required plugins
 	if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
-		log.Warningf("unable to automatically sync the plugins recommended by the active context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
+		log.Warningf("unable to automatically sync the plugins recommended by the new context. Please run 'tanzu plugin sync' to sync plugins manually, error: '%v'", err.Error())
 	}
 	return nil
 }
@@ -306,12 +306,12 @@ func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType,
 	}
 
 	if len(pluginsNeedToBeInstalled) == 0 {
-		log.Success("All recommended plugins are already installed.")
+		log.Success("All recommended plugins are already installed and up-to-date.")
 		return nil
 	}
 
 	errList := make([]error, 0)
-	log.Infof("Installing following plugins recommended by the context '%s':", ctxName)
+	log.Infof("Installing the following plugins recommended by context '%s':", ctxName)
 	displayToBeInstalledPluginsAsTable(plugins, cmd.ErrOrStderr())
 	for i := range pluginsNeedToBeInstalled {
 		err = pluginmanager.InstallStandalonePlugin(pluginsNeedToBeInstalled[i].Name, pluginsNeedToBeInstalled[i].RecommendedVersion, pluginsNeedToBeInstalled[i].Target)
@@ -329,8 +329,8 @@ func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType,
 
 // displayToBeInstalledPluginsAsTable takes a list of plugins and displays the plugin info as a table
 func displayToBeInstalledPluginsAsTable(plugins []discovery.Discovered, writer io.Writer) {
-	outputPlugins := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Installed", "Recommended")
-	outputPlugins.MarkDynamicKeys("Installed")
+	outputPlugins := component.NewOutputWriterWithOptions(writer, outputFormat, []component.OutputWriterOption{}, "Name", "Target", "Current", "Installing")
+	outputPlugins.MarkDynamicKeys("Current")
 	for i := range plugins {
 		if plugins[i].Status == common.PluginStatusNotInstalled || plugins[i].Status == common.PluginStatusUpdateAvailable {
 			outputPlugins.AddRow(plugins[i].Name, plugins[i].Target, plugins[i].InstalledVersion, plugins[i].RecommendedVersion)
@@ -1250,7 +1250,7 @@ func useCtx(cmd *cobra.Command, args []string) error { //nolint:gocyclo
 
 	// Sync all required plugins
 	if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
-		log.Warningf("unable to automatically sync the plugins recommended by the active context. Please run 'tanzu plugin sync' command to sync plugins manually, error: '%v'", err.Error())
+		log.Warningf("unable to automatically sync the plugins recommended by the active context. Please run 'tanzu plugin sync' to sync plugins manually, error: '%v'", err.Error())
 	}
 	return nil
 }

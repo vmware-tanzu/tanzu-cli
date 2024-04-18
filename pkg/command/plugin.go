@@ -69,6 +69,7 @@ func newPluginCmd() *cobra.Command {
 	listPluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
 	utils.PanicOnErr(listPluginCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
 	listPluginCmd.Flags().BoolVar(&showAllColumns, "wide", false, "display additional columns for plugins")
+	utils.PanicOnErr(listPluginCmd.Flags().MarkHidden("wide"))
 
 	describePluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
 	utils.PanicOnErr(describePluginCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
@@ -172,6 +173,7 @@ func newDescribePluginCmd() *cobra.Command {
 				defer fmt.Fprintln(cmd.OutOrStdout())
 			}
 			output := component.NewOutputWriterWithOptions(cmd.OutOrStdout(), outputFormat, []component.OutputWriterOption{}, "name", "version", "status", "target", "description", "installationPath")
+
 			if len(args) != 1 {
 				return fmt.Errorf("must provide one plugin name as a positional argument")
 			}
@@ -451,9 +453,11 @@ func syncPlugins(cmd *cobra.Command) error {
 	}
 
 	for contextType, context := range contextMap {
-		err = syncContextPlugins(cmd, contextType, context.Name)
-		if err != nil {
-			errList = append(errList, err)
+		if strings.TrimSpace(context.Name) != "" {
+			err = syncContextPlugins(cmd, contextType, context.Name)
+			if err != nil {
+				errList = append(errList, err)
+			}
 		}
 	}
 	return kerrors.NewAggregate(errList)
@@ -466,6 +470,7 @@ type pluginListInfo struct {
 	installed   string
 	recommended string
 	status      string
+	contextName string // used only to specify which context recommends the plugin
 	active      bool
 }
 
@@ -507,7 +512,7 @@ func displayInstalledPlugins(installedPlugins []cli.PluginInfo, recommendedConte
 			active:      pluginsupplier.IsPluginActive(&installedPlugins[index]),
 		}
 		if p.recommended != "" && p.installed != p.recommended {
-			p.status = common.PluginStatusRecommendUpdate
+			p.status = "update needed"
 			pluginSyncRequired = true
 		}
 		plugins = append(plugins, p)
@@ -520,7 +525,8 @@ func displayInstalledPlugins(installedPlugins []cli.PluginInfo, recommendedConte
 				target:      string(recommendedContextPlugins[index].Target),
 				installed:   "",
 				recommended: recommendedContextPlugins[index].RecommendedVersion,
-				status:      common.PluginStatusRecommendInstall,
+				status:      common.PluginStatusNotInstalled,
+				contextName: recommendedContextPlugins[index].ContextName,
 				active:      false,
 			}
 			plugins = append(plugins, p)
@@ -539,12 +545,15 @@ func displayInstalledPlugins(installedPlugins []cli.PluginInfo, recommendedConte
 		outputPluginWriter.SetKeys(columnsNames...)
 		outputPluginWriter.MarkDynamicKeys("Recommended") // Marking this column as dynamic so that it will only be shown if at least one row is non-empty
 		for index := range plugins {
+			// Output writer will ignore and not show additional row data if the row has more data compared to defined keys(column headers).
+			// So in this case if showAllColumns=false than last value for row (plugins[index].active) will not be shown. So it is safe to provide
+			// all values to the Row.
 			outputPluginWriter.AddRow(plugins[index].name, plugins[index].description, plugins[index].target, plugins[index].installed, plugins[index].recommended, plugins[index].status, plugins[index].active)
 		}
 	} else {
 		outputPluginWriter.SetKeys("Name", "Description", "Target", "Installed", "Recommended", "Status", "Active", "Context", "Version") // Add 'Context' and 'Version' fields for backwards compatibility
 		for index := range plugins {
-			outputPluginWriter.AddRow(plugins[index].name, plugins[index].description, plugins[index].target, plugins[index].installed, plugins[index].recommended, plugins[index].status, plugins[index].active, "", plugins[index].installed)
+			outputPluginWriter.AddRow(plugins[index].name, plugins[index].description, plugins[index].target, plugins[index].installed, plugins[index].recommended, plugins[index].status, plugins[index].active, plugins[index].contextName, plugins[index].installed)
 		}
 	}
 

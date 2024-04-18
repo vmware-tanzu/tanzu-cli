@@ -189,7 +189,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 				Expect(err).To(BeNil(), "should not get any error for plugin list")
 
 				uninstalledPluginInfo := f.GetGivenPluginFromTheGivenPluginList(recommendedPluginsList, pluginToUninstall)
-				Expect(uninstalledPluginInfo.Status).To(Equal(f.RecommendInstall), "uninstalled plugin should be listed as 'install recommended'")
+				Expect(uninstalledPluginInfo.Status).To(Equal(f.NotInstalled), "uninstalled plugin should be listed as 'not installed'")
 				Expect(uninstalledPluginInfo.Recommended).To(Equal(pluginToUninstall.Version), "uninstalled plugin should also specify correct recommended column")
 			} else {
 				// fail the test case if at least two plugins are not available in the mock response

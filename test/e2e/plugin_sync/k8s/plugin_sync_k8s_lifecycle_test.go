@@ -180,7 +180,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			recommendedInstalledPlugins, err = tf.PluginCmd.ListRecommendedPluginsFromActiveContext(true)
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 			for i := range recommendedInstalledPlugins {
-				Expect(recommendedInstalledPlugins[i].Status).To(Equal(f.RecommendUpdate), "all installed context-scoped plugin status should show 'update recommended'")
+				Expect(recommendedInstalledPlugins[i].Status).To(Equal(f.UpdateNeeded), "all installed context-scoped plugin status should show 'update needed'")
 			}
 
 			_, _, err = tf.PluginCmd.Sync()
@@ -207,7 +207,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 			Expect(err).To(BeNil(), "should not get any error for plugin list")
 
 			uninstalledPluginInfo := f.GetGivenPluginFromTheGivenPluginList(recommendedPluginsList, pluginToUninstall)
-			Expect(uninstalledPluginInfo.Status).To(Equal(f.RecommendInstall), "uninstalled plugin should be listed as 'install recommended'")
+			Expect(uninstalledPluginInfo.Status).To(Equal(f.NotInstalled), "uninstalled plugin should be listed as 'not installed'")
 			Expect(uninstalledPluginInfo.Recommended).To(Equal(pluginToUninstall.Version), "uninstalled plugin should also specify correct recommended column")
 
 			_, _, err = tf.PluginCmd.Sync()
@@ -317,7 +317,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-sync-lifecycle]", func() {
 		const (
 			ContextActivated         = "Successfully activated context '%s'"
 			PluginWillBeInstalled    = "Installing following plugins recommended by the context '%s':"
-			PluginsTableHeaderRegExp = "NAME\\s+TARGET\\s+RECOMMENDED"
+			PluginsTableHeaderRegExp = "NAME\\s+TARGET\\s+INSTALLING"
 			PluginsRow               = "%s\\s+%s\\s+%s"
 			PluginInstalledRegExp    = "Installed plugin '%s:.+' with target '%s'|Reinitialized plugin '%s:.+' with target '%s'"
 		)

@@ -156,7 +156,7 @@ func (po *pluginCmdOps) ListRecommendedPluginsFromActiveContext(installedOnly bo
 	for i := range plugins {
 		if plugins[i].Recommended != "" {
 			if installedOnly {
-				if plugins[i].Status == Installed || plugins[i].Status == UpdateAvailable || plugins[i].Status == RecommendUpdate {
+				if plugins[i].Status == Installed || plugins[i].Status == UpdateAvailable || plugins[i].Status == UpdateNeeded {
 					recommendedPlugins = append(recommendedPlugins, plugins[i])
 				}
 			} else {

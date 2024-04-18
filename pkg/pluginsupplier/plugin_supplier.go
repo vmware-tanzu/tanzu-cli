@@ -54,6 +54,17 @@ func FilterPluginsByActiveContextType(plugins []cli.PluginInfo) (result []cli.Pl
 }
 
 // IsPluginActive returns true if specified plugin is active
+//
+// Plugin being activated means it is available as Tanzu CLI commands.
+// Some plugins are activated conditionally based on a the plugin descriptor.
+// If plugin is not active, even if the plugin is installed, it is not
+// available as the Tanzu CLI commands for users to use.
+//
+// For example: If PluginDescription.SupportedContextType is
+// specified for the plugin, the plugin is only active
+// if the SupportedContextType mentioned with PluginDescription is
+// active in Tanzu CLI contexts.
+// Reference: https://github.com/vmware-tanzu/tanzu-plugin-runtime/blob/main/plugin/types.go#L117
 func IsPluginActive(pi *cli.PluginInfo) bool {
 	if len(pi.SupportedContextType) == 0 {
 		return true
