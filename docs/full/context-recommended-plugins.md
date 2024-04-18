@@ -42,7 +42,7 @@ Plugin availability is solely dependent on the configured discovery sources in t
 tanzu configuration file. Each discovery source points to a plugin repository
 which can contain one or more plugins.
 
-## Context Recommended Plugins
+## Context-Recommended Plugins
 
 As mentioned above in the abstract section, there might be a scenario when a user
 is working with multiple contexts at a time and wants to automatically select the

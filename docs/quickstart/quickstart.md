@@ -337,7 +337,7 @@ Switching to another context:
 
 ```
 
-The way this type of plugin installation works is that The context you
+The way this type of plugin installation works is that the context you
 create or activate can recommend a list of plugins and their versions.
 When you create or activate a context, the Tanzu CLI fetches the list of
 recommended plugins and automatically tries to install these plugins to
@@ -345,8 +345,8 @@ your machine. A `RECOMMENDED` column is shown as part of the
 `tanzu plugin list` output that specifies which plugins are recommended
 by the active context.
 
-For some reason, the auto-installation of the recommended plugins fails while
-creating or activating a context or an existing active context start recommending
+If for some reason the auto-installation of the recommended plugins fails while
+creating or activating a context or an existing active context starts recommending
 some newer versions of the plugins, you can check that with the `tanzu plugin list`
 output with the `STATUS` field mentioning `update needed` and a newer version in
 the `RECOMMENDED` column. You can run the `tanzu plugin sync` command

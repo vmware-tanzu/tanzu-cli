@@ -82,8 +82,8 @@ Below is the list of these variables:
 | `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` | Specifies test plugin repositories to use as a supplement to the production Central Repository of plugins. Ignored if `TANZU_CLI_PRIVATE_PLUGIN_DISCOVERY_IMAGES` is set. | Comma-separated list of test plugin repository URIs| |
 | `TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_NAME` | Override the default name (`vmware-tanzucli/essentials`) of the Essential Plugins group.  Should not be needed. | Group name |
 | `TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_VERSION` | Specify a fixed version to use for the Essential Plugins group instead of the latest.  Should not be needed. | Group version |
-| `TANZU_CLI_DEACTIVATE_AUTO_INSTALLATION_OF_CONTEXT_RECOMMENDED_PLUGINS` | Deactivates the auto-installation of the context recommended plugins
-on `tanzu context create` or `tanzu context use` | `1` or `true` to use deactivated auto-installation, `0`, `false`, `""` or unset to auto-install |
+| `TANZU_CLI_SKIP_CONTEXT_RECOMMENDED_PLUGIN_INSTALLATION` | Skips the auto-installation of the context recommended plugins
+on `tanzu context create` or `tanzu context use` | `1` or `true` to skip auto-installation, `0`, `false`, `""` or unset to auto-install |
 | `TANZU_CLI_INCLUDE_DEACTIVATED_PLUGINS_TEST_ONLY` | Instruct the CLI to treat deactivated plugins as if they were active | `1` or `true` to use deactivated plugin, `0`, `false`, `""` or unset not to use them |
 | `TANZU_CLI_E2E_TEST_BINARY_PATH` | Specifies the CLI binary to use for E2E tests.  Defaults to `tanzu` as found on `$PATH`. | The path including the binary to the CLI  |
 | `TANZU_CLI_PLUGIN_DB_CACHE_REFRESH_THRESHOLD_SECONDS` | Overrides the default threshold at which point the plugin inventory will be automatically refreshed.  Default: 24 hours. | Threshold in seconds |

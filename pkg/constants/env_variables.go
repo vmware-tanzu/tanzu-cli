@@ -72,7 +72,7 @@ const (
 	// Note: THIS SHOULD ONLY BE USED FOR TEST AND NON PRODUCTION ENVIRONMENTS.
 	SkipPluginGroupVerificationOnPublish = "TANZU_CLI_SKIP_PLUGIN_GROUP_VERIFICATION_ON_PUBLISH"
 
-	// DeactivateAutoInstallOfContextRecommendedPlugins disables the auto-installation of the context recommended plugins
+	// SkipAutoInstallOfContextRecommendedPlugins skips the auto-installation of the context recommended plugins
 	// on `tanzu context create` or `tanzu context use`
-	DeactivateAutoInstallOfContextRecommendedPlugins = "TANZU_CLI_DEACTIVATE_AUTO_INSTALLATION_OF_CONTEXT_RECOMMENDED_PLUGINS"
+	SkipAutoInstallOfContextRecommendedPlugins = "TANZU_CLI_SKIP_CONTEXT_RECOMMENDED_PLUGIN_INSTALLATION"
 )
