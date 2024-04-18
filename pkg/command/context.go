@@ -282,6 +282,11 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 
 // syncContextPlugins syncs the plugins for the given context type
 func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType, ctxName string) error {
+	disablePluginSync, _ := strconv.ParseBool(os.Getenv(constants.DeactivateAutoInstallOfContextRecommendedPlugins))
+	if disablePluginSync {
+		return nil
+	}
+
 	plugins, err := pluginmanager.DiscoverPluginsForContextType(contextType)
 	if err != nil {
 		return err

@@ -71,4 +71,8 @@ const (
 	// in the plugin-group are available in the database or not.
 	// Note: THIS SHOULD ONLY BE USED FOR TEST AND NON PRODUCTION ENVIRONMENTS.
 	SkipPluginGroupVerificationOnPublish = "TANZU_CLI_SKIP_PLUGIN_GROUP_VERIFICATION_ON_PUBLISH"
+
+	// DeactivateAutoInstallOfContextRecommendedPlugins disables the auto-installation of the context recommended plugins
+	// on `tanzu context create` or `tanzu context use`
+	DeactivateAutoInstallOfContextRecommendedPlugins = "TANZU_CLI_DEACTIVATE_AUTO_INSTALLATION_OF_CONTEXT_RECOMMENDED_PLUGINS"
 )
