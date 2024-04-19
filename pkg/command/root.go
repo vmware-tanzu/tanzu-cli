@@ -25,6 +25,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/globalinit"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/lastversion"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/recommendedversion"
@@ -297,6 +298,16 @@ func newRootCmd() *cobra.Command {
 			// for any other logic below.
 			if !shouldSkipGlobalInit(cmd) {
 				checkGlobalInit(cmd)
+
+				// Store the last executed CLI version in the datastore.
+				// This can be useful for future features.
+				// This must be done after the global initialization so initializers can
+				// use the previously stored version if necessary.
+				//
+				// Note that we cannot run this in the PersistentPostRunE because if the command fails,
+				// the PersistentPostRunE will not be called.  This could lead to the global initialization
+				// running again on the next command execution.
+				lastversion.SetLastExecutedCLIVersion()
 			}
 
 			// Ensure mutual exclusion in current contexts just in case if any plugins with old

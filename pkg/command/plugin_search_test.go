@@ -11,9 +11,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
 func TestPluginSearch(t *testing.T) {
@@ -60,10 +57,6 @@ func TestPluginSearch(t *testing.T) {
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
-
-	featureArray := strings.Split(constants.FeatureContextCommand, ".")
-	err = config.SetFeature(featureArray[1], featureArray[2], "true")
-	assert.Nil(err)
 
 	defer func() {
 		os.Unsetenv("TANZU_CONFIG")

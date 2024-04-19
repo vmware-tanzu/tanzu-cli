@@ -6,6 +6,8 @@ package constants
 // This block is for global feature constants, to allow them to be used more broadly
 const (
 	// FeatureContextCommand determines whether to surface the context command. This is disabled by default.
+	// This feature flag is no longer used.  However, we keep it defined so that it can be used to know
+	// if an older CLI (< 1.3.0) was last executed.
 	FeatureContextCommand = "features.global.context-target-v2"
 
 	// FeaturePluginDiscoveryForTanzuContext determines whether to enable context-scoped plugin discovery for Tanzu context.
@@ -25,10 +27,5 @@ const (
 // mainstreaming the feature (with a default true value) under the flag name "features.global.foo-bar", as there will be
 // no conflict with previous installs (that have a false value for the entry "features.global.foo-bar-beta").
 var (
-	DefaultCliFeatureFlags = map[string]bool{
-		FeatureContextCommand: true,
-		// Do NOT include the test feature flag to disable the central repo.
-		// We don't want to publicize this feature flag.
-		// It defaults to false when not specified, which is what is needed.
-	}
+	DefaultCliFeatureFlags = map[string]bool{}
 )

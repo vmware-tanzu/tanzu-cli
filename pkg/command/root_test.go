@@ -19,6 +19,7 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
@@ -98,6 +99,7 @@ type testCLIEnvironment struct {
 	cacheDir     string
 	configFile   string
 	configFileNG string
+	dataStore    string
 	envVars      []string
 }
 
@@ -119,6 +121,9 @@ func setupTestCLIEnvironment(t *testing.T) testCLIEnvironment {
 
 	os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 	os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
+
+	tmpDataStoreFile, _ := os.CreateTemp("", "data-store.yaml")
+	os.Setenv("TEST_CUSTOM_DATA_STORE_FILE", tmpDataStoreFile.Name())
 
 	// Start each test with the defaults of the target commands
 	// and reset the help flag in case it was set
@@ -145,12 +150,15 @@ func setupTestCLIEnvironment(t *testing.T) testCLIEnvironment {
 		cacheDir:     dir,
 		configFile:   configFile.Name(),
 		configFileNG: configFileNG.Name(),
+		dataStore:    tmpDataStoreFile.Name(),
+
 		envVars: []string{
 			"TEST_CUSTOM_CATALOG_CACHE_DIR",
 			"TANZU_CONFIG",
 			"TANZU_CONFIG_NEXT_GEN",
 			"TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER",
 			"TANZU_CLI_EULA_PROMPT_ANSWER",
+			"TEST_CUSTOM_DATA_STORE_FILE",
 		},
 	}
 }
@@ -160,6 +168,7 @@ func tearDownTestCLIEnvironment(env testCLIEnvironment) {
 	os.RemoveAll(env.cacheDir)
 	os.RemoveAll(env.configFile)
 	os.RemoveAll(env.configFileNG)
+	os.RemoveAll(env.dataStore)
 
 	for _, envVar := range env.envVars {
 		os.Unsetenv(envVar)
@@ -891,6 +900,48 @@ func TestGlobalInit(t *testing.T) {
 				assert.NotContains(string(got), initString)
 				assert.NotContains(string(got), "The initialization encountered an error")
 			}
+		})
+	}
+}
+
+func TestSetLastVersion(t *testing.T) {
+	tests := []struct {
+		test            string
+		version         string
+		expectedVersion string
+	}{
+		{
+			test:            "set version to v1.2.3",
+			version:         "v1.2.3",
+			expectedVersion: "v1.2.3",
+		},
+	}
+
+	originalVersion := buildinfo.Version
+	defer func() {
+		buildinfo.Version = originalVersion
+	}()
+
+	for _, spec := range tests {
+		env := setupTestCLIEnvironment(t)
+		defer tearDownTestCLIEnvironment(env)
+
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			buildinfo.Version = spec.version
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+			// Execute any command to trigger the version update
+			rootCmd.SetArgs([]string{"plugin", "list"})
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			// Read the data store file and make sure it contains the last executed version
+			b, err := os.ReadFile(env.dataStore)
+			assert.Nil(err)
+			assert.Contains(string(b), spec.expectedVersion)
 		})
 	}
 }
