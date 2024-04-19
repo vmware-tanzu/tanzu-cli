@@ -20,8 +20,6 @@ This document aims to provide a general overview of the Tanzu CLI architecture.
 
 The CLI is based on a plugin architecture. This architecture enables teams to build, own, and release their piece of functionality as well as enable external partners to integrate with the system.
 
-Two categories of plugins are determined based on Plugin Discovery. Standalone Plugins and Context-Scoped Plugins
-
 ## Plugin Discovery
 
 A plugin discovery points to a group of plugin artifacts that are installable by the Tanzu CLI. It uses an interface to fetch the list of available plugins, their supported versions, and how to download them.

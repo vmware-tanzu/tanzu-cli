@@ -94,7 +94,7 @@ func (tkfo *TKGKubeconfigFetcherOptions) getKubeconfigUsingPinnipedAuthPlugin() 
 }
 
 func (tkfo *TKGKubeconfigFetcherOptions) isPinnipedPluginInstalled() (bool, error) {
-	standalonePlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
+	standalonePlugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return false, err
 	}
