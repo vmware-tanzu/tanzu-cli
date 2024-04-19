@@ -79,4 +79,8 @@ const (
 	// SkipTAPScopesValidationOnTanzuContext skips the TAP scopes validation on the token acquired while creating "tanzu"
 	// context using tanzu login or tanzu context create command
 	SkipTAPScopesValidationOnTanzuContext = "TANZU_CLI_SKIP_TAP_SCOPES_VALIDATION_ON_TANZU_CONTEXT"
+
+	// AuthenticatedRegistry provides a comma separated list of registry hosts that requires authentication
+	// to pull images. Tanzu CLI will use default docker auth to communicate to these registries
+	AuthenticatedRegistry = "TANZU_CLI_AUTHENTICATED_REGISTRY"
 )
