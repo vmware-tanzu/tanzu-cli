@@ -22,6 +22,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 )
 
@@ -233,6 +234,12 @@ func setupTestPluginInventory(t *testing.T) {
 
 	// Add plugin group entries to the DB
 	_, err = db.Exec(createGroupsStmt)
+	assert.Nil(t, err)
+
+	// Create an empty central_config.yaml file to avoid
+	// triggering the global initializer that would invalidate the cache
+	// and add extra printouts to the test output
+	_, err = os.Create(filepath.Join(inventoryDir, constants.CentralConfigFileName))
 	assert.Nil(t, err)
 }
 
