@@ -229,6 +229,10 @@ cli.core.cli_recommended_versions:
 - version: v1.2.2
 - version: v1.1.1
 - version: v0.90.0
+cli.core.tanzu_application_platform_scopes:
+- scope: tap:viewer
+- scope: tap:admin
+- scope: tap:member
 cli.core.some-string: "the meaning of life, the universe, and everything"
 cli.core.some-int: 42
 cli.core.some-bool: true

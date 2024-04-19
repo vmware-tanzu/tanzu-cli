@@ -12,6 +12,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// KeyNotFoundError represents an error when the key is not found in the central configuration.
+type KeyNotFoundError struct {
+	Key string
+}
+
+func (e *KeyNotFoundError) Error() string {
+	return fmt.Sprintf("key '%s' not found in central config", e.Key)
+}
+
 type centralConfigYamlReader struct {
 	// configFile is the path to the central config file.
 	configFile string
@@ -54,7 +63,7 @@ func (c *centralConfigYamlReader) GetCentralConfigEntry(key string, out interfac
 		return err
 	}
 	if !ok {
-		return fmt.Errorf("key %s not found in central config", key)
+		return &KeyNotFoundError{Key: key}
 	}
 
 	return nil

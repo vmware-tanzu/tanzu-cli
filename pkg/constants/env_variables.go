@@ -75,4 +75,8 @@ const (
 	// SkipAutoInstallOfContextRecommendedPlugins skips the auto-installation of the context recommended plugins
 	// on `tanzu context create` or `tanzu context use`
 	SkipAutoInstallOfContextRecommendedPlugins = "TANZU_CLI_SKIP_CONTEXT_RECOMMENDED_PLUGIN_INSTALLATION"
+
+	// SkipTAPScopesValidationOnTanzuContext skips the TAP scopes validation on the token acquired while creating "tanzu"
+	// context using tanzu login or tanzu context create command
+	SkipTAPScopesValidationOnTanzuContext = "TANZU_CLI_SKIP_TAP_SCOPES_VALIDATION_ON_TANZU_CONTEXT"
 )
