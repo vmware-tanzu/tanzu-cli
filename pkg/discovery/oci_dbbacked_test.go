@@ -406,7 +406,7 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 
 				Expect(checkFileContentIsEqual(digestFile, imageURI)).To(BeTrue(), "expected the digest file to have the same content as the image URI")
 			})
-			It("should have update the URI in the digest file if the digest matches but the URI has changed", func() {
+			It("should have updated the URI in the digest file if the digest matches but the URI has changed", func() {
 				newImageURI := "test-image"
 				discovery := NewOCIDiscovery(discoveryName, newImageURI)
 				dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
@@ -430,6 +430,20 @@ var _ = Describe("Unit tests for DB-backed OCI discovery", func() {
 				// Check that the existing digest file was removed
 				_, err := os.Stat(digestFile)
 				Expect(os.IsNotExist(err)).To(BeTrue(), "expected the old digest file to be removed")
+			})
+			When("invalidating the cache", func() {
+				It("should return the current digest file name", func() {
+					discovery := NewOCIDiscovery(discoveryName, imageURI, WithForceInvalidation())
+					dbDiscovery, ok := discovery.(*DBBackedOCIDiscovery)
+					Expect(ok).To(BeTrue(), "oci discovery is not of type DBBackedOCIDiscovery")
+
+					digestFileName := dbDiscovery.checkDigestFileExistence(validDigest, "")
+					Expect(digestFileName).To(Equal(digestFile), "expected the same digest filename")
+
+					// Check that the digest file was removed in preparation for re-fetching the image
+					_, err := os.Stat(digestFile)
+					Expect(os.IsNotExist(err)).To(BeTrue(), "expected the old digest file to be removed")
+				})
 			})
 		})
 

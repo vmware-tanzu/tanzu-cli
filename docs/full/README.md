@@ -289,3 +289,11 @@ variable to `0` will turn off such notifications.
 
 Note that special consideration must be given for this feature to work in an internet-restricted environment.
 Please refer to [this section](../quickstart/install.md#updating-the-central-configuration) of the documentation.
+
+## Initialization upon the execution of a new version
+
+When a new version of the Tanzu CLI is executed for the first time it may need to be globally initialized.
+If needed, this allows the new CLI to update things like its cache or configuration depending on the needs of
+features being introduced in the new version. This initialization is normally only done once for a new
+version of the CLI, however, if a user goes back and forth between versions of the CLI (which can affect the
+format of the CLI data), the initialization could be performed more than once, as required.

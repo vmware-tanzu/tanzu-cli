@@ -14,6 +14,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/test/e2e/framework"
 )
 
@@ -57,7 +58,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
 	// check that the central config file is present
-	centralCfg := filepath.Join(framework.TestHomeDir, ".cache", "tanzu", common.PluginInventoryDirName, config.DefaultStandaloneDiscoveryName, "central_config.yaml")
+	centralCfg := filepath.Join(framework.TestHomeDir, ".cache", "tanzu", common.PluginInventoryDirName, config.DefaultStandaloneDiscoveryName, constants.CentralConfigFileName)
 	_, err = os.Stat(centralCfg)
 	Expect(err).To(BeNil(), "central config file should exist")
 })

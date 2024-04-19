@@ -220,12 +220,7 @@ func checkDiscoverySource(source configtypes.PluginDiscovery) error {
 	// the WithForceRefresh() option to ensure we refresh the DB no matter if the TTL has expired or not.
 	// This provides a way for the user to force a refresh of the DB by running "tanzu plugin source init/update"
 	// without waiting for the TTL to expire.
-	discObject, err := discovery.CreateDiscoveryFromV1alpha1(source, discovery.WithForceRefresh())
-	if err != nil {
-		return err
-	}
-	_, err = discObject.List()
-	return err
+	return discovery.RefreshDiscoveryDatabaseForSource(source, discovery.WithForceRefresh())
 }
 
 // ====================================

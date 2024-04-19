@@ -154,6 +154,13 @@ that is valid yaml.  To read the Central Configuration the `CentralConfig` inter
   err = reader.GetCentralConfigEntry("myStringKey", &myValue)
 ```
 
+## Global Initializers
+
+The CLI has a concept of global initializers accessible from the `globalinit` package.  Such initializers can
+be used by CLI features to initialize/update certain data required for the proper functioning of the CLI itself.
+Such initializers are often useful after an older CLI version was executed and a new CLI version now needs to
+properly setup its data.
+
 ## Deprecation of existing functionality
 
 Any changes aimed to remove functionality in the CLI (e.g. commands, command

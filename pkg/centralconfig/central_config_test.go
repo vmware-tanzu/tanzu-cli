@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
@@ -24,7 +25,7 @@ func TestNewCentralConfigReader(t *testing.T) {
 	})
 
 	path := reader.(*centralConfigYamlReader).configFile
-	expectedPath := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, discoveryName, CentralConfigFileName)
+	expectedPath := filepath.Join(common.DefaultCacheDir, common.PluginInventoryDirName, discoveryName, constants.CentralConfigFileName)
 
 	assert.Equal(t, expectedPath, path)
 }
