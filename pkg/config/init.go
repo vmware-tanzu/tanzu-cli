@@ -10,6 +10,10 @@ import (
 )
 
 func init() {
+	runInit()
+}
+
+func runInit() {
 	// Configure default feature flags
 	_ = config.ConfigureFeatureFlags(constants.DefaultCliFeatureFlags, config.SkipIfExists())
 

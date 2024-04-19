@@ -5,7 +5,6 @@ package config
 
 import (
 	"os"
-	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -31,10 +30,6 @@ var _ = Describe("Populate default central discovery", func() {
 		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
 		os.Setenv("TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER", "No")
 		os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "Yes")
-
-		featureArray := strings.Split(constants.FeatureContextCommand, ".")
-		err = configlib.SetFeature(featureArray[1], featureArray[2], "true")
-		Expect(err).To(BeNil())
 	})
 	AfterEach(func() {
 		os.Unsetenv("TANZU_CONFIG")
