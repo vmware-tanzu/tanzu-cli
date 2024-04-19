@@ -677,7 +677,22 @@ func globalTanzuLogin(c *configtypes.Context, generateContextNameFunc func(orgNa
 	// format
 	fmt.Fprintln(os.Stderr)
 	log.Successf("Successfully logged into '%s' organization and created a tanzu context", orgName)
+
+	// log warning message if the TAP scopes are retrieved successfully and validation failed
+	valid, err := validateTokenForTAPScopes(claims, nil)
+	if err == nil && !valid {
+		logTanzuInvalidOrgWarningMessage(orgName)
+	}
 	return nil
+}
+
+func logTanzuInvalidOrgWarningMessage(orgName string) {
+	warnMsg := `WARNING: While authenticated to organization '%s', there are insufficient permissions to access
+the Tanzu Application Platform service. Please ensure correct organization authentication and access permissions
+`
+	fmt.Fprintln(os.Stderr)
+	log.Warningf(warnMsg, orgName)
+	fmt.Fprintln(os.Stderr)
 }
 
 // updateTanzuContextMetadata updates the context additional metadata
