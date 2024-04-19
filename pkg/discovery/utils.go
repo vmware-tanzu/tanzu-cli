@@ -121,17 +121,22 @@ func RefreshDatabase() error {
 			if stat, err := os.Stat(matches[0]); err == nil {
 				// Check if the digest timestamp is passed 24 hours if so refresh the database cache
 				if time.Since(stat.ModTime()) > time.Duration(dbCacheRefreshThreshold)*time.Second {
-					if discObject, err := CreateDiscoveryFromV1alpha1(source); err == nil {
-						_, _ = discObject.List()
-					}
+					_ = RefreshDiscoveryDatabaseForSource(source)
 				}
 			}
 		} else {
 			// digest file not found so refresh the database cache
-			if discObject, err := CreateDiscoveryFromV1alpha1(source); err == nil {
-				_, _ = discObject.List()
-			}
+			_ = RefreshDiscoveryDatabaseForSource(source)
 		}
 	}
 	return nil
+}
+
+// RefreshDiscoveryDatabaseForSource function refreshes the plugin inventory database for the given source
+func RefreshDiscoveryDatabaseForSource(source configtypes.PluginDiscovery, options ...DiscoveryOptions) error {
+	discObject, err := CreateDiscoveryFromV1alpha1(source, options...)
+	if err == nil {
+		_, err = discObject.List()
+	}
+	return err
 }

@@ -24,6 +24,7 @@ import (
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/globalinit"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginmanager"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/pluginsupplier"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/recommendedversion"
@@ -265,6 +266,13 @@ func newRootCmd() *cobra.Command {
 			// Sets the verbosity of the logger if TANZU_CLI_LOG_LEVEL is set
 			setLoggerVerbosity()
 
+			// Perform some global initialization of the CLI if necessary
+			// We do this as early as possible to make sure the CLI is ready for use
+			// for any other logic below.
+			if !shouldSkipGlobalInit(cmd) {
+				checkGlobalInit(cmd)
+			}
+
 			// Ensure mutual exclusion in current contexts just in case if any plugins with old
 			// plugin-runtime sets k8s context as current when tanzu context is already set as current
 			if err := utils.EnsureMutualExclusiveCurrentContexts(); err != nil {
@@ -325,6 +333,24 @@ func setLoggerVerbosity() {
 		if err == nil {
 			log.SetVerbosity(int32(logValue))
 		}
+	}
+}
+
+func checkGlobalInit(cmd *cobra.Command) {
+	if globalinit.InitializationRequired() {
+		outStream := cmd.OutOrStderr()
+
+		fmt.Fprintf(outStream, "Some initialization of the CLI is required.\n")
+		fmt.Fprintf(outStream, "Let's set things up for you.  This will just take a few seconds.\n\n")
+
+		err := globalinit.PerformInitializations(outStream)
+		if err != nil {
+			log.Warningf("The initialization encountered the following error: %v", err)
+		}
+
+		fmt.Fprintln(outStream)
+		fmt.Fprintln(outStream, "Initialization done!")
+		fmt.Fprintln(outStream, "==")
 	}
 }
 
@@ -579,6 +605,20 @@ func shouldSkipVersionCheck(cmd *cobra.Command) bool {
 		"tanzu version",
 	}
 	return isSkipCommand(skipVersionCheckCommands, cmd.CommandPath())
+}
+
+// shouldSkipGlobalInit checks if the initialization of a new CLI version should be skipped
+// for the specified command
+func shouldSkipGlobalInit(cmd *cobra.Command) bool {
+	skipGlobalInitCommands := []string{
+		// The shell completion logic is not interactive, so it should not trigger
+		// the global initialization of the CLI
+		"tanzu __complete",
+		"tanzu completion",
+		// Common first command to run, let's not perform extra tasks
+		"tanzu version",
+	}
+	return isSkipCommand(skipGlobalInitCommands, cmd.CommandPath())
 }
 
 // Execute executes the CLI.
