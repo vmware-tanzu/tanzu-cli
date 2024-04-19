@@ -401,19 +401,15 @@ As a plugin developer, you will want to test your plugin manually at some point.
 During the development cycle, you can easily build and install the latest version of your plugin
 as described in the section on [building a plugin](#building-a-plugin).
 
-If you are using "contexts" while doing testing of your plugin and that your plugin is context-scoped
-you may find that your new plugin version is being overwritten with an older version by the CLI.
-When a plugin is context-scoped a context may recommend a specific version of that plugin for the CLI
-to use.  In such a case, if you want to test your new version and prevent the CLI from overwriting it
-with the version recommended by the context you can enable the `TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS`
+While testing your plugin, interacting with a context that recommends an older version of said
+plugin might result in your plugin version being overwritten.
+In such a case, if you want to test your new version and prevent the CLI from overwriting it
+with the version recommended by the context you can set the `TANZU_CLI_SKIP_CONTEXT_RECOMMENDED_PLUGIN_INSTALLATION`
 variable by doing:
 
 ```sh
-tanzu config set env.TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS true
+tanzu config set env.TANZU_CLI_SKIP_CONTEXT_RECOMMENDED_PLUGIN_INSTALLATION true
 ```
-
-This variable will instruct the CLI that any installation done with `tanzu plugin install <pluginName>`
-should take precedence over any installation coming from a context.
 
 #### Automated tests using the test plugin
 

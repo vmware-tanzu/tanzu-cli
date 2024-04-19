@@ -5,6 +5,7 @@ package pluginsupplier
 import (
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"github.com/otiai10/copy"
@@ -25,7 +26,7 @@ func TestPluginSupplierSuite(t *testing.T) {
 	RunSpecs(t, "plugin supplier test suite")
 }
 
-var _ = Describe("GetInstalledStandalonePlugins", func() {
+var _ = Describe("GetInstalledPlugins", func() {
 	var (
 		cdir string
 		err  error
@@ -45,7 +46,7 @@ var _ = Describe("GetInstalledStandalonePlugins", func() {
 		})
 
 		It("should return empty plugin list", func() {
-			installedPlugins, err := GetInstalledStandalonePlugins()
+			installedPlugins, err := GetInstalledPlugins()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(installedPlugins)).To(Equal(0))
 		})
@@ -57,7 +58,7 @@ var _ = Describe("GetInstalledStandalonePlugins", func() {
 		})
 
 		It("should return installed standalone plugin ", func() {
-			installedPlugins, err := GetInstalledStandalonePlugins()
+			installedPlugins, err := GetInstalledPlugins()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(installedPlugins)).To(Equal(1))
 			Expect(installedPlugins).Should(ContainElement(*pd1))
@@ -65,101 +66,7 @@ var _ = Describe("GetInstalledStandalonePlugins", func() {
 	})
 })
 
-var _ = Describe("GetInstalledServerPlugins", func() {
-	var (
-		cdir         string
-		err          error
-		configFile   *os.File
-		configFileNG *os.File
-		pd1          *cli.PluginInfo
-		pd2          *cli.PluginInfo
-	)
-	const (
-		tmcContextName = "test-tmc-context"
-		k8sContextName = "test-mc"
-	)
-	BeforeEach(func() {
-		cdir, err = os.MkdirTemp("", "test-catalog-cache")
-		Expect(err).ToNot(HaveOccurred())
-		common.DefaultCacheDir = cdir
-
-		configFile, err = os.CreateTemp("", "config")
-		Expect(err).To(BeNil())
-		err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config.yaml"), configFile.Name())
-		Expect(err).To(BeNil(), "Error while copying tanzu config file for testing")
-		os.Setenv("TANZU_CONFIG", configFile.Name())
-
-		configFileNG, err = os.CreateTemp("", "config_ng")
-		Expect(err).To(BeNil())
-		os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
-		err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), configFileNG.Name())
-		Expect(err).To(BeNil(), "Error while coping tanzu config-ng file for testing")
-	})
-	AfterEach(func() {
-		os.RemoveAll(cdir)
-		os.Unsetenv("TANZU_CONFIG")
-		os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
-		os.RemoveAll(configFile.Name())
-		os.RemoveAll(configFileNG.Name())
-	})
-
-	Context("when no server/context plugins installed", func() {
-		It("should return empty plugin list", func() {
-			installedPlugins, err := GetInstalledServerPlugins()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(installedPlugins)).To(Equal(0))
-		})
-	})
-	Context("when a server plugin for k8s target installed", func() {
-		BeforeEach(func() {
-			contextNameFromConfig := k8sContextName
-			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin1", types.TargetK8s, "v1.0.0")
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should return installed server plugin ", func() {
-			installedPlugins, err := GetInstalledServerPlugins()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(installedPlugins)).To(Equal(1))
-			Expect(installedPlugins).Should(ContainElement(*pd1))
-		})
-	})
-	Context("when a server plugin for tmc target installed", func() {
-		BeforeEach(func() {
-			contextNameFromConfig := tmcContextName
-			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetTMC, "v1.0.0")
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should return installed server plugin ", func() {
-			installedPlugins, err := GetInstalledServerPlugins()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(installedPlugins)).To(Equal(1))
-			Expect(installedPlugins).Should(ContainElement(*pd1))
-		})
-	})
-	Context("when a server plugin for both tmc and k8s targets installed", func() {
-		BeforeEach(func() {
-			contextNameFromConfig := k8sContextName
-			pd1, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin1", types.TargetTMC, "v1.0.0")
-			Expect(err).ToNot(HaveOccurred())
-
-			contextNameFromConfig = tmcContextName
-			pd2, err = fakeInstallPlugin(contextNameFromConfig, "fake-server-plugin2", types.TargetTMC, "v1.0.0")
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("should return installed server plugins ", func() {
-			installedPlugins, err := GetInstalledServerPlugins()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(installedPlugins)).To(Equal(2))
-			Expect(installedPlugins).Should(ContainElement(*pd1))
-			Expect(installedPlugins).Should(ContainElement(*pd2))
-		})
-	})
-})
-
-var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", func() {
+var _ = Describe("GetInstalledPlugins (standalone plugins)", func() {
 	var (
 		cdir             string
 		err              error
@@ -227,13 +134,14 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 			Expect(installedPlugins).Should(ContainElement(*pd1))
 		})
 
-		It("should return correct result for IsStandalonePluginInstalled", func() {
-			isInstalled := IsStandalonePluginInstalled("fake-server-plugin1", types.TargetK8s, "v1.0.0")
+		It("should return correct result for IsPluginInstalled", func() {
+			isInstalled := IsPluginInstalled("fake-server-plugin1", types.TargetK8s, "v1.0.0")
 			Expect(isInstalled).To(BeTrue())
-			isInstalled = IsStandalonePluginInstalled("random-plugin", types.TargetK8s, "v1.0.0")
+			isInstalled = IsPluginInstalled("random-plugin", types.TargetK8s, "v1.0.0")
 			Expect(isInstalled).To(BeFalse())
 		})
 	})
+
 	Context("when a standalone and server plugin for k8s target installed", func() {
 		BeforeEach(func() {
 			pd1, err = fakeInstallPlugin("", "fake-server-plugin1", types.TargetK8s, "v1.0.0")
@@ -247,7 +155,7 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 		It("should return installed plugins ", func() {
 			installedPlugins, err := GetInstalledPlugins()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(installedPlugins)).To(Equal(2))
+			Expect(len(installedPlugins)).To(Equal(2)) // server plugins will be migrated as standalone
 			Expect(installedPlugins).Should(ContainElement(*pd1))
 			Expect(installedPlugins).Should(ContainElement(*pd2))
 		})
@@ -270,7 +178,7 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 		It("should return installed plugins ", func() {
 			installedPlugins, err := GetInstalledPlugins()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(installedPlugins)).To(Equal(3))
+			Expect(len(installedPlugins)).To(Equal(3)) // server plugins will be migrated as standalone
 			Expect(installedPlugins).Should(ContainElement(*pd1))
 			Expect(installedPlugins).Should(ContainElement(*pd2))
 			Expect(installedPlugins).Should(ContainElement(*pd3))
@@ -294,15 +202,6 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(installedPlugins)).To(Equal(1))
 			Expect(installedPlugins).Should(ContainElement(*pd2))
-		})
-		It("if TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS=1 it should return the standalone plugin only", func() {
-			err := os.Setenv(constants.ConfigVariableStandaloneOverContextPlugins, "1")
-			Expect(err).ToNot(HaveOccurred())
-
-			installedPlugins, err := GetInstalledPlugins()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(installedPlugins)).To(Equal(1))
-			Expect(installedPlugins).Should(ContainElement(*pd1))
 		})
 	})
 
@@ -330,27 +229,19 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 			Expect(err).ToNot(HaveOccurred())
 		})
 
-		It("should not return any standalone plugins that are also server plugins", func() {
+		It("should not return any server plugins and only standalone plugins should be listed", func() {
 			installedPlugins, err := GetInstalledPlugins()
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(installedPlugins)).To(Equal(4))
 			Expect(installedPlugins).Should(ContainElement(*pd1))
 			Expect(installedPlugins).Should(ContainElement(*pd2))
+			Expect(installedPlugins).ShouldNot(ContainElement(*pd3))
 			Expect(installedPlugins).Should(ContainElement(*pd4))
+			Expect(installedPlugins).ShouldNot(ContainElement(*pd5))
 			Expect(installedPlugins).Should(ContainElement(*pd6))
 		})
-		It("if TANZU_CLI_STANDALONE_OVER_CONTEXT_PLUGINS=1 it should not return any server plugins that are also standalone plugins", func() {
-			err := os.Setenv(constants.ConfigVariableStandaloneOverContextPlugins, "1")
-			Expect(err).ToNot(HaveOccurred())
-			installedPlugins, err := GetInstalledPlugins()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(installedPlugins)).To(Equal(4))
-			Expect(installedPlugins).Should(ContainElement(*pd1))
-			Expect(installedPlugins).Should(ContainElement(*pd2))
-			Expect(installedPlugins).Should(ContainElement(*pd3))
-			Expect(installedPlugins).Should(ContainElement(*pd5))
-		})
 	})
+
 	Context("with a catalog cache from an older CLI version", func() {
 		BeforeEach(func() {
 			cdir, err = os.MkdirTemp("", "test-catalog-cache")
@@ -383,11 +274,12 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 			os.RemoveAll(configFileNG.Name())
 		})
 
-		It("should find the installed server plugin", func() {
-			installedServerPlugins, err := GetInstalledServerPlugins()
+		It("should find the installed standalone plugin along with server plugins with server plugins migrated in catalog", func() {
+			installedStandalonePlugins, err := GetInstalledPlugins()
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(installedServerPlugins)).To(Equal(2))
-			Expect(installedServerPlugins).Should(ContainElement(
+			sort.Sort(cli.PluginInfoSorter(installedStandalonePlugins))
+			Expect(len(installedStandalonePlugins)).To(Equal(3))
+			Expect(installedStandalonePlugins[0]).Should(Equal(
 				cli.PluginInfo{
 					Name:                         "cluster",
 					Description:                  "cluster functionality",
@@ -407,11 +299,13 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 					Status:                       "",
 					DiscoveredRecommendedVersion: "v0.0.1",
 					Target:                       types.TargetK8s,
-					DefaultFeatureFlags:          nil,
 					PostInstallHook:              nil,
+					DefaultFeatureFlags:          map[string]bool{},
+					InvokedAs:                    nil,
+					SupportedContextType:         nil,
 				},
 			))
-			Expect(installedServerPlugins).Should(ContainElement(
+			Expect(installedStandalonePlugins[1]).Should(Equal(
 				cli.PluginInfo{
 					Name:                         "iam",
 					Description:                  "IAM Policies for tmc resources",
@@ -431,16 +325,13 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 					Status:                       "",
 					DiscoveredRecommendedVersion: "v0.0.1",
 					Target:                       types.TargetTMC,
-					DefaultFeatureFlags:          nil,
 					PostInstallHook:              nil,
+					DefaultFeatureFlags:          map[string]bool{},
+					InvokedAs:                    nil,
+					SupportedContextType:         nil,
 				},
 			))
-		})
-		It("should find the installed standalone plugin", func() {
-			installedStandalonePlugins, err := GetInstalledStandalonePlugins()
-			Expect(err).ToNot(HaveOccurred())
-			Expect(len(installedStandalonePlugins)).To(Equal(1))
-			Expect(installedStandalonePlugins[0]).Should(Equal(
+			Expect(installedStandalonePlugins[2]).Should(Equal(
 				cli.PluginInfo{
 					Name:                         "isolated-cluster",
 					Description:                  "Prepopulating images/bundle for internet-restricted environments",
@@ -460,7 +351,7 @@ var _ = Describe("GetInstalledPlugins (both standalone and context plugins)", fu
 					Status:                       "",
 					DiscoveredRecommendedVersion: "v0.29.0",
 					Target:                       types.TargetUnknown,
-					DefaultFeatureFlags:          nil,
+					DefaultFeatureFlags:          map[string]bool{},
 					PostInstallHook:              nil,
 				},
 			))

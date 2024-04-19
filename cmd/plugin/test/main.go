@@ -45,7 +45,7 @@ func main() {
 		pluginsCmd,
 	)
 
-	installedPlugins, err := pluginsupplier.GetInstalledStandalonePlugins()
+	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		log.Fatal(err, "")
 	}

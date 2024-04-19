@@ -138,7 +138,7 @@ func displayPluginDetails(plugins []discovery.Discovered, writer io.Writer) {
 	}
 
 	// For the table format, we will use individual yaml output for each plugin
-	if outputFormat == "" || outputFormat == string(component.TableOutputType) {
+	if isTableOutputFormat() {
 		for i := range plugins {
 			if i > 0 {
 				fmt.Println()
