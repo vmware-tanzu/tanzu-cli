@@ -102,7 +102,7 @@ func DeleteContextFromKubeConfig(kubeconfigPath, context string) error {
 	}
 
 	if shouldWarn {
-		log.Warningf("warning: this removed your active context, use \"kubectl config use-context\" to select a different one")
+		log.Warningf("WARNING: this removed your active context, use \"kubectl config use-context\" to select a different one")
 	}
 
 	return nil
