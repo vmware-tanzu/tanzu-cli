@@ -5,7 +5,6 @@ package config
 
 import (
 	"os"
-	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -47,10 +46,6 @@ var _ = Describe("defaults test cases", func() {
 				configFileNG, err = os.CreateTemp("", "config_ng")
 				Expect(err).To(BeNil())
 				os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
-
-				featureArray := strings.Split(constants.FeatureContextCommand, ".")
-				err = configlib.SetFeature(featureArray[1], featureArray[2], "true")
-				Expect(err).To(BeNil())
 			})
 			AfterEach(func() {
 				os.Unsetenv("TANZU_CONFIG")

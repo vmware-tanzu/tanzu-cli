@@ -5,14 +5,11 @@ package discovery
 
 import (
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
-	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 )
 
 func Test_NewOCIDiscovery(t *testing.T) {
@@ -25,10 +22,6 @@ func Test_NewOCIDiscovery(t *testing.T) {
 	configFileNG, err := os.CreateTemp("", "config_ng")
 	assert.Nil(err)
 	os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
-
-	featureArray := strings.Split(constants.FeatureContextCommand, ".")
-	err = config.SetFeature(featureArray[1], featureArray[2], "true")
-	assert.Nil(err)
 
 	defer func() {
 		os.Unsetenv("TANZU_CONFIG")
