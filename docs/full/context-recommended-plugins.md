@@ -1,4 +1,4 @@
-# Context-Scope Plugin Installation
+# Context Recommended Plugin Installation
 
 ## Abstract
 
@@ -13,7 +13,7 @@ When a user is working with multiple instances of a product, we want to
 automatically select the right set of plugins and plugin versions for use
 based on the active context the user is connected to.
 
-The goals of the Context-Scoped Plugin Installation feature are:
+The goals of the Context-Recommended Plugin Installation feature are:
 
 As a plugin developer, I want to,
 
@@ -42,23 +42,12 @@ Plugin availability is solely dependent on the configured discovery sources in t
 tanzu configuration file. Each discovery source points to a plugin repository
 which can contain one or more plugins.
 
-## Standalone Plugins
-
-The scope of a plugin depends on how the plugin is getting installed on the user's machine.
-Users can run the `tanzu plugin search` command to see all available plugins from
-the configured discovery sources.
-
-If the user wants to install a plugin that is not dependent on any active context and
-wants to use it with the Tanzu CLI, the user can run `tanzu plugin install <plugin-name>`
-to install the required plugin. Installing the plugin this way will make the
-plugin a standalone plugin and it will not be associated with any contexts.
-
-## Context-scoped Plugins
+## Context-Recommended Plugins
 
 As mentioned above in the abstract section, there might be a scenario when a user
 is working with multiple contexts at a time and wants to automatically select the
 right set of plugins and plugin versions based on the currently active context.
-The context-scoped plugin implementation is useful in this scenario.
+The context-recommended plugin implementation is useful in this scenario.
 
 When the CLI user creates a new context for the Tanzu CLI using the
 `tanzu context create` command, the CLI adds a context in the tanzu configuration file
@@ -68,18 +57,20 @@ Now, this newly created context can also recommend the list of plugins and their
 that are needed to be installed on the user's machine to interact with the created context.
 The Tanzu CLI automatically detects the list of recommended plugins and their versions and
 installs them as part of the `tanzu context create` or `tanzu context use` commands. Below
-is the workflow of context-scoped plugin installation:
+is the workflow of context-recommended plugin installation:
 
 - The user runs the `tanzu context create` or `tanzu context use` commands to create a new context or switch active context
 - The Tanzu CLI gets the list of recommended plugins and their version from the created context
 - The Tanzu CLI finds the plugins and their metadata in the available list of plugins generated from the configured discovery sources
 - The Tanzu CLI fetches the plugin binary for these plugins from the specified location and installs the plugin
 
-Users should understand that these plugins (installed based on a context) are
-only available when said context is active. If a user deletes the context the plugins
-installed based on the deleted context are no longer available to use with the CLI.
 If the user switches the context to a different context using the `tanzu context use` command,
 the CLI will automatically install/update the recommended plugins based on the new context.
+
+Note: Users should understand that these plugins (installed based on a recommendation from a context) are
+installed as normal plugins and will not be automatically deleted when a user deletes the context or switches
+the context to a different context. Commands associated with those plugins will remain available
+to be used but will likely throw an error if those plugins do not work with the active context.
 
 ## Plugin Recommendations from a Context
 

@@ -101,7 +101,7 @@ func login(cmd *cobra.Command, _ []string) (err error) {
 	}
 
 	// Sync all required plugins
-	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName, true)
+	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName)
 
 	return nil
 }
