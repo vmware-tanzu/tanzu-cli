@@ -29,6 +29,9 @@ GO := go
 
 GOTEST_VERBOSE ?= -v
 
+# Allow turning off go's vcs build
+BUILDVCS ?= true
+
 # Directories
 TOOLS_DIR := $(abspath $(ROOT_DIR)/hack/tools)
 TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
@@ -144,9 +147,9 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 	fi
 
 	@if [ "$(OS)" = "windows" ]; then \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
+		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -buildvcs=$(BUILDVCS) -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH).exe" ./cmd/tanzu/main.go;\
 	else \
-		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
+		GOOS=$(OS) GOARCH=$(ARCH) $(GO) build -buildvcs=$(BUILDVCS) -gcflags=all="-l" --ldflags "$(LD_FLAGS)" -o "$(ARTIFACTS_DIR)/$(OS)/$(ARCH)/cli/core/$(BUILD_VERSION)/tanzu-cli-$(OS)_$(ARCH)" ./cmd/tanzu/main.go;\
 	fi
 
 ## --------------------------------------
@@ -155,7 +158,7 @@ build-cli-%: ##Build the Tanzu Core CLI for a platform
 
 .PHONY: prepare-builder
 prepare-builder: ## Build Tanzu CLI builder plugin
-	cd cmd/plugin/builder && $(GO) build -o $(ROOT_DIR)/bin/builder .
+	cd cmd/plugin/builder && $(GO) build -buildvcs=$(BUILDVCS) -o $(ROOT_DIR)/bin/builder .
 
 ## --------------------------------------
 ## OS Packages
