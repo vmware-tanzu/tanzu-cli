@@ -3,7 +3,6 @@ module github.com/vmware-tanzu/tanzu-cli
 go 1.21
 
 replace cloud.google.com/go => cloud.google.com/go v0.102.1
-replace github.com/vmware-tanzu/tanzu-plugin-runtime => ../../runtime-code/tanzu-plugin-runtime
 replace github.com/vmware-tanzu/tanzu-cli/test/e2e/framework => ./test/e2e/framework
 
 require (
