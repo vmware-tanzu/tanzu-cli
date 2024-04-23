@@ -4,6 +4,7 @@
 package airgapped
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -55,6 +57,11 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 		return errors.Wrap(err, "error while parsing plugin migration manifest")
 	}
 
+	totalImages := len(manifest.ImagesToCopy)
+	imagesUploaded := 0
+	uploadingMsg := "[%d/%d] uploading image %d"
+	uploadedMsg := "[%d/%d] uploaded image %d"
+	errorMsg := "error while uploading image %q"
 	// Iterate through all the images and publish them to the remote repository
 	for _, ic := range manifest.ImagesToCopy {
 		imageTar := filepath.Join(pluginBundleDir, ic.SourceTarFilePath)
@@ -62,11 +69,29 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 		if err != nil {
 			return errors.Wrap(err, "error while constructing the repo image path")
 		}
-		log.Infof("---------------------------")
-		log.Infof("uploading image %q", repoImagePath)
+		errorMsg = fmt.Sprintf(errorMsg, repoImagePath)
+		uploadingMsg = fmt.Sprintf(uploadingMsg, totalImages, imagesUploaded, imagesUploaded)
+		uploadedMsg = fmt.Sprintf(uploadedMsg, totalImages, imagesUploaded, imagesUploaded)
+		var spinner component.OutputWriterSpinner
+		if !component.IsTTYEnabled() {
+			// Initialize the spinner
+			spinner = component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr),
+				component.WithSpinnerText(uploadingMsg),
+				component.WithSpinnerStarted())
+			spinner.SetFinalText(errorMsg, log.LogTypeERROR)
+			defer spinner.StopSpinner()
+		} else {
+			log.Infof(uploadingMsg, totalImages, imagesUploaded, imagesUploaded)
+		}
 		err = o.ImageProcessor.CopyImageFromTar(imageTar, repoImagePath)
 		if err != nil {
-			return errors.Wrap(err, "error while uploading image")
+			return errors.Wrap(err, errorMsg)
+		}
+		imagesUploaded = imagesUploaded+1
+		if spinner != nil {
+			spinner.SetFinalText(uploadedMsg, log.LogTypeINFO)
+		} else {
+			log.Infof(uploadedMsg, totalImages, imagesUploaded, repoImagePath)
 		}
 	}
 	log.Infof("---------------------------")
