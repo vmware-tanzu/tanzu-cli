@@ -83,4 +83,8 @@ const (
 	// AuthenticatedRegistry provides a comma separated list of registry hosts that requires authentication
 	// to pull images. Tanzu CLI will use default docker auth to communicate to these registries
 	AuthenticatedRegistry = "TANZU_CLI_AUTHENTICATED_REGISTRY"
+
+	// UseStableKubeContextNameForTanzuContext uses the stable kube context name associated with tanzu context.
+	// CLI would not change the context name when the TAP resource pointed by the CLI context is changed.
+	UseStableKubeContextNameForTanzuContext = "TANZU_CLI_USE_STABLE_KUBE_CONTEXT_NAME"
 )
