@@ -59,40 +59,18 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 
 	totalImages := len(manifest.ImagesToCopy)
 	imagesUploaded := 0
-	uploadingMsg := "[%d/%d] uploading image %d"
-	uploadedMsg := "[%d/%d] uploaded image %d"
-	errorMsg := "error while uploading image %q"
 	// Iterate through all the images and publish them to the remote repository
+	var repoImagePath string
 	for _, ic := range manifest.ImagesToCopy {
 		imageTar := filepath.Join(pluginBundleDir, ic.SourceTarFilePath)
-		repoImagePath, err := utils.JoinURL(o.DestinationRepo, ic.RelativeImagePath)
+		repoImagePath, err = utils.JoinURL(o.DestinationRepo, ic.RelativeImagePath)
 		if err != nil {
 			return errors.Wrap(err, "error while constructing the repo image path")
 		}
-		errorMsg = fmt.Sprintf(errorMsg, repoImagePath)
-		uploadingMsg = fmt.Sprintf(uploadingMsg, totalImages, imagesUploaded, imagesUploaded)
-		uploadedMsg = fmt.Sprintf(uploadedMsg, totalImages, imagesUploaded, imagesUploaded)
-		var spinner component.OutputWriterSpinner
-		if !component.IsTTYEnabled() {
-			// Initialize the spinner
-			spinner = component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr),
-				component.WithSpinnerText(uploadingMsg),
-				component.WithSpinnerStarted())
-			spinner.SetFinalText(errorMsg, log.LogTypeERROR)
-			defer spinner.StopSpinner()
-		} else {
-			log.Infof(uploadingMsg, totalImages, imagesUploaded, imagesUploaded)
+		if err = o.uploadImage(imageTar, repoImagePath, totalImages, imagesUploaded); err != nil {
+			return err
 		}
-		err = o.ImageProcessor.CopyImageFromTar(imageTar, repoImagePath)
-		if err != nil {
-			return errors.Wrap(err, errorMsg)
-		}
-		imagesUploaded = imagesUploaded+1
-		if spinner != nil {
-			spinner.SetFinalText(uploadedMsg, log.LogTypeINFO)
-		} else {
-			log.Infof(uploadedMsg, totalImages, imagesUploaded, repoImagePath)
-		}
+		imagesUploaded++
 	}
 	log.Infof("---------------------------")
 	log.Infof("---------------------------")
@@ -122,6 +100,40 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 		return errors.Wrap(err, "error while constructing the image URL")
 	}
 	log.Infof("successfully published all plugin images to %q", joinedURL)
+
+	return nil
+}
+
+func (o *UploadPluginBundleOptions) uploadImage(imageTar, repoImagePath string, totalImages, imagesUploaded int) error {
+	uploadingMsg := fmt.Sprintf("[%d/%d] uploading image %q", totalImages, imagesUploaded, repoImagePath)
+	errorMsg := fmt.Sprintf("[%d/%d] error while uploading image %q", totalImages, imagesUploaded, repoImagePath)
+	uploadedMsg := "[%d/%d] uploaded image %q"
+
+	var spinner component.OutputWriterSpinner
+	if component.IsTTYEnabled() {
+		// Initialize the spinner
+		spinner = component.NewOutputWriterSpinner(
+			component.WithOutputStream(os.Stderr),
+			component.WithSpinnerText(uploadingMsg),
+			component.WithSpinnerStarted(),
+		)
+		spinner.SetFinalText(errorMsg, log.LogTypeERROR)
+		defer spinner.StopSpinner()
+	} else {
+		log.Infof(uploadingMsg, totalImages, imagesUploaded, repoImagePath)
+	}
+
+	if err := o.ImageProcessor.CopyImageFromTar(imageTar, repoImagePath); err != nil {
+		return errors.Wrapf(err, errorMsg, repoImagePath)
+	}
+
+	uploadedMsg = fmt.Sprintf(uploadedMsg, totalImages, imagesUploaded+1, repoImagePath)
+	if spinner != nil {
+		spinner.SetFinalText(uploadedMsg, log.LogTypeINFO)
+		spinner.StopSpinner()
+	} else {
+		log.Infof(uploadedMsg, totalImages, imagesUploaded, repoImagePath)
+	}
 
 	return nil
 }
