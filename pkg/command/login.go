@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
@@ -77,7 +78,7 @@ func init() {
 `
 }
 
-func login(cmd *cobra.Command, _ []string) (err error) {
+func login(_ *cobra.Command, _ []string) (err error) {
 	// assign the loginEndpoint to context endpoint option variable
 	endpoint = loginEndpoint
 
@@ -100,8 +101,16 @@ func login(cmd *cobra.Command, _ []string) (err error) {
 		return nil
 	}
 
+	// save the context since "ClusterOpts.Context" (kubecontext) in the CLI context could be modified.
+	err = config.SetContext(ctx, false)
+	if err != nil {
+		return errors.Wrap(err, "failed updating the context %q after kubeconfig update")
+	}
+
+	// TODO: uncomment the below context plugin sync call once context scope plugin support
+	//       is implemented for tanzu context(TAP SaaS)
 	// Sync all required plugins
-	_ = syncContextPlugins(cmd, ctx.ContextType, ctxName)
+	// _ = syncContextPlugins(cmd, ctx.ContextType, ctx.Name)
 
 	return nil
 }
@@ -112,8 +121,7 @@ func updateKubeConfigForContext(c *configtypes.Context) error {
 	spaceNameStr := getString(c.AdditionalMetadata[config.SpaceNameKey])
 	clusterGroupNameNameStr := getString(c.AdditionalMetadata[config.ClusterGroupNameKey])
 
-	projectVal := getProjectValueForKubeconfig(projNameStr, projIDStr)
-	return updateTanzuContextKubeconfig(c, projectVal, spaceNameStr, clusterGroupNameNameStr)
+	return updateTanzuContextKubeconfig(c, projNameStr, projIDStr, spaceNameStr, clusterGroupNameNameStr)
 }
 
 func getString(data interface{}) string {
