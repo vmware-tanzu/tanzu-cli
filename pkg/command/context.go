@@ -652,6 +652,15 @@ func globalTanzuLogin(c *configtypes.Context, generateContextNameFunc func(orgNa
 	if err != nil {
 		return err
 	}
+
+	// Fetch the Tanzu Hub endpoint for the Tanzu context as a best case effort
+	tanzuHubEndpoint, err := csp.GetTanzuHubEndpointForTAP(claims.OrgID, c.GlobalOpts.Auth.AccessToken, staging)
+	if err != nil {
+		log.V(7).Infof("unable to get Tanzu Hub endpoint. Error: %v", err.Error())
+	} else {
+		c.AdditionalMetadata[config.TanzuHubEndpointKey] = tanzuHubEndpoint
+	}
+
 	// update the context name using the context name generator
 	if generateContextNameFunc != nil {
 		c.Name = generateContextNameFunc(orgName, endpoint, staging)
