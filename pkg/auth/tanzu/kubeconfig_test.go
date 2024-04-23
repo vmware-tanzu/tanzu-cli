@@ -112,7 +112,7 @@ var _ = Describe("Unit tests for tanzu auth", func() {
 
 				Expect(cluster.Server).To(Equal(clusterAPIServerURL))
 				Expect(config.Contexts[kubeContext].AuthInfo).To(Equal("tanzu-cli-" + tanzuContext.Name + "-user"))
-				Expect(gotClusterName).To(Equal("tanzu-cli-" + tanzuContext.Name + "/current"))
+				Expect(gotClusterName).To(Equal("tanzu-cli-" + tanzuContext.Name))
 				Expect(len(cluster.CertificateAuthorityData)).To(Equal(0))
 				Expect(cluster.InsecureSkipTLSVerify).To(Equal(true))
 				Expect(user.Exec).To(Equal(getExecConfig(tanzuContext)))

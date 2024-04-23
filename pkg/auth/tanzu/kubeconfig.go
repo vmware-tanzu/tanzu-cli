@@ -70,7 +70,7 @@ func kubeconfigContextName(tanzuContextName string) string {
 }
 
 func kubeconfigClusterName(tanzuContextName string) string {
-	return "tanzu-cli-" + tanzuContextName + "/current"
+	return "tanzu-cli-" + tanzuContextName
 }
 
 func kubeconfigUserName(tanzuContextName string) string {

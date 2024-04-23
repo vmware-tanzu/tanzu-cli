@@ -26,6 +26,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	clientauthv1 "k8s.io/client-go/pkg/apis/clientauthentication/v1"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
@@ -273,9 +274,13 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 		return err
 	}
 
+	// TODO: update the below conditional check (and in login command) after context scope plugin support
+	//       is implemented for tanzu context(TAP SaaS)
 	// Sync all required plugins
-	if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
-		log.Warningf("unable to automatically sync the plugins recommended by the new context. Please run 'tanzu plugin sync' to sync plugins manually, error: '%v'", err.Error())
+	if ctx.ContextType != configtypes.ContextTypeTanzu {
+		if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
+			log.Warningf("unable to automatically sync the plugins recommended by the new context. Please run 'tanzu plugin sync' to sync plugins manually, error: '%v'", err.Error())
+		}
 	}
 	return nil
 }
@@ -1279,9 +1284,13 @@ func useCtx(cmd *cobra.Command, args []string) error { //nolint:gocyclo
 
 	log.Infof("Successfully activated context '%s' %s ", ctxName, suffixString)
 
+	// TODO: update the below conditional check (and in login command) after context scope plugin support
+	//       is implemented for tanzu context(TAP SaaS)
 	// Sync all required plugins
-	if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
-		log.Warningf("unable to automatically sync the plugins recommended by the active context. Please run 'tanzu plugin sync' to sync plugins manually, error: '%v'", err.Error())
+	if ctx.ContextType != configtypes.ContextTypeTanzu {
+		if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
+			log.Warningf("unable to automatically sync the plugins recommended by the active context. Please run 'tanzu plugin sync' to sync plugins manually, error: '%v'", err.Error())
+		}
 	}
 	return nil
 }
@@ -1629,14 +1638,13 @@ func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {
 	ctx.AdditionalMetadata[config.ProjectIDKey] = projectIDStr
 	ctx.AdditionalMetadata[config.SpaceNameKey] = spaceStr
 	ctx.AdditionalMetadata[config.ClusterGroupNameKey] = clustergroupStr
+	err = updateTanzuContextKubeconfig(ctx, projectStr, projectIDStr, spaceStr, clustergroupStr)
+	if err != nil {
+		return errors.Wrap(err, "failed to update the tanzu context kubeconfig")
+	}
 	err = config.SetContext(ctx, false)
 	if err != nil {
 		return errors.Wrap(err, "failed updating the context %q with the active tanzu resource")
-	}
-	projectVal := getProjectValueForKubeconfig(projectStr, projectIDStr)
-	err = updateTanzuContextKubeconfig(ctx, projectVal, spaceStr, clustergroupStr)
-	if err != nil {
-		return errors.Wrap(err, "failed to update the tanzu context kubeconfig")
 	}
 
 	return nil
@@ -1673,25 +1681,85 @@ func validateActiveResourceOptions() error {
 	return nil
 }
 
-func updateTanzuContextKubeconfig(cliContext *configtypes.Context, project, spaceName, clustergroupName string) error {
+func updateTanzuContextKubeconfig(cliContext *configtypes.Context, projectName, projectID, spaceName, clustergroupName string) error {
 	if cliContext.ClusterOpts == nil {
-		return errors.New("invalid context. Kubeconfig details missing in the context")
+		return errors.New("invalid context. Kubeconfig details are missing in the context")
 	}
+
 	kcfg, err := clientcmd.LoadFromFile(cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "unable to load kubeconfig")
 	}
 
-	kubeContext := kcfg.Contexts[cliContext.ClusterOpts.Context]
-	if kubeContext == nil {
-		return errors.Errorf("kubecontext %q doesn't exist", cliContext.ClusterOpts.Context)
+	projectVal := getProjectValueForKubeconfig(projectName, projectID)
+	newServerURL := prepareClusterServerURL(cliContext, projectVal, spaceName, clustergroupName)
+
+	// Manage context based on environment variable
+	useStableKubeContextName, _ := strconv.ParseBool(os.Getenv(constants.UseStableKubeContextNameForTanzuContext))
+	if useStableKubeContextName {
+		if err := updateContextInPlace(kcfg, cliContext, newServerURL); err != nil {
+			return err
+		}
+	} else {
+		newContextName := prepareKubeContextName(cliContext, projectName, spaceName, clustergroupName)
+		if err := updateContextWithNewName(kcfg, cliContext, newContextName, newServerURL); err != nil {
+			return err
+		}
 	}
-	cluster := kcfg.Clusters[kubeContext.Cluster]
-	cluster.Server = prepareClusterServerURL(cliContext, project, spaceName, clustergroupName)
+
 	err = clientcmd.WriteToFile(*kcfg, cliContext.ClusterOpts.Path)
 	if err != nil {
 		return errors.Wrap(err, "failed to update the context kubeconfig file")
 	}
+	return nil
+}
+
+func getKubeContextAndCluster(kcfg *api.Config, cliContext *configtypes.Context) (*api.Context, *api.Cluster, error) {
+	kubeCtx := kcfg.Contexts[cliContext.ClusterOpts.Context]
+	if kubeCtx == nil {
+		return nil, nil, errors.Errorf("kubecontext %q doesn't exist", cliContext.ClusterOpts.Context)
+	}
+	kubeCluster := kcfg.Clusters[kubeCtx.Cluster]
+	if kubeCluster == nil {
+		return nil, nil, errors.Errorf("kubecluster %q doesn't exist", kubeCtx.Cluster)
+	}
+	return kubeCtx, kubeCluster, nil
+}
+func updateContextInPlace(kcfg *api.Config, cliContext *configtypes.Context, newServerURL string) error {
+	_, kubeCluster, err := getKubeContextAndCluster(kcfg, cliContext)
+	if err != nil {
+		return err
+	}
+	kubeCluster.Server = newServerURL
+	return nil
+}
+
+func updateContextWithNewName(kcfg *api.Config, cliContext *configtypes.Context, newKubeContextName, newServerURL string) error {
+	kubeCtx, kubeCluster, err := getKubeContextAndCluster(kcfg, cliContext)
+	if err != nil {
+		return err
+	}
+
+	newKubeCluster := kubeCluster.DeepCopy()
+	newKubeContext := kubeCtx.DeepCopy()
+
+	delete(kcfg.Clusters, kubeCtx.Cluster)
+	delete(kcfg.Contexts, cliContext.ClusterOpts.Context)
+
+	newKubeCluster.Server = newServerURL
+	// use the same name for kubecontext and cluster
+	newKubeContext.Cluster = newKubeContextName
+	kcfg.Contexts[newKubeContextName] = newKubeContext
+	kcfg.Clusters[newKubeContext.Cluster] = newKubeCluster
+
+	// if the existing kubecontext is current update the current-context to point to new kubecontext
+	if kcfg.CurrentContext == cliContext.ClusterOpts.Context {
+		kcfg.CurrentContext = newKubeContextName
+	}
+
+	// update the CLI context to point to new context name
+	cliContext.ClusterOpts.Context = newKubeContextName
+
 	return nil
 }
 
@@ -1710,6 +1778,24 @@ func prepareClusterServerURL(context *configtypes.Context, project, spaceName, c
 		return serverURL + "/clustergroup/" + clustergroupName
 	}
 	return serverURL
+}
+
+// pre-reqs context.ClusterOpts is not nil
+func prepareKubeContextName(context *configtypes.Context, project, spaceName, clustergroupName string) string {
+	contextName := "tanzu-cli-" + context.Name
+	if project == "" {
+		return contextName
+	}
+	contextName += fmt.Sprintf(":%s", project)
+
+	if spaceName != "" {
+		return contextName + fmt.Sprintf(":%s", spaceName)
+	}
+	if clustergroupName != "" {
+		return contextName + fmt.Sprintf(":%s", clustergroupName)
+	}
+
+	return contextName
 }
 
 func getContextType() configtypes.ContextType {
