@@ -51,3 +51,22 @@ func JoinURL(baseURL, relativeURL string) (string, error) {
 	// Return the joined URL as a string
 	return parsedBaseURL.String(), nil
 }
+
+// ContainsRegistry returns true if the specified registryHost is part of registries
+func ContainsRegistry(registries []string, registryHost string) bool {
+	cleanRegistryURL := func(u string) string {
+		u = strings.TrimSpace(u)
+		u = strings.TrimPrefix(u, "http://")
+		u = strings.TrimPrefix(u, "https://")
+		return strings.Split(u, "/")[0]
+	}
+	registryHost = cleanRegistryURL(registryHost)
+
+	for _, reg := range registries {
+		reg = cleanRegistryURL(reg)
+		if strings.EqualFold(reg, registryHost) {
+			return true
+		}
+	}
+	return false
+}

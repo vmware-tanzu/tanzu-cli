@@ -67,22 +67,20 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 		})
 	})
 	Context("Download plugin bundle, Upload plugin bundle and plugin lifecycle tests with plugin group 'vmware-tkg/default:v0.0.1'", func() {
+		originalHomeDir := framework.GetHomeDir()
+
 		// Test case: download plugin bundle for plugin-group vmware-tkg/default:v0.0.1
 		It("download plugin bundle with specific plugin-group vmware-tkg/default:v0.0.1", func() {
 			err := tf.PluginCmd.DownloadPluginBundle(e2eTestLocalCentralRepoImage, []string{"vmware-tkg/default:v0.0.1"}, []string{}, false, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-default-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while downloading plugin bundle with specific group")
 		})
 
-		// Test case: upload plugin bundle downloaded using vmware-tkg/default:v0.0.1 plugin-group to the airgapped repository with authentication
-		It("upload plugin bundle that was downloaded using vmware-tkg/default:v0.0.1 plugin-group to the airgapped repository with authentication", func() {
-			curHomeDir := framework.GetHomeDir()
-			defer func() {
-				os.Setenv("HOME", curHomeDir)
-			}()
+		It("Authenticated Registry: Docker Login", func() {
 			// We are resetting the HOME environment variable for this specific tests as when we do docker login we need to have actually HOME variable set correctly
 			// otherwise the docker login fails with different errors on different systems (on macos we see keychain specific error)
-			// We are also using above defer function to revert the HOME environment variable after this test is ran
+			// We are reverting the HOME environment variable after this set of authenticated registry tests are run as part of "Authenticated Registry: Unset Environment Variable" test
 			os.Setenv("HOME", framework.OriginalHomeDir)
+			os.Setenv("TANZU_CLI_AUTHENTICATED_REGISTRY", e2eAirgappedCentralRepoWithAuth)
 
 			// Try uploading plugin bundle without docker login, it should fail
 			err := tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepoWithAuth, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-default-v0.0.1.tar.gz"))
@@ -92,10 +90,55 @@ var _ = framework.CLICoreDescribe("[Tests:E2E][Feature:Airgapped-Plugin-Download
 			dockerloginCmd := fmt.Sprintf("docker login %s --username %s --password %s", e2eAirgappedCentralRepoWithAuth, e2eAirgappedCentralRepoWithAuthUsername, e2eAirgappedCentralRepoWithAuthPassword)
 			_, _, err = tf.Exec.Exec(dockerloginCmd)
 			Expect(err).To(BeNil())
+		})
 
+		// Test case: upload plugin bundle downloaded using vmware-tkg/default:v0.0.1 plugin-group to the airgapped repository with authentication
+		It("Authenticated Registry: upload plugin bundle that was downloaded using vmware-tkg/default:v0.0.1 plugin-group to the airgapped repository with authentication", func() {
 			// Try uploading plugin bundle after docker login, it should succeed
 			err = tf.PluginCmd.UploadPluginBundle(e2eAirgappedCentralRepoWithAuth, filepath.Join(tempDir, "plugin_bundle_vmware-tkg-default-v0.0.1.tar.gz"))
 			Expect(err).To(BeNil(), "should not get any error while uploading plugin bundle")
+		})
+
+		// Test case: validate that the updating the discovery source to point to new airgapped repository requiring authentication works
+		It("Authenticated Registry: update discovery source to point to new airgapped repository discovery image that requires authentication", func() {
+			err = framework.UpdatePluginDiscoverySource(tf, e2eAirgappedCentralRepoWithAuthImage)
+			Expect(err).To(BeNil(), "should not get any error for plugin source update for authenticated registry")
+		})
+
+		// Test case: Validate that the correct plugins and plugin group exists with `tanzu plugin search` and `tanzu plugin group search` output on authenticated registry
+		It("Authenticated Registry: validate the plugins from group 'vmware-tkg/default:v0.0.1' exists", func() {
+			// search plugin groups
+			pluginGroups, err = pluginlifecyclee2e.SearchAllPluginGroups(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginGroupSearch)
+			// check all expected plugin groups are available in the `plugin group search` output from the airgapped repository
+			expectedPluginGroups := []*framework.PluginGroup{{Group: "vmware-tkg/default", Latest: "v0.0.1", Description: "Desc for vmware-tkg/default:v0.0.1"}}
+			Expect(framework.IsAllPluginGroupsExists(pluginGroups, expectedPluginGroups)).Should(BeTrue(), "all required plugin groups for life cycle tests should exists in plugin group search output")
+
+			// search plugins and make sure correct number of plugins available
+			// check expected plugins are available in the `plugin search` output from the airgapped repository
+			expectedPlugins := pluginsForPGTKG001
+			expectedPlugins = append(expectedPlugins, essentialPlugins...) // Essential plugin will be always installed
+			pluginsSearchList, err = pluginlifecyclee2e.SearchAllPlugins(tf)
+			Expect(err).To(BeNil(), framework.NoErrorForPluginSearch)
+			Expect(len(pluginsSearchList)).To(Equal(len(expectedPlugins)))
+			Expect(framework.CheckAllPluginsExists(pluginsSearchList, expectedPlugins)).To(BeTrue())
+		})
+
+		// Test case: Validate that the plugins can be installed from the plugin-group for authenticated registry
+		It("Authenticated Registry: validate that plugins can be installed from group 'vmware-tkg/default:v0.0.1' for authenticated registry", func() {
+			// All plugins should get installed from the group
+			_, _, err := tf.PluginCmd.InstallPluginsFromGroup("", "vmware-tkg/default:v0.0.1")
+			Expect(err).To(BeNil())
+
+			// Verify all plugins got installed with `tanzu plugin list`
+			installedPlugins, err := tf.PluginCmd.ListInstalledPlugins()
+			Expect(err).To(BeNil())
+			Expect(framework.CheckAllPluginsExists(installedPlugins, pluginsForPGTKG001)).To(BeTrue())
+		})
+
+		It("Authenticated Registry: Unset Environment Variable", func() {
+			os.Setenv("HOME", originalHomeDir)
+			os.Unsetenv("TANZU_CLI_AUTHENTICATED_REGISTRY")
 		})
 
 		// Test case: upload plugin bundle downloaded using vmware-tkg/default:v0.0.1 plugin-group to the airgapped repository

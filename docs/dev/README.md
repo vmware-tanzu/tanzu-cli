@@ -80,6 +80,7 @@ Below is the list of these variables:
 | -------------------- | ----------- | ----- |
 | `SQL_STATEMENTS_LOG_FILE` | Specifies a log file where SQL commands will be logged when _modifying_ the plugin inventory database.  This is done when publishing plugins using the `builder` plugin. | A file name with its path |
 | `TANZU_CLI_ADDITIONAL_PLUGIN_DISCOVERY_IMAGES_TEST_ONLY` | Specifies test plugin repositories to use as a supplement to the production Central Repository of plugins. Ignored if `TANZU_CLI_PRIVATE_PLUGIN_DISCOVERY_IMAGES` is set. | Comma-separated list of test plugin repository URIs| |
+| `TANZU_CLI_AUTHENTICATED_REGISTRY` | Specifies the list of registry hosts that requires authentication to pull images. Tanzu CLI will use default docker auth to communicate to these registries | Comma-separated list of registry host-names | |
 | `TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_NAME` | Override the default name (`vmware-tanzucli/essentials`) of the Essential Plugins group.  Should not be needed. | Group name |
 | `TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_VERSION` | Specify a fixed version to use for the Essential Plugins group instead of the latest.  Should not be needed. | Group version |
 | `TANZU_CLI_SKIP_CONTEXT_RECOMMENDED_PLUGIN_INSTALLATION` | Skips the auto-installation of the context recommended plugins
