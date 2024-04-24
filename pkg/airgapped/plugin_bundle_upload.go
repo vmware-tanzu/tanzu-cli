@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -67,9 +68,10 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 		if err != nil {
 			return errors.Wrap(err, "error while constructing the repo image path")
 		}
-		if err = o.uploadImage(imageTar, repoImagePath, totalImages, imagesUploaded); err != nil {
-			return err
+		if uploadErr := o.uploadImage(imageTar, repoImagePath, totalImages, imagesUploaded); uploadErr != nil {
+			return uploadErr
 		}
+		time.Sleep(3 * time.Second)
 		imagesUploaded++
 	}
 	log.Infof("---------------------------")
@@ -130,7 +132,6 @@ func (o *UploadPluginBundleOptions) uploadImage(imageTar, repoImagePath string, 
 	uploadedMsg = fmt.Sprintf(uploadedMsg, totalImages, imagesUploaded+1, repoImagePath)
 	if spinner != nil {
 		spinner.SetFinalText(uploadedMsg, log.LogTypeINFO)
-		spinner.StopSpinner()
 	} else {
 		log.Infof(uploadedMsg, totalImages, imagesUploaded, repoImagePath)
 	}
