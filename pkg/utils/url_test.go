@@ -630,3 +630,31 @@ func TestJoinUrl(t *testing.T) {
 		})
 	}
 }
+
+func TestContainsRegistry(t *testing.T) {
+	testCases := []struct {
+		input    string
+		expected bool
+	}{
+		{"google.com", true},
+		{"facebook.com", false},
+		{"xyz.com", false},
+		{"packages.xyz.com", true},
+		{"packages.example.com", false},
+		{"projects.example.com", true},
+		{"packages.repo.com", false},
+		{"registry.packages.repo.com", true},
+		{"registry.packages.repo.com/projects", true},
+		{"https://registry.packages.repo.com/projects", true},
+		{"registry.packages", false},
+	}
+
+	registries := []string{"https://google.com", "http://fb.com", "https://packages.xyz.com", "projects.example.com", "registry.packages.repo.com/projects/cli"}
+
+	for _, tc := range testCases {
+		got := ContainsRegistry(registries, tc.input)
+		if got != tc.expected {
+			t.Errorf("ContainsRegistry(%q, %q) = %t; want %t", registries, tc.input, got, tc.expected)
+		}
+	}
+}
