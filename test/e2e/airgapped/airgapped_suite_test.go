@@ -33,6 +33,7 @@ var (
 	e2eAirgappedCentralRepoWithAuth         string
 	e2eAirgappedCentralRepoWithAuthUsername string
 	e2eAirgappedCentralRepoWithAuthPassword string
+	e2eAirgappedCentralRepoWithAuthImage    string
 	pluginsSearchList                       []*framework.PluginInfo
 	pluginGroups                            []*framework.PluginGroup
 	tempDir                                 string
@@ -58,8 +59,9 @@ var _ = BeforeSuite(func() {
 	Expect(e2eAirgappedCentralRepoWithAuthUsername).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with airgapped central repository URL", framework.TanzuCliE2ETestAirgappedRepoWithAuthUsername))
 	e2eAirgappedCentralRepoWithAuthPassword = os.Getenv(framework.TanzuCliE2ETestAirgappedRepoWithAuthPassword)
 	Expect(e2eAirgappedCentralRepoWithAuthPassword).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with airgapped central repository URL", framework.TanzuCliE2ETestAirgappedRepoWithAuthPassword))
+	e2eAirgappedCentralRepoWithAuthImage = fmt.Sprintf("%s%s", e2eAirgappedCentralRepoWithAuth, filepath.Base(e2eTestLocalCentralRepoImage))
 
-	os.Setenv(framework.TanzuCliPluginDiscoverySignatureVerificationSkipList, fmt.Sprintf("%v,%v", e2eAirgappedCentralRepoImage, e2eTestLocalCentralRepoImage))
+	os.Setenv(framework.TanzuCliPluginDiscoverySignatureVerificationSkipList, fmt.Sprintf("%v,%v,%v", e2eAirgappedCentralRepoImage, e2eTestLocalCentralRepoImage, e2eAirgappedCentralRepoWithAuthImage))
 
 	e2eTestLocalCentralRepoPluginHost := os.Getenv(framework.TanzuCliE2ETestLocalCentralRepositoryHost)
 	Expect(e2eTestLocalCentralRepoPluginHost).NotTo(BeEmpty(), fmt.Sprintf("environment variable %s should set with local central repository host", framework.TanzuCliE2ETestLocalCentralRepositoryHost))
