@@ -222,6 +222,7 @@ func (r *registry) CopyImageFromTar(sourceTarFile, destImageRepo string) error {
 			Insecure:    r.opts.Insecure,
 		}
 	}
+
 	originalStdout := os.Stderr
 	pr, pw, pipeErr := os.Pipe()
 	if pipeErr != nil {

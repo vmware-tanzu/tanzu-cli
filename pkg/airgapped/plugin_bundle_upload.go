@@ -62,16 +62,17 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	imagesUploaded := 0
 	// Iterate through all the images and publish them to the remote repository
 	var repoImagePath string
+	spinner := component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr))
+	defer spinner.StopSpinner()
 	for _, ic := range manifest.ImagesToCopy {
 		imageTar := filepath.Join(pluginBundleDir, ic.SourceTarFilePath)
 		repoImagePath, err = utils.JoinURL(o.DestinationRepo, ic.RelativeImagePath)
 		if err != nil {
 			return errors.Wrap(err, "error while constructing the repo image path")
 		}
-		if uploadErr := o.uploadImage(imageTar, repoImagePath, totalImages, imagesUploaded); uploadErr != nil {
+		if uploadErr := o.uploadImage(imageTar, repoImagePath, totalImages, imagesUploaded, spinner); uploadErr != nil {
 			return uploadErr
 		}
-		time.Sleep(3 * time.Second)
 		imagesUploaded++
 	}
 	log.Infof("---------------------------")
@@ -106,32 +107,25 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	return nil
 }
 
-func (o *UploadPluginBundleOptions) uploadImage(imageTar, repoImagePath string, totalImages, imagesUploaded int) error {
+func (o *UploadPluginBundleOptions) uploadImage(imageTar, repoImagePath string, totalImages, imagesUploaded int, spinner component.OutputWriterSpinner) error {
 	uploadingMsg := fmt.Sprintf("[%d/%d] uploading image %q", totalImages, imagesUploaded, repoImagePath)
 	errorMsg := fmt.Sprintf("[%d/%d] error while uploading image %q", totalImages, imagesUploaded, repoImagePath)
 	uploadedMsg := "[%d/%d] uploaded image %q"
 
-	var spinner component.OutputWriterSpinner
-	if component.IsTTYEnabled() {
-		// Initialize the spinner
-		spinner = component.NewOutputWriterSpinner(
-			component.WithOutputStream(os.Stderr),
-			component.WithSpinnerText(uploadingMsg),
-			component.WithSpinnerStarted(),
-		)
+	if !component.IsTTYEnabled() {
+		spinner.SetText(uploadingMsg)
 		spinner.SetFinalText(errorMsg, log.LogTypeERROR)
-		defer spinner.StopSpinner()
+		spinner.StartSpinner()
 	} else {
 		log.Infof(uploadingMsg, totalImages, imagesUploaded, repoImagePath)
 	}
-
 	if err := o.ImageProcessor.CopyImageFromTar(imageTar, repoImagePath); err != nil {
 		return errors.Wrapf(err, errorMsg, repoImagePath)
 	}
-
+	time.Sleep(1 * time.Second)
 	uploadedMsg = fmt.Sprintf(uploadedMsg, totalImages, imagesUploaded+1, repoImagePath)
-	if spinner != nil {
-		spinner.SetFinalText(uploadedMsg, log.LogTypeINFO)
+	if spinner == nil {
+		spinner.SetFinalText("", "")
 	} else {
 		log.Infof(uploadedMsg, totalImages, imagesUploaded, repoImagePath)
 	}
