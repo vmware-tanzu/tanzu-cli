@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/pkg/errors"
 
@@ -122,7 +121,6 @@ func (o *UploadPluginBundleOptions) uploadImage(imageTar, repoImagePath string, 
 	if err := o.ImageProcessor.CopyImageFromTar(imageTar, repoImagePath); err != nil {
 		return errors.Wrapf(err, errorMsg, repoImagePath)
 	}
-	time.Sleep(1 * time.Second)
 	uploadedMsg = fmt.Sprintf(uploadedMsg, totalImages, imagesUploaded+1, repoImagePath)
 	if spinner == nil {
 		spinner.SetFinalText("", "")
