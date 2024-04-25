@@ -33,6 +33,8 @@ var _ = Describe("Unit tests for tanzu auth", func() {
 		err          error
 		endpoint     string
 		tanzuContext *configtypes.Context
+		oldHomeDir   string
+		tmpHomeDir   string
 	)
 
 	const (
@@ -55,13 +57,20 @@ var _ = Describe("Unit tests for tanzu auth", func() {
 					},
 				},
 			}
-			err = os.Setenv("KUBECONFIG", filepath.Join(testingDir, ".kube", "config"))
-			Expect(err).ToNot(HaveOccurred())
+
+			oldHomeDir = os.Getenv("HOME")
+			tmpHomeDir, err = os.MkdirTemp(os.TempDir(), "home")
+			Expect(err).To(BeNil(), "unable to create temporary home directory")
+			err = os.Setenv("HOME", tmpHomeDir)
+			Expect(err).To(BeNil())
 		})
 		AfterEach(func() {
 			deleteTempDirectory()
 			err = os.Unsetenv("KUBECONFIG")
 			Expect(err).ToNot(HaveOccurred())
+
+			err = os.Setenv("HOME", oldHomeDir)
+			Expect(err).To(BeNil())
 		})
 		Context("When the endpoint caCertPath file doesn't exist", func() {
 			BeforeEach(func() {
@@ -79,7 +88,7 @@ var _ = Describe("Unit tests for tanzu auth", func() {
 			})
 			It("should set the 'certificate-authority-data' in kubeconfig and 'insecure-skip-tls-verify' should be unset", func() {
 				Expect(err).ToNot(HaveOccurred())
-				Expect(kubeConfigPath).Should(Equal(filepath.Join(testingDir, ".kube", "config")))
+				Expect(kubeConfigPath).Should(Equal(filepath.Join(tmpHomeDir, ".config", "tanzu", "kube", "config")))
 				Expect(kubeContext).Should(Equal(kubeconfigContextName(tanzuContext.Name)))
 				config, err := clientcmd.LoadFromFile(kubeConfigPath)
 				Expect(err).ToNot(HaveOccurred())
@@ -101,7 +110,7 @@ var _ = Describe("Unit tests for tanzu auth", func() {
 			})
 			It("should not set the 'certificate-authority-data' in kubeconfig and 'insecure-skip-tls-verify' should be set", func() {
 				Expect(err).ToNot(HaveOccurred())
-				Expect(kubeConfigPath).Should(Equal(filepath.Join(testingDir, ".kube", "config")))
+				Expect(kubeConfigPath).Should(Equal(filepath.Join(tmpHomeDir, ".config", "tanzu", "kube", "config")))
 				Expect(kubeContext).Should(Equal("tanzu-cli-" + tanzuContext.Name))
 				config, err := clientcmd.LoadFromFile(kubeConfigPath)
 				Expect(err).ToNot(HaveOccurred())

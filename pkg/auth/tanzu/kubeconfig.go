@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -15,7 +16,16 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
 	kubeutils "github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+)
+
+const (
+	// tanzuLocalKubeDir is the local config directory
+	tanzuLocalKubeDir = "kube"
+
+	// tanzuKubeconfigFile is the name the of the kubeconfig file
+	tanzuKubeconfigFile = "config"
 )
 
 // GetTanzuKubeconfig constructs and returns the kubeconfig that points to Tanzu Org and
@@ -39,7 +49,7 @@ func GetTanzuKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertP
 	clusterName := kubeconfigClusterName(c.Name)
 	username := kubeconfigUserName(c.Name)
 	execConfig := getExecConfig(c)
-	config := &clientcmdapi.Config{
+	kcfg := &clientcmdapi.Config{
 		Kind:       "Config",
 		APIVersion: clientcmdapi.SchemeGroupVersion.Version,
 		Clusters: map[string]*clientcmdapi.Cluster{clusterName: {
@@ -52,11 +62,15 @@ func GetTanzuKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertP
 		CurrentContext: contextName,
 	}
 
-	kubeconfigByes, err := json.Marshal(config)
+	kubeconfigByes, err := json.Marshal(kcfg)
 	if err != nil {
 		return "", "", "", errors.Wrap(err, "failed to marshal the tanzu kubeconfig")
 	}
-	kubeconfigPath := kubeutils.GetDefaultKubeConfigFile()
+
+	kubeconfigPath, err := tanzuLocalKubeConfigPath()
+	if err != nil {
+		return "", "", "", errors.Wrap(err, "unable to get the Tanzu local kubeconfig path")
+	}
 	err = kubeutils.MergeKubeConfigWithoutSwitchContext(kubeconfigByes, kubeconfigPath)
 	if err != nil {
 		return "", "", "", errors.Wrap(err, "failed to merge the tanzu kubeconfig")
@@ -88,4 +102,26 @@ func getExecConfig(c *configtypes.Context) *clientcmdapi.ExecConfig {
 	execConfig.Command = "tanzu"
 	execConfig.Args = append([]string{"context", "get-token"}, c.Name)
 	return execConfig
+}
+
+// tanzuLocalKubeConfigPath returns the local tanzu kubeconfig path
+func tanzuLocalKubeConfigPath() (path string, err error) {
+	localDir, err := config.LocalDir()
+	if err != nil {
+		return path, errors.Wrap(err, "could not locate local tanzu dir")
+	}
+	path = filepath.Join(localDir, tanzuLocalKubeDir)
+	// create tanzu kubeconfig directory
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err = os.MkdirAll(path, 0755)
+		if err != nil {
+			return "", err
+		}
+	} else if err != nil {
+		return "", err
+	}
+
+	configFilePath := filepath.Join(path, tanzuKubeconfigFile)
+
+	return configFilePath, nil
 }
