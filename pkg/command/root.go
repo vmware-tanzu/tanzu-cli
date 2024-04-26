@@ -572,6 +572,8 @@ func shouldSkipTelemetryCollection(cmd *cobra.Command) bool {
 		"tanzu completion",
 		// Common first command to run,
 		"tanzu version",
+		// Can be used to set the prompt on every shell command
+		"tanzu context current",
 		// should skip telemetry for "telemetry" plugin
 		"tanzu telemetry",
 	}
@@ -597,6 +599,8 @@ func shouldSkipPrompts(cmd *cobra.Command) bool {
 		// get to see the prompts and the kubectl command execution just gets stuck, and it
 		// is very hard for users to figure out what is going wrong
 		"tanzu pinniped-auth",
+		// Can be used to set the prompt on every shell command
+		"tanzu context current",
 	}
 	return isSkipCommand(skipCommands, cmd.CommandPath())
 }
@@ -612,6 +616,9 @@ func shouldSkipEssentialPlugins(cmd *cobra.Command) bool {
 		"tanzu version",
 
 		"tanzu config set",
+
+		// Can be used to set the prompt on every shell command
+		"tanzu context current",
 
 		"tanzu config eula",
 		"tanzu ceip-participation set",
@@ -640,6 +647,8 @@ func shouldSkipVersionCheck(cmd *cobra.Command) bool {
 		"tanzu completion",
 		// Common first command to run, let's not recommend a new version of the CLI
 		"tanzu version",
+		// Can be used to set the prompt on every shell command
+		"tanzu context current",
 	}
 	return isSkipCommand(skipVersionCheckCommands, cmd.CommandPath())
 }
@@ -654,6 +663,8 @@ func shouldSkipGlobalInit(cmd *cobra.Command) bool {
 		"tanzu completion",
 		// Common first command to run, let's not perform extra tasks
 		"tanzu version",
+		// Can be used to set the prompt on every shell command
+		"tanzu context current",
 	}
 	return isSkipCommand(skipGlobalInitCommands, cmd.CommandPath())
 }
