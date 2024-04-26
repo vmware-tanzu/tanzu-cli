@@ -538,13 +538,12 @@ running the `tanzu plugin search`, `tanzu plugin group search`, and
 The "Central Configuration" refers to an asynchronously updatable, centrally-hosted CLI configuration.
 Deployed CLIs regularly read this Central Configuration and take action on specific changes.
 
-To get the latest version of the Central Configuration in an air-gapped/internet-restricted environment, the
-operator can run `tanzu plugin download-bundle/upload-bundle` specifying any plugin group to fetch and then
-upload the latest configuration.  This can be done periodically or whenever the operator wants the latest state
-of the Central Configuration.
-
-Trick: use the very small `vmware-tanzucli/essentials` plugin group if you only want to update the Central Configuration,
-i.e, `tanzu plugin download-bundle --group vmware-tanzucli/essentials --to-tar update_config.tar`
+Whenever an air-gap environment operator uses the `tanzu plugin download-bundle/upload-bundle` commands to add more plugin
+versions to the air-gap repository, the latest version of the Central Configuration will automatically be updated as well.
+If the operator wants to update the content of the Central Configuration without having to also upload new
+plugin versions, the new `tanzu plugin download-bundle --refresh-configuration-only` command can be used followed by a
+standard `tanzu plugin upload-bundle`.  Running both of these commands to refresh the Central Configuration only takes a
+few seconds.
 
 ### Interacting with a central repository hosted on a registry with self-signed CA or with expired CA
 
