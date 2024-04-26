@@ -12,7 +12,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/pkg/errors"
@@ -23,6 +25,9 @@ import (
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
+
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
 
 // RegistryOptions registry options used while interacting with registry
@@ -104,12 +109,19 @@ func (vo *CosignVerifyOptions) Verify(ctx context.Context, images []string) erro
 			return fmt.Errorf("parsing reference: %w", err)
 		}
 
+		remoteOptions := []remote.Option{remote.WithContext(ctx), remote.WithTransport(httpTrans)}
+
+		// Include WithAuthFromKeychain option for the registries requiring authentication
+		authenticatedRegistries := strings.Split(os.Getenv(constants.AuthenticatedRegistry), ",")
+		if utils.ContainsRegistry(authenticatedRegistries, ref.Context().Registry.RegistryStr()) {
+			remoteOptions = append(remoteOptions, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+		}
+
 		var arrErr []error
 		for _, verifier := range pubKeys {
 			co := &cosign.CheckOpts{
 				RegistryClientOpts: []ociremote.Option{
-					ociremote.WithRemoteOptions(remote.WithContext(ctx)),
-					ociremote.WithRemoteOptions(remote.WithTransport(httpTrans)),
+					ociremote.WithRemoteOptions(remoteOptions...),
 				},
 				IgnoreTlog:  ignoreTlog,
 				SigVerifier: verifier,
