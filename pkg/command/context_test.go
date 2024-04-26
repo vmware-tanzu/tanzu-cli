@@ -1323,6 +1323,15 @@ func TestCompletionContext(t *testing.T) {
 			expected: expectedOutForOutputFlag + ":4\n",
 		},
 		// =====================
+		// tanzu context current
+		// =====================
+		{
+			test: "no completion after the current command",
+			args: []string{"__complete", "context", "current", ""},
+			// ":4" is the value of the ShellCompDirectiveNoFileComp
+			expected: "_activeHelp_ " + compNoMoreArgsMsg + "\n:4\n",
+		},
+		// =====================
 		// tanzu context delete
 		// =====================
 		{
@@ -1552,6 +1561,275 @@ func TestCompletionContext(t *testing.T) {
 	os.Unsetenv("TANZU_ACTIVE_HELP")
 }
 
+func TestContextCurrentCmd(t *testing.T) {
+	ctxK8s := &configtypes.Context{
+		Name:        "tkg",
+		ContextType: configtypes.ContextTypeK8s,
+		ClusterOpts: &configtypes.ClusterServer{
+			Endpoint: "https://example.com/myendpoint/k8s/1",
+			Context:  "kube-context-name",
+			Path:     "/home/user/.kube/config",
+		},
+	}
+	ctxTMC := &configtypes.Context{
+		Name:        "tmc",
+		ContextType: configtypes.ContextTypeTMC,
+		GlobalOpts:  &configtypes.GlobalServer{Endpoint: "https://example.com/myendpoint/tmc/1"},
+	}
+	ctxTanzuNoOrg := &configtypes.Context{
+		Name:        "tanzu",
+		ContextType: configtypes.ContextTypeTanzu,
+		ClusterOpts: &configtypes.ClusterServer{
+			Endpoint: "https://example.com/myendpoint/tanzu/1",
+			Context:  "kube-context-name",
+			Path:     "/home/user/.kube/config",
+		},
+	}
+	ctxTanzuNoProject := &configtypes.Context{
+		Name:        "tanzu",
+		ContextType: configtypes.ContextTypeTanzu,
+		ClusterOpts: &configtypes.ClusterServer{
+			Endpoint: "https://example.com/myendpoint/tanzu/1",
+			Context:  "kube-context-name",
+			Path:     "/home/user/.kube/config",
+		},
+		AdditionalMetadata: map[string]interface{}{
+			config.OrgIDKey: "org-id",
+		},
+	}
+	ctxTanzuNoSpace := &configtypes.Context{
+		Name:        "tanzu",
+		ContextType: configtypes.ContextTypeTanzu,
+		ClusterOpts: &configtypes.ClusterServer{
+			Endpoint: "https://example.com/myendpoint/tanzu/1",
+			Context:  "kube-context-name",
+			Path:     "/home/user/.kube/config",
+		},
+		AdditionalMetadata: map[string]interface{}{
+			config.OrgIDKey:       "org-id",
+			config.ProjectNameKey: "project-name",
+			config.ProjectIDKey:   "project-id",
+		},
+	}
+	ctxTanzuSpace := &configtypes.Context{
+		Name:        "tanzu",
+		ContextType: configtypes.ContextTypeTanzu,
+		ClusterOpts: &configtypes.ClusterServer{
+			Endpoint: "https://example.com/myendpoint/tanzu/1",
+			Context:  "kube-context-name",
+			Path:     "/home/user/.kube/config",
+		},
+		AdditionalMetadata: map[string]interface{}{
+			config.OrgIDKey:       "org-id",
+			config.ProjectNameKey: "project-name",
+			config.ProjectIDKey:   "project-id",
+			config.SpaceNameKey:   "space-name",
+		},
+	}
+	ctxTanzuClustergroup := &configtypes.Context{
+		Name:        "tanzu",
+		ContextType: configtypes.ContextTypeTanzu,
+		ClusterOpts: &configtypes.ClusterServer{
+			Endpoint: "https://example.com/myendpoint/tanzu/1",
+			Context:  "kube-context-name",
+			Path:     "/home/user/.kube/config",
+		},
+		AdditionalMetadata: map[string]interface{}{
+			config.OrgIDKey:            "org-id",
+			config.ProjectNameKey:      "project-name",
+			config.ProjectIDKey:        "project-id",
+			config.ClusterGroupNameKey: "clustergroup-name",
+		},
+	}
+
+	tests := []struct {
+		test           string
+		activeContexts []*configtypes.Context
+		short          bool
+		expected       string
+	}{
+		{
+			test:     "no active context",
+			expected: "There is no active context\n",
+		},
+		{
+			test:     "no active context short",
+			short:    true,
+			expected: "There is no active context\n",
+		},
+		{
+			test:           "single k8s active context",
+			activeContexts: []*configtypes.Context{ctxK8s},
+			expected: `  Name:            tkg
+  Type:            kubernetes
+  Kube Config:     /home/user/.kube/config
+  Kube Context:    kube-context-name
+`,
+		},
+		{
+			test:           "single k8s active context short",
+			short:          true,
+			activeContexts: []*configtypes.Context{ctxK8s},
+			expected:       "tkg\n",
+		},
+		{
+			test:           "single tmc active context",
+			activeContexts: []*configtypes.Context{ctxTMC},
+			expected: `  Name:        tmc
+  Type:        mission-control
+`,
+		},
+		{
+			test:           "single tmc active context short",
+			short:          true,
+			activeContexts: []*configtypes.Context{ctxTMC},
+			expected:       "tmc\n",
+		},
+		{
+			test:           "both k8s and tmc active contexts",
+			activeContexts: []*configtypes.Context{ctxK8s, ctxTMC},
+			expected: `  Name:            tkg
+  Type:            kubernetes
+  Kube Config:     /home/user/.kube/config
+  Kube Context:    kube-context-name
+`,
+		},
+		{
+			test:           "both k8s and tmc active contexts short",
+			short:          true,
+			activeContexts: []*configtypes.Context{ctxK8s, ctxTMC},
+			expected:       "tkg\n",
+		},
+		{
+			test:           "tanzu no org",
+			activeContexts: []*configtypes.Context{ctxTanzuNoOrg, ctxTMC},
+			expected: `  Name:            tanzu
+  Type:            tanzu
+  Kube Config:     /home/user/.kube/config
+  Kube Context:    kube-context-name
+`,
+		},
+		{
+			test:           "tanzu no org short",
+			short:          true,
+			activeContexts: []*configtypes.Context{ctxTanzuNoOrg, ctxTMC},
+			expected:       "tanzu\n",
+		},
+		{
+			test:           "tanzu just org",
+			activeContexts: []*configtypes.Context{ctxTanzuNoProject, ctxTMC},
+			expected: `  Name:            tanzu
+  Type:            tanzu
+  Organization:    org-id
+  Project:         none set
+  Kube Config:     /home/user/.kube/config
+  Kube Context:    kube-context-name
+`,
+		},
+		{
+			test:           "tanzu just org short",
+			short:          true,
+			activeContexts: []*configtypes.Context{ctxTanzuNoProject, ctxTMC},
+			expected:       "tanzu\n",
+		},
+		{
+			test:           "tanzu just project",
+			activeContexts: []*configtypes.Context{ctxTanzuNoSpace},
+			expected: `  Name:            tanzu
+  Type:            tanzu
+  Organization:    org-id
+  Project:         project-name (project-id)
+  Kube Config:     /home/user/.kube/config
+  Kube Context:    kube-context-name
+`,
+		},
+		{
+			test:           "tanzu just project short",
+			short:          true,
+			activeContexts: []*configtypes.Context{ctxTanzuNoSpace},
+			expected:       "tanzu:project-name\n",
+		},
+		{
+			test:           "tanzu with space",
+			activeContexts: []*configtypes.Context{ctxTanzuSpace},
+			expected: `  Name:            tanzu
+  Type:            tanzu
+  Organization:    org-id
+  Project:         project-name (project-id)
+  Space:           space-name
+  Kube Config:     /home/user/.kube/config
+  Kube Context:    kube-context-name
+`,
+		},
+		{
+			test:           "tanzu with space short",
+			short:          true,
+			activeContexts: []*configtypes.Context{ctxTanzuSpace},
+			expected:       "tanzu:project-name:space-name\n",
+		},
+		{
+			test:           "tanzu with clustergroup",
+			activeContexts: []*configtypes.Context{ctxTanzuClustergroup, ctxTMC},
+			expected: `  Name:             tanzu
+  Type:             tanzu
+  Organization:     org-id
+  Project:          project-name (project-id)
+  Cluster Group:    clustergroup-name
+  Kube Config:      /home/user/.kube/config
+  Kube Context:     kube-context-name
+`,
+		},
+		{
+			test:           "tanzu with clustergroup short",
+			short:          true,
+			activeContexts: []*configtypes.Context{ctxTanzuClustergroup, ctxTMC},
+			expected:       "tanzu:project-name:clustergroup-name\n",
+		},
+	}
+
+	for _, spec := range tests {
+		t.Run(spec.test, func(t *testing.T) {
+			assert := assert.New(t)
+
+			// Setup a temporary configuration
+			configFile, err := os.CreateTemp("", "config")
+			assert.Nil(err)
+			os.Setenv("TANZU_CONFIG", configFile.Name())
+			configFileNG, err := os.CreateTemp("", "config_ng")
+			assert.Nil(err)
+			os.Setenv("TANZU_CONFIG_NEXT_GEN", configFileNG.Name())
+
+			// Add some active contexts
+			for i := range spec.activeContexts {
+				_ = config.SetContext(spec.activeContexts[i], true)
+			}
+
+			rootCmd, err := NewRootCmd()
+			assert.Nil(err)
+
+			var out bytes.Buffer
+			rootCmd.SetOut(&out)
+			args := []string{"context", "current"}
+			if spec.short {
+				args = append(args, "--short")
+			}
+			rootCmd.SetArgs(args)
+
+			err = rootCmd.Execute()
+			assert.Nil(err)
+
+			assert.Equal(spec.expected, out.String())
+
+			resetContextCommandFlags()
+
+			os.Unsetenv("TANZU_CONFIG")
+			os.Unsetenv("TANZU_CONFIG_NEXT_GEN")
+			os.RemoveAll(configFile.Name())
+			os.RemoveAll(configFileNG.Name())
+		})
+	}
+}
+
 func resetContextCommandFlags() {
 	ctxName = ""
 	endpoint = ""
@@ -1566,6 +1844,7 @@ func resetContextCommandFlags() {
 	targetStr = ""
 	contextTypeStr = ""
 	outputFormat = ""
+	shortCtx = false
 }
 
 func TestMapTanzuEndpointToTMCEndpoint(t *testing.T) {

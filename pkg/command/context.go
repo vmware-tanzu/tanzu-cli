@@ -1161,7 +1161,7 @@ func newCurrentCtxCmd() *cobra.Command {
 		Use:               "current",
 		Short:             "Display the current context",
 		Args:              cobra.NoArgs,
-		ValidArgsFunction: completeAllContexts,
+		ValidArgsFunction: noMoreCompletions,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			currentCtxMap, err := config.GetAllActiveContextsMap()
 			if err != nil {
@@ -1169,7 +1169,7 @@ func newCurrentCtxCmd() *cobra.Command {
 			}
 
 			if len(currentCtxMap) == 0 {
-				fmt.Println("There is no active context")
+				fmt.Fprintln(cmd.OutOrStdout(), "There is no active context")
 				return nil
 			}
 
@@ -1186,9 +1186,9 @@ func newCurrentCtxCmd() *cobra.Command {
 				}
 
 				if shortCtx {
-					printShortContext(ctx)
+					printShortContext(cmd.OutOrStdout(), ctx)
 				} else {
-					printContext(ctx)
+					printContext(cmd.OutOrStdout(), ctx)
 				}
 			}
 			return nil
@@ -1200,7 +1200,7 @@ func newCurrentCtxCmd() *cobra.Command {
 	return currentCtxCmd
 }
 
-func printShortContext(ctx *configtypes.Context) {
+func printShortContext(writer io.Writer, ctx *configtypes.Context) {
 	if ctx == nil {
 		return
 	}
@@ -1222,10 +1222,10 @@ func printShortContext(ctx *configtypes.Context) {
 			}
 		}
 	}
-	fmt.Println(ctxStr.String())
+	fmt.Fprintln(writer, ctxStr.String())
 }
 
-func printContext(ctx *configtypes.Context) {
+func printContext(writer io.Writer, ctx *configtypes.Context) {
 	if ctx == nil {
 		return
 	}
@@ -1269,7 +1269,7 @@ func printContext(ctx *configtypes.Context) {
 		row = append(row, kubeCtx)
 	}
 
-	outputWriter := component.NewOutputWriterWithOptions(os.Stdout, string(component.ListTableOutputType), []component.OutputWriterOption{}, columns...)
+	outputWriter := component.NewOutputWriterWithOptions(writer, string(component.ListTableOutputType), []component.OutputWriterOption{}, columns...)
 	outputWriter.AddRow(row...)
 	outputWriter.Render()
 }
