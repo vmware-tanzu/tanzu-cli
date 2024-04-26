@@ -1238,7 +1238,7 @@ func printContext(writer io.Writer, ctx *configtypes.Context) {
 		resources, err := config.GetTanzuContextActiveResource(ctx.Name)
 		if err == nil {
 			columns = append(columns, "Organization")
-			row = append(row, resources.OrgID)
+			row = append(row, fmt.Sprintf("%s (%s)", resources.OrgName, resources.OrgID))
 
 			columns = append(columns, "Project")
 			if resources.ProjectName != "" {

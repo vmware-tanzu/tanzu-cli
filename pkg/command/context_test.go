@@ -1594,7 +1594,8 @@ func TestContextCurrentCmd(t *testing.T) {
 			Path:     "/home/user/.kube/config",
 		},
 		AdditionalMetadata: map[string]interface{}{
-			config.OrgIDKey: "org-id",
+			config.OrgIDKey:   "org-id",
+			config.OrgNameKey: "org-name",
 		},
 	}
 	ctxTanzuNoSpace := &configtypes.Context{
@@ -1607,6 +1608,7 @@ func TestContextCurrentCmd(t *testing.T) {
 		},
 		AdditionalMetadata: map[string]interface{}{
 			config.OrgIDKey:       "org-id",
+			config.OrgNameKey:     "org-name",
 			config.ProjectNameKey: "project-name",
 			config.ProjectIDKey:   "project-id",
 		},
@@ -1621,6 +1623,7 @@ func TestContextCurrentCmd(t *testing.T) {
 		},
 		AdditionalMetadata: map[string]interface{}{
 			config.OrgIDKey:       "org-id",
+			config.OrgNameKey:     "org-name",
 			config.ProjectNameKey: "project-name",
 			config.ProjectIDKey:   "project-id",
 			config.SpaceNameKey:   "space-name",
@@ -1636,6 +1639,7 @@ func TestContextCurrentCmd(t *testing.T) {
 		},
 		AdditionalMetadata: map[string]interface{}{
 			config.OrgIDKey:            "org-id",
+			config.OrgNameKey:          "org-name",
 			config.ProjectNameKey:      "project-name",
 			config.ProjectIDKey:        "project-id",
 			config.ClusterGroupNameKey: "clustergroup-name",
@@ -1720,7 +1724,7 @@ func TestContextCurrentCmd(t *testing.T) {
 			activeContexts: []*configtypes.Context{ctxTanzuNoProject, ctxTMC},
 			expected: `  Name:            tanzu
   Type:            tanzu
-  Organization:    org-id
+  Organization:    org-name (org-id)
   Project:         none set
   Kube Config:     /home/user/.kube/config
   Kube Context:    kube-context-name
@@ -1737,7 +1741,7 @@ func TestContextCurrentCmd(t *testing.T) {
 			activeContexts: []*configtypes.Context{ctxTanzuNoSpace},
 			expected: `  Name:            tanzu
   Type:            tanzu
-  Organization:    org-id
+  Organization:    org-name (org-id)
   Project:         project-name (project-id)
   Kube Config:     /home/user/.kube/config
   Kube Context:    kube-context-name
@@ -1754,7 +1758,7 @@ func TestContextCurrentCmd(t *testing.T) {
 			activeContexts: []*configtypes.Context{ctxTanzuSpace},
 			expected: `  Name:            tanzu
   Type:            tanzu
-  Organization:    org-id
+  Organization:    org-name (org-id)
   Project:         project-name (project-id)
   Space:           space-name
   Kube Config:     /home/user/.kube/config
@@ -1772,7 +1776,7 @@ func TestContextCurrentCmd(t *testing.T) {
 			activeContexts: []*configtypes.Context{ctxTanzuClustergroup, ctxTMC},
 			expected: `  Name:             tanzu
   Type:             tanzu
-  Organization:     org-id
+  Organization:     org-name (org-id)
   Project:          project-name (project-id)
   Cluster Group:    clustergroup-name
   Kube Config:      /home/user/.kube/config
