@@ -1230,36 +1230,48 @@ func printContext(ctx *configtypes.Context) {
 		return
 	}
 
-	fmt.Println("Name: ", ctx.Name)
-	fmt.Println("Type: ", ctx.ContextType)
+	// Use a ListTable format to get nice alignment
+	columns := []string{"Name", "Type"}
+	row := []interface{}{ctx.Name, string(ctx.ContextType)}
 
 	if ctx.ContextType == configtypes.ContextTypeTanzu {
 		resources, err := config.GetTanzuContextActiveResource(ctx.Name)
 		if err == nil {
-			fmt.Println("Organization: ", resources.OrgID)
+			columns = append(columns, "Organization")
+			row = append(row, resources.OrgID)
 
+			columns = append(columns, "Project")
 			if resources.ProjectName != "" {
-				fmt.Printf("Project: %s (%s)\n", resources.ProjectName, resources.ProjectID)
+				row = append(row, fmt.Sprintf("%s (%s)", resources.ProjectName, resources.ProjectID))
 			} else {
-				fmt.Println("Project: none set")
+				row = append(row, "none set")
 			}
 
 			if resources.SpaceName != "" {
-				fmt.Println("Space: ", resources.SpaceName)
+				columns = append(columns, "Space")
+				row = append(row, resources.SpaceName)
 			} else if resources.ClusterGroupName != "" {
-				fmt.Println("Cluster Group: ", resources.ClusterGroupName)
+				columns = append(columns, "Cluster Group")
+				row = append(row, resources.ClusterGroupName)
 			}
 		}
 	}
+
 	if ctx.ContextType != configtypes.ContextTypeTMC {
 		var kubeconfig, kubeCtx string
 		if ctx.ClusterOpts != nil {
 			kubeconfig = ctx.ClusterOpts.Path
 			kubeCtx = ctx.ClusterOpts.Context
 		}
-		fmt.Println("Kube Config: ", kubeconfig)
-		fmt.Println("Kube Context: ", kubeCtx)
+		columns = append(columns, "Kube Config")
+		row = append(row, kubeconfig)
+		columns = append(columns, "Kube Context")
+		row = append(row, kubeCtx)
 	}
+
+	outputWriter := component.NewOutputWriterWithOptions(os.Stdout, string(component.ListTableOutputType), []component.OutputWriterOption{}, columns...)
+	outputWriter.AddRow(row...)
+	outputWriter.Render()
 }
 
 var deleteCtxCmd = &cobra.Command{
