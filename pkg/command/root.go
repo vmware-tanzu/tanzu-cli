@@ -601,6 +601,10 @@ func shouldSkipPrompts(cmd *cobra.Command) bool {
 		"tanzu pinniped-auth",
 		// Can be used to set the prompt on every shell command
 		"tanzu context current",
+		// This command is being invoked by the kubectl exec binary where the user doesn't
+		// get to see the prompts and the kubectl command execution just gets stuck, and it
+		// is very hard for users to figure out what is going wrong
+		"tanzu context get-token",
 	}
 	return isSkipCommand(skipCommands, cmd.CommandPath())
 }
@@ -619,11 +623,14 @@ func shouldSkipEssentialPlugins(cmd *cobra.Command) bool {
 
 		// Can be used to set the prompt on every shell command
 		"tanzu context current",
-
+		// This command is being invoked by the kubectl exec binary where the user doesn't
+		// get to see the output, so it is better to avoid printing essential plugins
+		// installation messages
+		"tanzu context get-token",
 		"tanzu config eula",
 		"tanzu ceip-participation set",
 		// This command is being invoked by the kubectl exec binary where the user doesn't
-		// get to see the output so it is better to avoid prinint essential plugins
+		// get to see the output so, it is better to avoid printing essential plugins
 		// installation messages
 		"tanzu pinniped-auth",
 		// Avoid trying to install essential plugins when the user wants to remove all plugins.
@@ -649,6 +656,12 @@ func shouldSkipVersionCheck(cmd *cobra.Command) bool {
 		"tanzu version",
 		// Can be used to set the prompt on every shell command
 		"tanzu context current",
+		// This command is being invoked by the kubectl exec binary where the user doesn't
+		// get to see the output so, we should avoid printing the new version availability
+		"tanzu context get-token",
+		// This command is being invoked by the kubectl exec binary where the user doesn't
+		// get to see the output so, we should avoid printing the new version availability
+		"tanzu pinniped-auth",
 	}
 	return isSkipCommand(skipVersionCheckCommands, cmd.CommandPath())
 }
@@ -665,6 +678,9 @@ func shouldSkipGlobalInit(cmd *cobra.Command) bool {
 		"tanzu version",
 		// Can be used to set the prompt on every shell command
 		"tanzu context current",
+		// This command is being invoked by the kubectl exec binary, and it is not interactive,
+		// so it should not trigger the global initialization of the CLI
+		"tanzu context get-token",
 	}
 	return isSkipCommand(skipGlobalInitCommands, cmd.CommandPath())
 }
