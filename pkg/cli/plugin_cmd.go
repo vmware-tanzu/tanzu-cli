@@ -56,7 +56,8 @@ func GetCommandMapForPlugin(p *PluginInfo) map[string]*cobra.Command {
 			dstPath := pathFromHierarchy(cmdHierarchy)
 			cmdMap[dstPath] = getCmdForPluginEx(p, cmdHierarchy[len(cmdHierarchy)-1], &mapEntry)
 			if alternateLocation := alternateRemapLocation(p, dstPath); alternateLocation != "" {
-				cmdMap[alternateLocation] = cmdMap[dstPath]
+				mapEntry.DestinationCommandPath = alternateLocation
+				cmdMap[alternateLocation] = getCmdForPluginEx(p, cmdHierarchy[len(cmdHierarchy)-1], &mapEntry)
 			}
 		}
 	}
