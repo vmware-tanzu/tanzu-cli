@@ -1825,7 +1825,7 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"hello !!"},
 		},
 		{
-			test: "command-level: invocation details available when plugin command is mapped to xxtop level",
+			test: "command-level: invocation details available when plugin command is mapped to top level",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:   "dummy",
@@ -1841,6 +1841,24 @@ func TestCommandRemapping(t *testing.T) {
 			},
 			args:     []string{"invoke-info", "arg1", "arg2"},
 			expected: []string{"args = (show-invoke-context arg1 arg2), context is ():(invoke-info):(show-invoke-context)"},
+		},
+		{
+			test: "command-level: invocation details available when plugin command is mapped to top level and invoked via a target",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy",
+					target: configtypes.TargetK8s,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "invoke-info",
+							SourceCommandPath:      "show-invoke-context",
+							Description:            "Shows invocation details",
+						},
+					},
+				},
+			},
+			args:     []string{"kubernetes", "invoke-info", "arg1", "arg2"},
+			expected: []string{"args = (show-invoke-context arg1 arg2), context is (kubernetes):(invoke-info):(show-invoke-context)"},
 		},
 		{
 			test: "command-level: invocation details available when plugin command is mapped to deeper level",
