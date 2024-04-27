@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -55,6 +56,21 @@ func newGenAllDocsCmd() *cobra.Command {
 			if err := genREADME(plugins); err != nil {
 				return fmt.Errorf("error generate core tanzu README markdown %q", err)
 			}
+
+			// Since the plugin's generate-docs will be updated to produce a
+			// plugin-consistent toplevel tanzu.md, it is important that same file name
+			// produced by the CLI itself be preserved.
+			// So make a backup of the file before running the
+			// doc generation for each plugin, and restoring the file from backup.
+			tanzuMarkdownFile := filepath.Join(docsDir, fmt.Sprintf("%s.md", cmd.Root().Name()))
+			tanzuMarkdownFileBackup := filepath.Join(docsDir, fmt.Sprintf("%s_bak.md", cmd.Root().Name()))
+			err = os.Rename(tanzuMarkdownFile, tanzuMarkdownFileBackup)
+			if err != nil {
+				return fmt.Errorf("unable to rename main CLI markdown file %q", err)
+			}
+			defer func() {
+				_ = os.Rename(tanzuMarkdownFileBackup, tanzuMarkdownFile)
+			}()
 
 			if err := genMarkdownTreePlugins(plugins); err != nil {
 				return fmt.Errorf("error generating plugin docs %q", err)
