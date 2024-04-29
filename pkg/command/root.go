@@ -108,12 +108,7 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 		return nil, err
 	}
 
-	allPlugins, err := pluginsupplier.GetInstalledPlugins()
-	if err != nil {
-		return nil, err
-	}
-
-	plugins, err := pluginsupplier.FilterPluginsByActiveContextType(allPlugins)
+	plugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return nil, err
 	}
@@ -165,6 +160,19 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 					maskedPluginsWithCoreCmdOverlap = append(maskedPluginsWithCoreCmdOverlap, plugins[i].Name)
 				}
 			}
+		}
+	}
+
+	// When feature flag is set, plugin-level mapping that might overwrite existing
+	// commands will be allowed to do so only if the active context type
+	// matches the supportedContextType of the mapping. So identify plugins that
+	// need to be subjected to the active context check.
+	if config.IsFeatureActivated(constants.FeaturePluginOverrideOnActiveContextType) {
+		pluginsToCheck, remainingPlugins := findPluginsRequiringActiveContextCheck(rootCmd, plugins)
+		pluginsAllowed, err := pluginsupplier.FilterPluginsByActiveContextType(pluginsToCheck)
+		if err == nil {
+			plugins = remainingPlugins
+			plugins = append(plugins, pluginsAllowed...)
 		}
 	}
 
@@ -248,6 +256,29 @@ func updateTargetCommandGroupVisibility() {
 	}
 }
 
+func findPluginsRequiringActiveContextCheck(rootCmd *cobra.Command, plugins []cli.PluginInfo) ([]cli.PluginInfo, []cli.PluginInfo) {
+	var pluginsToCheck []cli.PluginInfo
+	var remaining []cli.PluginInfo
+
+	for i := range plugins {
+		toCheck := false
+		for _, mapEntry := range plugins[i].CommandMap {
+			if mapEntry.SourceCommandPath == "" {
+				cmd, _ := findSubCommandByPath(rootCmd, mapEntry.DestinationCommandPath)
+				if cmd != nil {
+					pluginsToCheck = append(pluginsToCheck, plugins[i])
+					toCheck = true
+					break
+				}
+			}
+		}
+		if !toCheck {
+			remaining = append(remaining, plugins[i])
+		}
+	}
+	return pluginsToCheck, remaining
+}
+
 // setupTargetPlugins sets up the commands for the plugins under the k8s and tmc targets
 func setupTargetPlugins() error {
 	mapTargetToCmd := map[configtypes.Target]*cobra.Command{
@@ -256,14 +287,9 @@ func setupTargetPlugins() error {
 		configtypes.TargetOperations: opsCmd,
 	}
 
-	installedPlugins, err := pluginsupplier.GetInstalledPlugins()
+	plugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return fmt.Errorf("unable to find installed plugins: %w", err)
-	}
-
-	plugins, err := pluginsupplier.FilterPluginsByActiveContextType(installedPlugins)
-	if err != nil {
-		return err
 	}
 
 	convertInvokedAs(plugins)
