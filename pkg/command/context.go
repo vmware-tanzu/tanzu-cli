@@ -48,7 +48,7 @@ import (
 )
 
 var (
-	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify, showAllColumns              bool
+	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify, showAllColumns, shortCtx    bool
 	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath string
 
 	projectStr, projectIDStr, spaceStr, clustergroupStr string
@@ -98,6 +98,7 @@ func init() {
 		createCtxCmd,
 		listCtxCmd,
 		getCtxCmd,
+		newCurrentCtxCmd(),
 		deleteCtxCmd,
 		useCtxCmd,
 		unsetCtxCmd,
@@ -1155,6 +1156,124 @@ func getValues(m map[configtypes.ContextType]*configtypes.Context) []*configtype
 	return values
 }
 
+func newCurrentCtxCmd() *cobra.Command {
+	var currentCtxCmd = &cobra.Command{
+		Use:               "current",
+		Short:             "Display the current context",
+		Args:              cobra.NoArgs,
+		ValidArgsFunction: noMoreCompletions,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			currentCtxMap, err := config.GetAllActiveContextsMap()
+			if err != nil {
+				return err
+			}
+
+			if len(currentCtxMap) == 0 {
+				fmt.Fprintln(cmd.OutOrStdout(), "There is no active context")
+				return nil
+			}
+
+			ignoreTMCCtx := false
+			if len(currentCtxMap) > 1 {
+				// If there are multiple contexts, which means 2 of them, ignore the TMC context
+				// and prioritize the tanzu or k8s context (only one of those two will be present)
+				ignoreTMCCtx = true
+			}
+
+			for ctxType, ctx := range currentCtxMap {
+				if ignoreTMCCtx && ctxType == configtypes.ContextTypeTMC {
+					continue
+				}
+
+				if shortCtx {
+					printShortContext(cmd.OutOrStdout(), ctx)
+				} else {
+					printContext(cmd.OutOrStdout(), ctx)
+				}
+			}
+			return nil
+		},
+	}
+
+	currentCtxCmd.Flags().BoolVarP(&shortCtx, "short", "", false, "prints the context in compact form")
+
+	return currentCtxCmd
+}
+
+func printShortContext(writer io.Writer, ctx *configtypes.Context) {
+	if ctx == nil {
+		return
+	}
+
+	var ctxStr strings.Builder
+	ctxStr.WriteString(ctx.Name)
+
+	// For a tanzu context, print the project, space, and cluster group
+	if ctx.ContextType == configtypes.ContextTypeTanzu {
+		resources, err := config.GetTanzuContextActiveResource(ctx.Name)
+		if err == nil {
+			if resources.ProjectName != "" {
+				ctxStr.WriteString(fmt.Sprintf(":%s", resources.ProjectName))
+				if resources.SpaceName != "" {
+					ctxStr.WriteString(fmt.Sprintf(":%s", resources.SpaceName))
+				} else if resources.ClusterGroupName != "" {
+					ctxStr.WriteString(fmt.Sprintf(":%s", resources.ClusterGroupName))
+				}
+			}
+		}
+	}
+	fmt.Fprintln(writer, ctxStr.String())
+}
+
+func printContext(writer io.Writer, ctx *configtypes.Context) {
+	if ctx == nil {
+		return
+	}
+
+	// Use a ListTable format to get nice alignment
+	columns := []string{"Name", "Type"}
+	row := []interface{}{ctx.Name, string(ctx.ContextType)}
+
+	if ctx.ContextType == configtypes.ContextTypeTanzu {
+		resources, err := config.GetTanzuContextActiveResource(ctx.Name)
+		if err == nil {
+			columns = append(columns, "Organization")
+			row = append(row, fmt.Sprintf("%s (%s)", resources.OrgName, resources.OrgID))
+
+			columns = append(columns, "Project")
+			if resources.ProjectName != "" {
+				row = append(row, fmt.Sprintf("%s (%s)", resources.ProjectName, resources.ProjectID))
+			} else {
+				row = append(row, "none set")
+			}
+
+			if resources.SpaceName != "" {
+				columns = append(columns, "Space")
+				row = append(row, resources.SpaceName)
+			} else if resources.ClusterGroupName != "" {
+				columns = append(columns, "Cluster Group")
+				row = append(row, resources.ClusterGroupName)
+			}
+		}
+	}
+
+	if ctx.ContextType != configtypes.ContextTypeTMC {
+		var kubeconfig, kubeCtx string
+		if ctx.ClusterOpts != nil {
+			kubeconfig = ctx.ClusterOpts.Path
+			kubeCtx = ctx.ClusterOpts.Context
+		}
+		columns = append(columns, "Kube Config")
+		row = append(row, kubeconfig)
+		columns = append(columns, "Kube Context")
+		row = append(row, kubeCtx)
+	}
+
+	outputWriter := component.NewOutputWriterWithOptions(writer, string(component.ListTableOutputType), []component.OutputWriterOption{}, columns...)
+	outputWriter.AddRow(row...)
+	outputWriter.Render()
+}
+
 var deleteCtxCmd = &cobra.Command{
 	Use:               "delete CONTEXT_NAME",
 	Short:             "Delete a context from the config",
@@ -1530,7 +1649,7 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 
 	if !showAllColumns {
 		fmt.Println()
-		log.Info("Use '--wide' flag to view additional columns.")
+		log.Info("Use '--wide' to view additional columns.")
 	}
 }
 
