@@ -1106,13 +1106,14 @@ func setupFakePluginInfo(p fakePluginRemapAttributes, pluginDir string) *cli.Plu
 // Tests behavior of command tree with commands remapped at plugin and command level
 func TestCommandRemapping(t *testing.T) {
 	tests := []struct {
-		test              string
-		pluginVariants    []fakePluginRemapAttributes
-		args              []string
-		expected          []string
-		unexpected        []string
-		expectedFailure   bool
-		activeContextType configtypes.ContextType
+		test                    string
+		pluginVariants          []fakePluginRemapAttributes
+		args                    []string
+		expected                []string
+		unexpected              []string
+		expectedFailure         bool
+		activeContextType       configtypes.ContextType
+		allowActiveContextCheck bool
 	}{
 		{
 			test: "one unmapped k8s plugin",
@@ -1284,7 +1285,8 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"hello", "Warning, multiple command groups are being remapped to the same command names : \"dummy, dummy\""},
 		},
 		{
-			test: "mapped plugin with supportedContextType, command is hidden at target when no active context",
+			// because there is nothing that the mapping would override...
+			test: "mapped plugin with supportedContextType, command is not hidden at target when no active context",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:                 "dummy2",
@@ -1294,8 +1296,9 @@ func TestCommandRemapping(t *testing.T) {
 					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
 				},
 			},
-			args:     []string{"kubernetes"},
-			expected: []string{"No plugins are currently installed for the \"kubernetes\" target"},
+			args:                    []string{"kubernetes"},
+			expected:                []string{"dummy2 commands"},
+			allowActiveContextCheck: true,
 		},
 		{
 			test: "mapped plugin is only one for target, top level should show target",
@@ -1309,19 +1312,6 @@ func TestCommandRemapping(t *testing.T) {
 			},
 			args:     []string{""},
 			expected: []string{"kubernetes"},
-		},
-		{
-			test: "mapped plugin is only one for target with no active context for type hides target",
-			pluginVariants: []fakePluginRemapAttributes{
-				{
-					name:      "dummy2",
-					target:    configtypes.TargetTMC,
-					invokedAs: []string{"dummy"},
-					aliases:   []string{"dum"},
-				},
-			},
-			args:     []string{"mission-control"},
-			expected: []string{"No plugins are currently installed for the \"mission-control\" target"},
 		},
 		{
 			test: "mapping plugins when conditional on active contexts",
@@ -1360,10 +1350,11 @@ func TestCommandRemapping(t *testing.T) {
 					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
 				},
 			},
-			activeContextType: configtypes.ContextTypeK8s,
-			args:              []string{},
-			expected:          []string{"dummy commands"},
-			unexpected:        []string{"dummy2 commands"},
+			activeContextType:       configtypes.ContextTypeK8s,
+			allowActiveContextCheck: true,
+			args:                    []string{},
+			expected:                []string{"dummy commands"},
+			unexpected:              []string{"dummy2 commands"},
 		},
 		{
 			test: "nesting plugin within another plugin is not supported",
@@ -1620,7 +1611,7 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"hello", "Warning, multiple command groups are being remapped to the same command names : \"dummy, dummy\""},
 		},
 		{
-			test: "mapped plugin with supportedContextType, command is hidden at target when no active context",
+			test: "mapped plugin with supportedContextType, command is not hidden even with no active context type",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:                 "dummy2",
@@ -1634,8 +1625,9 @@ func TestCommandRemapping(t *testing.T) {
 					},
 				},
 			},
-			args:     []string{"kubernetes"},
-			expected: []string{"No plugins are currently installed for the \"kubernetes\" target"},
+			args:       []string{"kubernetes"},
+			expected:   []string{"kubernetes", "dummy2 commands"},
+			unexpected: []string{"No plugins are currently installed for the \"kubernetes\" target"},
 		},
 		{
 			test: "mapped plugin is only one for target, top level should show target",
@@ -1655,51 +1647,26 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"kubernetes"},
 		},
 		{
-			test: "mapped plugin is only one for target with no active context for type hides target",
+			test: "mapping ok with no active context as long as it does not override any existing",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
-					name:    "dummy2",
-					target:  configtypes.TargetTMC,
-					aliases: []string{"dum"},
+					name:                 "dummy2",
+					target:               configtypes.TargetTMC,
+					aliases:              []string{"dum"},
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTMC},
 					commandMap: []plugin.CommandMapEntry{
 						plugin.CommandMapEntry{
-							DestinationCommandPath: "dummy",
+							DestinationCommandPath: "mission-control dummy",
 						},
 					},
 				},
 			},
-			args:     []string{"mission-control"},
-			expected: []string{"No plugins are currently installed for the \"mission-control\" target"},
+			args:       []string{"mission-control"},
+			expected:   []string{"dummy2 commands"},
+			unexpected: []string{"No plugins are currently installed for the \"mission-control\" target"},
 		},
 		{
-			test: "with supportedContextType and no invokedAs, command is hidden at target when no active context",
-			pluginVariants: []fakePluginRemapAttributes{
-				{
-					name:                 "dummy2",
-					target:               configtypes.TargetTMC,
-					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTMC},
-					aliases:              []string{"dum"},
-				},
-			},
-			args:     []string{"mission-control"},
-			expected: []string{"No plugins are currently installed for the \"mission-control\" target"},
-		},
-		{
-			test: "with supportedContextType set, target not shown at top level when no active context",
-			pluginVariants: []fakePluginRemapAttributes{
-				{
-					name:                 "dummy2",
-					target:               configtypes.TargetTMC,
-					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTMC},
-					aliases:              []string{"dum"},
-				},
-			},
-			activeContextType: configtypes.ContextTypeTanzu,
-			args:              []string{},
-			unexpected:        []string{"mission-control"},
-		},
-		{
-			test: "mapping plugins when conditional on active contexts",
+			test: "mapping plugin ok when found active context type",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:    "dummy",
@@ -1718,13 +1685,14 @@ func TestCommandRemapping(t *testing.T) {
 					},
 				},
 			},
-			activeContextType: configtypes.ContextTypeTanzu,
-			args:              []string{},
-			expected:          []string{"dummy2 commands"},
-			unexpected:        []string{"dummy commands"},
+			activeContextType:       configtypes.ContextTypeTanzu,
+			allowActiveContextCheck: true,
+			args:                    []string{},
+			expected:                []string{"dummy2 commands"},
+			unexpected:              []string{"dummy commands"},
 		},
 		{
-			test: "no mapping if active context not one of supportContextType list",
+			test: "mapping ok when feature flag not true, regardless of active context",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:    "dummy",
@@ -1743,10 +1711,37 @@ func TestCommandRemapping(t *testing.T) {
 					},
 				},
 			},
-			activeContextType: configtypes.ContextTypeK8s,
-			args:              []string{},
-			expected:          []string{"dummy commands"},
-			unexpected:        []string{"dummy2 commands"},
+			activeContextType:       configtypes.ContextTypeK8s,
+			allowActiveContextCheck: false,
+			args:                    []string{},
+			expected:                []string{"dummy2 commands"},
+			unexpected:              []string{"dummy commands"},
+		},
+		{
+			test: "when feature flag set, no mapping if active context not one of supportContextType list",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:                 "dummy2",
+					target:               configtypes.TargetK8s,
+					aliases:              []string{"dum"},
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			activeContextType:       configtypes.ContextTypeK8s,
+			allowActiveContextCheck: true,
+			args:                    []string{},
+			expected:                []string{"dummy commands"},
+			unexpected:              []string{"dummy2 commands"},
 		},
 		{
 			test: "nesting plugin within another plugin is not supported",
@@ -1956,6 +1951,10 @@ func TestCommandRemapping(t *testing.T) {
 
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
+
+			configErr := config.ConfigureFeatureFlags(map[string]bool{
+				"features.global.plugin-override-on-active-context-type": spec.allowActiveContextCheck}, config.SkipIfExists())
+			assert.Nil(configErr)
 
 			r, w, err := os.Pipe()
 			if err != nil {

@@ -13,6 +13,11 @@ const (
 	// FeaturePluginDiscoveryForTanzuContext determines whether to enable context-scoped plugin discovery for Tanzu context.
 	// This is disabled by default
 	FeaturePluginDiscoveryForTanzuContext = "features.global.plugin-discovery-for-tanzu-context"
+
+	// FeaturePluginOverrideOnActiveContextType determines whether a plugin-level mapping that potentially
+	// overrides an existing CLI command group should be conditional on the active context type or not.
+	// When false, the mapping will be unconditionally applied.
+	FeaturePluginOverrideOnActiveContextType = "features.global.plugin-override-on-active-context-type"
 )
 
 // DefaultCliFeatureFlags is used to populate an initially empty config file with default values for feature flags.
