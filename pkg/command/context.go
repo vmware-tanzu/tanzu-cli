@@ -1195,7 +1195,7 @@ func newCurrentCtxCmd() *cobra.Command {
 		},
 	}
 
-	currentCtxCmd.Flags().BoolVarP(&shortCtx, "short", "", false, "print a short form of the context suitable for prompts")
+	currentCtxCmd.Flags().BoolVarP(&shortCtx, "short", "", false, "prints the context in compact form")
 
 	return currentCtxCmd
 }

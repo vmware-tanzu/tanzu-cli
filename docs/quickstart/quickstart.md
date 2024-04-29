@@ -254,6 +254,9 @@ CLI can target. There are various ways to create Contexts, such as providing an
 endpoint to the Tanzu Mission Control service, or providing a kubeconfig to
 an existing Tanzu Cluster as shown above.
 
+Note: The `tanzu context current --short` command prints a compact form of the current context.  This can be used
+in prompts to help users keep track of which context the tanzu CLI is currently interacting with.
+
 #### Creating a Tanzu Context
 
 The context of type "tanzu" can be created using interactive login (default mechanism) or by utilizing an API Token
