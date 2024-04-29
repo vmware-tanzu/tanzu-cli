@@ -283,7 +283,8 @@ func setupTargetPlugins() error {
 
 func newRootCmd() *cobra.Command {
 	var rootCmd = &cobra.Command{
-		Use: "tanzu",
+		Use:   "tanzu",
+		Short: "The Tanzu CLI",
 		// Don't have Cobra print the error message, the CLI will
 		// print it itself in a nicer format.
 		SilenceErrors: true,
