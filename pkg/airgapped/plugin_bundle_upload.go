@@ -4,7 +4,6 @@
 package airgapped
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/plugininventory"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -57,22 +55,19 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 		return errors.Wrap(err, "error while parsing plugin migration manifest")
 	}
 
-	totalImages := len(manifest.ImagesToCopy)
-	imagesUploaded := 0
 	// Iterate through all the images and publish them to the remote repository
-	var repoImagePath string
-	spinner := component.NewOutputWriterSpinner(component.WithOutputStream(os.Stderr))
-	defer spinner.StopSpinner()
 	for _, ic := range manifest.ImagesToCopy {
 		imageTar := filepath.Join(pluginBundleDir, ic.SourceTarFilePath)
-		repoImagePath, err = utils.JoinURL(o.DestinationRepo, ic.RelativeImagePath)
+		repoImagePath, err := utils.JoinURL(o.DestinationRepo, ic.RelativeImagePath)
 		if err != nil {
 			return errors.Wrap(err, "error while constructing the repo image path")
 		}
-		if uploadErr := o.uploadImage(imageTar, repoImagePath, totalImages, imagesUploaded, spinner); uploadErr != nil {
-			return uploadErr
+		log.Infof("---------------------------")
+		log.Infof("uploading image %q", repoImagePath)
+		err = o.ImageProcessor.CopyImageFromTar(imageTar, repoImagePath)
+		if err != nil {
+			return errors.Wrap(err, "error while uploading image")
 		}
-		imagesUploaded++
 	}
 	log.Infof("---------------------------")
 	log.Infof("---------------------------")
@@ -106,12 +101,13 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	return nil
 }
 
+/*
 func (o *UploadPluginBundleOptions) uploadImage(imageTar, repoImagePath string, totalImages, imagesUploaded int, spinner component.OutputWriterSpinner) error {
 	uploadingMsg := fmt.Sprintf("[%d/%d] uploading image %q", totalImages, imagesUploaded, repoImagePath)
 	errorMsg := fmt.Sprintf("[%d/%d] error while uploading image %q", totalImages, imagesUploaded, repoImagePath)
 	uploadedMsg := "[%d/%d] uploaded image %q"
 
-	if !component.IsTTYEnabled() {
+	if component.IsTTYEnabled() {
 		spinner.SetText(uploadingMsg)
 		spinner.SetFinalText(errorMsg, log.LogTypeERROR)
 		spinner.StartSpinner()
@@ -130,7 +126,7 @@ func (o *UploadPluginBundleOptions) uploadImage(imageTar, repoImagePath string, 
 
 	return nil
 }
-
+*/
 // mergePluginInventoryMetadata merges the downloaded plugin inventory metadata with
 // existing plugin inventory metadata available on the remote repository
 func (o *UploadPluginBundleOptions) mergePluginInventoryMetadata(pluginInventoryMetadataImageWithTag, bundledPluginInventoryMetadataDBFilePath, tempDir string) error {
