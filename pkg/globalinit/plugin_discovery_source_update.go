@@ -39,13 +39,6 @@ func updatePluginDiscoverySource(outStream io.Writer) error {
 		return nil
 	}
 
-	// Considering we are updating the discovery source to point to new registry,
-	// User must be prompted to access the EULA again. So, let's first unset EULA status
-	err = config.SetEULAStatus(config.EULAStatusUnset)
-	if err != nil {
-		return err
-	}
-
 	// Update the `default` discovery source to point to the new central plugin discovery image
 	// Note: This update only modifies the discovery source and does not trigger a database refresh.
 	// This is intentional, as we want to avoid downloading the image without the user re-accepting the EULA.
