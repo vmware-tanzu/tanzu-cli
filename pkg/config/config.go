@@ -59,7 +59,10 @@ Do you agree to the VMware General Terms?
 	// accepted semver versions matches in the major.minor of this value.
 	// If this value is empty, however, any previously recorded acceptance
 	// is considered valid.
-	CurrentEULAVersion = ""
+	//
+	// Update the EULA version to v1.1.0 to re-prompt users because of the
+	// default plugin discovery source change
+	CurrentEULAVersion = "v1.1.0"
 )
 
 func init() {
