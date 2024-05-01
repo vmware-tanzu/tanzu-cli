@@ -39,8 +39,7 @@ func MergeKubeConfigWithoutSwitchContext(kubeConfig []byte, mergeFile string) er
 	}
 
 	context := dest.CurrentContext
-	err = mergo.Merge(dest, newConfig, mergo.WithOverwriteWithEmptyValue)
-
+	err = mergo.Merge(dest, newConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to merge config")
 	}
