@@ -5,6 +5,7 @@ package csp
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -426,4 +427,62 @@ func GetOrgNameFromOrgID(orgID, accessToken, issuer string) (string, error) {
 	}
 
 	return org.Name, nil
+}
+
+// GetTanzuHubEndpointForTAP retrieves Tanzu Hub Endpoint For TAP SaaS through the CSP API
+func GetTanzuHubEndpointForTAP(orgID, accessToken string, useStagingIssuer bool) (string, error) {
+	// CSPServiceURLs stores the CSP service URL information
+	type CSPServiceURLs struct {
+		ServiceHome string `json:"serviceHome"`
+	}
+
+	// CSPService stores the CSP service details
+	type CSPService struct {
+		DisplayName         string         `json:"displayName"`
+		ProductIdentifier   string         `json:"productIdentifier"`
+		ServiceDefinitionID string         `json:"serviceDefinitionId"`
+		ServiceUrls         CSPServiceURLs `json:"serviceUrls"`
+	}
+
+	// CSPServices stores the CSP services list
+	type CSPServices struct {
+		ServicesList []CSPService `json:"servicesList"`
+	}
+
+	endpoint := "https://console.cloud.vmware.com"
+	if useStagingIssuer {
+		endpoint = "https://console-stg.cloud.vmware.com"
+	}
+	api := fmt.Sprintf("%s/csp/gateway/slc/api/v2/ui/definitions/?orgId=%s", endpoint, orgID)
+
+	data := url.Values{}
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", api, bytes.NewBufferString(data.Encode()))
+	req.Header.Set("authorization", "Bearer "+accessToken)
+
+	resp, err := httpRestClient.Do(req)
+	if err != nil {
+		return "", errors.WithMessage(err, "Failed to obtain available services for the specified organization")
+	}
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", errors.Errorf("Failed to obtain available services for the specified organization. %s", string(body))
+	}
+
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	services := CSPServices{}
+
+	if err = json.Unmarshal(body, &services); err != nil {
+		return "", errors.Wrap(err, "could not unmarshal the services response")
+	}
+
+	for _, s := range services.ServicesList {
+		if s.ProductIdentifier == "TANZU-SAAS" && strings.Contains(s.DisplayName, "Tanzu Application Platform") { // TODO: Can this be improved to use some unique id?
+			// Remove `www.` if present from the endpoint. Because when invoking directly through API it does not work
+			tanzuHubEndpoint := strings.Replace(s.ServiceUrls.ServiceHome, "www.", "", 1)
+			return tanzuHubEndpoint, nil
+		}
+	}
+
+	return "", errors.New("could not find 'Tanzu Application Platform' service associated with the specified organization")
 }
