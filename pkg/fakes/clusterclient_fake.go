@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	"github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/capabilities/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cluster"
-	"github.com/vmware-tanzu/tanzu-framework/capabilities/client/pkg/discovery"
 )
 
 type ClusterClient struct {
