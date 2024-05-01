@@ -27,7 +27,7 @@ tanzu plugin download-bundle [flags]
 ```
       --group strings   only download the plugins specified in the plugin-group version (can specify multiple)
   -h, --help            help for download-bundle
-      --image string    URI of the plugin discovery image providing the plugins (default "projects.registry.vmware.com/tanzu_cli/plugins/plugin-inventory:latest")
+      --image string    URI of the plugin discovery image providing the plugins (default "projects.packages.broadcom.com/tanzu_cli/plugins/plugin-inventory:latest")
       --to-tar string   local tar file path to store the plugin images
 ```
 
