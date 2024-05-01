@@ -652,13 +652,20 @@ func globalTanzuLogin(c *configtypes.Context, generateContextNameFunc func(orgNa
 	if err != nil {
 		return err
 	}
+
+	// Fetch the Tanzu Hub endpoint for the Tanzu context as a best case effort
+	tanzuHubEndpoint, err := csp.GetTanzuHubEndpointForTAP(claims.OrgID, c.GlobalOpts.Auth.AccessToken, staging)
+	if err != nil {
+		log.V(7).Infof("unable to get Tanzu Hub endpoint. Error: %v", err.Error())
+	}
+
 	// update the context name using the context name generator
 	if generateContextNameFunc != nil {
 		c.Name = generateContextNameFunc(orgName, endpoint, staging)
 	}
 
 	// update the context metadata
-	if err := updateTanzuContextMetadata(c, claims.OrgID, orgName); err != nil {
+	if err := updateTanzuContextMetadata(c, claims.OrgID, orgName, tanzuHubEndpoint); err != nil {
 		return err
 	}
 
@@ -702,7 +709,7 @@ the Tanzu Application Platform service. Please ensure correct organization authe
 }
 
 // updateTanzuContextMetadata updates the context additional metadata
-func updateTanzuContextMetadata(c *configtypes.Context, orgID, orgName string) error {
+func updateTanzuContextMetadata(c *configtypes.Context, orgID, orgName, tanzuHubEndpoint string) error {
 	exists, err := config.ContextExists(c.Name)
 	if err != nil {
 		return err
@@ -710,6 +717,7 @@ func updateTanzuContextMetadata(c *configtypes.Context, orgID, orgName string) e
 	if !exists {
 		c.AdditionalMetadata[config.OrgIDKey] = orgID
 		c.AdditionalMetadata[config.OrgNameKey] = orgName
+		c.AdditionalMetadata[config.TanzuHubEndpointKey] = tanzuHubEndpoint
 		return nil
 	}
 	// This is possible only for contexts created using "tanzu login" command because
@@ -721,6 +729,7 @@ func updateTanzuContextMetadata(c *configtypes.Context, orgID, orgName string) e
 	// If the context exists with the same name, honor the users current context additional metadata
 	// which includes the org/project/space details.
 	c.AdditionalMetadata = existingContext.AdditionalMetadata
+	c.AdditionalMetadata[config.TanzuHubEndpointKey] = tanzuHubEndpoint
 
 	return nil
 }
