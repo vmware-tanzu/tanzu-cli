@@ -36,21 +36,24 @@ TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER to "yes" or "no".
 Do you agree to participate in the Customer Experience Improvement Program?
 `
 
-	eulaPromptMsg = `You must agree to the VMware General Terms in order to download, install, or
-use software from this registry via Tanzu CLI. Acceptance of the VMware General
-Terms covers all software installed via the Tanzu CLI during any Session.
-“Session” means the period from acceptance until any of the following occurs:
-(1) a change to VMware General Terms, (2) a new major release of the Tanzu CLI
-is installed, (3) software is accessed in a separate software distribution
-registry, or (4) re-acceptance of the General Terms is prompted by VMware.
+	eulaPromptMsg = `You must agree to the Broadcom Foundation Agreement in order to download,
+install, or use software from this registry via Tanzu CLI. Acceptance of the
+Broadcom Foundation Agreement covers all software installed via the Tanzu CLI
+during any Session. "Session" means the period from acceptance until any of the
+following occurs: (1) a change to Broadcom Foundation Agreement, (2) a new
+major release of the Tanzu CLI is installed, (3) software is accessed in a
+separate software distribution registry, or (4) re-acceptance of the Foundation
+Agreement is prompted by Broadcom.
 
-To view the VMware General Terms, please see https://www.vmware.com/vmware-general-terms.html.
+To view the Broadcom Foundation Agreement, please see
+https://www.broadcom.com/company/legal/licensing.
 
-If you agree, the essential plugins (required by the tanzu cli) will be automatically installed.
+If you agree, the essential plugins (required by the Tanzu CLI) will be
+automatically installed.
 
 Note: this prompt can be avoided by running "tanzu config eula accept".
 
-Do you agree to the VMware General Terms?
+Do you agree to the Broadcom Foundation Agreement?
 `
 
 	// CurrentEULAVersion (vMajor.Minor.Patch) is the version of the EULA to
