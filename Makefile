@@ -19,6 +19,8 @@ GOARCH ?= $(shell go env GOARCH)
 GOHOSTOS ?= $(shell go env GOHOSTOS)
 GOHOSTARCH ?= $(shell go env GOHOSTARCH)
 
+GO_MODULES=$(shell find . -path "*/go.mod" | xargs -I _ dirname _)
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -311,7 +313,12 @@ lint: tools go-lint doc-lint misspell yamllint ## Run linting and misspell check
 
 .PHONY: gomod
 gomod: ## Update go module dependencies
-	go mod tidy
+	for i in $(GO_MODULES); do \
+		echo "-- Tidying $$i --"; \
+		pushd $${i}; \
+		$(GO) mod tidy || exit 1; \
+		popd; \
+	done
 
 misspell: $(MISSPELL)
 	hack/check/misspell.sh
