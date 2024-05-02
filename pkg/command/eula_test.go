@@ -107,7 +107,7 @@ var _ = Describe("EULA command tests", func() {
 				cmd.SetArgs([]string{"context", "list"})
 				err = cmd.Execute()
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("terms not accepted"))
+				Expect(err.Error()).To(ContainSubstring("agreement not accepted"))
 				os.Unsetenv("TANZU_CLI_EULA_PROMPT_ANSWER")
 			})
 
