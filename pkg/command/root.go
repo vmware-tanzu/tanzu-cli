@@ -356,8 +356,8 @@ func newRootCmd() *cobra.Command {
 				}
 				configVal, _ := config.GetEULAStatus()
 				if configVal != config.EULAStatusAccepted {
-					fmt.Fprintf(os.Stderr, "The Tanzu CLI is only usable with reduced functionality until the General Terms are agreed to.\nPlease use `tanzu config eula show` to review the terms, or `tanzu config eula accept` to accept them directly\n")
-					return errors.New("terms not accepted")
+					fmt.Fprintf(os.Stderr, "The Tanzu CLI is only usable with reduced functionality until the Broadcom Foundation Agreement is accepted.\nPlease use `tanzu config eula show` to review the Agreement, or `tanzu config eula accept` to accept it directly\n")
+					return errors.New("agreement not accepted")
 				}
 
 				// Prompt for CEIP agreement
