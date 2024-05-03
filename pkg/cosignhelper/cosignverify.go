@@ -84,7 +84,7 @@ func (vo *CosignVerifyOptions) Verify(ctx context.Context, images []string) erro
 		}
 
 	default:
-		for _, raw := range [][]byte{tanzuCLIPluginDBImageSignPublicKeyOfficial} {
+		for _, raw := range [][]byte{tanzuCLIPluginDBImageSignPublicKeyOfficialV2, tanzuCLIPluginDBImageSignPublicKeyOfficial} {
 			// PEM encoded file.
 			key, err := cryptoutils.UnmarshalPEMToPublicKey(raw)
 			if err != nil {
