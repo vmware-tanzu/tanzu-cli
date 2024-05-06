@@ -94,6 +94,7 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 		k8sCmd,
 		tmcCmd,
 		opsCmd,
+		tpeCmd,
 		// Note(TODO:prkalle): The below ceip-participation command(experimental) added may be removed in the next release,
 		//       If we decide to fold this functionality into existing 'tanzu telemetry' plugin
 		newCEIPParticipationCmd(),
@@ -249,7 +250,7 @@ func buildReplacementMap(plugins []cli.PluginInfo) map[string]*cobra.Command {
 // updateTargetCommandGroupVisibility hides commands associated with target
 // command group if latter did not acquire any child commands
 func updateTargetCommandGroupVisibility() {
-	for _, targetCmd := range []*cobra.Command{k8sCmd, tmcCmd, opsCmd} {
+	for _, targetCmd := range []*cobra.Command{k8sCmd, tmcCmd, opsCmd, tpeCmd} {
 		if len(targetCmd.Commands()) == 0 {
 			targetCmd.Hidden = true
 		}
@@ -426,12 +427,12 @@ func installEssentialPlugins() {
 	_, _ = pluginmanager.InstallPluginsFromEssentialPluginGroup()
 }
 
-func handleTargetHelp(cmd *cobra.Command, args []string) {
-	// If there are no plugins installed for this target, print a message
+func handleCommandGroupHelp(cmd *cobra.Command, args []string) {
+	// If there are no plugins installed for this command group, print a message
 	if len(cmd.Commands()) == 0 {
-		fmt.Fprintf(cmd.OutOrStdout(), "Note: No plugins are currently installed for the %[1]q target.\n\n", cmd.Name())
+		fmt.Fprintf(cmd.OutOrStdout(), "Note: No plugins are currently installed for %[1]q.\n\n", cmd.Name())
 	}
-	// Always print the help for the target command is invoked without any subcommand
+	// Always print the help for the command
 	cmd.HelpFunc()(cmd, args)
 }
 
@@ -443,7 +444,7 @@ var k8sCmd = &cobra.Command{
 		"group": string(plugin.TargetCmdGroup),
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		handleTargetHelp(cmd, args)
+		handleCommandGroupHelp(cmd, args)
 	},
 }
 
@@ -455,7 +456,7 @@ var tmcCmd = &cobra.Command{
 		"group": string(plugin.TargetCmdGroup),
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		handleTargetHelp(cmd, args)
+		handleCommandGroupHelp(cmd, args)
 	},
 }
 
@@ -467,7 +468,22 @@ var opsCmd = &cobra.Command{
 		"group": string(plugin.TargetCmdGroup),
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		handleTargetHelp(cmd, args)
+		handleCommandGroupHelp(cmd, args)
+	},
+}
+
+// Experiemental: placeholder group for platform-engineering commands
+// For motivation and how this can be leveraged see
+// https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/plugindev/README.md#reorganizing-the-plugin-commands-under-a-different-category-group-for-plugin
+var tpeCmd = &cobra.Command{
+	Use:     "platform-engineering",
+	Short:   "Commands that provide functionality for Tanzu Platform Engineering",
+	Aliases: []string{"tpe"},
+	Annotations: map[string]string{
+		"group": string(plugin.ExtraCmdGroup),
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		handleCommandGroupHelp(cmd, args)
 	},
 }
 
