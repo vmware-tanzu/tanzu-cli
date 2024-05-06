@@ -501,7 +501,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for k8s target run when empty",
 			args: []string{"k8s"},
 			expected: []string{
-				"Note: No plugins are currently installed for the \"kubernetes\" target",
+				"Note: No plugins are currently installed for \"kubernetes\"",
 				"Commands that interact with a Kubernetes endpoint",
 			},
 			unexpected: []string{
@@ -522,7 +522,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for k8s target invalid when empty",
 			args: []string{"k8s", "invalid"},
 			expected: []string{
-				"Note: No plugins are currently installed for the \"kubernetes\" target",
+				"Note: No plugins are currently installed for \"kubernetes\"",
 				"Commands that interact with a Kubernetes endpoint",
 			},
 			unexpected: []string{
@@ -559,7 +559,7 @@ func TestTargetCommands(t *testing.T) {
 			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
 			expected: []string{
 				"Commands that interact with a Kubernetes endpoint",
-				"Note: No plugins are currently installed for the \"kubernetes\" target",
+				"Note: No plugins are currently installed for \"kubernetes\"",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -583,7 +583,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for tmc target run when empty",
 			args: []string{"tmc"},
 			expected: []string{
-				"Note: No plugins are currently installed for the \"mission-control\" target",
+				"Note: No plugins are currently installed for \"mission-control\"",
 				"Commands that provide functionality for Tanzu Mission Control",
 			},
 			unexpected: []string{
@@ -604,7 +604,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for tmc target invalid when empty",
 			args: []string{"tmc", "invalid"},
 			expected: []string{
-				"Note: No plugins are currently installed for the \"mission-control\" target",
+				"Note: No plugins are currently installed for \"mission-control\"",
 				"Commands that provide functionality for Tanzu Mission Control",
 			},
 			unexpected: []string{
@@ -641,7 +641,7 @@ func TestTargetCommands(t *testing.T) {
 			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
 			expected: []string{
 				"Commands that provide functionality for Tanzu Mission Control",
-				"Note: No plugins are currently installed for the \"mission-control\" target",
+				"Note: No plugins are currently installed for \"mission-control\"",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -665,7 +665,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for ops target run when empty",
 			args: []string{"ops"},
 			expected: []string{
-				"Note: No plugins are currently installed for the \"operations\" target",
+				"Note: No plugins are currently installed for \"operations\"",
 				"Commands that support Kubernetes operations for Tanzu Application Platform",
 			},
 			unexpected: []string{
@@ -686,7 +686,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for ops target invalid when empty",
 			args: []string{"ops", "invalid"},
 			expected: []string{
-				"Note: No plugins are currently installed for the \"operations\" target",
+				"Note: No plugins are currently installed for \"operations\"",
 				"Commands that support Kubernetes operations for Tanzu Application Platform",
 			},
 			unexpected: []string{
@@ -723,7 +723,7 @@ func TestTargetCommands(t *testing.T) {
 			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
 			expected: []string{
 				"Commands that support Kubernetes operations for Tanzu Application Platform",
-				"Note: No plugins are currently installed for the \"operations\" target",
+				"Note: No plugins are currently installed for \"operations\"",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -1627,7 +1627,7 @@ func TestCommandRemapping(t *testing.T) {
 			},
 			args:       []string{"kubernetes"},
 			expected:   []string{"kubernetes", "dummy2 commands"},
-			unexpected: []string{"No plugins are currently installed for the \"kubernetes\" target"},
+			unexpected: []string{"No plugins are currently installed for \"kubernetes\""},
 		},
 		{
 			test: "mapped plugin is only one for target, top level should show target",
@@ -1663,7 +1663,7 @@ func TestCommandRemapping(t *testing.T) {
 			},
 			args:       []string{"mission-control"},
 			expected:   []string{"dummy2 commands"},
-			unexpected: []string{"No plugins are currently installed for the \"mission-control\" target"},
+			unexpected: []string{"No plugins are currently installed for \"mission-control\""},
 		},
 		{
 			test: "mapping plugin ok when found active context type",
