@@ -635,7 +635,9 @@ elevated (see previous section) and nothing interesting should be invoked via
 ```
 
 instead of every plugin command X be invocable via `tanzu foo X`, it is now
-invocable via `tanzu operations foo X`
+invocable via `tanzu operations foo X`. Note that there is a requirement that
+the command group a plugin is mapping under ("operations" in the example
+provided) has to be already present in the CLI.
 
 ### SupportedContextType
 
