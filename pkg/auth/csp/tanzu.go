@@ -27,7 +27,11 @@ import (
 	"go.pinniped.dev/pkg/oidcclient/state"
 	"golang.org/x/oauth2"
 	"golang.org/x/term"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
+	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -37,6 +41,12 @@ const (
 	tanzuCLIClientID     = "tanzu-cli-client-id"
 	defaultListenAddress = "127.0.0.1:0"
 	defaultCallbackPath  = "/callback"
+
+	centralConfigTanzuHubEndpointProductionKey        = "cli.core.tanzu_hub_endpoint_production"
+	centralConfigTanzuHubEndpointStagingKey           = "cli.core.tanzu_hub_endpoint_staging"
+	centralConfigTanzuHubEndpointUseCentralConfigKey  = "cli.core.tanzu_hub_endpoint_use_central_config"
+	centralConfigTanzuPlatformCSPProductIdentifierKey = "cli.core.tanzu_platform_csp_product_identifier"
+	centralConfigTanzuPlatformCSPDisplayName          = "cli.core.tanzu_platform_csp_display_name"
 )
 
 // stdin returns the file descriptor for stdin as an int.
@@ -429,8 +439,40 @@ func GetOrgNameFromOrgID(orgID, accessToken, issuer string) (string, error) {
 	return org.Name, nil
 }
 
-// GetTanzuHubEndpointForTAP retrieves Tanzu Hub Endpoint For TAP SaaS through the CSP API
+// GetTanzuHubEndpointForTAP retrieves Tanzu Hub Endpoint For TAP SaaS through the CSP API or through Central Config as fallback
 func GetTanzuHubEndpointForTAP(orgID, accessToken string, useStagingIssuer bool) (string, error) {
+	var errCSP, errCentralConfig error
+	var endpoint string
+
+	// We will get the central configuration from the default discovery source
+	discoverySource, err := config.GetCLIDiscoverySource(cliconfig.DefaultStandaloneDiscoveryName)
+	if err != nil {
+		return "", err
+	}
+	centralConfigReader := centralconfig.NewCentralConfigReader(discoverySource)
+
+	// If feature-flag to get endpoint from central config is not configured
+	// try to use CSP api to get the endpoint
+	if !shouldUseCentralConfigToGetHubEndpoint(centralConfigReader) {
+		endpoint, errCSP = getTanzuHubEndpointForTAPFromCSP(centralConfigReader, orgID, accessToken, useStagingIssuer)
+	}
+
+	// If the endpoint is empty or we got error while getting endpoint from CSP
+	// try to get the endpoint from central configuration
+	if endpoint == "" || errCSP != nil {
+		endpoint, errCentralConfig = getTanzuHubEndpointForTAPFromCentralConfig(centralConfigReader, useStagingIssuer)
+	}
+
+	// If endpoint is still empty return error
+	if endpoint == "" {
+		return "", kerrors.NewAggregate([]error{errCSP, errCentralConfig})
+	}
+
+	return endpoint, nil
+}
+
+// getTanzuHubEndpointForTAPFromCSP retrieves Tanzu Hub Endpoint For TAP SaaS through the CSP API
+func getTanzuHubEndpointForTAPFromCSP(centralConfigReader centralconfig.CentralConfig, orgID, accessToken string, useStagingIssuer bool) (string, error) {
 	// CSPServiceURLs stores the CSP service URL information
 	type CSPServiceURLs struct {
 		ServiceHome string `json:"serviceHome"`
@@ -476,13 +518,37 @@ func GetTanzuHubEndpointForTAP(orgID, accessToken string, useStagingIssuer bool)
 		return "", errors.Wrap(err, "could not unmarshal the services response")
 	}
 
+	var productIdentifier, displayName string
+	_ = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuPlatformCSPProductIdentifierKey, &productIdentifier)
+	_ = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuPlatformCSPDisplayName, &displayName)
+
 	for _, s := range services.ServicesList {
-		if s.ProductIdentifier == "TANZU-SAAS" && strings.Contains(s.DisplayName, "Tanzu Application Platform") { // TODO: Can this be improved to use some unique id?
+		if s.ProductIdentifier == productIdentifier && strings.Contains(s.DisplayName, displayName) {
 			// Remove `www.` if present from the endpoint. Because when invoking directly through API it does not work
 			tanzuHubEndpoint := strings.Replace(s.ServiceUrls.ServiceHome, "www.", "", 1)
 			return tanzuHubEndpoint, nil
 		}
 	}
 
-	return "", errors.New("could not find 'Tanzu Application Platform' service associated with the specified organization")
+	return "", errors.Errorf("could not find '%s' service associated with the specified organization", displayName)
+}
+
+func getTanzuHubEndpointForTAPFromCentralConfig(centralConfigReader centralconfig.CentralConfig, useStagingIssuer bool) (string, error) {
+	// Get the endpoint based on staging or production csp issuer
+	var endpoint string
+	key := centralConfigTanzuHubEndpointProductionKey
+	if useStagingIssuer {
+		key = centralConfigTanzuHubEndpointStagingKey
+	}
+	err := centralConfigReader.GetCentralConfigEntry(key, &endpoint)
+	if err != nil {
+		return "", err
+	}
+	return endpoint, nil
+}
+
+func shouldUseCentralConfigToGetHubEndpoint(centralConfigReader centralconfig.CentralConfig) bool {
+	var useCentralConfig bool
+	_ = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuHubEndpointUseCentralConfigKey, &useCentralConfig)
+	return useCentralConfig
 }
