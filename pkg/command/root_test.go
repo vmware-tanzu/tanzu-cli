@@ -1943,6 +1943,28 @@ func TestCommandRemapping(t *testing.T) {
 			args:     []string{"sic", "arg1", "arg2"},
 			expected: []string{"args = (show-invoke-context arg1 arg2), context is ():(dummy):(show-invoke-context)"},
 		},
+		{
+			test:     "when nothing under platform-engineering command group",
+			args:     []string{"tpe"},
+			expected: []string{"No plugins are currently installed for \"platform-engineering\""},
+		},
+		{
+			test: "mapping ok with under command platform-engineering command group",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetGlobal,
+					commandMap: []plugin.CommandMapEntry{
+						plugin.CommandMapEntry{
+							DestinationCommandPath: "platform-engineering dummy",
+						},
+					},
+				},
+			},
+			args:       []string{"tpe"},
+			expected:   []string{"dummy2 commands"},
+			unexpected: []string{"No plugins are currently installed for \"platform-engineering\""},
+		},
 	}
 
 	for _, spec := range tests {
