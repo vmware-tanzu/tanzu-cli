@@ -233,11 +233,12 @@ cli.core.tanzu_application_platform_scopes:
 - scope: tap:viewer
 - scope: tap:admin
 - scope: tap:member
-cli.core.tanzu_platform_csp_product_identifier: "TANZU-SAAS"
-cli.core.tanzu_platform_csp_display_name: "Tanzu Platform"
-cli.core.tanzu_hub_endpoint_production: https://www.production.fake.vmware.com/hub
-cli.core.tanzu_hub_endpoint_staging: https://www.staging.fake.vmware.com/hub
-cli.core.tanzu_hub_endpoint_use_central_config: false
+cli.core.tanzu_hub_metadata:
+  cspProductIdentifier: "TANZU-SAAS"
+  cspDisplayName: "Tanzu Platform"
+  endpointProduction: https://www.production.fake.vmware.com/hub
+  endpointStaging: https://www.staging.fake.vmware.com/hub
+  useCentralConfig: false
 cli.core.some-string: "the meaning of life, the universe, and everything"
 cli.core.some-int: 42
 cli.core.some-bool: true
