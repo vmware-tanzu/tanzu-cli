@@ -182,10 +182,6 @@ var createCtxCmd = &cobra.Command{
     # Create a Tanzu context but skip TLS verification (this is insecure):
     tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com --insecure-skip-tls-verify
 
-    Note: The "tanzu" context type is being released to provide advance support for the development
-    and release of new services (and CLI plugins) which extend and combine features provided by
-    individual tanzu components.
-
     Notes: 
     1. TMC context: To create Mission Control (TMC) context an API Key is required. It can be provided using the
        TANZU_API_TOKEN environment variable or entered during context creation.
@@ -851,13 +847,6 @@ func doCSPAPITokenAuthAndUpdateContext(c *configtypes.Context, apiTokenValue str
 func promptContextType() (ctxCreationType ContextCreationType, err error) {
 	ctxCreationTypeStr := ""
 	promptOpts := getPromptOpts()
-
-	fmt.Print(`
-Note: The "tanzu" context type is being released to provide advance support for the development
-and release of new services (and CLI plugins) which extend and combine features provided by
-individual tanzu components.
-
-`)
 
 	err = component.Prompt(
 		&component.PromptConfig{
