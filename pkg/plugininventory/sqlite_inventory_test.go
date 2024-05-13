@@ -245,9 +245,9 @@ INSERT INTO PluginBinaries VALUES(
 	'',
 	'v0.0.1',
 	'false',
-	'Mission-control management cluster operations',
-	'tmc',
-	'vmware',
+	'Description 1',
+	'publisher 1',
+	'vendor 1',
 	'linux',
 	'amd64',
 	'0000000000',
@@ -258,9 +258,9 @@ INSERT INTO PluginBinaries VALUES(
 	'',
 	'v0.0.2',
 	'false',
-	'Mission-control management cluster operations',
-	'tmc',
-	'vmware',
+	'Description 2',
+	'publisher 2',
+	'vendor 2',
 	'linux',
 	'amd64',
 	'1111111111',
@@ -271,9 +271,9 @@ INSERT INTO PluginBinaries VALUES(
     '',
     'v0.0.3',
     'true',
-    'Mission-control management cluster operations',
-    'tmc',
-    'vmware',
+    'Description 3',
+    'publisher 3',
+    'vendor 3',
     'linux',
     'amd64',
     '2222222222',
@@ -781,8 +781,6 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					Expect(p.RecommendedVersion).To(Equal("v0.0.2"))
 					Expect(string(p.Target)).To(Equal("mission-control"))
-					Expect(p.Vendor).To(Equal("vmware"))
-					Expect(p.Publisher).To(Equal("tmc"))
 
 					artifactList := p.Artifacts["v0.0.2"]
 					Expect(len(artifactList)).To(Equal(1))
@@ -791,6 +789,17 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 					Expect(a.Arch).To(Equal("amd64"))
 					Expect(a.Digest).To(Equal("1111111111"))
 					Expect(a.Image).To(Equal(tmpDir + "/vmware/tmc/linux/amd64/tmc/management-cluster:v0.0.2"))
+				})
+				It("should return the description, publisher and vendor of the latest version", func() {
+					plugins, err := inventory.GetAllPlugins()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(len(plugins)).To(Equal(1))
+
+					p := plugins[0]
+					Expect(p.Name).To(Equal("management-cluster"))
+					Expect(p.Description).To(Equal("Description 2"))
+					Expect(p.Vendor).To(Equal("vendor 2"))
+					Expect(p.Publisher).To(Equal("publisher 2"))
 				})
 			})
 			Context("When getting all plugins including hidden ones", func() {
@@ -808,8 +817,9 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 
 					Expect(p.RecommendedVersion).To(Equal("v0.0.3"))
 					Expect(string(p.Target)).To(Equal("mission-control"))
-					Expect(p.Vendor).To(Equal("vmware"))
-					Expect(p.Publisher).To(Equal("tmc"))
+					Expect(p.Description).To(Equal("Description 3"))
+					Expect(p.Vendor).To(Equal("vendor 3"))
+					Expect(p.Publisher).To(Equal("publisher 3"))
 
 					artifactList := p.Artifacts["v0.0.2"]
 					Expect(len(artifactList)).To(Equal(1))

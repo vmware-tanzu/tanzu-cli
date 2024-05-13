@@ -312,6 +312,16 @@ func (b *SQLiteInventory) extractPluginsFromRows(rows *sql.Rows) ([]*PluginInven
 				artifacts[currentVersion] = artifactList
 				artifactList = distribution.ArtifactList{}
 			}
+
+			// When we get a new version, let's update the shared fields of the plugin
+			// These shared fields apply to all versions of this plugin, so let's use
+			// the values of the latest version.  We know each version is more recent than
+			// the previous because we queried the DB in ascending order of version.
+			currentPlugin.Description = row.description
+			currentPlugin.Publisher = row.publisher
+			currentPlugin.Vendor = row.vendor
+			currentPlugin.RecommendedVersion = row.recommendedVersion
+
 			currentVersion = row.version
 		}
 
