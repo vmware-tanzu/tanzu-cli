@@ -774,6 +774,7 @@ func doCSPAuthentication(c *configtypes.Context) (*csp.Claims, error) {
 }
 
 func doCSPInteractiveLoginAndUpdateContext(c *configtypes.Context) (claims *csp.Claims, err error) {
+	logCSPOrgIDEnvVariableUsage()
 	issuer := csp.ProdIssuer
 	if staging {
 		issuer = csp.StgIssuer
@@ -810,6 +811,24 @@ func doCSPInteractiveLoginAndUpdateContext(c *configtypes.Context) (claims *csp.
 	}
 
 	return claims, nil
+}
+
+func logCSPOrgIDEnvVariableUsage() {
+	// The environment variable can be set using "tanzu config set env.<env variable name>" or by exporting
+	// the environment variable name. If both are set, exported environment variable value has priority
+	cspOrgIDValueFromCLIConfigEnv, cliConfigEnvErr := config.GetEnv(constants.CSPLoginOrgID)
+	if cliConfigEnvErr == nil {
+		cspOrgIDValueFromEnv, cspOrgIDExists := os.LookupEnv(constants.CSPLoginOrgID)
+		if cspOrgIDExists && cspOrgIDValueFromEnv != "" && cspOrgIDValueFromEnv == cspOrgIDValueFromCLIConfigEnv {
+			log.Infof("This tanzu context is being created using organization ID %s as set in the tanzu configuration (to unset, use `tanzu config unset env.TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID`).", cspOrgIDValueFromCLIConfigEnv)
+			return
+		}
+	}
+
+	cspOrgIDValueFromEnv, cspOrgIDExists := os.LookupEnv(constants.CSPLoginOrgID)
+	if cspOrgIDExists && cspOrgIDValueFromEnv != "" {
+		log.Infof("This tanzu context is being created using organization ID %s as set in the TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID environment variable.", cspOrgIDValueFromEnv)
+	}
 }
 
 func doCSPAPITokenAuthAndUpdateContext(c *configtypes.Context, apiTokenValue string) (claims *csp.Claims, err error) {
