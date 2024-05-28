@@ -17,14 +17,15 @@ func init() {
 }
 
 var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Initialize the CLI",
+	Use:    "init",
+	Hidden: true,
+	Short:  "Initialize the CLI",
 	Annotations: map[string]string{
 		"group": string(plugin.SystemCmdGroup),
 	},
 	SilenceErrors:     true,
 	ValidArgsFunction: noMoreCompletions,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		// Currently nothing to initialize.
 		// We are keeping this command as it may become useful
 		// again in the future.
