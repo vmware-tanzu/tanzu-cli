@@ -59,10 +59,10 @@ func init() {
     # Login to Tanzu using non-default endpoint
     tanzu login --endpoint "https://login.example.com"
 
-    #  Login to Tanzu by using the provided CA Bundle for TLS verification:
+    # Login to Tanzu by using the provided CA Bundle for TLS verification
     tanzu login --endpoint https://test.example.com[:port] --endpoint-ca-certificate /path/to/ca/ca-cert
 
-    # Login to Tanzu by explicit request to skip TLS verification (this is insecure)::
+    # Login to Tanzu by explicit request to skip TLS verification (this is insecure)
     tanzu login --endpoint https://test.example.com[:port] --insecure-skip-tls-verify
 
     Note:
