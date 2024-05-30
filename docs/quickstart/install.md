@@ -255,6 +255,26 @@ In addition, to ensure the CLI installed is used, ensure that the PATH setting
 is such that it is picked up by default. Commands like `which tanzu` and
 `tanzu version` will be useful to check that the right CLI binary is being used.
 
+## Special considerations for ARM64 architectures
+
+The Tanzu CLI is available natively on Darwin ARM64 (Mac M* machines) and
+Windows ARM64.  Installing from package managers will automatically install the
+correct native build of the CLI.
+
+However, not all CLI plugins are yet available natively for these architectures.
+To provide full functionality on these ARM64 platforms, the CLI makes use of emulators
+available on Mac and Windows.  The CLI will therefore *transparently* fallback to
+installing an AMD64/Intel build of a plugin when the ARM64 version is not available
+and the plugin will work just as expected.
+
+This should be completely transparent to the user but if for some reason the AMD64/Intel
+emulator is not installed, the user will need to install it.  The emulator used on Mac OS
+is Rosetta 2, while Windows uses a feature called Arm64EC.
+
+Note that Linux ARM64 is currently not supported because there is no emulator to
+easily fallback on.  Once sufficient plugins are available for ARM64, Linux ARM64
+will be supported.
+
 ## Automatic Prompts, and Potential Mitigations
 
 At the first suitable opportunity, (and on subsequent CLI use until the EULA is
