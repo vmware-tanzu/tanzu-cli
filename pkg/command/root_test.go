@@ -1381,7 +1381,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1397,7 +1397,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1419,7 +1419,7 @@ func TestCommandRemapping(t *testing.T) {
 					target:  configtypes.TargetK8s,
 					aliases: []string{"dum"},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy3",
 						},
 					},
@@ -1440,7 +1440,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "bar2",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "bar",
 						},
 					},
@@ -1463,7 +1463,7 @@ func TestCommandRemapping(t *testing.T) {
 					target:  configtypes.TargetK8s,
 					aliases: []string{"dum"},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1486,7 +1486,7 @@ func TestCommandRemapping(t *testing.T) {
 					target:  configtypes.TargetK8s,
 					aliases: []string{"dum"},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy3",
 							Overrides:              "dummy",
 						},
@@ -1504,10 +1504,10 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "operations dummy",
 						},
 					},
@@ -1523,7 +1523,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1539,7 +1539,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "kubernetes dummy",
 						},
 					},
@@ -1555,7 +1555,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "nonexistentprefix dummy",
 						},
 					},
@@ -1571,10 +1571,10 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetTMC,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "mission-control dummy",
 						},
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1591,7 +1591,7 @@ func TestCommandRemapping(t *testing.T) {
 					target:  configtypes.TargetK8s,
 					aliases: []string{"dum"},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1601,7 +1601,7 @@ func TestCommandRemapping(t *testing.T) {
 					target:  configtypes.TargetK8s,
 					aliases: []string{"dum"},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1619,7 +1619,7 @@ func TestCommandRemapping(t *testing.T) {
 					aliases:              []string{"dum"},
 					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1637,7 +1637,7 @@ func TestCommandRemapping(t *testing.T) {
 					target:  configtypes.TargetK8s,
 					aliases: []string{"dum"},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1655,7 +1655,7 @@ func TestCommandRemapping(t *testing.T) {
 					aliases:              []string{"dum"},
 					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTMC},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "mission-control dummy",
 						},
 					},
@@ -1679,7 +1679,7 @@ func TestCommandRemapping(t *testing.T) {
 					aliases:              []string{"dum"},
 					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1705,7 +1705,7 @@ func TestCommandRemapping(t *testing.T) {
 					aliases:              []string{"dum"},
 					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1731,7 +1731,7 @@ func TestCommandRemapping(t *testing.T) {
 					aliases:              []string{"dum"},
 					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 						},
 					},
@@ -1755,7 +1755,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "deeper",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "kubernetes dummy deeper",
 						},
 					},
@@ -1772,7 +1772,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "topshout",
 							SourceCommandPath:      "shout",
 							Description:            "extracted shout command",
@@ -1790,7 +1790,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "topshout",
 							SourceCommandPath:      "shout",
 							Description:            "extracted shout command",
@@ -1808,7 +1808,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "topshout",
 							SourceCommandPath:      "shout",
 							Description:            "extracted shout command",
@@ -1826,7 +1826,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "invoke-info",
 							SourceCommandPath:      "show-invoke-context",
 							Description:            "Shows invocation details",
@@ -1844,7 +1844,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "invoke-info",
 							SourceCommandPath:      "show-invoke-context",
 							Description:            "Shows invocation details",
@@ -1862,7 +1862,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "plugin source invoke-info",
 							SourceCommandPath:      "show-invoke-context",
 							Description:            "Shows invocation details",
@@ -1885,7 +1885,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 							SourceCommandPath:      "show-invoke-context",
 							Description:            "Shows invocation details",
@@ -1908,7 +1908,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy say",
 							SourceCommandPath:      "show-invoke-context",
 							Description:            "Shows invocation details",
@@ -1931,7 +1931,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetK8s,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "dummy",
 							SourceCommandPath:      "show-invoke-context",
 							Description:            "Shows invocation details",
@@ -1955,7 +1955,7 @@ func TestCommandRemapping(t *testing.T) {
 					name:   "dummy2",
 					target: configtypes.TargetGlobal,
 					commandMap: []plugin.CommandMapEntry{
-						plugin.CommandMapEntry{
+						{
 							DestinationCommandPath: "platform-engineering dummy",
 						},
 					},
@@ -1964,6 +1964,39 @@ func TestCommandRemapping(t *testing.T) {
 			args:       []string{"tpe"},
 			expected:   []string{"dummy2 commands"},
 			unexpected: []string{"No plugins are currently installed for \"platform-engineering\""},
+		},
+		// --- Command level mapping tests for the "tanzu help" command
+		{
+			test: "help command for one unmapped plugin",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy",
+					target: configtypes.TargetGlobal,
+				},
+			},
+			args: []string{"help", "dummy"},
+			// Help output for the dummy plugin
+			expected: []string{"dummy functionality\n\nUsage:\n  tanzu dummy [command]"},
+		},
+		{
+			test: "help command for one mapped plugin",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetGlobal,
+					commandMap: []plugin.CommandMapEntry{
+						{
+							SourceCommandPath:      "show-invoke-context",
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args: []string{"help", "dummy"},
+			// Output for the show-invoke-context command which prints the passed arguments
+			// and environment.  So we confirm that the show-invoke-context was called, passed -h
+			// and received the remapping environment.
+			expected: []string{"args = (show-invoke-context -h), context is ():(dummy):(show-invoke-context)"},
 		},
 	}
 
@@ -2015,7 +2048,11 @@ func TestCommandRemapping(t *testing.T) {
 
 			rootCmd, err := NewRootCmd()
 			assert.Nil(err)
-			rootCmd.SetArgs(spec.args)
+			// To be able to test the "tanzu help" command, we need to set the os.Args
+			// instead of using the cobra command's SetArgs method.
+			// rootCmd.SetArgs(spec.args)
+			// See getHelpArguments() in pkg/cli/plugin_cmd.go
+			os.Args = append([]string{"tanzu"}, spec.args...)
 
 			os.Unsetenv("TANZU_CLI_INVOKED_GROUP")
 			os.Unsetenv("TANZU_CLI_INVOKED_COMMAND")
