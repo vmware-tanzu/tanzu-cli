@@ -272,7 +272,7 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	// TODO: update the below conditional check (and in login command) after context scope plugin support
-	//       is implemented for tanzu context(TAP SaaS)
+	//       is implemented for tanzu context(Tanzu Platform for Kubernetes)
 	// Sync all required plugins
 	if ctx.ContextType != configtypes.ContextTypeTanzu {
 		if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
@@ -687,7 +687,7 @@ func globalTanzuLogin(c *configtypes.Context, generateContextNameFunc func(orgNa
 	fmt.Fprintln(os.Stderr)
 	log.Successf("Successfully logged into '%s' organization and created a tanzu context", orgName)
 
-	// log warning message if the TAP scopes are retrieved successfully and validation failed
+	// log warning message if the Tanzu Platform for Kubernetes scopes are retrieved successfully and validation failed
 	valid, err := validateTokenForTAPScopes(claims, nil)
 	if err == nil && !valid {
 		logTanzuInvalidOrgWarningMessage(orgName)
@@ -697,7 +697,7 @@ func globalTanzuLogin(c *configtypes.Context, generateContextNameFunc func(orgNa
 
 func logTanzuInvalidOrgWarningMessage(orgName string) {
 	warnMsg := `WARNING: While authenticated to organization '%s', there are insufficient permissions to access
-the Tanzu Application Platform service. Please ensure correct organization authentication and access permissions
+the Tanzu Platform for Kubernetes service. Please ensure correct organization authentication and access permissions
 `
 	fmt.Fprintln(os.Stderr)
 	log.Warningf(warnMsg, orgName)
@@ -1421,7 +1421,7 @@ func useCtx(cmd *cobra.Command, args []string) error { //nolint:gocyclo
 	log.Infof("Successfully activated context '%s' %s ", ctxName, suffixString)
 
 	// TODO: update the below conditional check (and in login command) after context scope plugin support
-	//       is implemented for tanzu context(TAP SaaS)
+	//       is implemented for tanzu context(Tanzu Platform for Kubernetes SaaS)
 	// Sync all required plugins
 	if ctx.ContextType != configtypes.ContextTypeTanzu {
 		if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {

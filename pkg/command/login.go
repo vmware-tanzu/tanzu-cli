@@ -25,7 +25,7 @@ var loginEndpoint string
 
 var loginCmd = &cobra.Command{
 	Use:     "login",
-	Short:   "Login to Tanzu Application Platform",
+	Short:   "Login to Tanzu Platform for Kubernetes",
 	Aliases: []string{"lo", "logins"},
 	Annotations: map[string]string{
 		"group": string(plugin.SystemCmdGroup),
@@ -72,9 +72,9 @@ func init() {
        environment variable with the custom organization ID value. More information regarding organizations in Cloud Services
        and how to obtain the organization ID can be found at
        https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html
-       Also, more information on logging into Tanzu Application SaaS platform and using
+       Also, more information on logging into Tanzu Platform Platform for Kubernetes and using
        interactive login in terminal based hosts (without browser) can be found at
-       https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/quickstart/quickstart.md#logging-into-tanzu-application-platform
+       https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/quickstart/quickstart.md#logging-into-tanzu-platform-for-kubernetes
 `
 }
 
@@ -108,7 +108,7 @@ func login(_ *cobra.Command, _ []string) (err error) {
 	}
 
 	// TODO: uncomment the below context plugin sync call once context scope plugin support
-	//       is implemented for tanzu context(TAP SaaS)
+	//       is implemented for tanzu context(Tanzu Platform for Kubernetes)
 	// Sync all required plugins
 	// _ = syncContextPlugins(cmd, ctx.ContextType, ctx.Name)
 

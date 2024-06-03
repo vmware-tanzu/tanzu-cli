@@ -462,7 +462,7 @@ var tmcCmd = &cobra.Command{
 
 var opsCmd = &cobra.Command{
 	Use:     "operations",
-	Short:   "Commands that support Kubernetes operations for Tanzu Application Platform",
+	Short:   "Commands that support Kubernetes operations for Tanzu Platform for Kubernetes",
 	Aliases: []string{"ops"},
 	Annotations: map[string]string{
 		"group": string(plugin.TargetCmdGroup),

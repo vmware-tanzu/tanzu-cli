@@ -28,8 +28,8 @@ type tapScope struct {
 
 type tapScopesGetter func() ([]string, error)
 
-// validateTokenForTAPScopes validates if the token claims contains at least one of the TAP scopes listed in
-// the central configuration. If the central configuration doesn't have any TAP scopes listed, it will return success.
+// validateTokenForTAPScopes validates if the token claims contains at least one of the Tanzu Platform for Kubernetes scopes listed in
+// the central configuration. If the central configuration doesn't have any Tanzu Platform for Kubernetes scopes listed, it will return success.
 // It will skip the validation and return success if TANZU_CLI_SKIP_TANZU_CONTEXT_TAP_SCOPES_VALIDATION environment
 // variable is set to true
 func validateTokenForTAPScopes(claims *csp.Claims, scopesGetter tapScopesGetter) (bool, error) {
@@ -41,8 +41,8 @@ func validateTokenForTAPScopes(claims *csp.Claims, scopesGetter tapScopesGetter)
 	}
 	tapScopes, err := scopesGetter()
 	if err != nil {
-		log.V(7).Error(err, "error retrieving TAP scopes from the central config")
-		return false, errors.Wrap(err, "error retrieving TAP scopes from the central config")
+		log.V(7).Error(err, "error retrieving Tanzu Platform for Kubernetes scopes from the central config")
+		return false, errors.Wrap(err, "error retrieving Tanzu Platform for Kubernetes scopes from the central config")
 	}
 
 	// validate only if we get the permissions/scopes from central configuration
@@ -69,7 +69,7 @@ func getTAPScopesFromCentralConfig() ([]string, error) {
 		return nil, err
 	}
 
-	// Get the Tanzu Application Platform scopes from the central configuration
+	// Get the Tanzu Platform for Kubernetes scopes from the central configuration
 	reader := centralconfig.NewCentralConfigReader(discoverySource)
 	var tapScopes []tapScope
 	err = reader.GetCentralConfigEntry(centralConfigTanzuApplicationPlatformScopesKey, &tapScopes)
