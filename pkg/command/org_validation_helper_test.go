@@ -19,14 +19,14 @@ func TestValidateTokenForTanzuScopes(t *testing.T) {
 		expectedErr  error
 	}{
 		{
-			name:         "When the central config does not have any TAP scopes listed, it should return success.",
+			name:         "When the central config does not have any Tanzu Platform for Kubernetes scopes listed, it should return success.",
 			claims:       &csp.Claims{Permissions: []string{}},
 			scopesGetter: func() ([]string, error) { return []string{}, nil },
 			expectedBool: true,
 			expectedErr:  nil,
 		},
 		{
-			name:   "When the token has at least one of the specified TAP scopes listed in central config, it should return success",
+			name:   "When the token has at least one of the specified Tanzu Platform for Kubernetes scopes listed in central config, it should return success",
 			claims: &csp.Claims{Permissions: []string{"external/UID-123-567/matching-scope", "csp:org_admin", "csp:developer"}},
 			scopesGetter: func() ([]string, error) {
 				return []string{"matching-scope", "matching-another-scope"}, nil
@@ -35,7 +35,7 @@ func TestValidateTokenForTanzuScopes(t *testing.T) {
 			expectedErr:  nil,
 		},
 		{
-			name:   "When the token lacks at least one of the specified TAP scopes listed in the central config, it should return an error",
+			name:   "When the token lacks at least one of the specified Tanzu Platform for Kubernetes scopes listed in the central config, it should return an error",
 			claims: &csp.Claims{Permissions: []string{"external/UID-123-567/non-matching-scope", "csp:org_member", "csp:software_installer"}},
 			scopesGetter: func() ([]string, error) {
 				return []string{"matching-scope", "matching-another-scope"}, nil
@@ -44,13 +44,13 @@ func TestValidateTokenForTanzuScopes(t *testing.T) {
 			expectedErr:  nil,
 		},
 		{
-			name:   "It should return an error if fetching the TAP scopes from the central config fails",
+			name:   "It should return an error if fetching the Tanzu Platform for Kubernetes scopes from the central config fails",
 			claims: &csp.Claims{},
 			scopesGetter: func() ([]string, error) {
-				return nil, errors.New("error retrieving TAP scopes")
+				return nil, errors.New("error retrieving Tanzu Platform for Kubernetes scopes")
 			},
 			expectedBool: false,
-			expectedErr:  errors.New("error retrieving TAP scopes from the central config: error retrieving TAP scopes"),
+			expectedErr:  errors.New("error retrieving Tanzu Platform for Kubernetes scopes from the central config: error retrieving Tanzu Platform for Kubernetes scopes"),
 		},
 	}
 

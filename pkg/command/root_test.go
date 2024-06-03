@@ -666,7 +666,7 @@ func TestTargetCommands(t *testing.T) {
 			args: []string{"ops"},
 			expected: []string{
 				"Note: No plugins are currently installed for \"operations\"",
-				"Commands that support Kubernetes operations for Tanzu Application Platform",
+				"Commands that support Kubernetes operations for Tanzu Platform for Kubernetes",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -676,7 +676,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for ops target help when empty",
 			args: []string{"ops", "-h"},
 			expected: []string{
-				"Commands that support Kubernetes operations for Tanzu Application Platform",
+				"Commands that support Kubernetes operations for Tanzu Platform for Kubernetes",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -687,7 +687,7 @@ func TestTargetCommands(t *testing.T) {
 			args: []string{"ops", "invalid"},
 			expected: []string{
 				"Note: No plugins are currently installed for \"operations\"",
-				"Commands that support Kubernetes operations for Tanzu Application Platform",
+				"Commands that support Kubernetes operations for Tanzu Platform for Kubernetes",
 			},
 			unexpected: []string{
 				"Available command groups",
@@ -698,7 +698,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"ops"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetOperations},
 			expected: []string{
-				"Commands that support Kubernetes operations for Tanzu Application Platform",
+				"Commands that support Kubernetes operations for Tanzu Platform for Kubernetes",
 				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
 			},
 			unexpected: []string{
@@ -710,7 +710,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"ops", "-h"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetOperations},
 			expected: []string{
-				"Commands that support Kubernetes operations for Tanzu Application Platform",
+				"Commands that support Kubernetes operations for Tanzu Platform for Kubernetes",
 				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
 			},
 			unexpected: []string{
@@ -722,7 +722,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"ops"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
 			expected: []string{
-				"Commands that support Kubernetes operations for Tanzu Application Platform",
+				"Commands that support Kubernetes operations for Tanzu Platform for Kubernetes",
 				"Note: No plugins are currently installed for \"operations\"",
 			},
 			unexpected: []string{
@@ -734,7 +734,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"ops", "-h"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
 			expected: []string{
-				"Commands that support Kubernetes operations for Tanzu Application Platform",
+				"Commands that support Kubernetes operations for Tanzu Platform for Kubernetes",
 			},
 			unexpected: []string{
 				"Available command groups",

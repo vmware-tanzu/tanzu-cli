@@ -23,7 +23,7 @@ such sets of plugins.
 The list of targets supported thus far are `kubernetes`, which applies to
 Kubernetes endpoint, `mission-control`, which applies to Tanzu Mission
 Control service endpoints, and `operations`, to support Kubernetes operations
-for Tanzu Application Platform. A plugin can be associated with one or zero targets.
+for Tanzu Platform for Kubernetes. A plugin can be associated with one or zero targets.
 A plugin associated with no target implies its functionality can be used
 regardless of what endpoint the CLI may be connecting to.
 
@@ -177,15 +177,15 @@ tanzu plugin upgrade <plugin> [--target <target>]
 This command will update the specified plugin to the recommendedVersion
 associated with this plugin's entry found in the plugin repository.
 
-### Logging into Tanzu Application Platform
+### Logging into Tanzu Platform for Kubernetes
 
-To log in to the Tanzu Application Platform and create a context of type tanzu, use the following command:
+To log in to the Tanzu Platform for Kubernetes and create a context of type tanzu, use the following command:
 
 ```console
 tanzu login
 ```
 
-This command will log in to the Tanzu Application Platform and creates a context associated
+This command will log in to the Tanzu Platform for Kubernetes and creates a context associated
 with the organization's name that you are logging in to. Once the context is created,
 you can manage it using the `tanzu context` command.
 
@@ -381,7 +381,7 @@ The `tanzu login` command has undergone significant changes.
   the `tanzu context create` or `tanzu context use` commands for managing contexts.
 
 - **Repurposing:** The deprecated `tanzu login` core command has been repurposed
-  to facilitate logging into the Tanzu Application Platform. It is no longer
+  to facilitate logging into the Tanzu Platform for Kubernetes. It is no longer
   considered deprecated.
 
 - **For Legacy CLI Users:** If you still require the use of any legacy Tanzu CLI,

@@ -12,7 +12,7 @@ const (
 	compGlobalTarget = "global\tApplicable globally"
 	compK8sTarget    = "k8s\tInteractions with a Kubernetes endpoint"
 	compTMCTarget    = "tmc\tInteractions with a Tanzu Mission Control endpoint"
-	compOpsTarget    = "ops\tKubernetes operations for Tanzu Application Platform"
+	compOpsTarget    = "ops\tKubernetes operations for Tanzu Platform for Kubernetes"
 
 	// Completion strings for the values of the --type flag
 	compK8sContextType   = "k8s\tContext for a Kubernetes cluster"
