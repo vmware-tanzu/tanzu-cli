@@ -164,6 +164,7 @@ func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMa
 
 		runner := NewRunner(p.Name, p.InstallationPath, completion)
 		ctx := context.Background()
+		setupPluginEnv(srcHierarchy, dstHierarchy)
 		output, _, err := runner.RunOutput(ctx)
 		if err != nil {
 			return nil, cobra.ShellCompDirectiveError
@@ -198,10 +199,14 @@ func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMa
 		// calls such as "tanzu help cluster list", we need to do some argument
 		// parsing ourselves and modify what gets passed along to the plugin.
 		helpArgs := getHelpArguments()
+		if len(srcHierarchy) > 0 {
+			helpArgs = append(srcHierarchy, helpArgs...)
+		}
 
 		// Pass this new command in to our plugin to have it handle help output
 		runner := NewRunner(p.Name, p.InstallationPath, helpArgs)
 		ctx := context.Background()
+		setupPluginEnv(srcHierarchy, dstHierarchy)
 		err := runner.Run(ctx)
 		if err != nil {
 			log.Errorf("Help output for '%s' is not available.", c.Name())
