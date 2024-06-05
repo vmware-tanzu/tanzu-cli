@@ -42,7 +42,7 @@ require (
 	github.com/vmware-tanzu/carvel-ytt v0.40.0
 	github.com/vmware-tanzu/tanzu-cli/test/e2e/framework v0.0.0-00010101000000-000000000000
 	github.com/vmware-tanzu/tanzu-framework/capabilities/client v0.0.0-20230523145612-1c6fbba34686
-	github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0-dev.0.20240501223830-ad724a20da91
+	github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0
 	go.pinniped.dev v0.20.0
 	golang.org/x/mod v0.15.0
 	golang.org/x/oauth2 v0.8.0
