@@ -115,7 +115,7 @@ baseurl=https://storage.googleapis.com/tanzu-cli-os-packages/rpm/tanzu-cli
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
-gpgkey=https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub
+gpgkey=https://packages-prod.broadcom.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub
 EOF
 yum install -y tanzu-cli
 ```
