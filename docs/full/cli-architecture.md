@@ -170,33 +170,26 @@ Note: For backward compatibility reasons, one `mission-control` context can be a
 
 Target represents a group of Tanzu CLI Plugins that are of the same category (generally talking to similar endpoints) and are represented as the `tanzu <target-name> <plugin-name>` command.
   
-The Tanzu CLI supports four targets: `global`, `kubernetes` (alias `k8s`), `mission-control` (alias `tmc`) and `operations` (alias `ops`).
+The Tanzu CLI supports three targets: `global`, `mission-control` (alias `tmc`) and `operations` (alias `ops`).
+A `kubernetes` (alias `k8s`) target has been deprecated; plugins of this target can be accessed as if they were `global`.
 
 Each plugin is associated with one of the above targets. `global` is a special target that links the plugin under the root tanzu cli command.
 
 Below are some examples of plugin invocation commands formed for different targets:
 
-- PluginName: `foo`, Target: `kubernetes`, Command: `tanzu kubernetes foo`
 - PluginName: `bar`, Target: `mission-control`, Command: `tanzu mission-control bar`
 - PluginName: `baz`, Target: `global`, Command: `tanzu baz`
 - PluginName: `qux`, Target: `operations`, Command: `tanzu operations qux`
 
-For backward compatibility reasons, the plugins with the `kubernetes` target are also available under the root `tanzu` command along with the `tanzu kubernetes` command.
-
-To list TKG workload clusters using the TKG cluster plugin which is associated with the `kubernetes` target:
+To list TKG workload clusters using the TKG cluster plugin which is associated with the deprecated `kubernetes` target:
 
 ```sh
-# Without target grouping (a TKG management cluster is set as the current active server)
 tanzu cluster list
-
-# With target grouping
-tanzu kubernetes cluster list
 ```
 
 To list TMC workload clusters using the TMC cluster plugin which is associated with the `mission-control` target:
 
 ```sh
-# With target grouping
 tanzu mission-control cluster list
 ```
 

@@ -20,12 +20,11 @@ installed. Plugin groups is the means to facilitate an efficient installation of
 such sets of plugins.
 
 *Target* : A class of control-plane endpoints that a plugin may interact with.
-The list of targets supported thus far are `kubernetes`, which applies to
-Kubernetes endpoint, `mission-control`, which applies to Tanzu Mission
-Control service endpoints, and `operations`, to support Kubernetes operations
-for Tanzu Platform for Kubernetes. A plugin can be associated with one or zero targets.
-A plugin associated with no target implies its functionality can be used
-regardless of what endpoint the CLI may be connecting to.
+The list of targets supported thus far are `operations` to support Kubernetes operations
+for Tanzu Platform for Kubernetes and `mission-control` which applies to Tanzu Mission
+Control service endpoints. If a plugin is not limited to a particular target it should
+be marked as `global` and will be accessible directly under the root `tanzu` command.
+A `kubernetes` target exists but is deprecated in favor of `global`.
 
 *Context* : Represents a connection to an endpoint with which the Tanzu CLI can
 interact. A context can be established via creating a Tanzu Management
@@ -70,27 +69,31 @@ zsh:
 
 ```console
 $ tanzu plugin group search
-  GROUP                DESCRIPTION                             LATEST
-  vmware-tap/default   Plugins for Tanzu Application Platform  v1.4.0
-  vmware-tkg/default   Plugins for Tanzu Kubernetes Grid       v2.1.0
-  vmware-tmc/tmc-user  Plugins for Tanzu Mission-Control       v0.0.1
+  GROUP                           DESCRIPTION                                           LATEST
+  vmware-tanzu/app-developer      Plugins for Application Developer for Tanzu Platform  v0.1.2
+  vmware-tanzu/platform-engineer  Plugins for Platform Engineer for Tanzu Platform      v0.1.3
+  vmware-tanzucli/essentials      Essential plugins for the Tanzu CLI                   v1.0.0
+  vmware-tap/default              Plugins for TAP                                       v1.10.0
+  vmware-tkg/default              Plugins for TKG                                       v2.5.1
+  vmware-tmc/default              Plugins for TMC                                       v1.0.0
+  vmware-vsphere/default          Plugins for vSphere                                   v8.0.2
 ```
 
 ### List the plugins of a plugin group
 
 ```console
-$ tz plugin group get vmware-tkg/default:v2.1.0
-Plugins in Group:  vmware-tkg/default:v2.1.0
-  NAME                TARGET      LATEST
-  cluster             kubernetes  v0.28.0
-  feature             kubernetes  v0.28.0
-  isolated-cluster    global      v0.28.0
-  kubernetes-release  kubernetes  v0.28.0
-  management-cluster  kubernetes  v0.28.0
-  package             kubernetes  v0.28.0
-  pinniped-auth       global      v0.28.0
-  secret              kubernetes  v0.28.0
-  telemetry           kubernetes  v0.28.0
+$ tz plugin group get  vmware-tanzu/app-developer
+Plugins in Group:  vmware-tanzu/app-developer:v0.1.2
+  NAME      TARGET      VERSION
+  appsv2    global      v0.2.2
+  build     global      v0.8.0
+  package   kubernetes  v0.35.0
+  project   global      v0.2.0
+  rbac      global      v0.1.1
+  resource  global      v0.1.0
+  secret    kubernetes  v0.33.1
+  services  kubernetes  v0.10.0
+  space     global      v0.2.0
 ```
 
 Note that you can omit the version if you are interested in the contents of the latest version of a group:

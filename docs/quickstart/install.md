@@ -483,14 +483,14 @@ Below are the supported formats for the `--plugin` flag:
 # To download plugin bundle with the latest available version of the 'cluster' plugin. (Returns an error if the specified plugin name is available across multiple targets)
 tanzu plugin download-bundle --plugin cluster --to-tar /tmp/plugin_bundle_cluster.tar.gz
 
-# To download plugin bundle with the latest available version of the 'cluster' plugin for `kubernetes` target
-tanzu plugin download-bundle --plugin cluster@kubernetes --to-tar /tmp/plugin_bundle_cluster.tar.gz
+# To download plugin bundle with the latest available version of the 'cluster' plugin for `operations` target
+tanzu plugin download-bundle --plugin cluster@operations --to-tar /tmp/plugin_bundle_cluster.tar.gz
 
-# To download plugin bundle with v1.0.0 version of 'cluster' plugin for `kubernetes` target
-tanzu plugin download-bundle --plugin cluster@kubernetes:v1.0.0 --to-tar /tmp/plugin_bundle_cluster.tar.gz
+# To download plugin bundle with v1.0.0 version of 'cluster' plugin for `operations` target
+tanzu plugin download-bundle --plugin cluster@operations:v1.0.0 --to-tar /tmp/plugin_bundle_cluster.tar.gz
 
-# To download plugin bundle with latest available version of 'cluster' plugin for `kubernetes` target
-tanzu plugin download-bundle --plugin cluster@kubernetes:latest --to-tar /tmp/plugin_bundle_cluster.tar.gz
+# To download plugin bundle with latest available version of 'cluster' plugin for `operations` target
+tanzu plugin download-bundle --plugin cluster@operations:latest --to-tar /tmp/plugin_bundle_cluster.tar.gz
 ```
 
 Using the `--group` and `--plugin` flags together is also supported.  In such a case the union of all the
