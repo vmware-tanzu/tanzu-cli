@@ -578,6 +578,7 @@ Each CommandMapEntry has the following fields
 - DestinationCommandPath: is a space-delimited path to the command relative to the root Command of the Tanzu CLI that the command associated with SourceCommandPath should be mapped to and invocable by the user
 - Overrides: By default, the command previously situated at the DestinationCommandPath of the Tanzu CLI, if exist, will be the one overridden by this entry. If this mapping attempt in intended to override another part of the Tanzu CLI command tree, the override path should be used.
 - Description: Required when remapping a subcommand of this plugin outside of the plugin's command tree (e.g. whe elevating a plugin's subcommand to a top level command of the Tanzu CLI). This enables the CLI to provide better help information about the remapped command.
+- RequiredContextType: If this list not empty, the mapping prescribed by the entry will only take effect if the type of the active CLI Context matches one in this list.
 
 Assume there is a plugin named foo with a non empty CommandMap
 
@@ -638,6 +639,19 @@ instead of every plugin command X be invocable via `tanzu foo X`, it is now
 invocable via `tanzu operations foo X`. Note that there is a requirement that
 the command group a plugin is mapping under ("operations" in the example
 provided) has to be already present in the CLI.
+
+### Relocating a plugin command to a different command group when active CLI context is of a specific type
+
+```go
+        plugin.CommandMapEntry{
+            SourceCommandPath:      "echo",
+            DestinationCommandPath: "cluster echo",
+            RequiredContextType:    [types.ContextType{types.ContextTypeTanzu}],
+        },
+```
+
+When the active CLI context is of type 'tanzu', `tanzu cluster echo` will be
+available and provided by this plugin's 'echo' command
 
 ### SupportedContextType
 

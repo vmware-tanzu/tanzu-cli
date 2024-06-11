@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,25 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 )
+
+// CommandMapProcessor process the plugin's command map to
+// determine how commands should be mapped in the CLI command tree.
+type CommandMapProcessor interface {
+	// GetCommandMapForPlugin returns how the plugin's commands should be mapped
+	GetCommandMapForPlugin(p *PluginInfo) map[string]*cobra.Command
+}
+
+type contextAwareCommandMapProcessor struct {
+	activeContextMap map[configtypes.ContextType]*configtypes.Context
+}
+
+var _ CommandMapProcessor = &contextAwareCommandMapProcessor{}
+
+// NewCommandMapProcessor returns a CommandMapProcessor capable of processing
+// command mapping directives from plugins
+func NewCommandMapProcessor(contextMap map[configtypes.ContextType]*configtypes.Context) CommandMapProcessor {
+	return &contextAwareCommandMapProcessor{activeContextMap: contextMap}
+}
 
 // K8s-targeted plugins command group shows up as top level commands and under
 // the kubernetes group. Any remap location that points to one should also map
@@ -44,12 +64,34 @@ func pathFromHierarchy(hierarchy []string) string {
 	return strings.Join(hierarchy, " ")
 }
 
+// isMapEntryAllowed returns true when the type of any active context matches
+// any explicitly required context types of the map entry
+func (cmp *contextAwareCommandMapProcessor) isMapEntryAllowed(mapEntry *plugin.CommandMapEntry) bool {
+	if mapEntry == nil {
+		return false
+	}
+	if len(mapEntry.RequiredContextType) == 0 {
+		return true
+	}
+
+	for ctxType := range cmp.activeContextMap {
+		if slices.Contains(mapEntry.RequiredContextType, ctxType) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // GetCommandMapForPlugin returns how the plugin's commands should be mapped
-func GetCommandMapForPlugin(p *PluginInfo) map[string]*cobra.Command {
+func (cmp *contextAwareCommandMapProcessor) GetCommandMapForPlugin(p *PluginInfo) map[string]*cobra.Command {
 	cmdMap := map[string]*cobra.Command{}
 
 	for i := range p.CommandMap {
 		mapEntry := p.CommandMap[i]
+		if !cmp.isMapEntryAllowed(&mapEntry) {
+			continue
+		}
 		cmdHierarchy := hierarchyFromPath(mapEntry.DestinationCommandPath)
 
 		if len(cmdHierarchy) > 0 {
@@ -63,7 +105,11 @@ func GetCommandMapForPlugin(p *PluginInfo) map[string]*cobra.Command {
 	}
 
 	// identify commands for removal
-	for _, mapEntry := range p.CommandMap {
+	for i := range p.CommandMap {
+		mapEntry := p.CommandMap[i]
+		if !cmp.isMapEntryAllowed(&mapEntry) {
+			continue
+		}
 		if mapEntry.Overrides != "" {
 			cmdHierarchy := hierarchyFromPath(mapEntry.Overrides)
 

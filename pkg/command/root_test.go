@@ -1740,6 +1740,133 @@ func TestCommandRemapping(t *testing.T) {
 			unexpected:              []string{"dummy2 commands"},
 		},
 		{
+			test: "no mapping of entry if active context type is not among its requiredContextType list",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:    "dummy2",
+					target:  configtypes.TargetGlobal,
+					aliases: []string{"dum"},
+					commandMap: []plugin.CommandMapEntry{
+						{
+							DestinationCommandPath: "conditionally-mapped",
+							RequiredContextType:    []configtypes.ContextType{configtypes.ContextTypeTanzu},
+						},
+						{
+							DestinationCommandPath: "always-mapped",
+						},
+						{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			activeContextType: configtypes.ContextTypeK8s,
+			args:              []string{},
+			expected:          []string{"always-mapped", "dummy2 commands"},
+			unexpected:        []string{"conditionally-mapped", "dummy commands"},
+		},
+		{
+			test: "apply mapping of entry if active context type is among its requiredContextType list",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:    "dummy2",
+					target:  configtypes.TargetGlobal,
+					aliases: []string{"dum"},
+					commandMap: []plugin.CommandMapEntry{
+						{
+							DestinationCommandPath: "conditionally-mapped",
+							RequiredContextType:    []configtypes.ContextType{configtypes.ContextTypeTanzu},
+						},
+						{
+							DestinationCommandPath: "always-mapped",
+						},
+						{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			activeContextType: configtypes.ContextTypeTanzu,
+			args:              []string{},
+			expected:          []string{"conditionally-mapped", "always-mapped", "dummy2 commands"},
+			unexpected:        []string{"dummy commands"},
+		},
+		{
+			test: "supportedContextType has no bearing on effect of RequiredContextType",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:                 "dummy2",
+					target:               configtypes.TargetGlobal,
+					aliases:              []string{"dum"},
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
+					commandMap: []plugin.CommandMapEntry{
+						{
+							DestinationCommandPath: "conditionally-mapped",
+							RequiredContextType:    []configtypes.ContextType{configtypes.ContextTypeTanzu},
+						},
+						{
+							DestinationCommandPath: "always-mapped",
+						},
+						{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			activeContextType: configtypes.ContextTypeK8s,
+			args:              []string{},
+			expected:          []string{"always-mapped", "dummy2 commands"},
+			unexpected:        []string{"conditionally-mapped", "dummy commands"},
+		},
+		{
+			test: "when feature flag is set supportedContextType takes precedence over RequiredContextType",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:    "dummy",
+					target:  configtypes.TargetK8s,
+					aliases: []string{"dum"},
+				},
+				{
+					name:                 "dummy2",
+					target:               configtypes.TargetGlobal,
+					aliases:              []string{"dum"},
+					supportedContextType: []configtypes.ContextType{configtypes.ContextTypeTanzu},
+					commandMap: []plugin.CommandMapEntry{
+						{
+							DestinationCommandPath: "conditionally-mapped",
+							RequiredContextType:    []configtypes.ContextType{configtypes.ContextTypeK8s},
+						},
+						{
+							DestinationCommandPath: "not-always-mapped",
+						},
+						{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			activeContextType:       configtypes.ContextTypeK8s,
+			allowActiveContextCheck: true,
+			args:                    []string{},
+			expected:                []string{"dummy commands"},
+			unexpected:              []string{"conditionally-mapped", "not-always-mapped", "dummy2 commands"},
+		},
+		{
 			test: "nesting plugin within another plugin is not supported",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
