@@ -225,8 +225,20 @@ func buildReplacementMap(plugins []cli.PluginInfo) map[string]*cobra.Command {
 	var maskedRemappedPlugins []string
 	result := map[string]*cobra.Command{}
 
+	activeContextMap, err := config.GetAllActiveContextsMap()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to get active contexts : %v\n", err)
+		return result
+	}
+
+	cmp := cli.NewCommandMapProcessor(activeContextMap)
+	if cmp == nil {
+		fmt.Fprintf(os.Stderr, "Unable to process command map from plugins")
+		return result
+	}
+
 	for i := range plugins {
-		cmdMap := cli.GetCommandMapForPlugin(&plugins[i])
+		cmdMap := cmp.GetCommandMapForPlugin(&plugins[i])
 		for pathKey, newCmd := range cmdMap {
 			if _, ok := result[pathKey]; ok {
 				// Remapping a remapped command is unexpected! Note it and skip the attempt.
