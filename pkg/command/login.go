@@ -47,8 +47,11 @@ func init() {
 	loginCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
 	loginCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
 	loginCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
+	loginCmd.Flags().StringVar(&tanzuHubEndpoint, "tanzu-hub-endpoint", "", "customize the Tanzu Hub endpoint associated with the context")
+
 	utils.PanicOnErr(loginCmd.Flags().MarkHidden("api-token"))
 	utils.PanicOnErr(loginCmd.Flags().MarkHidden("staging"))
+	utils.PanicOnErr(loginCmd.Flags().MarkHidden("tanzu-hub-endpoint"))
 	loginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 	loginCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
 

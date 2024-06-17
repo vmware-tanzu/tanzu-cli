@@ -50,16 +50,16 @@ import (
 var (
 	stderrOnly, forceCSP, staging, onlyCurrent, skipTLSVerify, showAllColumns, shortCtx    bool
 	ctxName, endpoint, apiToken, kubeConfig, kubeContext, getOutputFmt, endpointCACertPath string
+	tanzuHubEndpoint                                                                       string
 
 	projectStr, projectIDStr, spaceStr, clustergroupStr string
 	contextTypeStr                                      string
 )
 
 const (
-	knownGlobalHost             = "cloud.vmware.com"
-	defaultTanzuEndpoint        = "https://api.tanzu.cloud.vmware.com"
-	isPinnipedEndpoint          = "isPinnipedEndpoint"
-	tanzuMissionControlEndpoint = "tanzuMissionControlEndpoint"
+	knownGlobalHost      = "cloud.vmware.com"
+	defaultTanzuEndpoint = "https://api.tanzu.cloud.vmware.com"
+	isPinnipedEndpoint   = "isPinnipedEndpoint"
 
 	contextNotExistsForContextType      = "The provided context '%v' does not exist or is not active for the given context type '%v'"
 	noActiveContextExistsForContextType = "There is no active context for the given context type '%v'"
@@ -224,6 +224,8 @@ func initCreateCtxCmd() {
 	createCtxCmd.Flags().BoolVar(&stderrOnly, "stderr-only", false, "send all output to stderr rather than stdout")
 	createCtxCmd.Flags().BoolVar(&forceCSP, "force-csp", false, "force the context to use CSP auth")
 	createCtxCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
+	createCtxCmd.Flags().StringVar(&tanzuHubEndpoint, "tanzu-hub-endpoint", "", "customize the Tanzu Hub endpoint associated with the context")
+
 	// Shell completion for this flag is the default behavior of doing file completion
 	createCtxCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
 	createCtxCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
@@ -236,6 +238,8 @@ func initCreateCtxCmd() {
 	utils.PanicOnErr(createCtxCmd.Flags().MarkHidden("stderr-only"))
 	utils.PanicOnErr(createCtxCmd.Flags().MarkHidden("force-csp"))
 	utils.PanicOnErr(createCtxCmd.Flags().MarkHidden("staging"))
+	utils.PanicOnErr(createCtxCmd.Flags().MarkHidden("tanzu-hub-endpoint"))
+
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint", "kubecontext")
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint", "kubeconfig")
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
@@ -604,7 +608,8 @@ func createContextWithTanzuEndpoint() (context *configtypes.Context, err error) 
 		GlobalOpts:  &configtypes.GlobalServer{Endpoint: sanitizedEndpoint},
 		ClusterOpts: &configtypes.ClusterServer{},
 		AdditionalMetadata: map[string]interface{}{
-			tanzuMissionControlEndpoint: mapTanzuEndpointToTMCEndpoint(sanitizedEndpoint),
+			config.TanzuMissionControlEndpointKey: mapTanzuEndpointToTMCEndpoint(sanitizedEndpoint),
+			config.TanzuHubEndpointKey:            tanzuHubEndpoint,
 		},
 	}
 	return context, err
@@ -650,9 +655,13 @@ func globalTanzuLogin(c *configtypes.Context, generateContextNameFunc func(orgNa
 	}
 
 	// Fetch the Tanzu Hub endpoint for the Tanzu context as a best case effort
-	tanzuHubEndpoint, err := csp.GetTanzuHubEndpoint(claims.OrgID, c.GlobalOpts.Auth.AccessToken, staging)
-	if err != nil {
-		log.V(7).Infof("unable to get Tanzu Hub endpoint. Error: %v", err.Error())
+	if tanzuHubEndpoint == "" {
+		tanzuHubEndpoint, err = csp.GetTanzuHubEndpoint(claims.OrgID, c.GlobalOpts.Auth.AccessToken, staging)
+		if err != nil {
+			log.V(7).Infof("unable to get Tanzu Hub endpoint. Error: %v", err.Error())
+		}
+	} else {
+		log.Warningf("This tanzu context is being created with the custom Tanzu Hub endpoint: %q", tanzuHubEndpoint)
 	}
 
 	// update the context name using the context name generator
