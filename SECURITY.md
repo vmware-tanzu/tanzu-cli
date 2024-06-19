@@ -12,7 +12,7 @@ Minor versions of the Tanzu CLI are expected to be released every three months. 
 
 Security is of the highest importance and all security vulnerabilities or suspected security vulnerabilities should be reported to Tanzu CLI privately, to minimize attacks against current users of Tanzu CLI before they are fixed. Vulnerabilities will be investigated and patched on the next patch (or minor) release as soon as possible. This information could be kept entirely internal to the project.
 
-If you know of a publicly disclosed security vulnerability for Tanzu CLI, please **IMMEDIATELY** contact the [Broadcom Security Team](mailto:vmware.psirt@broadcom.com). The use of encrypted email is encouraged. The public PGP key can be found [here](https://knowledge.broadcom.com/external/article?legacyId=1055). **IMPORTANT: Do not file public issues on GitHub for security vulnerabilities**
+If you know of a publicly disclosed security vulnerability for Tanzu CLI, please **IMMEDIATELY** contact the [Broadcom Security Team](mailto:tanzu.psirt@broadcom.com). The use of encrypted email is encouraged. The public PGP key can be found [here](https://knowledge.broadcom.com/external/article?legacyId=1055). **IMPORTANT: Do not file public issues on GitHub for security vulnerabilities**
 
 To report a vulnerability or a security-related issue, please contact the Broadcom email address with the details of the vulnerability. The email will be fielded by the Broadcom Security Team and then shared with the Tanzu CLI maintainers who have committer and release permissions. Emails will be addressed within 3 business days, including a detailed plan to investigate the issue and any potential workarounds to perform in the meantime. Do not report non-security-impacting bugs through this channel. Use [GitHub issues](https://github.com/vmware-tanzu/tanzu-cli/issues) instead.
 
@@ -54,7 +54,7 @@ The Security Team will also publish any mitigating steps users can take until th
 
 ## Mailing lists
 
-* Use [vmware.psirt@broadcom.com](mailto:vmware.psirt@broadcom.com) to report security concerns to the Broadcom Security Team, who uses the list to privately discuss security issues and fixes prior to disclosure.
+* Use [tanzu.psirt@broadcom.com](mailto:tanzu.psirt@broadcom.com) to report security concerns to the Broadcom Security Team, who uses the list to privately discuss security issues and fixes prior to disclosure.
 * Join the Tanzu CLI Distributors (`tanzu-cli-distributors@googlegroups.com`) mailing list for early private information and vulnerability disclosure. Early disclosure may include mitigating steps and additional information on security patch releases. See below for information on how Tanzu CLI distributors or vendors can apply to join this list.
 
 ## Early Disclosure to Tanzu CLI Distributors List
@@ -81,7 +81,7 @@ The information that members receive on the Tanzu CLI Distributors mailing list 
 
 Before you share any information from the list with members of your team who are required to fix the issue, these team members must agree to the same terms, and only be provided with information on a need-to-know basis.
 
-In the unfortunate event that you share information beyond what is permitted by this policy, you must urgently inform the [Broadcom Security Team](vmware.psirt@broadcom.com) of exactly what information was leaked and to whom. If you continue to leak information and break the policy outlined here, you will be permanently removed from the list.
+In the unfortunate event that you share information beyond what is permitted by this policy, you must urgently inform the [Broadcom Security Team](tanzu.psirt@broadcom.com) of exactly what information was leaked and to whom. If you continue to leak information and break the policy outlined here, you will be permanently removed from the list.
 
 ## Requesting to Join
 
