@@ -253,7 +253,9 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 		}
 		ctxName = args[0]
 	}
-
+	if err := validateContextCreateFlagValues(); err != nil {
+		return err
+	}
 	if !configtypes.IsValidContextType(contextTypeStr) {
 		return errors.New(invalidContextType)
 	}
@@ -282,6 +284,16 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 		if err := syncContextPlugins(cmd, ctx.ContextType, ctxName); err != nil {
 			log.Warningf("unable to automatically sync the plugins recommended by the new context. Please run 'tanzu plugin sync' to sync plugins manually, error: '%v'", err.Error())
 		}
+	}
+	return nil
+}
+
+func validateContextCreateFlagValues() error {
+	if contextTypeStr == string(configtypes.ContextTypeTanzu) && kubeConfig != "" {
+		return fmt.Errorf("the '–-kubeconfig' flag is not applicable when creating a context of type 'tanzu'")
+	}
+	if contextTypeStr == string(configtypes.ContextTypeTanzu) && kubeContext != "" {
+		return fmt.Errorf("the '–-kubecontext' flag is not applicable when creating a context of type 'tanzu'")
 	}
 	return nil
 }
