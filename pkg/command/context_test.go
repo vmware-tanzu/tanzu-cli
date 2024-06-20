@@ -932,12 +932,13 @@ type ContextListInfo struct {
 
 var _ = Describe("create new context", func() {
 	const (
-		existingContext    = "test-mc"
-		testKubeContext    = "test-k8s-context"
-		testKubeConfigPath = "/fake/path/kubeconfig"
-		testContextName    = "fake-context-name"
-		fakeTMCEndpoint    = "tmc.cloud.vmware.com:443"
-		fakeTanzuEndpoint  = "https://fake.api.tanzu.cloud.vmware.com"
+		existingContext      = "test-mc"
+		testKubeContext      = "test-k8s-context"
+		testKubeConfigPath   = "/fake/path/kubeconfig"
+		testContextName      = "fake-context-name"
+		fakeTMCEndpoint      = "tmc.cloud.vmware.com:443"
+		fakeTanzuEndpoint    = "https://fake.api.tanzu.cloud.vmware.com"
+		fakeTanzuHubEndpoint = "https://fake.api.tanzu.hub.vmware.com"
 	)
 	var (
 		tkgConfigFile   *os.File
@@ -1115,6 +1116,19 @@ var _ = Describe("create new context", func() {
 					Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
 					Expect(string(ctx.ContextType)).To(ContainSubstring(contextTypeTanzu))
 					Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
+				})
+			})
+			Context("with endpoint, tanzuHubEndpoint and context name provided", func() {
+				It("should create context with given endpoint and context name", func() {
+					endpoint = fakeTanzuEndpoint
+					tanzuHubEndpoint = fakeTanzuHubEndpoint
+					ctxName = testContextName
+					ctx, err = createNewContext()
+					Expect(err).To(BeNil())
+					Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
+					Expect(string(ctx.ContextType)).To(ContainSubstring(contextTypeTanzu))
+					Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
+					Expect(ctx.AdditionalMetadata[config.TanzuHubEndpointKey].(string)).To(ContainSubstring(tanzuHubEndpoint))
 				})
 			})
 			Context("context name already exists", func() {
