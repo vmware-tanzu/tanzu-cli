@@ -1903,3 +1903,11 @@ func TestMapTanzuEndpointToTMCEndpoint(t *testing.T) {
 		}
 	}
 }
+
+func TestCreateContextWithTanzuTypeAndKubeconfigFlags(t *testing.T) {
+	contextTypeStr = contextTypeTanzu
+	kubeConfig = "fake-kubeconfig"
+	err := createCtx(&cobra.Command{}, []string{})
+	assert.NotNil(t, err)
+	assert.EqualError(t, err, `the '–-kubeconfig' flag is not applicable when creating a context of type 'tanzu'`)
+}
