@@ -243,6 +243,7 @@ func newInstallPluginCmd() *cobra.Command {
 				return installPluginsForPluginGroup(cmd, args)
 			}
 
+			pluginmanager.SetTotalPluginsToInstall(1)
 			// Invoke install plugin from local source if local files are provided
 			if local != "" {
 				if len(args) == 0 {
@@ -340,6 +341,7 @@ func newUpgradePluginCmd() *cobra.Command {
 
 			// With the Central Repository feature we can simply request to install
 			// the recommendedVersion.
+			pluginmanager.SetTotalPluginsToInstall(1)
 			err = pluginmanager.UpgradePlugin(pluginName, cli.VersionLatest, getTarget())
 			if err != nil {
 				return err
