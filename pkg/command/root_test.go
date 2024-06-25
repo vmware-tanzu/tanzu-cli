@@ -447,52 +447,54 @@ func TestTargetCommands(t *testing.T) {
 		{
 			test:       "top run for all empty targets",
 			args:       []string{},
-			unexpected: []string{"Target", "kubernetes", "mission-control"},
+			unexpected: []string{"Target", "kubernetes", "mission-control", "operations"},
 		},
 		{
-			test:                   "top run for only k8s empty",
+			test:                   "top run for only ops empty",
 			args:                   []string{},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
 			expected:               []string{"Target", "mission-control"},
-			unexpected:             []string{"kubernetes"},
+			unexpected:             []string{"kubernetes", "operations"},
 		},
 		{
 			test:                   "top run for only tmc empty",
 			args:                   []string{},
-			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
-			expected:               []string{"Target", "kubernetes"},
-			unexpected:             []string{"mission-control"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s, configtypes.TargetOperations},
+			expected:               []string{"Target", "operations"},
+			unexpected:             []string{"mission-control", "kubernetes"},
 		},
 		{
 			test:                   "top run for no empty targets",
 			args:                   []string{},
-			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s, configtypes.TargetTMC},
-			expected:               []string{"Target", "kubernetes", "mission-control"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s, configtypes.TargetTMC, configtypes.TargetOperations},
+			expected:               []string{"Target", "operations", "mission-control"},
+			unexpected:             []string{"kubernetes"},
 		},
 		{
 			test:       "top help for all empty targets",
 			args:       []string{"-h"},
-			unexpected: []string{"Target", "kubernetes", "mission-control"},
+			unexpected: []string{"Target", "kubernetes", "mission-control", "operations"},
 		},
 		{
-			test:                   "top help for only k8s empty",
+			test:                   "top help for only ops empty",
 			args:                   []string{"-h"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
 			expected:               []string{"Target", "mission-control"},
-			unexpected:             []string{"kubernetes"},
+			unexpected:             []string{"kubernetes", "operations"},
 		},
 		{
 			test:                   "top help for only tmc empty",
 			args:                   []string{"-h"},
-			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
-			expected:               []string{"Target", "kubernetes"},
-			unexpected:             []string{"mission-control"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s, configtypes.TargetOperations},
+			expected:               []string{"Target", "operations"},
+			unexpected:             []string{"mission-control", "kubernetes"},
 		},
 		{
 			test:                   "top help for no empty targets",
 			args:                   []string{"-h"},
-			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s, configtypes.TargetTMC},
-			expected:               []string{"Target", "kubernetes", "mission-control"},
+			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s, configtypes.TargetTMC, configtypes.TargetOperations},
+			expected:               []string{"Target", "operations", "mission-control"},
+			unexpected:             []string{"kubernetes"},
 		},
 		// ========================
 		// Tests for the k8s target
@@ -501,6 +503,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for k8s target run when empty",
 			args: []string{"k8s"},
 			expected: []string{
+				"Command \"kubernetes\" is deprecated",
 				"Note: No plugins are currently installed for \"kubernetes\"",
 				"Commands that interact with a Kubernetes endpoint",
 			},
@@ -512,6 +515,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for k8s target help when empty",
 			args: []string{"k8s", "-h"},
 			expected: []string{
+				"Command \"kubernetes\" is deprecated",
 				"Commands that interact with a Kubernetes endpoint",
 			},
 			unexpected: []string{
@@ -522,6 +526,7 @@ func TestTargetCommands(t *testing.T) {
 			test: "help for k8s target invalid when empty",
 			args: []string{"k8s", "invalid"},
 			expected: []string{
+				"Command \"kubernetes\" is deprecated",
 				"Note: No plugins are currently installed for \"kubernetes\"",
 				"Commands that interact with a Kubernetes endpoint",
 			},
@@ -534,6 +539,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"k8s"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
 			expected: []string{
+				"Command \"kubernetes\" is deprecated",
 				"Commands that interact with a Kubernetes endpoint",
 				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
 			},
@@ -546,6 +552,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"k8s", "-h"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetK8s},
 			expected: []string{
+				"Command \"kubernetes\" is deprecated",
 				"Commands that interact with a Kubernetes endpoint",
 				"Available command groups:\n\n  System\n    dummy                   dummy \n\nFlags:",
 			},
@@ -558,6 +565,7 @@ func TestTargetCommands(t *testing.T) {
 			args:                   []string{"k8s"},
 			installedPluginTargets: []configtypes.Target{configtypes.TargetTMC},
 			expected: []string{
+				"Command \"kubernetes\" is deprecated",
 				"Commands that interact with a Kubernetes endpoint",
 				"Note: No plugins are currently installed for \"kubernetes\"",
 			},
@@ -1127,7 +1135,7 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"hello"},
 		},
 		{
-			test: "one mapped k8s plugin",
+			test: "one mapped k8s plugin (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:      "dummy2",
@@ -1139,7 +1147,7 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"hello"},
 		},
 		{
-			test: "once mapped, command using original plugin name is not accessible",
+			test: "once mapped, command using original plugin name is not accessible (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:      "dummy2",
@@ -1151,7 +1159,7 @@ func TestCommandRemapping(t *testing.T) {
 			expectedFailure: true,
 		},
 		{
-			test: "two plugins share aliases shows duplicate warning",
+			test: "two plugins share aliases shows duplicate warning (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:    "dummy",
@@ -1169,7 +1177,7 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"hello", "the alias dum is duplicated across plugins: dummy, dummy3"},
 		},
 		{
-			test: "plugin replaces another if former maps to an alias of the latter",
+			test: "plugin replaces another if former maps to an alias of the latter (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:    "bars",
@@ -1187,7 +1195,7 @@ func TestCommandRemapping(t *testing.T) {
 			unexpected: []string{"bars commands"},
 		},
 		{
-			test: "two plugins sharing aliases does not show duplicate warning if one replaces another",
+			test: "two plugins sharing aliases does not show duplicate warning if one replaces another (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:    "dummy",
@@ -1206,7 +1214,7 @@ func TestCommandRemapping(t *testing.T) {
 			unexpected: []string{"duplicated across plugins"},
 		},
 		{
-			test: "map to deeper subcommand is valid as long as parent exists",
+			test: "map to deeper subcommand is valid as long as parent exists (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:      "dummy2",
@@ -1218,7 +1226,7 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"hello"},
 		},
 		{
-			test: "k8s-target plugins also maps to kubernetes command group",
+			test: "k8s-target plugins also maps to kubernetes command group (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:      "dummy2",
@@ -1230,7 +1238,7 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"hello"},
 		},
 		{
-			test: "k8s-target plugins remapping in kubernetes command group also remap top-level command group",
+			test: "k8s-target plugins remapping in kubernetes command group also remap top-level command group (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:      "dummy2",
@@ -1242,7 +1250,7 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"hello"},
 		},
 		{
-			test: "map to deeper subcommand is invalid if parent missing",
+			test: "map to deeper subcommand is invalid if parent missing (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:      "dummy2",
@@ -1254,7 +1262,7 @@ func TestCommandRemapping(t *testing.T) {
 			expectedFailure: true,
 		},
 		{
-			test: "one mapped tmc plugin",
+			test: "one mapped tmc plugin (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:      "dummy2",
@@ -1266,7 +1274,7 @@ func TestCommandRemapping(t *testing.T) {
 			expected: []string{"hello"},
 		},
 		{
-			test: "two plugins remapped to same location will warn",
+			test: "two plugins remapped to same location will warn (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:      "dummy2",
@@ -1286,7 +1294,7 @@ func TestCommandRemapping(t *testing.T) {
 		},
 		{
 			// because there is nothing that the mapping would override...
-			test: "mapped plugin with supportedContextType, command is not hidden at target when no active context",
+			test: "mapped plugin with supportedContextType, command is not hidden at target when no active context (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:                 "dummy2",
@@ -1301,20 +1309,7 @@ func TestCommandRemapping(t *testing.T) {
 			allowActiveContextCheck: true,
 		},
 		{
-			test: "mapped plugin is only one for target, top level should show target",
-			pluginVariants: []fakePluginRemapAttributes{
-				{
-					name:      "dummy2",
-					target:    configtypes.TargetK8s,
-					invokedAs: []string{"dummy"},
-					aliases:   []string{"dum"},
-				},
-			},
-			args:     []string{""},
-			expected: []string{"kubernetes"},
-		},
-		{
-			test: "mapping plugins when conditional on active contexts",
+			test: "mapping plugins when conditional on active contexts (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:    "dummy",
@@ -1335,7 +1330,7 @@ func TestCommandRemapping(t *testing.T) {
 			unexpected:        []string{"dummy commands"},
 		},
 		{
-			test: "no mapping if active context not one of supportContextType list",
+			test: "no mapping if active context not one of supportContextType list (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:    "dummy",
@@ -1357,7 +1352,7 @@ func TestCommandRemapping(t *testing.T) {
 			unexpected:              []string{"dummy2 commands"},
 		},
 		{
-			test: "nesting plugin within another plugin is not supported",
+			test: "nesting plugin within another plugin is not supported (invokedAs)",
 			pluginVariants: []fakePluginRemapAttributes{
 				{
 					name:    "dummy",
@@ -1629,23 +1624,24 @@ func TestCommandRemapping(t *testing.T) {
 			expected:   []string{"kubernetes", "dummy2 commands"},
 			unexpected: []string{"No plugins are currently installed for \"kubernetes\""},
 		},
-		{
-			test: "mapped plugin is only one for target, top level should show target",
-			pluginVariants: []fakePluginRemapAttributes{
-				{
-					name:    "dummy2",
-					target:  configtypes.TargetK8s,
-					aliases: []string{"dum"},
-					commandMap: []plugin.CommandMapEntry{
-						{
-							DestinationCommandPath: "dummy",
-						},
-					},
-				},
-			},
-			args:     []string{""},
-			expected: []string{"kubernetes"},
-		},
+		// Only works for the Kubernetes target which is now always hidden
+		// {
+		// 	test: "mapped plugin is only one for target, top level should show target",
+		// 	pluginVariants: []fakePluginRemapAttributes{
+		// 		{
+		// 			name:    "dummy2",
+		// 			target:  configtypes.TargetOperations,
+		// 			aliases: []string{"dum"},
+		// 			commandMap: []plugin.CommandMapEntry{
+		// 				{
+		// 					DestinationCommandPath: "dummy",
+		// 				},
+		// 			},
+		// 		},
+		// 	},
+		// 	args:     []string{""},
+		// 	expected: []string{"operations"},
+		// },
 		{
 			test: "mapping ok with no active context as long as it does not override any existing",
 			pluginVariants: []fakePluginRemapAttributes{

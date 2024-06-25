@@ -440,6 +440,10 @@ var k8sCmd = &cobra.Command{
 	Use:     "kubernetes",
 	Short:   "Commands that interact with a Kubernetes endpoint",
 	Aliases: []string{"k8s"},
+	// We are moving away from the 'kubernetes' target.
+	// All commands under this target are accessible as sub-commands of the root command.
+	// For backwards compatibility, we are keeping the target but are hiding it.
+	Deprecated: `you should invoke its sub-commands directly without the "kubernetes" prefix.`,
 	Annotations: map[string]string{
 		"group": string(plugin.TargetCmdGroup),
 	},
