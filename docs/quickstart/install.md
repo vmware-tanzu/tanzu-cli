@@ -243,6 +243,55 @@ sudo yum install tanzu-cli-unstable
 
 To uninstall: `sudo yum remove tanzu-cli-unstable`
 
+### asdf (MacOS and Linux)
+
+`asdf` is a tool version manager.  It can be used to install the latest Tanzu CLI.
+It also makes it easy to install and switch between different versions of the Tanzu CLI
+(if you need to do that).  Note that the latest released version of the Tanzu CLI is
+always the recommended version, no matter what your backend version is.
+
+```console
+asdf plugin add tanzu
+asdf install tanzu latest
+asdf global tanzu latest
+```
+
+To upgrade to a new release: `asdf install tanzu latest && asdf global tanzu latest`
+Note that this installs the new latest version but does not remove any previously installed ones.
+
+To uninstall particular version: `asdf uninstall tanzu <version>`
+
+#### Installing a Specific Version
+
+`asdf` is made to make it easy to install a specific version:
+
+```console
+asdf plugin add tanzu  # if not done already
+
+asdf install tanzu <version>
+asdf global tanzu <version>
+```
+
+It then becomes possible to switch between installed versions:
+
+```console
+# For the entire machine
+asdf global tanzu <any installed version>
+
+# For the current directory
+asdf local tanzu <any installed version>
+
+# For the current shell
+asdf shell tanzu <any installed version>
+```
+
+#### Installing a Pre-Release
+
+Pre-releases of the Tanzu CLI are made available to get early feedback before
+a new version is released.  Pre-releases are  normal `asdf` packages and can
+be installed the same way as official releases (see previous section).
+Note that the special `latest` version does not include pre-releases.
+
 ### Note on installation paths
 
 Package managers have opinions on locations to which binaries are installed.
