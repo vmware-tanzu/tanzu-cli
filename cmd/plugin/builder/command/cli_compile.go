@@ -308,6 +308,18 @@ type target struct {
 	args []string
 }
 
+func getGoFlagsList(goflags string) []string {
+	var result []string
+	tmpSpaceReplacement := "__##SPC##__"
+	// escape '\ ' with a replacement string before splitting
+	goflags = strings.ReplaceAll(goflags, "\\ ", tmpSpaceReplacement)
+	goflagsList := strings.Split(goflags, " ")
+	for _, v := range goflagsList {
+		result = append(result, strings.ReplaceAll(v, tmpSpaceReplacement, " "))
+	}
+	return result
+}
+
 func (t target) build(targetPath, prefix, modPath, ldflags, tags, goflags string) error {
 	cmd := goCommand("build")
 
@@ -317,8 +329,15 @@ func (t target) build(targetPath, prefix, modPath, ldflags, tags, goflags string
 	}
 
 	if goflags != "" {
-		cmd.Args = append(cmd.Args, strings.Split(goflags, " ")...)
+		// Because the entire goflags string is treated as a space-delimited
+		// string, any goflag entry that itself has space(s) in them will not
+		// be processed properly.
+		// So, we introduce a helper to support any goflag value with space
+		// chararacters as long as each is escaped with a preceding '\'
+		// e.g. tanzu builder plugin build ... --goflag "-gcflags=all=-N\ -l" ...
+		cmd.Args = append(cmd.Args, getGoFlagsList(goflags)...)
 	}
+
 	cmd.Args = append(cmd.Args, t.args...)
 	cmd.Args = append(cmd.Args, commonArgs...)
 
