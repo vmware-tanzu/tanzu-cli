@@ -95,7 +95,7 @@ on `tanzu context create` or `tanzu context use` | `1` or `true` to skip auto-in
 | `TANZU_CLI_TMC_UNSTABLE_URL` | Specifies the endpoint for the TMC cluster to use in E2E tests. | The URI of the endpoint |
 | `TANZU_CONFIG` | Use a different `config.yaml` file. | Full path to the new config file |
 | `TANZU_CONFIG_METADATA` | Use a different `.config-metadata.yaml` file. | Full path to the new config-metadata file|
-| `TANZU_CONFIG_NEXT_GEN` | Use a different `config-ng.yaml` fil.e | Full path to the new config-ng file |
+| `TANZU_CONFIG_NEXT_GEN` | Use a different `config-ng.yaml` file. | Full path to the new config-ng file |
 | `TEST_CUSTOM_CATALOG_CACHE_DIR` | Use a different directory for the `catalog.yaml` plugin catalog cache file. | Full path of the directory |
 | `TEST_CUSTOM_DATA_STORE_FILE` | Use a different `.data-store.yaml` file | Full path of the new file |
 | `TEST_CUSTOM_PLUGIN_COMMAND_TREE_CACHE_DIR` | Use a different directory for the command-tree information used for telemetry. | Full path to the new directory |
