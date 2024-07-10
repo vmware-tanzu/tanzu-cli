@@ -1486,6 +1486,44 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(plugins[0].Version).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Version))
 				Expect(plugins[0].Mandatory).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Mandatory))
 			})
+			It("should not return error if TANZU_CLI_ACTIVATE_PLUGINS_ON_PLUGIN_GROUP_PUBLISH=true and Plugins should be activated", func() {
+				err = os.Setenv(constants.ActivatePluginsOnPluginGroupPublish, "true")
+				defer os.Unsetenv(constants.ActivatePluginsOnPluginGroupPublish)
+				Expect(err).To(BeNil())
+
+				err = inventory.InsertPluginGroup(&groupWithHiddenPlugin, false)
+				Expect(err).To(BeNil())
+
+				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(1))
+				pg := groups[0]
+				Expect(pg.Name).To(Equal(groupWithHiddenPlugin.Name))
+				Expect(pg.Vendor).To(Equal(groupWithHiddenPlugin.Vendor))
+				Expect(pg.Publisher).To(Equal(groupWithHiddenPlugin.Publisher))
+				Expect(pg.Description).To(Equal(groupWithHiddenPlugin.Description))
+
+				Expect(pg.Hidden).To(Equal(groupWithHiddenPlugin.Hidden))
+
+				Expect(len(pg.Versions)).To(Equal(1))
+
+				plugins := pg.Versions["v1.0.0"]
+				Expect(len(plugins)).To(Equal(1))
+				Expect(plugins[0].Name).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Name))
+				Expect(plugins[0].Target).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Target))
+				Expect(plugins[0].Version).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Version))
+				Expect(plugins[0].Mandatory).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Mandatory))
+
+				// Try to get the plugin with IncludeHidden:false filter and verify that
+				// plugin that was deactivated before creating plugin group is now activated
+				updatedPlugins, err := inventory.GetPlugins(&PluginInventoryFilter{Name: plugins[0].Name, Target: plugins[0].Target, Version: plugins[0].Version, IncludeHidden: false})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(updatedPlugins)).To(Equal(1))
+				Expect(updatedPlugins[0].Name).To(Equal(plugins[0].Name))
+				Expect(updatedPlugins[0].Target).To(Equal(plugins[0].Target))
+				Expect(updatedPlugins[0].RecommendedVersion).To(Equal(plugins[0].Version))
+				Expect(updatedPlugins[0].Hidden).To(BeFalse())
+			})
 		})
 		Context("When inserting a plugin-group which already exists in the database", func() {
 			BeforeEach(func() {
@@ -1581,6 +1619,8 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 			Expect(err).To(BeNil(), "failed to insert plugin2")
 			err = inventory.InsertPlugin(&piEntry3)
 			Expect(err).To(BeNil(), "failed to insert plugin3")
+			err = inventory.InsertPlugin(&hiddenPluginEntry)
+			Expect(err).To(BeNil(), "failed to insert hidden-plugin")
 		})
 		AfterEach(func() {
 			os.RemoveAll(tmpDir)
@@ -1591,7 +1631,7 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				err = inventory.InsertPluginGroup(&pluginGroup1, false)
 				Expect(err).To(BeNil())
 			})
-			It("should not return error when no change has been done to the activation state and the GetPluginGroups should reflect the same", func() {
+			It("should not return error when no change has been done to the activation state and plugin group should still be active and the GetPluginGroups should reflect the same", func() {
 				err = inventory.UpdatePluginGroupActivationState(&pluginGroup1)
 				Expect(err).To(BeNil())
 
@@ -1608,8 +1648,35 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				Expect(len(groups[0].Versions["v2.0.0"])).To(Equal(len(pluginGroup1.Versions["v2.0.0"])))
 				Expect(len(groups[0].Versions["v1.0.0"])).To(Equal(len(pluginGroup1.Versions["v1.0.0"])))
 			})
-			It("should not return error when the activation state has been updated and the GetPluginGroups should reflect the change", func() {
+			It("should not return error when the plugin group is deactivated and the GetPluginGroups should not return the plugin group", func() {
 				pluginGroupUpdated := pluginGroup1
+				pluginGroupUpdated.Hidden = true
+				err = inventory.UpdatePluginGroupActivationState(&pluginGroupUpdated)
+				Expect(err).To(BeNil())
+
+				// Verify the result using GetPluginGroups
+				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(0))
+			})
+		})
+
+		Context("When updating the activation state of a plugin-group wrt TANZU_CLI_ACTIVATE_PLUGINS_ON_PLUGIN_GROUP_PUBLISH env variable", func() {
+			BeforeEach(func() {
+				err = os.Setenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting, "true")
+				defer os.Unsetenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting)
+				hiddenGroupWithHiddenPlugin := groupWithHiddenPlugin
+				hiddenGroupWithHiddenPlugin.Hidden = true
+				Expect(err).To(BeNil())
+				err = inventory.InsertPluginGroup(&hiddenGroupWithHiddenPlugin, false)
+				Expect(err).To(BeNil())
+			})
+			It("when activating plugin group containing a deactivated plugin with TANZU_CLI_ACTIVATE_PLUGINS_ON_PLUGIN_GROUP_PUBLISH=true set, it should activate the deactivated plugin", func() {
+				err = os.Setenv(constants.ActivatePluginsOnPluginGroupPublish, "true")
+				defer os.Unsetenv(constants.ActivatePluginsOnPluginGroupPublish)
+				Expect(err).To(BeNil())
+
+				pluginGroupUpdated := groupWithHiddenPlugin
 				pluginGroupUpdated.Hidden = false
 				err = inventory.UpdatePluginGroupActivationState(&pluginGroupUpdated)
 				Expect(err).To(BeNil())
@@ -1618,14 +1685,51 @@ var _ = Describe("Unit tests for plugin inventory", func() {
 				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
 				Expect(err).ToNot(HaveOccurred())
 				Expect(len(groups)).To(Equal(1))
-				Expect(groups[0].Name).To(Equal(pluginGroupUpdated.Name))
-				Expect(groups[0].Vendor).To(Equal(pluginGroupUpdated.Vendor))
-				Expect(groups[0].Publisher).To(Equal(pluginGroupUpdated.Publisher))
-				Expect(groups[0].Description).To(Equal(pluginGroupUpdated.Description))
-				Expect(groups[0].Hidden).To(Equal(pluginGroupUpdated.Hidden))
-				Expect(len(groups[0].Versions)).To(Equal(len(pluginGroup1.Versions)))
-				Expect(len(groups[0].Versions["v2.0.0"])).To(Equal(len(pluginGroup1.Versions["v2.0.0"])))
-				Expect(len(groups[0].Versions["v1.0.0"])).To(Equal(len(pluginGroup1.Versions["v1.0.0"])))
+				pg := groups[0]
+				// Make sure the hidden field is set to correct value we requested
+				Expect(pg.Hidden).To(Equal(groupWithHiddenPlugin.Hidden))
+				Expect(len(pg.Versions)).To(Equal(1))
+
+				plugins := pg.Versions["v1.0.0"]
+				Expect(len(plugins)).To(Equal(1))
+				Expect(plugins[0].Name).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Name))
+				Expect(plugins[0].Target).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Target))
+				Expect(plugins[0].Version).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Version))
+				Expect(plugins[0].Mandatory).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Mandatory))
+
+				// Try to get the plugin with IncludeHidden:false filter and verify that
+				// plugin that was deactivated before activating the plugin group is not activated
+				updatedPlugins, err := inventory.GetPlugins(&PluginInventoryFilter{Name: plugins[0].Name, Target: plugins[0].Target, Version: plugins[0].Version, IncludeHidden: false})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(updatedPlugins)).To(Equal(1))
+				Expect(updatedPlugins[0].Name).To(Equal(plugins[0].Name))
+				Expect(updatedPlugins[0].Target).To(Equal(plugins[0].Target))
+				Expect(updatedPlugins[0].RecommendedVersion).To(Equal(plugins[0].Version))
+				Expect(updatedPlugins[0].Hidden).To(BeFalse())
+			})
+			It("when activating plugin group containing a deactivated plugin without TANZU_CLI_ACTIVATE_PLUGINS_ON_PLUGIN_GROUP_PUBLISH being set, it should NOT activate the deactivated plugin", func() {
+				pluginGroupUpdated := groupWithHiddenPlugin
+				pluginGroupUpdated.Hidden = false
+				err = inventory.UpdatePluginGroupActivationState(&pluginGroupUpdated)
+				Expect(err).To(BeNil())
+
+				// Verify the result using GetPluginGroups
+				groups, err := inventory.GetPluginGroups(PluginGroupFilter{})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(groups)).To(Equal(1))
+				pg := groups[0]
+
+				plugins := pg.Versions["v1.0.0"]
+				Expect(len(plugins)).To(Equal(1))
+				Expect(plugins[0].Name).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Name))
+				Expect(plugins[0].Target).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Target))
+				Expect(plugins[0].Version).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Version))
+				Expect(plugins[0].Mandatory).To(Equal(groupWithHiddenPlugin.Versions["v1.0.0"][0].Mandatory))
+
+				// Try to get the plugin with IncludeHidden:false filter and no plugins should be present
+				plugins2, err := inventory.GetPlugins(&PluginInventoryFilter{Name: plugins[0].Name, Target: plugins[0].Target, Version: plugins[0].Version, IncludeHidden: false})
+				Expect(err).ToNot(HaveOccurred())
+				Expect(len(plugins2)).To(Equal(0))
 			})
 		})
 

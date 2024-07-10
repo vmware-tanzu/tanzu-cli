@@ -645,7 +645,7 @@ func (b *SQLiteInventory) InsertPlugin(pluginInventoryEntry *PluginInventoryEntr
 
 // InsertPluginGroup inserts plugin-group to the inventory
 // specifying override will delete the existing plugin-group and add new one
-func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) error {
+func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) error { //nolint:gocyclo
 	db, err := sql.Open("sqlite", b.inventoryFile)
 	if err != nil {
 		return errors.Wrapf(err, "failed to open the DB from '%s' file", b.inventoryFile)
@@ -674,7 +674,12 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 		}
 	}
 
-	allowHiddenPlugins, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting))
+	includeDeactivatedPluginsForTesting, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting))
+	activatePlugins, _ := strconv.ParseBool(os.Getenv(constants.ActivatePluginsOnPluginGroupPublish))
+
+	// Allow hidden plugins if either of the below configuration is specified
+	allowHiddenPlugins := includeDeactivatedPluginsForTesting || activatePlugins
+
 	for version, plugins := range pg.Versions {
 		for _, pi := range plugins {
 			// Skip plugin group verification. If TANZU_CLI_SKIP_PLUGIN_GROUP_VERIFICATION_ON_PUBLISH is set while publishing a plugin-group
@@ -689,6 +694,16 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 					return errors.Wrap(err, "error while verifying existence of the plugin in the database")
 				} else if len(pie) == 0 {
 					return errors.Errorf("specified plugin 'name:%s', 'target:%s', 'version:%s' is not present in the database", pi.Name, pi.Target, pi.Version)
+				}
+			}
+
+			// Activate plugins on plugin group publish if the TANZU_CLI_ACTIVATE_PLUGINS_ON_PLUGIN_GROUP_PUBLISH
+			// environment variable is set to True.
+			// Note: If it is set to false, plugins won't be deactivated
+			if activatePlugins {
+				err = b.updatePluginActivationState(db, pi.Name, string(pi.Target), pi.Version, true)
+				if err != nil {
+					return errors.Wrap(err, "unable to activate plugin with in plugin group")
 				}
 			}
 
@@ -724,18 +739,25 @@ func (b *SQLiteInventory) UpdatePluginActivationState(pluginInventoryEntry *Plug
 	defer db.Close()
 
 	for version := range pluginInventoryEntry.Artifacts {
-		result, err := db.Exec("UPDATE PluginBinaries SET hidden = ? WHERE PluginName = ? AND Target = ? AND Version = ? AND Publisher = ? AND Vendor = ? ;", strconv.FormatBool(pluginInventoryEntry.Hidden), pluginInventoryEntry.Name, string(pluginInventoryEntry.Target), version, pluginInventoryEntry.Publisher, pluginInventoryEntry.Vendor)
+		err := b.updatePluginActivationState(db, pluginInventoryEntry.Name, string(pluginInventoryEntry.Target), version, !pluginInventoryEntry.Hidden)
 		if err != nil {
-			return errors.Wrapf(err, "unable to update plugin %v_%v", pluginInventoryEntry.Name, string(pluginInventoryEntry.Target))
+			return err
 		}
-		rowsAffected, _ := result.RowsAffected()
-		if rowsAffected == 0 {
-			return errors.Errorf("unable to update plugin %v_%v", pluginInventoryEntry.Name, string(pluginInventoryEntry.Target))
-		}
-		// Write sql statement logs if required
-		writeSQLStatementLogs(fmt.Sprintf("UPDATE PluginBinaries SET hidden = %v WHERE PluginName = %v AND Target = %v AND Version = %v AND Publisher = %v AND Vendor = %v ;\n", strconv.FormatBool(pluginInventoryEntry.Hidden), pluginInventoryEntry.Name, string(pluginInventoryEntry.Target), version, pluginInventoryEntry.Publisher, pluginInventoryEntry.Vendor))
 	}
+	return nil
+}
 
+func (b *SQLiteInventory) updatePluginActivationState(db *sql.DB, name, target, version string, activate bool) error {
+	result, err := db.Exec("UPDATE PluginBinaries SET hidden = ? WHERE PluginName = ? AND Target = ? AND Version = ? ;", strconv.FormatBool(!activate), name, target, version)
+	if err != nil {
+		return errors.Wrapf(err, "unable to update plugin %v_%v", name, target)
+	}
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return errors.Errorf("unable to update plugin %v_%v", name, target)
+	}
+	// Write sql statement logs if required
+	writeSQLStatementLogs(fmt.Sprintf("UPDATE PluginBinaries SET hidden = %v WHERE PluginName = %v AND Target = %v AND Version = %v ;\n", strconv.FormatBool(!activate), name, target, version))
 	return nil
 }
 
@@ -746,7 +768,20 @@ func (b *SQLiteInventory) UpdatePluginGroupActivationState(pg *PluginGroup) erro
 	}
 	defer db.Close()
 
-	for version := range pg.Versions {
+	activatePlugins, _ := strconv.ParseBool(os.Getenv(constants.ActivatePluginsOnPluginGroupPublish))
+
+	for version, plugins := range pg.Versions {
+		// Activate plugins on plugin group activate if the TANZU_CLI_ACTIVATE_PLUGINS_ON_PLUGIN_GROUP_PUBLISH
+		// environment variable is set to `True` and we are trying to activate the plugin group
+		if activatePlugins && !pg.Hidden {
+			for _, pi := range plugins {
+				err = b.updatePluginActivationState(db, pi.Name, string(pi.Target), pi.Version, true)
+				if err != nil {
+					return errors.Wrap(err, "unable to activate plugin with in plugin group")
+				}
+			}
+		}
+
 		result, err := db.Exec("UPDATE PluginGroups SET hidden = ? WHERE GroupName = ? AND Publisher = ? AND Vendor = ? AND GroupVersion = ? ;", strconv.FormatBool(pg.Hidden), pg.Name, pg.Publisher, pg.Vendor, version)
 		if err != nil {
 			return errors.Wrapf(err, "unable to update plugin-group '%s:%s'", PluginGroupToID(pg), version)

@@ -87,4 +87,8 @@ const (
 	// UseStableKubeContextNameForTanzuContext uses the stable kube context name associated with tanzu context.
 	// CLI would not change the context name when the TAP resource pointed by the CLI context is changed.
 	UseStableKubeContextNameForTanzuContext = "TANZU_CLI_USE_STABLE_KUBE_CONTEXT_NAME"
+
+	// ActivatePluginsOnPluginGroupPublish activates all the plugins specified within the plugin group
+	// as part of the plugin group publishing
+	ActivatePluginsOnPluginGroupPublish = "TANZU_CLI_ACTIVATE_PLUGINS_ON_PLUGIN_GROUP_PUBLISH"
 )
