@@ -754,10 +754,7 @@ func updateTanzuContextMetadata(c *configtypes.Context, orgID, orgName, tanzuHub
 // getCSPOrganizationName returns the CSP Org name using the orgID from the claims.
 // It will return empty string if API fails
 func getCSPOrganizationName(c *configtypes.Context, claims *csp.Claims) (string, error) {
-	issuer := csp.ProdIssuer
-	if staging {
-		issuer = csp.StgIssuer
-	}
+	issuer := csp.GetIssuer(staging)
 	if c.GlobalOpts == nil {
 		return "", errors.New("invalid context %q. Missing authorization fields")
 	}
@@ -796,10 +793,7 @@ func doCSPAuthentication(c *configtypes.Context) (*csp.Claims, error) {
 
 func doCSPInteractiveLoginAndUpdateContext(c *configtypes.Context) (claims *csp.Claims, err error) {
 	logCSPOrgIDEnvVariableUsage()
-	issuer := csp.ProdIssuer
-	if staging {
-		issuer = csp.StgIssuer
-	}
+	issuer := csp.GetIssuer(staging)
 	cspOrgIDValue, cspOrgIDExists := os.LookupEnv(constants.CSPLoginOrgID)
 	var loginOptions []csp.LoginOption
 	if cspOrgIDExists && cspOrgIDValue != "" {
@@ -853,10 +847,7 @@ func logCSPOrgIDEnvVariableUsage() {
 }
 
 func doCSPAPITokenAuthAndUpdateContext(c *configtypes.Context, apiTokenValue string) (claims *csp.Claims, err error) {
-	issuer := csp.ProdIssuer
-	if staging {
-		issuer = csp.StgIssuer
-	}
+	issuer := csp.GetIssuer(staging)
 	token, err := csp.GetAccessTokenFromAPIToken(apiTokenValue, issuer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get the token from CSP")
