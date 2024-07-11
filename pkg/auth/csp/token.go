@@ -31,11 +31,17 @@ const (
 	// ExtraIDToken is the key in the Extra fields map that contains id_token.
 	ExtraIDToken = "id_token"
 
-	// StgIssuer is the CSP staging issuer.
+	// StgIssuer is the VMware CSP(VCSP) staging issuer.
 	StgIssuer = "https://console-stg.cloud.vmware.com/csp/gateway/am/api"
 
-	// ProdIssuer is the CSP issuer.
+	// ProdIssuer is the VMware CSP(VCSP) issuer.
 	ProdIssuer = "https://console.cloud.vmware.com/csp/gateway/am/api"
+
+	// StgIssuerTCSP is the Tanzu CSP (TCSP) staging issuer.
+	StgIssuerTCSP = "https://console-stg.tanzu.broadcom.com/csp/gateway/am/api"
+
+	// ProdIssuerTCSP is the Tanzu CSP (TCSP) issuer
+	ProdIssuerTCSP = "https://console.tanzu.broadcom.com/csp/gateway/am/api"
 
 	//nolint:gosec // Avoid "hardcoded credentials" false positive.
 	// APITokenKey is the env var for an API token override.
@@ -51,8 +57,8 @@ const (
 )
 
 var (
-	// KnownIssuers are known OAuth2 endpoints in each CSP environment.
-	KnownIssuers = map[string]oauth2.Endpoint{
+	// DefaultKnownIssuers are known OAuth2 endpoints in each CSP environment.
+	DefaultKnownIssuers = map[string]oauth2.Endpoint{
 		StgIssuer: {
 			AuthURL:   "https://console-stg.cloud.vmware.com/csp/gateway/discovery",
 			TokenURL:  "https://console-stg.cloud.vmware.com/csp/gateway/am/api/auth/authorize",
@@ -61,6 +67,16 @@ var (
 		ProdIssuer: {
 			AuthURL:   "https://console.cloud.vmware.com/csp/gateway/discovery",
 			TokenURL:  "https://console.cloud.vmware.com/csp/gateway/am/api/auth/authorize",
+			AuthStyle: oauth2.AuthStyleInHeader,
+		},
+		StgIssuerTCSP: {
+			AuthURL:   "https://console-stg.tanzu.broadcom.com/csp/gateway/discovery",
+			TokenURL:  "https://console-stg.tanzu.broadcom.com/csp/gateway/am/api/auth/authorize",
+			AuthStyle: oauth2.AuthStyleInHeader,
+		},
+		ProdIssuerTCSP: {
+			AuthURL:   "https://console.tanzu.broadcom.com/csp/gateway/discovery",
+			TokenURL:  "https://console.tanzu.broadcom.com/csp/gateway/am/api/auth/authorize",
 			AuthStyle: oauth2.AuthStyleInHeader,
 		},
 	}
@@ -131,10 +147,11 @@ func GetAccessTokenFromAPIToken(apiToken, issuer string) (*Token, error) {
 
 // GetIssuer returns the appropriate CSP issuer based on the environment.
 func GetIssuer(staging bool) string {
+	cspMetadata := GetCSPMetadata()
 	if staging {
-		return StgIssuer
+		return cspMetadata.IssuerStaging
 	}
-	return ProdIssuer
+	return cspMetadata.IssuerProduction
 }
 
 // IsExpired checks for the token expiry and returns true if the token has expired else will return false
@@ -220,12 +237,16 @@ func GetToken(g *configapi.GlobalServerAuth) (*oauth2.Token, error) {
 			return nil, err
 		}
 	}
-
+	claims, err := ParseToken(&oauth2.Token{AccessToken: token.AccessToken})
+	if err != nil {
+		return nil, err
+	}
 	expiration := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
 	g.Expiration = expiration
 	g.RefreshToken = token.RefreshToken
 	g.AccessToken = token.AccessToken
 	g.IDToken = token.IDToken
+	g.Permissions = claims.Permissions
 
 	tok := &oauth2.Token{
 		AccessToken:  token.AccessToken,

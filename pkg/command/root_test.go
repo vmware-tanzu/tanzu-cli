@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -19,6 +20,7 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
@@ -2193,5 +2195,111 @@ func TestCommandRemapping(t *testing.T) {
 				assert.NotContains(string(got), unexpected)
 			}
 		})
+	}
+}
+
+func TestUpdateConfigWithTanzuCSPIssuer(t *testing.T) {
+	env := setupTestCLIEnvironment(t)
+	defer tearDownTestCLIEnvironment(env)
+
+	// Set up mocks for the centralConfigIssuerUpdateFlagGetter and cliContextUpdateStatusGetter functions
+	centralConfigIssuerUpdateFlagGetter := func() bool {
+		return true
+	}
+	cliContextUpdateStatusGetter := func(string, interface{}) error {
+		return nil
+	}
+
+	// Test TMC context with the VCSP staging Issuer, is updated to TCSP staging issuer, and refresh token and expiration time are unchanged
+	missionContextWithVCSPStagingIssuer := createFakeContext("mission-context-with-vcsp-staging-issuer", csp.StgIssuer,
+		"refresh-token-should-not-be-modified", csp.APITokenType, configtypes.ContextTypeTMC)
+	err := config.SetContext(missionContextWithVCSPStagingIssuer, false)
+	assert.NoError(t, err)
+	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
+	gotCtx, err := config.GetContext(missionContextWithVCSPStagingIssuer.Name)
+	assert.NoError(t, err)
+	assert.Equal(t, csp.StgIssuerTCSP, gotCtx.GlobalOpts.Auth.Issuer)
+	assert.Equal(t, missionContextWithVCSPStagingIssuer.GlobalOpts.Auth.RefreshToken, gotCtx.GlobalOpts.Auth.RefreshToken)
+	assert.Equal(t, missionContextWithVCSPStagingIssuer.GlobalOpts.Auth.Expiration.Local(), gotCtx.GlobalOpts.Auth.Expiration.Local())
+
+	// Test TMC context with the VCSP prod Issuer, is updated to TCSP prod issuer and refresh token and expiration time are unchanged
+	missionContextWithVCSPProdIssuer := createFakeContext("mission-context-with-vcsp-prod-issuer", csp.ProdIssuer,
+		"refresh-token-should-not-be-modified", csp.APITokenType, configtypes.ContextTypeTMC)
+	err = config.SetContext(missionContextWithVCSPProdIssuer, false)
+	assert.NoError(t, err)
+	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
+
+	gotCtx, err = config.GetContext(missionContextWithVCSPProdIssuer.Name)
+	assert.NoError(t, err)
+	assert.Equal(t, csp.ProdIssuerTCSP, gotCtx.GlobalOpts.Auth.Issuer)
+	assert.Equal(t, missionContextWithVCSPProdIssuer.GlobalOpts.Auth.RefreshToken, gotCtx.GlobalOpts.Auth.RefreshToken)
+	assert.Equal(t, missionContextWithVCSPProdIssuer.GlobalOpts.Auth.Expiration.Local(), gotCtx.GlobalOpts.Auth.Expiration.Local())
+
+	// Test Tanzu context with the VCSP staging Issuer, is updated to TCSP staging issuer
+	// and refresh token and expiration time are unchanged as the token is API token
+	tanzuContextWithVCSPStagingIssuer := createFakeContext("tanzu-context-with-tcsp-prod-issuer", csp.StgIssuer,
+		"refresh-token-to-be-modified", csp.APITokenType, configtypes.ContextTypeTanzu)
+	err = config.SetContext(tanzuContextWithVCSPStagingIssuer, false)
+	assert.NoError(t, err)
+	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
+	gotCtx, err = config.GetContext(tanzuContextWithVCSPStagingIssuer.Name)
+	assert.NoError(t, err)
+	assert.Equal(t, csp.StgIssuerTCSP, gotCtx.GlobalOpts.Auth.Issuer)
+	assert.Equal(t, tanzuContextWithVCSPStagingIssuer.GlobalOpts.Auth.RefreshToken, gotCtx.GlobalOpts.Auth.RefreshToken)
+	assert.Equal(t, tanzuContextWithVCSPStagingIssuer.GlobalOpts.Auth.Expiration.Local(), gotCtx.GlobalOpts.Auth.Expiration.Local())
+
+	// Test Tanzu context with the VCSP prod Issuer, is updated to TCSP prod issuer
+	// and refresh token and expiration time are unchanged as the token is API token
+	tanzuContextWithVCSPProdIssuer := createFakeContext("tanzu-context-with-tcsp-prod-issuer", csp.ProdIssuer,
+		"refresh-token-to-be-modified", csp.APITokenType, configtypes.ContextTypeTanzu)
+	err = config.SetContext(tanzuContextWithVCSPProdIssuer, false)
+	assert.NoError(t, err)
+	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
+	gotCtx, err = config.GetContext(tanzuContextWithVCSPProdIssuer.Name)
+	assert.NoError(t, err)
+	assert.Equal(t, csp.ProdIssuerTCSP, gotCtx.GlobalOpts.Auth.Issuer)
+	assert.Equal(t, tanzuContextWithVCSPProdIssuer.GlobalOpts.Auth.RefreshToken, gotCtx.GlobalOpts.Auth.RefreshToken)
+	assert.Equal(t, tanzuContextWithVCSPProdIssuer.GlobalOpts.Auth.Expiration.Local(), gotCtx.GlobalOpts.Auth.Expiration.Local())
+
+	// Test Tanzu context with the VCSP prod Issuer, is updated to TCSP prod issuer
+	// and refresh token and expiration time are invalidated as the token is id-token(interactive login token)
+	tanzuContextWithVCSPProdIssuerWithIDTokenType := createFakeContext("tanzu-context-with-tcsp-prod-issuer-with-IDToken",
+		csp.ProdIssuer, "refresh-token-to-be-modified", csp.IDTokenType, configtypes.ContextTypeTanzu)
+	err = config.SetContext(tanzuContextWithVCSPProdIssuerWithIDTokenType, false)
+	assert.NoError(t, err)
+	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
+	gotCtx, err = config.GetContext(tanzuContextWithVCSPProdIssuerWithIDTokenType.Name)
+	assert.NoError(t, err)
+	assert.Equal(t, csp.ProdIssuerTCSP, gotCtx.GlobalOpts.Auth.Issuer)
+	assert.Equal(t, "Invalid", gotCtx.GlobalOpts.Auth.RefreshToken)
+	assert.True(t, gotCtx.GlobalOpts.Auth.Expiration.Before(time.Now().Local()))
+
+	// Test Tanzu context with the TCSP prod Issuer is unchanged
+	tanzuContextWithTCSPProdIssuerWithIDTokenType := createFakeContext("tanzu-context-with-tcsp-prod-issuer-with-IDToken",
+		csp.ProdIssuerTCSP, "refresh-token-to-be-modified", csp.IDTokenType, configtypes.ContextTypeTanzu)
+	err = config.SetContext(tanzuContextWithTCSPProdIssuerWithIDTokenType, false)
+	assert.NoError(t, err)
+	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
+	gotCtx, err = config.GetContext(tanzuContextWithTCSPProdIssuerWithIDTokenType.Name)
+	assert.NoError(t, err)
+	assert.Equal(t, tanzuContextWithTCSPProdIssuerWithIDTokenType.GlobalOpts.Auth.Issuer, gotCtx.GlobalOpts.Auth.Issuer)
+	assert.Equal(t, tanzuContextWithTCSPProdIssuerWithIDTokenType.GlobalOpts.Auth.RefreshToken, gotCtx.GlobalOpts.Auth.RefreshToken)
+	assert.Equal(t, tanzuContextWithTCSPProdIssuerWithIDTokenType.GlobalOpts.Auth.Expiration.Local(), gotCtx.GlobalOpts.Auth.Expiration.Local())
+}
+
+func createFakeContext(ctxName, issuer, refreshToken, tokenType string, ctxType configtypes.ContextType) *configtypes.Context {
+	return &configtypes.Context{
+		Name:        ctxName,
+		ContextType: ctxType,
+		GlobalOpts: &configtypes.GlobalServer{
+			Auth: configtypes.GlobalServerAuth{
+				Issuer:       issuer,
+				UserName:     "test-user-name",
+				AccessToken:  "access-token",
+				RefreshToken: refreshToken,
+				Expiration:   time.Now().Local().Add(5 * time.Second),
+				Type:         tokenType,
+			},
+		},
 	}
 }

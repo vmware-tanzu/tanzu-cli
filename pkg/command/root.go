@@ -13,16 +13,19 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/datastore"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/discovery"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/globalinit"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/lastversion"
@@ -38,6 +41,8 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
+
+const isCLIContextsUpdatedToTCSPIssuers = "isCLIContextsUpdatedToTCSPIssuers"
 
 var interruptChannel = make(chan os.Signal, 1)
 
@@ -179,6 +184,7 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 
 	remapCommandTree(rootCmd, plugins)
 	updateTargetCommandGroupVisibility()
+	updateConfigWithTanzuCSPIssuer(csp.GetIssuerUpdateFlagFromCentralConfig, datastore.GetDataStoreValue)
 
 	if len(maskedPluginsWithPluginOverlap) > 0 {
 		catalog.DeleteIncorrectPluginEntriesFromCatalog()
@@ -318,6 +324,68 @@ func setupTargetPlugins() error {
 	}
 
 	return nil
+}
+
+// updateConfigWithTanzuCSPIssuer updates the "tanzu" and "mission-control" CLI contexts issuers with TCSP if the
+// issuer is VCSP Issuer, and invalidate the refresh token and token expiry time if these contexts token is
+// of the type id-token, so that CLI would re-trigger the interactive login with updated issuer.
+// This is done for only once.
+func updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter func() bool,
+	cliContextUpdateStatusGetter func(string, interface{}) error) {
+
+	issuerUpdateFlag := centralConfigIssuerUpdateFlagGetter()
+	if !issuerUpdateFlag {
+		return
+	}
+
+	cliContextsCSPIssuerUpdated := false
+	_ = cliContextUpdateStatusGetter(isCLIContextsUpdatedToTCSPIssuers, &cliContextsCSPIssuerUpdated)
+	if cliContextsCSPIssuerUpdated {
+		return
+	}
+	cfg, err := config.GetClientConfig()
+	if err != nil {
+		return
+	}
+	if cfg == nil || len(cfg.KnownContexts) == 0 {
+		return
+	}
+	updateSuccess := true
+	for idx := range cfg.KnownContexts {
+		ctx := cfg.KnownContexts[idx]
+		if eligible := isEligibleForTCSPIssuerUpdate(ctx); !eligible {
+			continue
+		}
+		if ctx.GlobalOpts.Auth.Issuer == csp.StgIssuer {
+			ctx.GlobalOpts.Auth.Issuer = csp.StgIssuerTCSP
+		} else if ctx.GlobalOpts.Auth.Issuer == csp.ProdIssuer {
+			ctx.GlobalOpts.Auth.Issuer = csp.ProdIssuerTCSP
+		}
+		// invalidate only for interactive login token(id_token) and not for API Token type (API Tokens are carried over to TCSP)
+		if ctx.GlobalOpts.Auth.Type == csp.IDTokenType {
+			ctx.GlobalOpts.Auth.Expiration = time.Now().Local().Add(-10 * time.Second)
+			ctx.GlobalOpts.Auth.RefreshToken = "Invalid"
+		}
+		if err := config.SetContext(ctx, false); err != nil {
+			updateSuccess = false
+		}
+	}
+	// if all the contexts are updated successfully, update the flag in the data store
+	if updateSuccess {
+		_ = datastore.SetDataStoreValue(isCLIContextsUpdatedToTCSPIssuers, &updateSuccess)
+		log.Info("The CLI contexts have been updated to use the Tanzu CSP issuer. Any existing tokens obtained through interactive login are now invalid and CLI will automatically obtain a new token through interactive login using the new Tanzu CSP issuer")
+	}
+}
+
+func isEligibleForTCSPIssuerUpdate(ctx *configtypes.Context) bool {
+	if ctx.ContextType != configtypes.ContextTypeTanzu && ctx.ContextType != configtypes.ContextTypeTMC {
+		return false
+	}
+
+	if (ctx.GlobalOpts == nil) || (ctx.GlobalOpts.Auth.Issuer != csp.StgIssuer && ctx.GlobalOpts.Auth.Issuer != csp.ProdIssuer) {
+		return false
+	}
+	return true
 }
 
 func newRootCmd() *cobra.Command {
