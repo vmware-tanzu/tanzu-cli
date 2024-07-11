@@ -256,15 +256,17 @@ func TestGetToken_Expired(t *testing.T) {
 		Expiration:   expireTime,
 		Type:         APITokenType,
 	}
-
 	fakeHTTPClient := &fakes.FakeHTTPClient{}
-	responseBody := io.NopCloser(bytes.NewReader([]byte(`{
+	responseBodyFmt := `{
 		"id_token": "abc",
 		"token_type": "Test",
 		"expires_in": 86400,
 		"scope": "Test",
-		"access_token": "LetMeIn",
-		"refresh_token": "LetMeInAgain"}`)))
+		"access_token": "%s",
+		"refresh_token": "LetMeInAgain"}`
+
+	responseBodyStr := fmt.Sprintf(responseBodyFmt, accessToken)
+	responseBody := io.NopCloser(bytes.NewReader([]byte(responseBodyStr)))
 	fakeHTTPClient.DoReturns(&http.Response{
 		StatusCode: 200,
 		Body:       responseBody,
@@ -274,6 +276,6 @@ func TestGetToken_Expired(t *testing.T) {
 	tok, err := GetToken(&serverAuth)
 	assert.Nil(err)
 	assert.NotNil(tok)
-	assert.Equal(tok.AccessToken, "LetMeIn")
+	assert.Equal(tok.AccessToken, accessToken)
 	assert.Equal(tok.RefreshToken, "LetMeInAgain")
 }

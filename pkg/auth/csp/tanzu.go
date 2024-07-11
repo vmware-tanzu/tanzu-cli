@@ -30,6 +30,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
@@ -41,9 +42,13 @@ const (
 	defaultListenAddress = "127.0.0.1:0"
 	defaultCallbackPath  = "/callback"
 
-	centralConfigTanzuHubMetadata = "cli.core.tanzu_hub_metadata"
-	defaultCSPDisplayName         = "Tanzu Platform"
-	defaultCSPProductIdentifier   = "TANZU-SAAS"
+	centralConfigTanzuHubMetadata             = "cli.core.tanzu_hub_metadata"
+	centralConfigTanzuDefaultCSPMetadata      = "cli.core.tanzu_default_csp_metadata"
+	centralConfigTanzuTCSPMetadata            = "cli.core.tanzu_tcsp_metadata"
+	centralConfigTanzuKnownIssersEndpoints    = "cli.core.tanzu_csp_known_issuer_endpoints"
+	centralConfigCLIConfigCSPIssuerUpdateFlag = "cli.core.tanzu_cli_config_csp_issuer_update_flag"
+	defaultCSPDisplayName                     = "Tanzu Platform"
+	defaultCSPProductIdentifier               = "TANZU-SAAS"
 )
 
 // stdin returns the file descriptor for stdin as an int.
@@ -61,6 +66,19 @@ type tanzuHubMetadata struct {
 	EndpointProduction   string `json:"endpointProduction" yaml:"endpointProduction"`
 	EndpointStaging      string `json:"endpointStaging" yaml:"endpointStaging"`
 	UseCentralConfig     bool   `json:"useCentralConfig" yaml:"useCentralConfig"`
+}
+
+type issuerEndPoints struct {
+	AuthURL  string `json:"authURL" yaml:"authURL"`
+	TokenURL string `json:"tokenURL" yaml:"tokenURL"`
+}
+
+type cspKnownIssuerEndpoints map[string]issuerEndPoints
+
+// TanzuCSPMetadata to parse the CSP metadata from central config
+type TanzuCSPMetadata struct {
+	IssuerProduction string `json:"issuerProduction" yaml:"issuerProduction"`
+	IssuerStaging    string `json:"issuerStaging" yaml:"issuerStaging"`
 }
 
 type cspLoginHandler struct {
@@ -157,12 +175,13 @@ func TanzuLogin(issuerURL string, opts ...LoginOption) (*Token, error) {
 		promptForValue: promptForValue,
 		isTTY:          term.IsTerminal,
 	}
+	cspKnownIssuerEPs := getCSPKnownIssuersEndpoints()
 	h.oauthConfig = &oauth2.Config{
 		RedirectURL: (&url.URL{Scheme: "http", Host: h.listenAddr, Path: h.callbackPath}).String(),
 		ClientID:    h.clientID,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  KnownIssuers[issuerURL].AuthURL,
-			TokenURL: KnownIssuers[issuerURL].TokenURL,
+			AuthURL:  cspKnownIssuerEPs[issuerURL].AuthURL,
+			TokenURL: cspKnownIssuerEPs[issuerURL].TokenURL,
 		},
 	}
 	for _, opt := range opts {
@@ -554,4 +573,102 @@ func getTanzuHubMetadataFromCentralConfig() tanzuHubMetadata {
 	// Get the tanzu hub metadata
 	_ = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuHubMetadata, &hubMetadata)
 	return hubMetadata
+}
+
+// GetCSPMetadata gets the CSP metadata from central config as best effort,
+// If it fails to get the metadata from central config, it returns the default values
+func GetCSPMetadata() TanzuCSPMetadata {
+	cspMetaData := getCSPMetadataFromCentralConfig()
+	// If failed to get the CSP Metadata from central config,
+	// set the default Issuer URL of VCSP
+	// TODO(prkalle): Update the default Issuers to TCSP issuer URL( If TCSP is not stable in current release, update it next release)
+	//                This just defaults in the code, defaults in central config can be updated anytime
+	if cspMetaData.IssuerStaging == "" {
+		cspMetaData.IssuerStaging = StgIssuer
+	}
+	if cspMetaData.IssuerProduction == "" {
+		cspMetaData.IssuerProduction = ProdIssuer
+	}
+
+	return cspMetaData
+}
+
+// getCSPMetadataFromCentralConfig gets the CSP metadata from central config as best effort
+func getCSPMetadataFromCentralConfig() TanzuCSPMetadata {
+	cspMetadata := TanzuCSPMetadata{}
+
+	// We will get the central configuration from the default discovery source
+	discoverySource, err := config.GetCLIDiscoverySource(cliconfig.DefaultStandaloneDiscoveryName)
+	if err != nil {
+		return cspMetadata
+	}
+	centralConfigReader := centralconfig.NewCentralConfigReader(discoverySource)
+
+	// Get the tanzu CSP metadata based on user preference
+	useTanzuCSP, _ := strconv.ParseBool(os.Getenv(constants.UseTanzuCSP))
+	if useTanzuCSP {
+		_ = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuTCSPMetadata, &cspMetadata)
+	} else {
+		_ = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuDefaultCSPMetadata, &cspMetadata)
+	}
+
+	return cspMetadata
+}
+
+// getCSPKnownIssuersEndpoints gets the CSP known issuer endpoints from central config as best effort,
+// If it fails to fetch data from central config, it returns the default values
+func getCSPKnownIssuersEndpoints() cspKnownIssuerEndpoints {
+	cspKnownIssuerEPs, err := getCSPKnownEndpointsFromCentralConfig()
+	if err == nil {
+		return cspKnownIssuerEPs
+	}
+
+	// If failed to get the CSP Known Issuer endpoints, use the defaults
+	for key := range DefaultKnownIssuers {
+		cspKnownIssuerEPs[key] = issuerEndPoints{
+			AuthURL:  DefaultKnownIssuers[key].AuthURL,
+			TokenURL: DefaultKnownIssuers[key].TokenURL,
+		}
+	}
+
+	return cspKnownIssuerEPs
+}
+
+// getCSPKnownEndpointsFromCentralConfig gets the CSP known endpoints from central config as best effort
+func getCSPKnownEndpointsFromCentralConfig() (cspKnownIssuerEndpoints, error) {
+	cspKnownIssuerEPs := cspKnownIssuerEndpoints{}
+
+	// We will get the central configuration from the default discovery source
+	discoverySource, err := config.GetCLIDiscoverySource(cliconfig.DefaultStandaloneDiscoveryName)
+	if err != nil {
+		return cspKnownIssuerEPs, err
+	}
+	centralConfigReader := centralconfig.NewCentralConfigReader(discoverySource)
+
+	err = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuKnownIssersEndpoints, &cspKnownIssuerEPs)
+	if err != nil {
+		return cspKnownIssuerEPs, err
+	}
+
+	return cspKnownIssuerEPs, nil
+}
+
+// GetIssuerUpdateFlagFromCentralConfig gets the issuer update flag (used to update the CLI config file)
+// from Central config as best effort
+func GetIssuerUpdateFlagFromCentralConfig() bool {
+	updateIssuerInCLIConfig := false
+
+	// We will get the central configuration from the default discovery source
+	discoverySource, err := config.GetCLIDiscoverySource(cliconfig.DefaultStandaloneDiscoveryName)
+	if err != nil {
+		return updateIssuerInCLIConfig
+	}
+	centralConfigReader := centralconfig.NewCentralConfigReader(discoverySource)
+
+	err = centralConfigReader.GetCentralConfigEntry(centralConfigCLIConfigCSPIssuerUpdateFlag, &updateIssuerInCLIConfig)
+	if err != nil {
+		return updateIssuerInCLIConfig
+	}
+
+	return updateIssuerInCLIConfig
 }
