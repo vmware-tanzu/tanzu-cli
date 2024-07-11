@@ -47,8 +47,8 @@ github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcU
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
 github.com/tj/assert v0.0.3 h1:Df/BlaZ20mq6kuai7f5z2TvPFiwC3xaWJSDQNiIS3Rk=
 github.com/tj/assert v0.0.3/go.mod h1:Ne6X72Q+TB1AteidzQncjw9PabbMp4PBMZ1k+vd1Pvk=
-github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0 h1:bOxm+8XlkroHR1sf1iwsDEfsIm/cb/vrK+l3GMeOKMU=
-github.com/vmware-tanzu/tanzu-plugin-runtime v1.3.0/go.mod h1:FtRiwn4qIsx4yQUbKqcv33Sx5x1c+Cil30/K/3FJ4co=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.4.0 h1:4qGh38D+apKgFZEXVPNortq6GYz7Hk1V1z9zW5kuKB8=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.4.0/go.mod h1:Ml22WHAlQ/oyEVLHNGHtRSRvVCnejzwEtIsDzVzM6hY=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
