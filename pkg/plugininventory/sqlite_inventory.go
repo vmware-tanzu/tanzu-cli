@@ -675,7 +675,9 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 	}
 
 	includeDeactivatedPluginsForTesting, _ := strconv.ParseBool(os.Getenv(constants.ConfigVariableIncludeDeactivatedPluginsForTesting))
+	// Only activate plugins if TANZU_CLI_ACTIVATE_PLUGINS_ON_PLUGIN_GROUP_PUBLISH=true and we are PluginGroup is also active (!pg.Hidden)
 	activatePlugins, _ := strconv.ParseBool(os.Getenv(constants.ActivatePluginsOnPluginGroupPublish))
+	activatePlugins = activatePlugins && !pg.Hidden
 
 	// Allow hidden plugins if either of the below configuration is specified
 	allowHiddenPlugins := includeDeactivatedPluginsForTesting || activatePlugins
@@ -701,7 +703,7 @@ func (b *SQLiteInventory) InsertPluginGroup(pg *PluginGroup, override bool) erro
 			// environment variable is set to True.
 			// Note: If it is set to false, plugins won't be deactivated
 			if activatePlugins {
-				err = b.updatePluginActivationState(db, pi.Name, string(pi.Target), pi.Version, true)
+				err = b.updatePluginVersionActivationState(db, pi.Name, string(pi.Target), pi.Version, true)
 				if err != nil {
 					return errors.Wrap(err, "unable to activate plugin with in plugin group")
 				}
@@ -739,7 +741,7 @@ func (b *SQLiteInventory) UpdatePluginActivationState(pluginInventoryEntry *Plug
 	defer db.Close()
 
 	for version := range pluginInventoryEntry.Artifacts {
-		err := b.updatePluginActivationState(db, pluginInventoryEntry.Name, string(pluginInventoryEntry.Target), version, !pluginInventoryEntry.Hidden)
+		err := b.updatePluginVersionActivationState(db, pluginInventoryEntry.Name, string(pluginInventoryEntry.Target), version, !pluginInventoryEntry.Hidden)
 		if err != nil {
 			return err
 		}
@@ -747,7 +749,7 @@ func (b *SQLiteInventory) UpdatePluginActivationState(pluginInventoryEntry *Plug
 	return nil
 }
 
-func (b *SQLiteInventory) updatePluginActivationState(db *sql.DB, name, target, version string, activate bool) error {
+func (b *SQLiteInventory) updatePluginVersionActivationState(db *sql.DB, name, target, version string, activate bool) error {
 	result, err := db.Exec("UPDATE PluginBinaries SET hidden = ? WHERE PluginName = ? AND Target = ? AND Version = ? ;", strconv.FormatBool(!activate), name, target, version)
 	if err != nil {
 		return errors.Wrapf(err, "unable to update plugin %v_%v", name, target)
@@ -775,9 +777,9 @@ func (b *SQLiteInventory) UpdatePluginGroupActivationState(pg *PluginGroup) erro
 		// environment variable is set to `True` and we are trying to activate the plugin group
 		if activatePlugins && !pg.Hidden {
 			for _, pi := range plugins {
-				err = b.updatePluginActivationState(db, pi.Name, string(pi.Target), pi.Version, true)
+				err = b.updatePluginVersionActivationState(db, pi.Name, string(pi.Target), pi.Version, true)
 				if err != nil {
-					return errors.Wrap(err, "unable to activate plugin with in plugin group")
+					return errors.Wrap(err, "unable to activate plugin within plugin group")
 				}
 			}
 		}
