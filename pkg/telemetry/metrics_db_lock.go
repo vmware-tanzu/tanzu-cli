@@ -56,7 +56,7 @@ func ReleaseTanzuMetricDBLock() {
 	if cliMetricDBLock == nil {
 		return
 	}
-	if errUnlock := cliMetricDBLock.Unlock(); errUnlock != nil {
+	if errUnlock := cliMetricDBLock.Close(); errUnlock != nil {
 		panic(fmt.Sprintf("cannot release lock for Tanzu CLI metrics DB, reason: %v", errUnlock))
 	}
 
@@ -87,7 +87,7 @@ func getFileLockWithTimeout(lockPath string, lockDuration time.Duration) (*filem
 		select {
 		case <-cancel:
 			// Timed out, cleanup if necessary.
-			_ = flock.Unlock()
+			_ = flock.Close()
 		case result <- err:
 		}
 	}()
