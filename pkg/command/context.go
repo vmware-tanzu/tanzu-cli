@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"reflect"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -2143,14 +2142,30 @@ func renderDynamicTable(slices interface{}, tableWriter component.OutputWriter, 
 }
 
 func mapTanzuEndpointToTMCEndpoint(tanzuEndpoint string) string {
-	// Define the regular expression pattern
-	apiPattern := regexp.MustCompile(`https://api\.tanzu(-\w*)?\.cloud\.vmware\.com`)
-	// Replace "api" with "tmc" in the input URL
-	tmcEndpoint := apiPattern.ReplaceAllString(tanzuEndpoint, "https://tmc.tanzu$1.cloud.vmware.com")
+	tmcEndpoint := ""
+	// Define the mapping rules
+	mappingRules := []struct {
+		tanzuEndpointPrefix string
+		tmcEndpointPrefix   string
+	}{
+		{"https://api.tanzu", "https://tmc.tanzu"},
+		{"https://ucp.platform", "https://ops.platform"},
+	}
+
+	// Iterate through the mapping rules
+	for _, rule := range mappingRules {
+		if strings.HasPrefix(tanzuEndpoint, rule.tanzuEndpointPrefix) {
+			// Replace the prefix with the suffix
+			tmcEndpoint = strings.Replace(tanzuEndpoint, rule.tanzuEndpointPrefix, rule.tmcEndpointPrefix, 1)
+			break
+		}
+	}
+
 	// Check if the transformation was successful
 	if tanzuEndpoint == tmcEndpoint {
 		return ""
 	}
+
 	return tmcEndpoint
 }
 
