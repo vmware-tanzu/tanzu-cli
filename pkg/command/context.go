@@ -667,9 +667,14 @@ func globalTanzuLogin(c *configtypes.Context, generateContextNameFunc func(orgNa
 
 	// Fetch the Tanzu Hub endpoint for the Tanzu context as a best case effort
 	if tanzuHubEndpoint == "" {
-		tanzuHubEndpoint, err = csp.GetTanzuHubEndpoint(claims.OrgID, c.GlobalOpts.Auth.AccessToken, staging)
-		if err != nil {
-			log.V(7).Infof("unable to get Tanzu Hub endpoint. Error: %v", err.Error())
+		// If the TANZU_CLI_HUB_ENDPOINT is set just use the configured endpoint
+		if os.Getenv(constants.TPHubEndpoint) != "" {
+			tanzuHubEndpoint = os.Getenv(constants.TPHubEndpoint)
+		} else {
+			tanzuHubEndpoint, err = csp.GetTanzuHubEndpoint(claims.OrgID, c.GlobalOpts.Auth.AccessToken, staging)
+			if err != nil {
+				log.V(7).Infof("unable to get Tanzu Hub endpoint. Error: %v", err.Error())
+			}
 		}
 	} else {
 		log.Warningf("This tanzu context is being created with the custom Tanzu Hub endpoint: %q", tanzuHubEndpoint)
@@ -2142,6 +2147,11 @@ func renderDynamicTable(slices interface{}, tableWriter component.OutputWriter, 
 }
 
 func mapTanzuEndpointToTMCEndpoint(tanzuEndpoint string) string {
+	// If the TANZU_CLI_K8S_OPS_ENDPOINT is set just return the configured endpoint
+	if os.Getenv(constants.TPKubernetesOpsEndpoint) != "" {
+		return os.Getenv(constants.TPKubernetesOpsEndpoint)
+	}
+
 	tmcEndpoint := ""
 	// Define the mapping rules
 	mappingRules := []struct {
@@ -2155,7 +2165,7 @@ func mapTanzuEndpointToTMCEndpoint(tanzuEndpoint string) string {
 	// Iterate through the mapping rules
 	for _, rule := range mappingRules {
 		if strings.HasPrefix(tanzuEndpoint, rule.tanzuEndpointPrefix) {
-			// Replace the prefix with the suffix
+			// Replace the tanzuEndpointPrefix with the tmcEndpointPrefix
 			tmcEndpoint = strings.Replace(tanzuEndpoint, rule.tanzuEndpointPrefix, rule.tmcEndpointPrefix, 1)
 			break
 		}

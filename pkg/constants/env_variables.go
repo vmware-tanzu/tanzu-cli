@@ -94,4 +94,12 @@ const (
 
 	// UseTanzuCSP uses the Tanzu CSP while login/context creation
 	UseTanzuCSP = "TANZU_CLI_USE_TANZU_CLOUD_SERVICE_PROVIDER"
+
+	// TPKubernetesOpsEndpoint specifies kubernetes ops endpoint for the Tanzu Platform
+	// This will be used as part of `tanzu login`
+	TPKubernetesOpsEndpoint = "TANZU_CLI_K8S_OPS_ENDPOINT"
+
+	// TPHubEndpoint specifies hub endpoint for the Tanzu Platform
+	// This will be used as part of `tanzu login`
+	TPHubEndpoint = "TANZU_CLI_HUB_ENDPOINT"
 )
