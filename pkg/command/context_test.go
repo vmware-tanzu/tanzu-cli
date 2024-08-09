@@ -1883,6 +1883,18 @@ func TestMapTanzuEndpointToTMCEndpoint(t *testing.T) {
 			expected: "https://tmc.tanzu.cloud.vmware.com",
 		},
 		{
+			input:    "https://ucp.platform.tanzu.broadcom.com",
+			expected: "https://ops.platform.tanzu.broadcom.com",
+		},
+		{
+			input:    "https://ucp.platform-dev.tanzu.broadcom.com",
+			expected: "https://ops.platform-dev.tanzu.broadcom.com",
+		},
+		{
+			input:    "https://ucp.platform-verify.tanzu.broadcom.com",
+			expected: "https://ops.platform-verify.tanzu.broadcom.com",
+		},
+		{
 			input:    "https://symphony.api.tanzu.cloud.vmware.com",
 			expected: "",
 		},
