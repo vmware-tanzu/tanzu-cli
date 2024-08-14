@@ -19,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	commonauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
@@ -363,7 +364,7 @@ func updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter func() b
 			ctx.GlobalOpts.Auth.Issuer = csp.ProdIssuerTCSP
 		}
 		// invalidate only for interactive login token(id_token) and not for API Token type (API Tokens are carried over to TCSP)
-		if ctx.GlobalOpts.Auth.Type == csp.IDTokenType {
+		if ctx.GlobalOpts.Auth.Type == commonauth.IDTokenType {
 			ctx.GlobalOpts.Auth.Expiration = time.Now().Local().Add(-10 * time.Second)
 			ctx.GlobalOpts.Auth.RefreshToken = "Invalid"
 		}
