@@ -13,6 +13,7 @@ func TestPrepareTanzuContextName(t *testing.T) {
 		orgName   string
 		endpoint  string
 		isStaging bool
+		forceCSP  bool
 		expected  string
 	}{
 		// Test case for normal input with no staging environment and default endpoint.
@@ -29,23 +30,34 @@ func TestPrepareTanzuContextName(t *testing.T) {
 			isStaging: true,
 			expected:  "MyOrg-staging",
 		},
-		// Test case for normal input with no staging environment and custom endpoint.
+		// Test case for normal input with no staging environment and custom SaaS endpoint.
 		{
 			orgName:   "MyOrg",
 			endpoint:  "https://custom-endpoint.com",
 			isStaging: false,
 			expected:  "MyOrg-86fd8133",
+			forceCSP:  true,
 		},
-		// Test case for normal input with staging environment and custom endpoint.
+		// Test case for normal input with staging environment and custom SaaS endpoint.
 		{
 			orgName:   "MyOrg",
 			endpoint:  "https://custom-endpoint.com",
 			isStaging: true,
 			expected:  "MyOrg-staging-86fd8133",
+			forceCSP:  true,
+		},
+		// Test case for normal input custom SM endpoint.
+		{
+			// org and staging values are effectively ignored
+			orgName:   "MyOrg",
+			isStaging: true,
+			endpoint:  "https://custom-endpoint.com",
+			expected:  "tpsm-86fd8133",
 		},
 	}
 
 	for _, tc := range testCases {
+		forceCSP = tc.forceCSP
 		actual := prepareTanzuContextName(tc.orgName, tc.endpoint, tc.isStaging)
 		if actual != tc.expected {
 			t.Errorf("orgName: %s, endpoint: %s, isStaging: %t - expected: %s, got: %s", tc.orgName, tc.endpoint, tc.isStaging, tc.expected, actual)

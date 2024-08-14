@@ -20,6 +20,7 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
@@ -2212,7 +2213,7 @@ func TestUpdateConfigWithTanzuCSPIssuer(t *testing.T) {
 
 	// Test TMC context with the VCSP staging Issuer, is updated to TCSP staging issuer, and refresh token and expiration time are unchanged
 	missionContextWithVCSPStagingIssuer := createFakeContextWithAuthData("mission-context-with-vcsp-staging-issuer", csp.StgIssuer,
-		"refresh-token-should-not-be-modified", csp.APITokenType, configtypes.ContextTypeTMC)
+		"refresh-token-should-not-be-modified", common.APITokenType, configtypes.ContextTypeTMC)
 	err := config.SetContext(missionContextWithVCSPStagingIssuer, false)
 	assert.NoError(t, err)
 	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
@@ -2224,7 +2225,7 @@ func TestUpdateConfigWithTanzuCSPIssuer(t *testing.T) {
 
 	// Test TMC context with the VCSP prod Issuer, is updated to TCSP prod issuer and refresh token and expiration time are unchanged
 	missionContextWithVCSPProdIssuer := createFakeContextWithAuthData("mission-context-with-vcsp-prod-issuer", csp.ProdIssuer,
-		"refresh-token-should-not-be-modified", csp.APITokenType, configtypes.ContextTypeTMC)
+		"refresh-token-should-not-be-modified", common.APITokenType, configtypes.ContextTypeTMC)
 	err = config.SetContext(missionContextWithVCSPProdIssuer, false)
 	assert.NoError(t, err)
 	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
@@ -2238,7 +2239,7 @@ func TestUpdateConfigWithTanzuCSPIssuer(t *testing.T) {
 	// Test Tanzu context with the VCSP staging Issuer, is updated to TCSP staging issuer
 	// and refresh token and expiration time are unchanged as the token is API token
 	tanzuContextWithVCSPStagingIssuer := createFakeContextWithAuthData("tanzu-context-with-tcsp-prod-issuer", csp.StgIssuer,
-		"refresh-token-to-be-modified", csp.APITokenType, configtypes.ContextTypeTanzu)
+		"refresh-token-to-be-modified", common.APITokenType, configtypes.ContextTypeTanzu)
 	err = config.SetContext(tanzuContextWithVCSPStagingIssuer, false)
 	assert.NoError(t, err)
 	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
@@ -2251,7 +2252,7 @@ func TestUpdateConfigWithTanzuCSPIssuer(t *testing.T) {
 	// Test Tanzu context with the VCSP prod Issuer, is updated to TCSP prod issuer
 	// and refresh token and expiration time are unchanged as the token is API token
 	tanzuContextWithVCSPProdIssuer := createFakeContextWithAuthData("tanzu-context-with-tcsp-prod-issuer", csp.ProdIssuer,
-		"refresh-token-to-be-modified", csp.APITokenType, configtypes.ContextTypeTanzu)
+		"refresh-token-to-be-modified", common.APITokenType, configtypes.ContextTypeTanzu)
 	err = config.SetContext(tanzuContextWithVCSPProdIssuer, false)
 	assert.NoError(t, err)
 	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
@@ -2264,7 +2265,7 @@ func TestUpdateConfigWithTanzuCSPIssuer(t *testing.T) {
 	// Test Tanzu context with the VCSP prod Issuer, is updated to TCSP prod issuer
 	// and refresh token and expiration time are invalidated as the token is id-token(interactive login token)
 	tanzuContextWithVCSPProdIssuerWithIDTokenType := createFakeContextWithAuthData("tanzu-context-with-tcsp-prod-issuer-with-IDToken",
-		csp.ProdIssuer, "refresh-token-to-be-modified", csp.IDTokenType, configtypes.ContextTypeTanzu)
+		csp.ProdIssuer, "refresh-token-to-be-modified", common.IDTokenType, configtypes.ContextTypeTanzu)
 	err = config.SetContext(tanzuContextWithVCSPProdIssuerWithIDTokenType, false)
 	assert.NoError(t, err)
 	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)
@@ -2276,7 +2277,7 @@ func TestUpdateConfigWithTanzuCSPIssuer(t *testing.T) {
 
 	// Test Tanzu context with the TCSP prod Issuer is unchanged
 	tanzuContextWithTCSPProdIssuerWithIDTokenType := createFakeContextWithAuthData("tanzu-context-with-tcsp-prod-issuer-with-IDToken",
-		csp.ProdIssuerTCSP, "refresh-token-to-be-modified", csp.IDTokenType, configtypes.ContextTypeTanzu)
+		csp.ProdIssuerTCSP, "refresh-token-to-be-modified", common.IDTokenType, configtypes.ContextTypeTanzu)
 	err = config.SetContext(tanzuContextWithTCSPProdIssuerWithIDTokenType, false)
 	assert.NoError(t, err)
 	updateConfigWithTanzuCSPIssuer(centralConfigIssuerUpdateFlagGetter, cliContextUpdateStatusGetter)

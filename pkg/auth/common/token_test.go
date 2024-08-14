@@ -1,108 +1,25 @@
-// Copyright 2022 VMware, Inc. All Rights Reserved.
+// Copyright 2024 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package csp
+package common
 
 import (
-	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"io"
-	"net/http"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
-
-	"github.com/vmware-tanzu/tanzu-cli/pkg/fakes"
 )
 
-const issuerURL = "https://auth0.com/"
-
 var JWTHeader = `{"alg":"HS256","typ":"JWT"}`
-
-func TestGetAccessTokenFromAPIToken(t *testing.T) {
-	assert := assert.New(t)
-	fakeHTTPClient = &fakes.FakeHTTPClient{}
-	responseBody := io.NopCloser(bytes.NewReader([]byte(`{
-		"id_token": "abc",
-		"token_type": "Test",
-		"expires_in": 86400,
-		"scope": "Test",
-		"access_token": "LetMeIn",
-		"refresh_token": "LetMeInAgain"}`)))
-	fakeHTTPClient.DoReturns(&http.Response{
-		StatusCode: 200,
-		Body:       responseBody,
-	}, nil)
-	httpRestClient = fakeHTTPClient
-	token, err := GetAccessTokenFromAPIToken("asdas", issuerURL)
-	if err != nil {
-		fmt.Println(err)
-		fmt.Println("Error...................................")
-	}
-	assert.Nil(err)
-	assert.Equal("LetMeIn", token.AccessToken)
-}
-
-func TestGetAccessTokenFromAPIToken_Err(t *testing.T) {
-	assert := assert.New(t)
-
-	token, err := GetAccessTokenFromAPIToken("asdas", "example.com")
-	assert.NotNil(err)
-	assert.Nil(token)
-}
-func TestGetAccessTokenFromAPIToken_FailStatus(t *testing.T) {
-	assert := assert.New(t)
-	fakeHTTPClient := &fakes.FakeHTTPClient{}
-	responseBody := io.NopCloser(bytes.NewReader([]byte(``)))
-	fakeHTTPClient.DoReturns(&http.Response{
-		StatusCode: 403,
-		Body:       responseBody,
-	}, nil)
-	httpRestClient = fakeHTTPClient
-	token, err := GetAccessTokenFromAPIToken("asdas", issuerURL)
-	assert.NotNil(err)
-	assert.Contains(err.Error(), "obtain access token")
-	assert.Nil(token)
-}
-
-func TestGetAccessTokenFromAPIToken_InvalidResponse(t *testing.T) {
-	assert := assert.New(t)
-	fakeHTTPClient := &fakes.FakeHTTPClient{}
-	responseBody := io.NopCloser(bytes.NewReader([]byte(`[{
-		"id_token": "abc",
-		"token_type": "Test",
-		"expires_in": 86400,
-		"scope": "Test",
-		"access_token": "LetMeIn",
-		"refresh_token": "LetMeInAgain"}]`)))
-	fakeHTTPClient.DoReturns(&http.Response{
-		StatusCode: 200,
-		Body:       responseBody,
-	}, nil)
-	httpRestClient = fakeHTTPClient
-
-	token, err := GetAccessTokenFromAPIToken("asdas", issuerURL)
-	assert.NotNil(err)
-	assert.Contains(err.Error(), "could not unmarshal")
-	assert.Nil(token)
-}
-func TestIsExpired(t *testing.T) {
-	assert := assert.New(t)
-
-	testTime := time.Now().Add(-time.Minute)
-	assert.True(IsExpired(testTime))
-
-	testTime = time.Now().Add(time.Minute * 30)
-	assert.False(IsExpired(testTime))
-}
 
 func generateJWTToken(claims string) string {
 	hm := hmac.New(sha256.New, []byte("secret"))
@@ -131,27 +48,10 @@ func TestParseToken_ParseFailure(t *testing.T) {
 		Expiry:       time.Now().Add(time.Minute * 30),
 	}
 
-	context, err := ParseToken(&tkn)
+	claims, err := ParseToken(&tkn, config.CSPIdpType)
 	assert.NotNil(err)
 	assert.Contains(err.Error(), "invalid")
-	assert.Nil(context)
-}
-
-func TestIDTokenFromTokenSource_getIDToken(t *testing.T) {
-	assert := assert.New(t)
-
-	// Pass in incorrectly formatted AccessToken
-	tkn := oauth2.Token{
-		AccessToken:  "LetMeIn",
-		TokenType:    "Bearer",
-		RefreshToken: "LetMeInAgain",
-		Expiry:       time.Now().Add(time.Minute * 30),
-	}
-	tknExt := tkn.WithExtra(map[string]interface{}{
-		"id_token": "idtoken",
-	})
-	idtoken := IDTokenFromTokenSource(tknExt)
-	assert.Contains(idtoken, "idtoken")
+	assert.Nil(claims)
 }
 
 func TestParseToken_MissingUsername(t *testing.T) {
@@ -167,10 +67,10 @@ func TestParseToken_MissingUsername(t *testing.T) {
 		Expiry:       time.Now().Add(time.Minute * 30),
 	}
 
-	context, err := ParseToken(&tkn)
+	claims, err := ParseToken(&tkn, config.CSPIdpType)
 	assert.NotNil(err)
 	assert.Contains(err.Error(), "could not parse username")
-	assert.Nil(context)
+	assert.Nil(claims)
 }
 
 func TestParseToken_MissingContextName(t *testing.T) {
@@ -186,10 +86,10 @@ func TestParseToken_MissingContextName(t *testing.T) {
 		Expiry:       time.Now().Add(time.Minute * 30),
 	}
 
-	context, err := ParseToken(&tkn)
+	claims, err := ParseToken(&tkn, config.CSPIdpType)
 	assert.NotNil(err)
 	assert.Contains(err.Error(), "could not parse orgID")
-	assert.Nil(context)
+	assert.Nil(claims)
 }
 
 func TestParseToken(t *testing.T) {
@@ -205,13 +105,60 @@ func TestParseToken(t *testing.T) {
 		Expiry:       time.Now().Add(time.Minute * 30),
 	}
 
-	claim, err := ParseToken(&tkn)
+	claim, err := ParseToken(&tkn, config.CSPIdpType)
 	assert.Nil(err)
 	assert.NotNil(claim)
 
 	assert.Equal("John Doe", claim.Username)
 	assert.Equal("1516239022", claim.OrgID)
 	assert.Empty(claim.Permissions)
+}
+
+func TestParseTokenUAA(t *testing.T) {
+	assert := assert.New(t)
+
+	accessToken := generateJWTToken(
+		`{"sub":"1234567890","user_name":"John Doe","scope":["openid", "roles", "ensemble:admin"]}`,
+	)
+	tkn := oauth2.Token{
+		AccessToken:  accessToken,
+		TokenType:    "Bearer",
+		RefreshToken: "LetMeInAgain",
+		Expiry:       time.Now().Add(time.Minute * 30),
+	}
+
+	claim, err := ParseToken(&tkn, config.UAAIdpType)
+	assert.Nil(err)
+	assert.NotNil(claim)
+
+	assert.Equal("John Doe", claim.Username)
+	assert.Equal("", claim.OrgID)
+	assert.ElementsMatch(claim.Permissions, []string{"openid", "roles", "ensemble:admin"})
+}
+
+func TestIsExpired(t *testing.T) {
+	assert := assert.New(t)
+
+	testTime := time.Now().Add(-time.Minute)
+	assert.True(IsExpired(testTime))
+
+	testTime = time.Now().Add(time.Minute * 30)
+	assert.False(IsExpired(testTime))
+}
+
+func mockBadTokenGetter(refreshToken, _, _, _ string) (*Token, error) {
+	return nil, fmt.Errorf("bad token refresh for %s", refreshToken)
+}
+
+func createMockTokenGetter(newRefreshToken string, newTokenExpirySeconds int64) func(refreshToken, accessToken, issuer, tokenType string) (*Token, error) {
+	return func(refreshToken, accessToken, issuer, tokenType string) (*Token, error) {
+		tok := &Token{
+			AccessToken:  accessToken,
+			RefreshToken: newRefreshToken,
+			ExpiresIn:    newTokenExpirySeconds,
+		}
+		return tok, nil
+	}
 }
 
 func TestGetToken_Valid_NotExpired(t *testing.T) {
@@ -232,7 +179,8 @@ func TestGetToken_Valid_NotExpired(t *testing.T) {
 		Type:         "client",
 	}
 
-	tok, err := GetToken(&serverAuth)
+	tok, err := GetToken(&serverAuth, mockBadTokenGetter, config.CSPIdpType)
+	// implies mockBadTokenGetter not called
 	assert.Nil(err)
 	assert.NotNil(tok)
 	assert.Equal(accessToken, tok.AccessToken)
@@ -256,26 +204,15 @@ func TestGetToken_Expired(t *testing.T) {
 		Expiration:   expireTime,
 		Type:         APITokenType,
 	}
-	fakeHTTPClient := &fakes.FakeHTTPClient{}
-	responseBodyFmt := `{
-		"id_token": "abc",
-		"token_type": "Test",
-		"expires_in": 86400,
-		"scope": "Test",
-		"access_token": "%s",
-		"refresh_token": "LetMeInAgain"}`
 
-	responseBodyStr := fmt.Sprintf(responseBodyFmt, accessToken)
-	responseBody := io.NopCloser(bytes.NewReader([]byte(responseBodyStr)))
-	fakeHTTPClient.DoReturns(&http.Response{
-		StatusCode: 200,
-		Body:       responseBody,
-	}, nil)
-	httpRestClient = fakeHTTPClient
+	newRefreshToken := "LetMeInAgain"
+	newExpiry := int64(time.Until(time.Now().Add(time.Minute * 30)).Seconds())
 
-	tok, err := GetToken(&serverAuth)
+	tokenGetter := createMockTokenGetter(newRefreshToken, newExpiry)
+
+	tok, err := GetToken(&serverAuth, tokenGetter, config.CSPIdpType)
 	assert.Nil(err)
 	assert.NotNil(tok)
 	assert.Equal(tok.AccessToken, accessToken)
-	assert.Equal(tok.RefreshToken, "LetMeInAgain")
+	assert.Equal(tok.RefreshToken, newRefreshToken)
 }

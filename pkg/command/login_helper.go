@@ -93,18 +93,33 @@ func configureTanzuPlatformServiceEndpointsForSM(tpEndpoint string) error {
 	// tanzu platform url used for UI directly. In this can remove `www.` prefix.
 	u.Host = strings.TrimPrefix(u.Host, "www.")
 
-	tanzuHubEndpoint = fmt.Sprintf("%s://api.%s/hub", u.Scheme, u.Host)
-	tanzuTMCEndpoint = fmt.Sprintf("%s://ops.%s", u.Scheme, u.Host)
-	tanzuUCPEndpoint = fmt.Sprintf("%s://ucp.%s", u.Scheme, u.Host)
+	tanzuHubEndpoint = fmt.Sprintf("%s://%s/hub", u.Scheme, u.Host)
+	tanzuTMCEndpoint = fmt.Sprintf("%s://%s", u.Scheme, u.Host)
+	tanzuUCPEndpoint = fmt.Sprintf("%s://%s/ucp", u.Scheme, u.Host)
+	tanzuAuthEndpoint = fmt.Sprintf("%s://%s/auth", u.Scheme, u.Host)
+
 	return nil
 }
 
 func isTanzuPlatformSaaSEndpoint(tpEndpoint string) bool {
+	if forceCSP {
+		return true
+	}
+
 	if tpEndpoint == "" {
 		return false
 	}
+
+	defaultSaaSEndpoints := []string{
+		"https://(www.)?platform(.)*.tanzu.broadcom.com",
+		"https://api.tanzu(.)*.cloud.vmware.com",
+	}
 	saasEndpointRegularExpressions, _ := centralconfig.DefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointList()
+	saasEndpointRegularExpressions = append(saasEndpointRegularExpressions, defaultSaaSEndpoints...)
 	for _, endpointRegex := range saasEndpointRegularExpressions {
+		if endpointRegex == "" {
+			continue
+		}
 		// Create a regular expression pattern
 		re, err := regexp.Compile(endpointRegex)
 		if err != nil {

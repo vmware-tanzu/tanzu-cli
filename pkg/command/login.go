@@ -47,11 +47,13 @@ func newLoginCmd() *cobra.Command {
 		return cobra.AppendActiveHelp(nil, fmt.Sprintf("Please enter your api-token (you can instead set the variable %s)", config.EnvAPITokenKey)), cobra.ShellCompDirectiveNoFileComp
 	}))
 	loginCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
+	loginCmd.Flags().BoolVar(&forceCSP, "force-csp", false, "force use of CSP for authentication")
 	loginCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
 	loginCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
 
 	utils.PanicOnErr(loginCmd.Flags().MarkHidden("api-token"))
 	utils.PanicOnErr(loginCmd.Flags().MarkHidden("staging"))
+	utils.PanicOnErr(loginCmd.Flags().MarkHidden("force-csp"))
 	loginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 	loginCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
 
@@ -138,9 +140,15 @@ func getString(data interface{}) string {
 // prepareTanzuContextName returns the context name given organization name,endpoint and staging details
 // pre-req orgName and endpoint is non-empty string
 func prepareTanzuContextName(orgName, ucpEndpoint string, isStaging bool) string {
-	contextName := strings.Replace(orgName, " ", "_", -1)
-	if isStaging {
-		contextName += "-staging"
+	var contextName string
+	idpType := getIDPType(ucpEndpoint)
+	if idpType == config.UAAIdpType {
+		contextName = "tpsm"
+	} else {
+		contextName = strings.Replace(orgName, " ", "_", -1)
+		if isStaging {
+			contextName += "-staging"
+		}
 	}
 
 	// If the ucpEndpoint is a subdomain of the default TanzuPlatformEndpoint consider it as default
