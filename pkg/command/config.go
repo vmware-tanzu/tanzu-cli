@@ -28,50 +28,52 @@ const (
 	ConfigLiteralEnv      = "env"
 )
 
-func init() {
+var unattended bool
+
+func newConfigCmd() *cobra.Command {
+	configCmd := &cobra.Command{
+		Use:   "config",
+		Short: "Configuration for the CLI",
+		Annotations: map[string]string{
+			"group": string(plugin.SystemCmdGroup),
+		},
+	}
 	configCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 	configCmd.AddCommand(
-		getConfigCmd,
-		initConfigCmd,
-		setConfigCmd,
-		unsetConfigCmd,
+		newGetConfigCmd(),
+		newInitConfigCmd(),
+		newSetConfigCmd(),
+		newUnsetConfigCmd(),
 		newEULACmd(),
 		newCertCmd(),
 	)
+	return configCmd
 }
 
-var unattended bool
+func newGetConfigCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:               "get",
+		Short:             "Get the current configuration",
+		ValidArgsFunction: noMoreCompletions,
+		Args:              cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := configlib.GetClientConfig()
+			if err != nil {
+				return err
+			}
 
-var configCmd = &cobra.Command{
-	Use:   "config",
-	Short: "Configuration for the CLI",
-	Annotations: map[string]string{
-		"group": string(plugin.SystemCmdGroup),
-	},
-}
+			// Print the entire config
+			b, err := yaml.Marshal(&cfg)
+			if err != nil {
+				return err
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), strings.TrimSpace(string(b)))
 
-var getConfigCmd = &cobra.Command{
-	Use:               "get",
-	Short:             "Get the current configuration",
-	ValidArgsFunction: noMoreCompletions,
-	Args:              cobra.NoArgs,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := configlib.GetClientConfig()
-		if err != nil {
-			return err
-		}
+			warningForShadowedEnvVars(cmd.ErrOrStderr())
 
-		// Print the entire config
-		b, err := yaml.Marshal(&cfg)
-		if err != nil {
-			return err
-		}
-		fmt.Fprintln(cmd.OutOrStdout(), strings.TrimSpace(string(b)))
-
-		warningForShadowedEnvVars(cmd.ErrOrStderr())
-
-		return nil
-	},
+			return nil
+		},
+	}
 }
 
 // Check if any of the variables of the config file are shadowed by
@@ -101,33 +103,35 @@ func warningForShadowedEnvVars(writer io.Writer) {
 	}
 }
 
-var setConfigCmd = &cobra.Command{
-	Use:               "set PATH <value>",
-	Short:             "Set config values at the given PATH",
-	Long:              "Set config values at the given PATH. Supported PATH values: [features.global.<feature>, features.<plugin>.<feature>, env.<variable>]",
-	ValidArgsFunction: completeSetConfig,
-	Example: `
+func newSetConfigCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:               "set PATH <value>",
+		Short:             "Set config values at the given PATH",
+		Long:              "Set config values at the given PATH. Supported PATH values: [features.global.<feature>, features.<plugin>.<feature>, env.<variable>]",
+		ValidArgsFunction: completeSetConfig,
+		Example: `
     # Sets a custom CA cert for a proxy that requires it
     tanzu config set env.PROXY_CA_CERT b329baa034afn3.....
     # Enables a specific plugin feature
     tanzu config set features.management-cluster.custom_nameservers true
     # Enables a general CLI feature
     tanzu config set features.global.abcd true`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 2 {
-			return errors.Errorf("both PATH and <value> are required")
-		}
-		if len(args) > 2 {
-			return errors.Errorf("only PATH and <value> are allowed")
-		}
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 2 {
+				return errors.Errorf("both PATH and <value> are required")
+			}
+			if len(args) > 2 {
+				return errors.Errorf("only PATH and <value> are allowed")
+			}
 
-		err := setConfiguration(args[0], args[1])
-		if err != nil {
-			return err
-		}
+			err := setConfiguration(args[0], args[1])
+			if err != nil {
+				return err
+			}
 
-		return nil
-	},
+			return nil
+		},
+	}
 }
 
 // setConfiguration sets the key-value pair for the given path
@@ -159,48 +163,51 @@ func setConfiguration(pathParam, value string) error {
 	}
 }
 
-var initConfigCmd = &cobra.Command{
-	Use:               "init",
-	Short:             "Initialize config with defaults",
-	Long:              "Initialize config with defaults including plugin specific defaults such as default feature flags for all active and installed plugins",
-	ValidArgsFunction: noMoreCompletions,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		plugins, err := pluginsupplier.GetInstalledPlugins()
-		if err != nil {
-			return err
-		}
-
-		// Add the default featureflags for active plugins based on the currentContext
-		// Plugins that are installed but are not active plugin will not be processed here
-		// and defaultFeatureFlags will not be configured for those plugins
-		for _, desc := range plugins {
-			err := configlib.ConfigureFeatureFlags(desc.DefaultFeatureFlags, configlib.SkipIfExists())
+func newInitConfigCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:               "init",
+		Short:             "Initialize config with defaults",
+		Long:              "Initialize config with defaults including plugin specific defaults such as default feature flags for all active and installed plugins",
+		ValidArgsFunction: noMoreCompletions,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			plugins, err := pluginsupplier.GetInstalledPlugins()
 			if err != nil {
 				return err
 			}
-		}
 
-		log.Success("successfully initialized the config")
-		return nil
-	},
+			// Add the default featureflags for active plugins based on the currentContext
+			// Plugins that are installed but are not active plugin will not be processed here
+			// and defaultFeatureFlags will not be configured for those plugins
+			for i := range plugins {
+				err := configlib.ConfigureFeatureFlags(plugins[i].DefaultFeatureFlags, configlib.SkipIfExists())
+				if err != nil {
+					return err
+				}
+			}
+
+			log.Success("successfully initialized the config")
+			return nil
+		},
+	}
 }
 
-var unsetConfigCmd = &cobra.Command{
-	Use:               "unset PATH",
-	Short:             "Unset config values at the given PATH",
-	Long:              "Unset config values at the given PATH. Supported PATH values: [features.global.<feature>, features.<plugin>.<feature>, env.<variable>]",
-	ValidArgsFunction: completeUnsetConfig,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.Errorf("PATH is required")
-		}
-		if len(args) > 1 {
-			return errors.Errorf("only PATH is allowed")
-		}
+func newUnsetConfigCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:               "unset PATH",
+		Short:             "Unset config values at the given PATH",
+		Long:              "Unset config values at the given PATH. Supported PATH values: [features.global.<feature>, features.<plugin>.<feature>, env.<variable>]",
+		ValidArgsFunction: completeUnsetConfig,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				return errors.Errorf("PATH is required")
+			}
+			if len(args) > 1 {
+				return errors.Errorf("only PATH is allowed")
+			}
 
-		return unsetConfiguration(args[0])
-
-	},
+			return unsetConfiguration(args[0])
+		},
+	}
 }
 
 // unsetConfiguration unsets the key-value pair for the given path and removes it

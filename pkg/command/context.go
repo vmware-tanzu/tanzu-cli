@@ -82,72 +82,40 @@ type ContextCreationType string
 
 const NA = "n/a"
 
-var contextCmd = &cobra.Command{
-	Use:     "context",
-	Short:   "Configure and manage contexts for the Tanzu CLI",
-	Aliases: []string{"ctx", "contexts"},
-	Annotations: map[string]string{
-		"group": string(plugin.SystemCmdGroup),
-	},
-}
+func newContextCmd() *cobra.Command {
+	contextCmd := &cobra.Command{
+		Use:     "context",
+		Short:   "Configure and manage contexts for the Tanzu CLI",
+		Aliases: []string{"ctx", "contexts"},
+		Annotations: map[string]string{
+			"group": string(plugin.SystemCmdGroup),
+		},
+	}
 
-func init() {
 	contextCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 	contextCmd.AddCommand(
-		createCtxCmd,
-		listCtxCmd,
-		getCtxCmd,
+		newCreateCtxCmd(),
+		newListCtxCmd(),
+		newGetCtxCmd(),
 		newCurrentCtxCmd(),
-		deleteCtxCmd,
-		useCtxCmd,
-		unsetCtxCmd,
-		getCtxTokenCmd,
+		newDeleteCtxCmd(),
+		newUseCtxCmd(),
+		newUnsetCtxCmd(),
+		newGetCtxTokenCmd(),
 		newUpdateCtxCmd(),
 	)
 
-	initCreateCtxCmd()
-
-	listCtxCmd.Flags().StringVarP(&targetStr, "target", "", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc])")
-	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
-	}))
-
-	listCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "list only contexts associated with the specified context-type (kubernetes[k8s]/mission-control[tmc]/tanzu)")
-	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sContextType, compTanzuContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
-	}))
-
-	listCtxCmd.Flags().BoolVar(&onlyCurrent, "current", false, "list only current active contexts")
-	listCtxCmd.Flags().BoolVar(&showAllColumns, "wide", false, "display additional columns for the contexts")
-	listCtxCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "output format: table|yaml|json")
-	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
-
-	getCtxCmd.Flags().StringVarP(&getOutputFmt, "output", "o", "yaml", "output format: yaml|json")
-	utils.PanicOnErr(getCtxCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
-
-	deleteCtxCmd.Flags().BoolVarP(&unattended, "yes", "y", false, "delete the context entry without confirmation")
-
-	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc])")
-	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
-	}))
-	unsetCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "unset active context associated with the specified context-type (kubernetes[k8s]|mission-control[tmc]|tanzu)")
-	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
-		return []string{compK8sContextType, compTanzuContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
-	}))
-
-	msg := "this was done in the v1.1.0 release, it will be removed following the deprecation policy (6 months). Use the --type flag instead.\n"
-	utils.PanicOnErr(listCtxCmd.Flags().MarkDeprecated("target", msg))
-	utils.PanicOnErr(unsetCtxCmd.Flags().MarkDeprecated("target", msg))
+	return contextCmd
 }
 
-var createCtxCmd = &cobra.Command{
-	Use:               "create CONTEXT_NAME",
-	Short:             "Create a Tanzu CLI context",
-	Args:              cobra.MaximumNArgs(1),
-	ValidArgsFunction: completeCreateCtx,
-	RunE:              createCtx,
-	Example: `
+func newCreateCtxCmd() *cobra.Command { //nolint:funlen
+	var createCtxCmd = &cobra.Command{
+		Use:               "create CONTEXT_NAME",
+		Short:             "Create a Tanzu CLI context",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeCreateCtx,
+		RunE:              createCtx,
+		Example: `
     # Create a TKG management cluster context using endpoint and type (--type is optional, if not provided the CLI will infer the type from the endpoint)
     tanzu context create mgmt-cluster --endpoint https://k8s.example.com[:port] --type k8s
 
@@ -198,9 +166,8 @@ var createCtxCmd = &cobra.Command{
     'kubeconfig' and 'context'. If only '--context' is set and '--kubeconfig' is not, the
     $KUBECONFIG env variable will be used and, if the $KUBECONFIG env is also not set, the default
     kubeconfig file ($HOME/.kube/config) will be used.`,
-}
+	}
 
-func initCreateCtxCmd() {
 	createCtxCmd.Flags().StringVar(&ctxName, "name", "", "name of the context")
 	utils.PanicOnErr(createCtxCmd.Flags().MarkDeprecated("name", "it has been replaced by using an argument to the command"))
 
@@ -242,6 +209,8 @@ func initCreateCtxCmd() {
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint", "kubecontext")
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint", "kubeconfig")
 	createCtxCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
+
+	return createCtxCmd
 }
 
 func createCtx(cmd *cobra.Command, args []string) (err error) {
@@ -1052,11 +1021,33 @@ func vSphereSupervisorLogin(endpoint string) (mergeFilePath, currentContext stri
 	return kubeCfg, kubeCtx, err
 }
 
-var listCtxCmd = &cobra.Command{
-	Use:               "list",
-	Short:             "List contexts",
-	ValidArgsFunction: noMoreCompletions,
-	RunE:              listCtx,
+func newListCtxCmd() *cobra.Command {
+	var listCtxCmd = &cobra.Command{
+		Use:               "list",
+		Short:             "List contexts",
+		ValidArgsFunction: noMoreCompletions,
+		RunE:              listCtx,
+	}
+
+	listCtxCmd.Flags().StringVarP(&targetStr, "target", "", "", "list only contexts associated with the specified target (kubernetes[k8s]/mission-control[tmc])")
+	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{compK8sContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+	}))
+
+	listCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "list only contexts associated with the specified context-type (kubernetes[k8s]/mission-control[tmc]/tanzu)")
+	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{compK8sContextType, compTanzuContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+	}))
+
+	listCtxCmd.Flags().BoolVar(&onlyCurrent, "current", false, "list only current active contexts")
+	listCtxCmd.Flags().BoolVar(&showAllColumns, "wide", false, "display additional columns for the contexts")
+	listCtxCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "output format: table|yaml|json")
+	utils.PanicOnErr(listCtxCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
+
+	msg := "this was done in the v1.1.0 release, it will be removed following the deprecation policy (6 months). Use the --type flag instead.\n" //nolint:goconst
+	utils.PanicOnErr(listCtxCmd.Flags().MarkDeprecated("target", msg))
+
+	return listCtxCmd
 }
 
 func listCtx(cmd *cobra.Command, _ []string) error {
@@ -1082,11 +1073,16 @@ func listCtx(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-var getCtxCmd = &cobra.Command{
-	Use:               "get CONTEXT_NAME",
-	Short:             "Display a context from the config",
-	ValidArgsFunction: completeAllContexts,
-	RunE:              getCtx,
+func newGetCtxCmd() *cobra.Command {
+	var getCtxCmd = &cobra.Command{
+		Use:               "get CONTEXT_NAME",
+		Short:             "Display a context from the config",
+		ValidArgsFunction: completeAllContexts,
+		RunE:              getCtx,
+	}
+	getCtxCmd.Flags().StringVarP(&getOutputFmt, "output", "o", "yaml", "output format: yaml|json")
+	utils.PanicOnErr(getCtxCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
+	return getCtxCmd
 }
 
 func getCtx(cmd *cobra.Command, args []string) error {
@@ -1307,11 +1303,15 @@ func printContext(writer io.Writer, ctx *configtypes.Context) {
 	outputWriter.Render()
 }
 
-var deleteCtxCmd = &cobra.Command{
-	Use:               "delete CONTEXT_NAME",
-	Short:             "Delete a context from the config",
-	ValidArgsFunction: completeAllContexts,
-	RunE:              deleteCtx,
+func newDeleteCtxCmd() *cobra.Command {
+	var deleteCtxCmd = &cobra.Command{
+		Use:               "delete CONTEXT_NAME",
+		Short:             "Delete a context from the config",
+		ValidArgsFunction: completeAllContexts,
+		RunE:              deleteCtx,
+	}
+	deleteCtxCmd.Flags().BoolVarP(&unattended, "yes", "y", false, "delete the context entry without confirmation")
+	return deleteCtxCmd
 }
 
 func deleteCtx(_ *cobra.Command, args []string) error {
@@ -1376,11 +1376,15 @@ func isPinnipedEndpointContext(ctx *configtypes.Context) bool {
 	return false
 }
 
-var useCtxCmd = &cobra.Command{
-	Use:               "use CONTEXT_NAME",
-	Short:             "Set the context to be used by default",
-	ValidArgsFunction: completeAllContexts,
-	RunE:              useCtx,
+func newUseCtxCmd() *cobra.Command {
+	var useCtxCmd = &cobra.Command{
+		Use:               "use CONTEXT_NAME",
+		Short:             "Set the context to be used by default",
+		ValidArgsFunction: completeAllContexts,
+		RunE:              useCtx,
+	}
+
+	return useCtxCmd
 }
 
 func useCtx(cmd *cobra.Command, args []string) error { //nolint:gocyclo
@@ -1455,12 +1459,28 @@ func syncCurrentKubeContext(ctx *configtypes.Context) error {
 	return kubecfg.SetCurrentContext(ctx.ClusterOpts.Path, ctx.ClusterOpts.Context)
 }
 
-var unsetCtxCmd = &cobra.Command{
-	Use:               "unset CONTEXT_NAME",
-	Short:             "Unset the active context so that it is not used by default",
-	Args:              cobra.MaximumNArgs(1),
-	ValidArgsFunction: completeActiveContexts,
-	RunE:              unsetCtx,
+func newUnsetCtxCmd() *cobra.Command {
+	var unsetCtxCmd = &cobra.Command{
+		Use:               "unset CONTEXT_NAME",
+		Short:             "Unset the active context so that it is not used by default",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: completeActiveContexts,
+		RunE:              unsetCtx,
+	}
+
+	unsetCtxCmd.Flags().StringVarP(&targetStr, "target", "", "", "unset active context associated with the specified target (kubernetes[k8s]|mission-control[tmc])")
+	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("target", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{compK8sContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+	}))
+	unsetCtxCmd.Flags().StringVarP(&contextTypeStr, "type", "t", "", "unset active context associated with the specified context-type (kubernetes[k8s]|mission-control[tmc]|tanzu)")
+	utils.PanicOnErr(unsetCtxCmd.RegisterFlagCompletionFunc("type", func(_ *cobra.Command, _ []string, _ string) ([]string, cobra.ShellCompDirective) {
+		return []string{compK8sContextType, compTanzuContextType, compTMCContextType}, cobra.ShellCompDirectiveNoFileComp
+	}))
+
+	msg := "this was done in the v1.1.0 release, it will be removed following the deprecation policy (6 months). Use the --type flag instead.\n"
+	utils.PanicOnErr(unsetCtxCmd.Flags().MarkDeprecated("target", msg))
+
+	return unsetCtxCmd
 }
 
 func unsetCtx(_ *cobra.Command, args []string) error {
@@ -1686,13 +1706,16 @@ func displayContextListOutputWithDynamicColumns(cfg *configtypes.ClientConfig, w
 	}
 }
 
-var getCtxTokenCmd = &cobra.Command{
-	Use:               "get-token CONTEXT_NAME",
-	Short:             "Get the valid CSP token for the given tanzu context",
-	Args:              cobra.ExactArgs(1),
-	Hidden:            true,
-	ValidArgsFunction: completeTanzuContexts,
-	RunE:              getToken,
+func newGetCtxTokenCmd() *cobra.Command {
+	var getCtxTokenCmd = &cobra.Command{
+		Use:               "get-token CONTEXT_NAME",
+		Short:             "Get the valid CSP token for the given tanzu context",
+		Args:              cobra.ExactArgs(1),
+		Hidden:            true,
+		ValidArgsFunction: completeTanzuContexts,
+		RunE:              getToken,
+	}
+	return getCtxTokenCmd
 }
 
 func getToken(cmd *cobra.Command, args []string) error {
@@ -1746,13 +1769,8 @@ func newUpdateCtxCmd() *cobra.Command {
 		Short:  "Update an aspect of a context (subject to change)",
 		Hidden: true,
 	}
-	tanzuActiveResourceCmd.Flags().StringVarP(&projectStr, "project", "", "", "project name to be set as active")
-	tanzuActiveResourceCmd.Flags().StringVarP(&projectIDStr, "project-id", "", "", "project ID to be set as active")
-	tanzuActiveResourceCmd.Flags().StringVarP(&spaceStr, "space", "", "", "space name to be set as active")
-	tanzuActiveResourceCmd.Flags().StringVarP(&clustergroupStr, "clustergroup", "", "", "clustergroup name to be set as active")
-
 	updateCtxCmd.AddCommand(
-		tanzuActiveResourceCmd,
+		newTanzuActiveResourceCmd(),
 	)
 	return updateCtxCmd
 }
@@ -1760,13 +1778,21 @@ func newUpdateCtxCmd() *cobra.Command {
 // tanzuActiveResourceCmd updates the tanzu active resource referenced by tanzu context
 //
 // NOTE!!: This command is EXPERIMENTAL and subject to change in future
-var tanzuActiveResourceCmd = &cobra.Command{
-	Use:               "tanzu-active-resource CONTEXT_NAME",
-	Short:             "Updates the tanzu active resource for the given context of type tanzu (subject to change)",
-	Hidden:            true,
-	Args:              cobra.ExactArgs(1),
-	ValidArgsFunction: completeTanzuContexts,
-	RunE:              setTanzuCtxActiveResource,
+func newTanzuActiveResourceCmd() *cobra.Command {
+	tanzuActiveResourceCmd := &cobra.Command{
+		Use:               "tanzu-active-resource CONTEXT_NAME",
+		Short:             "Updates the tanzu active resource for the given context of type tanzu (subject to change)",
+		Hidden:            true,
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: completeTanzuContexts,
+		RunE:              setTanzuCtxActiveResource,
+	}
+	tanzuActiveResourceCmd.Flags().StringVarP(&projectStr, "project", "", "", "project name to be set as active")
+	tanzuActiveResourceCmd.Flags().StringVarP(&projectIDStr, "project-id", "", "", "project ID to be set as active")
+	tanzuActiveResourceCmd.Flags().StringVarP(&spaceStr, "space", "", "", "space name to be set as active")
+	tanzuActiveResourceCmd.Flags().StringVarP(&clustergroupStr, "clustergroup", "", "", "clustergroup name to be set as active")
+
+	return tanzuActiveResourceCmd
 }
 
 func setTanzuCtxActiveResource(_ *cobra.Command, args []string) error {

@@ -17,10 +17,6 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
-func init() {
-	completionCmd.SetUsageFunc(cli.SubCmdUsageFunc)
-}
-
 const compNoMoreArgsMsg = "This command does not take any more arguments (but may accept flags)."
 
 var (
@@ -93,25 +89,30 @@ Note for bash users: make sure the bash-completions package has been installed.`
 		  Register-ArgumentCompleter -CommandName 'tz' -ScriptBlock ${__tanzuCompleterBlock}`)
 )
 
-// completionCmd represents the completion command
-var completionCmd = &cobra.Command{
-	Use:                   fmt.Sprintf("completion [%v]", strings.Join(completionShells, "|")),
-	Short:                 "Output shell completion code",
-	Long:                  fmt.Sprintf(completionLongDesc, strings.Join(completionShells, ", ")),
-	Example:               completionExamples,
-	DisableFlagsInUseLine: true,
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if len(args) == 0 {
-			return completionShells, cobra.ShellCompDirectiveNoFileComp
-		}
-		return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
-	},
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return runCompletion(os.Stdout, cmd, args)
-	},
-	Annotations: map[string]string{
-		"group": string(plugin.SystemCmdGroup),
-	},
+func newCompletionCmd() *cobra.Command {
+	// completionCmd represents the completion command
+	completionCmd := &cobra.Command{
+		Use:                   fmt.Sprintf("completion [%v]", strings.Join(completionShells, "|")),
+		Short:                 "Output shell completion code",
+		Long:                  fmt.Sprintf(completionLongDesc, strings.Join(completionShells, ", ")),
+		Example:               completionExamples,
+		DisableFlagsInUseLine: true,
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) == 0 {
+				return completionShells, cobra.ShellCompDirectiveNoFileComp
+			}
+			return activeHelpNoMoreArgs(nil), cobra.ShellCompDirectiveNoFileComp
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runCompletion(os.Stdout, cmd, args)
+		},
+		Annotations: map[string]string{
+			"group": string(plugin.SystemCmdGroup),
+		},
+	}
+	completionCmd.SetUsageFunc(cli.SubCmdUsageFunc)
+
+	return completionCmd
 }
 
 func runCompletion(out io.Writer, cmd *cobra.Command, args []string) error {

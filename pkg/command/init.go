@@ -12,24 +12,24 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
-func init() {
+func newInitCmd() *cobra.Command {
+	var initCmd = &cobra.Command{
+		Use:    "init",
+		Hidden: true,
+		Short:  "Initialize the CLI",
+		Annotations: map[string]string{
+			"group": string(plugin.SystemCmdGroup),
+		},
+		SilenceErrors:     true,
+		ValidArgsFunction: noMoreCompletions,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			// Currently nothing to initialize.
+			// We are keeping this command as it may become useful
+			// again in the future.
+			log.Success("successfully initialized CLI")
+			return nil
+		},
+	}
 	initCmd.SetUsageFunc(cli.SubCmdUsageFunc)
-}
-
-var initCmd = &cobra.Command{
-	Use:    "init",
-	Hidden: true,
-	Short:  "Initialize the CLI",
-	Annotations: map[string]string{
-		"group": string(plugin.SystemCmdGroup),
-	},
-	SilenceErrors:     true,
-	ValidArgsFunction: noMoreCompletions,
-	RunE: func(_ *cobra.Command, _ []string) error {
-		// Currently nothing to initialize.
-		// We are keeping this command as it may become useful
-		// again in the future.
-		log.Success("successfully initialized CLI")
-		return nil
-	},
+	return initCmd
 }
