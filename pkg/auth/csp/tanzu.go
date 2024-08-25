@@ -5,7 +5,6 @@ package csp
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -29,9 +28,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
-	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -57,15 +54,6 @@ func stdin() int { return int(os.Stdin.Fd()) }
 // orgInfo to decode the CSP organization API response
 type orgInfo struct {
 	Name string `json:"displayName"`
-}
-
-// tanzuHubMetadata to parse the hub metadata from central config
-type tanzuHubMetadata struct {
-	CSPProductIdentifier string `json:"cspProductIdentifier" yaml:"cspProductIdentifier"`
-	CSPDisplayName       string `json:"cspDisplayName" yaml:"cspDisplayName"`
-	EndpointProduction   string `json:"endpointProduction" yaml:"endpointProduction"`
-	EndpointStaging      string `json:"endpointStaging" yaml:"endpointStaging"`
-	UseCentralConfig     bool   `json:"useCentralConfig" yaml:"useCentralConfig"`
 }
 
 type issuerEndPoints struct {
@@ -464,117 +452,6 @@ func GetOrgNameFromOrgID(orgID, accessToken, issuer string) (string, error) {
 	return org.Name, nil
 }
 
-// GetTanzuHubEndpoint retrieves Tanzu Hub Endpoint through the CSP API or through Central Config as fallback
-func GetTanzuHubEndpoint(orgID, accessToken string, useStagingIssuer bool) (string, error) {
-	var errCSP error
-	var endpoint string
-
-	hubMetadata := getTanzuHubMetadataFromCentralConfig()
-	if hubMetadata.CSPDisplayName == "" {
-		hubMetadata.CSPDisplayName = defaultCSPDisplayName
-	}
-	if hubMetadata.CSPProductIdentifier == "" {
-		hubMetadata.CSPProductIdentifier = defaultCSPProductIdentifier
-	}
-
-	// If feature-flag to get endpoint from central config is not configured
-	// try to use CSP api to get the endpoint
-	if !hubMetadata.UseCentralConfig {
-		endpoint, errCSP = getTanzuHubEndpointFromCSP(hubMetadata, orgID, accessToken, useStagingIssuer)
-	}
-
-	// If the endpoint is empty or we got error while getting endpoint from CSP
-	// try to get the endpoint from central configuration with hubMetadata
-	if endpoint == "" || errCSP != nil {
-		endpoint = hubMetadata.EndpointProduction
-		if useStagingIssuer {
-			endpoint = hubMetadata.EndpointStaging
-		}
-	}
-
-	// If endpoint is still empty return error
-	if endpoint == "" {
-		return "", errCSP
-	}
-
-	return endpoint, nil
-}
-
-// getTanzuHubEndpointFromCSP retrieves Tanzu Hub Endpoint through the CSP API
-func getTanzuHubEndpointFromCSP(metadata tanzuHubMetadata, orgID, accessToken string, useStagingIssuer bool) (string, error) {
-	// CSPServiceURLs stores the CSP service URL information
-	type CSPServiceURLs struct {
-		ServiceHome string `json:"serviceHome"`
-	}
-
-	// CSPService stores the CSP service details
-	type CSPService struct {
-		DisplayName         string         `json:"displayName"`
-		ProductIdentifier   string         `json:"productIdentifier"`
-		ServiceDefinitionID string         `json:"serviceDefinitionId"`
-		ServiceUrls         CSPServiceURLs `json:"serviceUrls"`
-	}
-
-	// CSPServices stores the CSP services list
-	type CSPServices struct {
-		ServicesList []CSPService `json:"servicesList"`
-	}
-
-	endpoint := "https://console.cloud.vmware.com"
-	if useStagingIssuer {
-		endpoint = "https://console-stg.cloud.vmware.com"
-	}
-	api := fmt.Sprintf("%s/csp/gateway/slc/api/v2/ui/definitions/?orgId=%s", endpoint, orgID)
-
-	data := url.Values{}
-	req, _ := http.NewRequestWithContext(context.Background(), "GET", api, bytes.NewBufferString(data.Encode()))
-	req.Header.Set("authorization", "Bearer "+accessToken)
-
-	resp, err := httpRestClient.Do(req)
-	if err != nil {
-		return "", errors.WithMessage(err, "Failed to obtain available services for the specified organization")
-	}
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", errors.Errorf("Failed to obtain available services for the specified organization. %s", string(body))
-	}
-
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	services := CSPServices{}
-
-	if err = json.Unmarshal(body, &services); err != nil {
-		return "", errors.Wrap(err, "could not unmarshal the services response")
-	}
-
-	for _, s := range services.ServicesList {
-		if s.ProductIdentifier == metadata.CSPProductIdentifier && strings.Contains(s.DisplayName, metadata.CSPDisplayName) {
-			// Remove `www.` if present from the endpoint. Because when invoking directly through API it does not work
-			tanzuHubEndpoint := strings.Replace(s.ServiceUrls.ServiceHome, "www.", "", 1)
-			return tanzuHubEndpoint, nil
-		}
-	}
-
-	return "", errors.Errorf("could not find '%s' service associated with the specified organization", metadata.CSPDisplayName)
-}
-
-// getTanzuHubMetadataFromCentralConfig gets the tanzu hub metadata from central config as best effort
-// If cannot get the data from central config it will set few default CSP config before returning the object
-func getTanzuHubMetadataFromCentralConfig() tanzuHubMetadata {
-	hubMetadata := tanzuHubMetadata{}
-
-	// We will get the central configuration from the default discovery source
-	discoverySource, err := config.GetCLIDiscoverySource(cliconfig.DefaultStandaloneDiscoveryName)
-	if err != nil {
-		return hubMetadata
-	}
-	centralConfigReader := centralconfig.NewCentralConfigReader(discoverySource)
-
-	// Get the tanzu hub metadata
-	_ = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuHubMetadata, &hubMetadata)
-	return hubMetadata
-}
-
 // GetCSPMetadata gets the CSP metadata from central config as best effort,
 // If it fails to get the metadata from central config, it returns the default values
 func GetCSPMetadata() TanzuCSPMetadata {
@@ -597,19 +474,12 @@ func GetCSPMetadata() TanzuCSPMetadata {
 func getCSPMetadataFromCentralConfig() TanzuCSPMetadata {
 	cspMetadata := TanzuCSPMetadata{}
 
-	// We will get the central configuration from the default discovery source
-	discoverySource, err := config.GetCLIDiscoverySource(cliconfig.DefaultStandaloneDiscoveryName)
-	if err != nil {
-		return cspMetadata
-	}
-	centralConfigReader := centralconfig.NewCentralConfigReader(discoverySource)
-
 	// Get the tanzu CSP metadata based on user preference
 	useTanzuCSP, _ := strconv.ParseBool(os.Getenv(constants.UseTanzuCSP))
 	if useTanzuCSP {
-		_ = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuTCSPMetadata, &cspMetadata)
+		_ = centralconfig.DefaultCentralConfigReader.GetCentralConfigEntry(centralConfigTanzuTCSPMetadata, &cspMetadata)
 	} else {
-		_ = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuDefaultCSPMetadata, &cspMetadata)
+		_ = centralconfig.DefaultCentralConfigReader.GetCentralConfigEntry(centralConfigTanzuDefaultCSPMetadata, &cspMetadata)
 	}
 
 	return cspMetadata
@@ -638,14 +508,7 @@ func getCSPKnownIssuersEndpoints() cspKnownIssuerEndpoints {
 func getCSPKnownEndpointsFromCentralConfig() (cspKnownIssuerEndpoints, error) {
 	cspKnownIssuerEPs := cspKnownIssuerEndpoints{}
 
-	// We will get the central configuration from the default discovery source
-	discoverySource, err := config.GetCLIDiscoverySource(cliconfig.DefaultStandaloneDiscoveryName)
-	if err != nil {
-		return cspKnownIssuerEPs, err
-	}
-	centralConfigReader := centralconfig.NewCentralConfigReader(discoverySource)
-
-	err = centralConfigReader.GetCentralConfigEntry(centralConfigTanzuKnownIssersEndpoints, &cspKnownIssuerEPs)
+	err := centralconfig.DefaultCentralConfigReader.GetCentralConfigEntry(centralConfigTanzuKnownIssersEndpoints, &cspKnownIssuerEPs)
 	if err != nil {
 		return cspKnownIssuerEPs, err
 	}
@@ -658,14 +521,7 @@ func getCSPKnownEndpointsFromCentralConfig() (cspKnownIssuerEndpoints, error) {
 func GetIssuerUpdateFlagFromCentralConfig() bool {
 	updateIssuerInCLIConfig := false
 
-	// We will get the central configuration from the default discovery source
-	discoverySource, err := config.GetCLIDiscoverySource(cliconfig.DefaultStandaloneDiscoveryName)
-	if err != nil {
-		return updateIssuerInCLIConfig
-	}
-	centralConfigReader := centralconfig.NewCentralConfigReader(discoverySource)
-
-	err = centralConfigReader.GetCentralConfigEntry(centralConfigCLIConfigCSPIssuerUpdateFlag, &updateIssuerInCLIConfig)
+	err := centralconfig.DefaultCentralConfigReader.GetCentralConfigEntry(centralConfigCLIConfigCSPIssuerUpdateFlag, &updateIssuerInCLIConfig)
 	if err != nil {
 		return updateIssuerInCLIConfig
 	}

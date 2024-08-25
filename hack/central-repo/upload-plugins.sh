@@ -266,6 +266,19 @@ cli.core.some-json-as-a-string: |-
         "but" : "will be returned as a string"
         "which": "the caller can parse itself"
     }
+
+cli.core.tanzu_default_endpoint: https://api.tanzu.cloud.vmware.com
+
+cli.core.tanzu_endpoint_map:
+  https://api.tanzu.cloud.vmware.com:
+    ucp: https://api.tanzu.cloud.vmware.com
+    tmc: https://tmc.tanzu.cloud.vmware.com
+    hub: https://api.mgmt.cloud.vmware.com
+
+cli.core.tanzu_cli_platform_saas_endpoints_as_regular_expression:
+  - https://(www.)?platform(.)*.tanzu.broadcom.com
+  - https://api.tanzu(.)*.cloud.vmware.com
+
 EOF
 }
 
