@@ -23,18 +23,18 @@ import (
 
 var loginEndpoint string
 
-var loginCmd = &cobra.Command{
-	Use:     "login",
-	Short:   "Login to Tanzu Platform for Kubernetes",
-	Aliases: []string{"lo", "logins"},
-	Annotations: map[string]string{
-		"group": string(plugin.SystemCmdGroup),
-	},
-	ValidArgsFunction: noMoreCompletions,
-	RunE:              login,
-}
+func newLoginCmd() *cobra.Command {
+	loginCmd := &cobra.Command{
+		Use:     "login",
+		Short:   "Login to Tanzu Platform for Kubernetes",
+		Aliases: []string{"lo", "logins"},
+		Annotations: map[string]string{
+			"group": string(plugin.SystemCmdGroup),
+		},
+		ValidArgsFunction: noMoreCompletions,
+		RunE:              login,
+	}
 
-func init() {
 	// "endpoint" variable from context.go cannot be used as default value varies for login command
 	loginCmd.Flags().StringVar(&loginEndpoint, "endpoint", "https://api.tanzu.cloud.vmware.com", "endpoint to login to")
 	utils.PanicOnErr(loginCmd.RegisterFlagCompletionFunc("endpoint", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -79,6 +79,7 @@ func init() {
        interactive login in terminal based hosts (without browser) can be found at
        https://github.com/vmware-tanzu/tanzu-cli/blob/main/docs/quickstart/quickstart.md#logging-into-tanzu-platform-for-kubernetes
 `
+	return loginCmd
 }
 
 func login(_ *cobra.Command, _ []string) (err error) {

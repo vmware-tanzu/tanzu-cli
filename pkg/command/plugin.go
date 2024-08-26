@@ -45,6 +45,10 @@ const (
 	pluginNameCaps                  = "PLUGIN_NAME"
 )
 
+var (
+	targetFlagDesc = fmt.Sprintf("target of the plugin (%s)", common.TargetList)
+)
+
 func newPluginCmd() *cobra.Command {
 	var pluginCmd = &cobra.Command{
 		Use:   "plugin",
@@ -57,69 +61,15 @@ func newPluginCmd() *cobra.Command {
 
 	pluginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 
-	listPluginCmd := newListPluginCmd()
-	installPluginCmd := newInstallPluginCmd()
-	upgradePluginCmd := newUpgradePluginCmd()
-	describePluginCmd := newDescribePluginCmd()
-	deletePluginCmd := newDeletePluginCmd()
-	cleanPluginCmd := newCleanPluginCmd()
-	syncPluginCmd := newSyncPluginCmd()
-	discoverySourceCmd := newDiscoverySourceCmd()
-
-	listPluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
-	utils.PanicOnErr(listPluginCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
-	listPluginCmd.Flags().BoolVar(&showAllColumns, "wide", false, "display additional columns for plugins")
-	utils.PanicOnErr(listPluginCmd.Flags().MarkHidden("wide"))
-
-	describePluginCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
-	utils.PanicOnErr(describePluginCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
-
-	installPluginCmd.Flags().StringVar(&group, "group", "", "install the plugins specified by a plugin-group version")
-	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("group", completeGroupsAndVersion))
-
-	// --local is renamed to --local-source
-	installPluginCmd.Flags().StringVarP(&local, "local", "", "", "path to local plugin source")
-	msg := "this was done in the v1.0.0 release, it will be removed following the deprecation policy (6 months). Use the --local-source flag instead.\n"
-	utils.PanicOnErr(installPluginCmd.Flags().MarkDeprecated("local", msg))
-
-	// The --local-source flag for installing plugins is only used in development testing
-	// and should not be used in production.  We mark it as hidden to help convey this reality.
-	// Shell completion for this flag is the default behavior of doing file completion
-	installPluginCmd.Flags().StringVarP(&local, "local-source", "l", "", "path to local plugin source")
-	utils.PanicOnErr(installPluginCmd.Flags().MarkHidden("local-source"))
-
-	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
-	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("version", completePluginVersions))
-
-	deletePluginCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "uninstall the plugin without asking for confirmation")
-
-	targetFlagDesc := fmt.Sprintf("target of the plugin (%s)", common.TargetList)
-	installPluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
-	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("target", completeTargetsForAllPlugins))
-
-	upgradePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
-	utils.PanicOnErr(upgradePluginCmd.RegisterFlagCompletionFunc("target", completeTargetsForAllPlugins))
-
-	deletePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
-	utils.PanicOnErr(deletePluginCmd.RegisterFlagCompletionFunc("target", completeTargetsForInstalledPlugins))
-
-	describePluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
-	utils.PanicOnErr(describePluginCmd.RegisterFlagCompletionFunc("target", completeTargetsForInstalledPlugins))
-
-	installPluginCmd.MarkFlagsMutuallyExclusive("group", "local")
-	installPluginCmd.MarkFlagsMutuallyExclusive("group", "local-source")
-	installPluginCmd.MarkFlagsMutuallyExclusive("group", "version")
-	installPluginCmd.MarkFlagsMutuallyExclusive("group", "target")
-
 	pluginCmd.AddCommand(
-		listPluginCmd,
-		installPluginCmd,
-		upgradePluginCmd,
-		describePluginCmd,
-		deletePluginCmd,
-		cleanPluginCmd,
-		syncPluginCmd,
-		discoverySourceCmd,
+		newListPluginCmd(),
+		newInstallPluginCmd(),
+		newUpgradePluginCmd(),
+		newDescribePluginCmd(),
+		newDeletePluginCmd(),
+		newCleanPluginCmd(),
+		newSyncPluginCmd(),
+		newDiscoverySourceCmd(),
 		newSearchPluginCmd(),
 		newPluginGroupCmd(),
 		newDownloadBundlePluginCmd(),
@@ -156,6 +106,10 @@ func newListPluginCmd() *cobra.Command {
 			return kerrors.NewAggregate(errorList)
 		},
 	}
+	listCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
+	utils.PanicOnErr(listCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
+	listCmd.Flags().BoolVar(&showAllColumns, "wide", false, "display additional columns for plugins")
+	utils.PanicOnErr(listCmd.Flags().MarkHidden("wide"))
 
 	return listCmd
 }
@@ -193,11 +147,17 @@ func newDescribePluginCmd() *cobra.Command {
 		},
 	}
 
+	describeCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (yaml|json|table)")
+	utils.PanicOnErr(describeCmd.RegisterFlagCompletionFunc("output", completionGetOutputFormats))
+
+	describeCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+	utils.PanicOnErr(describeCmd.RegisterFlagCompletionFunc("target", completeTargetsForInstalledPlugins))
+
 	return describeCmd
 }
 
-func newInstallPluginCmd() *cobra.Command {
-	var installCmd = &cobra.Command{
+func newInstallPluginCmd() *cobra.Command { //nolint:funlen
+	var installPluginCmd = &cobra.Command{
 		Use:   "install [" + pluginNameCaps + "]",
 		Short: "Install a plugin",
 		Long:  "Install a specific plugin by name or specify all to install all plugins of a group",
@@ -285,7 +245,33 @@ func newInstallPluginCmd() *cobra.Command {
 			return nil
 		},
 	}
-	return installCmd
+
+	installPluginCmd.Flags().StringVar(&group, "group", "", "install the plugins specified by a plugin-group version")
+	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("group", completeGroupsAndVersion))
+
+	// --local is renamed to --local-source
+	installPluginCmd.Flags().StringVarP(&local, "local", "", "", "path to local plugin source")
+	msg := "this was done in the v1.0.0 release, it will be removed following the deprecation policy (6 months). Use the --local-source flag instead.\n"
+	utils.PanicOnErr(installPluginCmd.Flags().MarkDeprecated("local", msg))
+
+	// The --local-source flag for installing plugins is only used in development testing
+	// and should not be used in production.  We mark it as hidden to help convey this reality.
+	// Shell completion for this flag is the default behavior of doing file completion
+	installPluginCmd.Flags().StringVarP(&local, "local-source", "l", "", "path to local plugin source")
+	utils.PanicOnErr(installPluginCmd.Flags().MarkHidden("local-source"))
+
+	installPluginCmd.Flags().StringVarP(&version, "version", "v", cli.VersionLatest, "version of the plugin")
+	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("version", completePluginVersions))
+
+	installPluginCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+	utils.PanicOnErr(installPluginCmd.RegisterFlagCompletionFunc("target", completeTargetsForAllPlugins))
+
+	installPluginCmd.MarkFlagsMutuallyExclusive("group", "local")
+	installPluginCmd.MarkFlagsMutuallyExclusive("group", "local-source")
+	installPluginCmd.MarkFlagsMutuallyExclusive("group", "version")
+	installPluginCmd.MarkFlagsMutuallyExclusive("group", "target")
+
+	return installPluginCmd
 }
 
 func installPluginsForPluginGroup(cmd *cobra.Command, args []string) error {
@@ -349,6 +335,9 @@ func newUpgradePluginCmd() *cobra.Command {
 		},
 	}
 
+	upgradeCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+	utils.PanicOnErr(upgradeCmd.RegisterFlagCompletionFunc("target", completeTargetsForAllPlugins))
+
 	return upgradeCmd
 }
 
@@ -395,6 +384,12 @@ func newDeletePluginCmd() *cobra.Command {
 			return nil
 		},
 	}
+
+	deleteCmd.Flags().BoolVarP(&forceDelete, "yes", "y", false, "uninstall the plugin without asking for confirmation")
+
+	deleteCmd.Flags().StringVarP(&targetStr, "target", "t", "", targetFlagDesc)
+	utils.PanicOnErr(deleteCmd.RegisterFlagCompletionFunc("target", completeTargetsForInstalledPlugins))
+
 	return deleteCmd
 }
 

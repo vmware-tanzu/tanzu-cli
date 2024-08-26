@@ -16,7 +16,7 @@ import (
 func Test_runCompletion_MissingArg(t *testing.T) {
 	var out bytes.Buffer
 	var args []string
-	err := runCompletion(&out, completionCmd, args)
+	err := runCompletion(&out, newCompletionCmd(), args)
 	if err == nil {
 		t.Error("Missing shell argument should have resulted in an error")
 	}
@@ -34,7 +34,7 @@ func Test_runCompletion_MissingArg(t *testing.T) {
 func Test_runCompletion_InvalidArg(t *testing.T) {
 	var out bytes.Buffer
 	args := []string{"cmd.exe"}
-	err := runCompletion(&out, completionCmd, args)
+	err := runCompletion(&out, newCompletionCmd(), args)
 	if err == nil {
 		t.Error("Invalid shell argument should have resulted in an error")
 	}
@@ -52,7 +52,7 @@ func Test_runCompletion_InvalidArg(t *testing.T) {
 func Test_runCompletion_WrongArgs(t *testing.T) {
 	var out bytes.Buffer
 	args := []string{"bash", "zsh"}
-	err := runCompletion(&out, completionCmd, args)
+	err := runCompletion(&out, newCompletionCmd(), args)
 	if err == nil {
 		t.Error("Invalid shell argument should have resulted in an error")
 	}
@@ -70,7 +70,7 @@ func Test_runCompletion_WrongArgs(t *testing.T) {
 func Test_runCompletion_Bash(t *testing.T) {
 	var out bytes.Buffer
 	args := []string{"bash"}
-	err := runCompletion(&out, completionCmd, args)
+	err := runCompletion(&out, newCompletionCmd(), args)
 	if err != nil {
 		t.Errorf("Unexpected error for valid shell: %v", err)
 	}
@@ -86,7 +86,7 @@ func Test_runCompletion_Bash(t *testing.T) {
 func Test_runCompletion_Zsh(t *testing.T) {
 	var out bytes.Buffer
 	args := []string{"zsh"}
-	err := runCompletion(&out, completionCmd, args)
+	err := runCompletion(&out, newCompletionCmd(), args)
 	if err != nil {
 		t.Errorf("Unexpected error for valid shell: %v", err)
 	}
@@ -101,7 +101,7 @@ func Test_runCompletion_Zsh(t *testing.T) {
 func Test_runCompletion_Fish(t *testing.T) {
 	var out bytes.Buffer
 	args := []string{"fish"}
-	err := runCompletion(&out, completionCmd, args)
+	err := runCompletion(&out, newCompletionCmd(), args)
 	if err != nil {
 		t.Errorf("Unexpected error for valid shell: %v", err)
 	}
@@ -116,7 +116,7 @@ func Test_runCompletion_Fish(t *testing.T) {
 func Test_runCompletion_Pwsh(t *testing.T) {
 	var out bytes.Buffer
 	args := []string{"powershell"}
-	err := runCompletion(&out, completionCmd, args)
+	err := runCompletion(&out, newCompletionCmd(), args)
 	if err != nil {
 		t.Errorf("Unexpected error for valid shell: %v", err)
 	}
