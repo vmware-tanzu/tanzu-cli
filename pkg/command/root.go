@@ -185,6 +185,7 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 	remapCommandTree(rootCmd, plugins)
 	updateTargetCommandGroupVisibility()
 	updateConfigWithTanzuCSPIssuer(csp.GetIssuerUpdateFlagFromCentralConfig, datastore.GetDataStoreValue)
+	updateConfigWithTanzuPlatformEndpointChanges()
 
 	if len(maskedPluginsWithPluginOverlap) > 0 {
 		catalog.DeleteIncorrectPluginEntriesFromCatalog()
