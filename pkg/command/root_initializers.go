@@ -68,12 +68,12 @@ func updateConfigWithTanzuPlatformEndpointChanges() {
 	}
 }
 
-// isValidContextForEndpointUpdates validates if the specified context is valid tanzu context or not
+// isValidContextForEndpointUpdates validates if the specified context is valid tanzu/tmc context or not
 func isValidContextForEndpointUpdates(ctx *configtypes.Context) bool {
-	if ctx == nil || ctx.ContextType == configtypes.ContextTypeK8s {
-		return false
+	if ctx != nil && (ctx.ContextType == configtypes.ContextTypeTanzu || ctx.ContextType == configtypes.ContextTypeTMC) {
+		return true
 	}
-	return true
+	return false
 }
 
 // updateEndpointsInTanzuContext replaces the old endpoint to the new endpoint if the match is found
