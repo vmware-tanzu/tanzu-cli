@@ -21,10 +21,13 @@ func (c *centralConfigYamlReader) GetTanzuPlatformEndpointToServiceEndpointMap()
 
 // GetTanzuPlatformSaaSEndpointList returns list of tanzu platform saas endpoints which can be a regular
 // expression. When comparing the result please make sure to use regex match instead of string comparison
-func (c *centralConfigYamlReader) GetTanzuPlatformSaaSEndpointList() ([]string, error) {
+func (c *centralConfigYamlReader) GetTanzuPlatformSaaSEndpointList() []string {
 	saasEndpointList := []string{}
 	err := c.GetCentralConfigEntry(KeyTanzuPlatformSaaSEndpointsAsRegularExpression, &saasEndpointList)
-	return saasEndpointList, err
+	if err != nil {
+		return defaultSaaSEndpoints
+	}
+	return saasEndpointList
 }
 
 // GetTanzuConfigEndpointUpdateVersion returns current version for the local configuration file update

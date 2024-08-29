@@ -1114,7 +1114,7 @@ var _ = Describe("create new context", func() {
 
 				// Mock the default central configuration reader
 				fakeDefaultCentralConfigReader := fakes.CentralConfig{}
-				fakeDefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointListReturns([]string{fakeTanzuEndpoint}, nil)
+				fakeDefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointListReturns([]string{fakeTanzuEndpoint})
 				fakeDefaultCentralConfigReader.GetTanzuPlatformEndpointToServiceEndpointMapReturns(centralconfig.TanzuPlatformEndpointToServiceEndpointMap{}, nil)
 				centralconfig.DefaultCentralConfigReader = &fakeDefaultCentralConfigReader
 			})

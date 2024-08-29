@@ -171,13 +171,11 @@ func TestGetTanzuPlatformSaaSEndpointList(t *testing.T) {
 		name            string
 		cfgContent      string
 		tpSaaSEndpoints []string
-		expectError     bool
 	}{
 		{
-			name:            "when saas endpoint list does not exist",
+			name:            "when saas endpoint list does not exist, it should return default endpoints from local variable",
 			cfgContent:      "",
-			tpSaaSEndpoints: []string{},
-			expectError:     true,
+			tpSaaSEndpoints: defaultSaaSEndpoints,
 		},
 		{
 			name: "when saas endpoint list exists",
@@ -188,16 +186,14 @@ cli.core.tanzu_cli_platform_saas_endpoints_as_regular_expression:
   - https://api.tanzu*.example.com
 `,
 			tpSaaSEndpoints: []string{"https://platform*.fake.example.com", "https://api.fake.example.com", "https://api.tanzu*.example.com"},
-			expectError:     false,
 		},
 		{
-			name: "when saas endpoint list exists but the format is different and cannot be parsed",
+			name: "when saas endpoint list exists but the format is different and cannot be parsed, it should return default endpoints from local variable",
 			cfgContent: `
 cli.core.tanzu_cli_platform_saas_endpoints_as_regular_expression:
   https://platform*.fake.example.com
 `,
-			tpSaaSEndpoints: []string{},
-			expectError:     true,
+			tpSaaSEndpoints: defaultSaaSEndpoints,
 		},
 	}
 
@@ -217,13 +213,7 @@ cli.core.tanzu_cli_platform_saas_endpoints_as_regular_expression:
 			err = os.WriteFile(path, []byte(tc.cfgContent), 0644)
 			assert.Nil(t, err)
 
-			tpSaaSEndpoints, err := reader.GetTanzuPlatformSaaSEndpointList()
-			if tc.expectError {
-				assert.NotNil(t, err)
-			} else {
-				assert.Nil(t, err)
-			}
-
+			tpSaaSEndpoints := reader.GetTanzuPlatformSaaSEndpointList()
 			assert.Equal(t, tc.tpSaaSEndpoints, tpSaaSEndpoints)
 		})
 	}

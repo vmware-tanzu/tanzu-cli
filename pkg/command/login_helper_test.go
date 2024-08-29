@@ -121,7 +121,7 @@ func TestConfigureTanzuPlatformServiceEndpoints(t *testing.T) {
 			}()
 
 			fakeDefaultCentralConfigReader := fakes.CentralConfig{}
-			fakeDefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointListReturns(tt.saasEndpointListInCC, nil)
+			fakeDefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointListReturns(tt.saasEndpointListInCC)
 			fakeDefaultCentralConfigReader.GetTanzuPlatformEndpointToServiceEndpointMapReturns(tt.saasEndpointToServiceEndpointMapInCC, nil)
 			centralconfig.DefaultCentralConfigReader = &fakeDefaultCentralConfigReader
 
@@ -191,7 +191,7 @@ func TestIsTanzuPlatformSaaSEndpoint(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fakeDefaultCentralConfigReader := fakes.CentralConfig{}
-			fakeDefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointListReturns(tt.saasEndpointListInCentralConfig, nil)
+			fakeDefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointListReturns(tt.saasEndpointListInCentralConfig)
 			centralconfig.DefaultCentralConfigReader = &fakeDefaultCentralConfigReader
 
 			actual := isTanzuPlatformSaaSEndpoint(tt.tpEndpoint)

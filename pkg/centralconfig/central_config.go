@@ -30,7 +30,7 @@ type CentralConfig interface {
 	GetTanzuPlatformEndpointToServiceEndpointMap() (TanzuPlatformEndpointToServiceEndpointMap, error)
 	// GetTanzuPlatformSaaSEndpointList returns list of tanzu platform saas endpoints which can be a regular
 	// expression. When comparing the result please make sure to use regex match instead of string comparison
-	GetTanzuPlatformSaaSEndpointList() ([]string, error)
+	GetTanzuPlatformSaaSEndpointList() []string
 	// GetTanzuConfigEndpointUpdateVersion returns current version for the local configuration file update
 	// If the version specified here does not match with the local version stored in the datastore that means
 	// the local configuration file endpoint updates are required

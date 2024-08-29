@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig/fakes"
 )
 
 func TestPrepareTanzuContextName(t *testing.T) {
@@ -58,6 +59,10 @@ func TestPrepareTanzuContextName(t *testing.T) {
 
 	for _, tc := range testCases {
 		forceCSP = tc.forceCSP
+		fakeDefaultCentralConfigReader := fakes.CentralConfig{}
+		fakeDefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointListReturns([]string{centralconfig.DefaultTanzuPlatformEndpoint})
+		centralconfig.DefaultCentralConfigReader = &fakeDefaultCentralConfigReader
+
 		actual := prepareTanzuContextName(tc.orgName, tc.endpoint, tc.isStaging)
 		if actual != tc.expected {
 			t.Errorf("orgName: %s, endpoint: %s, isStaging: %t - expected: %s, got: %s", tc.orgName, tc.endpoint, tc.isStaging, tc.expected, actual)
