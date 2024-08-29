@@ -98,8 +98,10 @@ const (
 	// TPKubernetesOpsEndpoint specifies kubernetes ops endpoint for the Tanzu Platform
 	// This will be used as part of `tanzu login`
 	TPKubernetesOpsEndpoint = "TANZU_CLI_K8S_OPS_ENDPOINT"
-
 	// TPHubEndpoint specifies hub endpoint for the Tanzu Platform
 	// This will be used as part of `tanzu login`
 	TPHubEndpoint = "TANZU_CLI_HUB_ENDPOINT"
+	// TPUCPEndpoint specifies UCP endpoint for the Tanzu Platform
+	// This will be used as part of `tanzu login`
+	TPUCPEndpoint = "TANZU_CLI_UCP_ENDPOINT"
 )

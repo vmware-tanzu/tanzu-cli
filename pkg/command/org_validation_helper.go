@@ -11,12 +11,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
-	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 )
 
@@ -63,16 +61,9 @@ func validateTokenForTAPScopes(claims *csp.Claims, scopesGetter tapScopesGetter)
 }
 
 func getTAPScopesFromCentralConfig() ([]string, error) {
-	// We will get the central configuration from the default discovery source
-	discoverySource, err := config.GetCLIDiscoverySource(cliconfig.DefaultStandaloneDiscoveryName)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get the Tanzu Platform for Kubernetes scopes from the central configuration
-	reader := centralconfig.NewCentralConfigReader(discoverySource)
+	// Get the Tanzu Platform for Kubernetes scopes from the default central configuration
 	var tapScopes []tapScope
-	err = reader.GetCentralConfigEntry(centralConfigTanzuApplicationPlatformScopesKey, &tapScopes)
+	err := centralconfig.DefaultCentralConfigReader.GetCentralConfigEntry(centralConfigTanzuApplicationPlatformScopesKey, &tapScopes)
 	if err != nil {
 		// If the key is not found in the central config, it does not return an error because some central repositories
 		// may choose not to have a central config file.

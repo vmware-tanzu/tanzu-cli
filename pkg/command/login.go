@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/google/uuid"
@@ -17,6 +18,7 @@ import (
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
 )
@@ -35,8 +37,8 @@ func newLoginCmd() *cobra.Command {
 		RunE:              login,
 	}
 
-	// "endpoint" variable from context.go cannot be used as default value varies for login command
-	loginCmd.Flags().StringVar(&loginEndpoint, "endpoint", "https://api.tanzu.cloud.vmware.com", "endpoint to login to")
+	// "endpoint" variable from context.go cannot be used as default value varies for login command hence using "loginEndpoint" variable
+	loginCmd.Flags().StringVar(&loginEndpoint, "endpoint", centralconfig.DefaultTanzuPlatformEndpoint, "endpoint to login to")
 	utils.PanicOnErr(loginCmd.RegisterFlagCompletionFunc("endpoint", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return cobra.AppendActiveHelp(nil, "Please enter the endpoint for which to create the context"), cobra.ShellCompDirectiveNoFileComp
 	}))
@@ -47,11 +49,9 @@ func newLoginCmd() *cobra.Command {
 	loginCmd.Flags().BoolVar(&staging, "staging", false, "use CSP staging issuer")
 	loginCmd.Flags().StringVar(&endpointCACertPath, "endpoint-ca-certificate", "", "path to the endpoint public certificate")
 	loginCmd.Flags().BoolVar(&skipTLSVerify, "insecure-skip-tls-verify", false, "skip endpoint's TLS certificate verification")
-	loginCmd.Flags().StringVar(&tanzuHubEndpoint, "tanzu-hub-endpoint", "", "customize the Tanzu Hub endpoint associated with the context")
 
 	utils.PanicOnErr(loginCmd.Flags().MarkHidden("api-token"))
 	utils.PanicOnErr(loginCmd.Flags().MarkHidden("staging"))
-	utils.PanicOnErr(loginCmd.Flags().MarkHidden("tanzu-hub-endpoint"))
 	loginCmd.SetUsageFunc(cli.SubCmdUsageFunc)
 	loginCmd.MarkFlagsMutuallyExclusive("endpoint-ca-certificate", "insecure-skip-tls-verify")
 
@@ -137,17 +137,36 @@ func getString(data interface{}) string {
 
 // prepareTanzuContextName returns the context name given organization name,endpoint and staging details
 // pre-req orgName and endpoint is non-empty string
-func prepareTanzuContextName(orgName, endpoint string, isStaging bool) string {
+func prepareTanzuContextName(orgName, ucpEndpoint string, isStaging bool) string {
 	contextName := strings.Replace(orgName, " ", "_", -1)
 	if isStaging {
 		contextName += "-staging"
 	}
 
-	if endpoint != defaultTanzuEndpoint {
+	// If the ucpEndpoint is a subdomain of the default TanzuPlatformEndpoint consider it as default
+	// endpoint and do not add suffix. If not add suffix based on the ucpEndpoint
+	if !isSubdomain(centralconfig.DefaultTanzuPlatformEndpoint, ucpEndpoint) {
 		// append just 8 chars of sha to the context name
-		contextName += fmt.Sprintf("-%s", hashString(endpoint)[:8])
+		contextName += fmt.Sprintf("-%s", hashString(ucpEndpoint)[:8])
 	}
 	return contextName
+}
+
+func isSubdomain(parent, child string) bool {
+	// Parse the URLs
+	parentURL, err := url.Parse(parent)
+	if err != nil {
+		return false
+	}
+	childURL, err := url.Parse(child)
+	if err != nil {
+		return false
+	}
+	if parentURL.Scheme != childURL.Scheme {
+		return false
+	}
+	// Compare the host parts and path parts
+	return (parentURL.Host == childURL.Host || strings.HasSuffix(childURL.Host, parentURL.Host)) && parentURL.Path == childURL.Path
 }
 
 func hashString(str string) string {

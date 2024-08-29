@@ -18,11 +18,9 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/buildinfo"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
-	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/datastore"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -50,16 +48,9 @@ func CheckRecommendedCLIVersion(cmd *cobra.Command) {
 		return
 	}
 
-	// We will get the central configuration from the default discovery source
-	discoverySource, err := config.GetCLIDiscoverySource(cliconfig.DefaultStandaloneDiscoveryName)
-	if err != nil {
-		return
-	}
-
-	// Get the recommended versions from the central configuration
-	reader := centralconfig.NewCentralConfigReader(discoverySource)
+	// Get the recommended versions from the default central configuration
 	var versionStruct []RecommendedVersion
-	err = reader.GetCentralConfigEntry(centralConfigRecommendedVersionsKey, &versionStruct)
+	err := centralconfig.DefaultCentralConfigReader.GetCentralConfigEntry(centralConfigRecommendedVersionsKey, &versionStruct)
 	if err != nil {
 		log.V(7).Error(err, "error reading recommended versions from central config")
 		return

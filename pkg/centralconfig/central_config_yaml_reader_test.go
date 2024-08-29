@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 var (
@@ -249,12 +248,7 @@ func TestGetCentralConfigEntry(t *testing.T) {
 
 	common.DefaultCacheDir = dir
 
-	reader := NewCentralConfigReader(&types.PluginDiscovery{
-		OCI: &types.OCIDiscovery{
-			Name:  "my_discovery",
-			Image: "image",
-		},
-	})
+	reader := newCentralConfigReader("my_discovery")
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {

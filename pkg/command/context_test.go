@@ -24,6 +24,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig/fakes"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
@@ -932,13 +934,15 @@ type ContextListInfo struct {
 
 var _ = Describe("create new context", func() {
 	const (
-		existingContext      = "test-mc"
-		testKubeContext      = "test-k8s-context"
-		testKubeConfigPath   = "/fake/path/kubeconfig"
-		testContextName      = "fake-context-name"
-		fakeTMCEndpoint      = "tmc.cloud.vmware.com:443"
-		fakeTanzuEndpoint    = "https://fake.api.tanzu.cloud.vmware.com"
-		fakeTanzuHubEndpoint = "https://fake.api.tanzu.hub.vmware.com"
+		existingContext          = "test-mc"
+		testKubeContext          = "test-k8s-context"
+		testKubeConfigPath       = "/fake/path/kubeconfig"
+		testContextName          = "fake-context-name"
+		fakeTMCEndpoint          = "tmc.cloud.vmware.com:443"
+		fakeTanzuEndpoint        = "https://fake.tanzu.cloud.vmware.com"
+		expectedTanzuHubEndpoint = "https://api.fake.tanzu.cloud.vmware.com/hub"
+		expectedTanzuUCPEndpoint = "https://ucp.fake.tanzu.cloud.vmware.com"
+		expectedTanzuTMCEndpoint = "https://ops.fake.tanzu.cloud.vmware.com"
 	)
 	var (
 		tkgConfigFile   *os.File
@@ -1099,6 +1103,15 @@ var _ = Describe("create new context", func() {
 				os.Setenv("TANZU_CONFIG_NEXT_GEN", tkgConfigFileNG.Name())
 				err = copy.Copy(filepath.Join("..", "fakes", "config", "tanzu_config_ng.yaml"), tkgConfigFileNG.Name())
 				Expect(err).To(BeNil(), "Error while copying tanzu config_ng file for testing")
+
+				// Reset the variables before running tests
+				tanzuHubEndpoint, tanzuUCPEndpoint, tanzuTMCEndpoint = "", "", ""
+
+				// Mock the default central configuration reader
+				fakeDefaultCentralConfigReader := fakes.CentralConfig{}
+				fakeDefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointListReturns([]string{fakeTanzuEndpoint}, nil)
+				fakeDefaultCentralConfigReader.GetTanzuPlatformEndpointToServiceEndpointMapReturns(centralconfig.TanzuPlatformEndpointToServiceEndpointMap{}, nil)
+				centralconfig.DefaultCentralConfigReader = &fakeDefaultCentralConfigReader
 			})
 			AfterEach(func() {
 				os.Unsetenv("TANZU_CONFIG")
@@ -1114,21 +1127,10 @@ var _ = Describe("create new context", func() {
 					ctx, err = createNewContext()
 					Expect(err).To(BeNil())
 					Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
-					Expect(string(ctx.ContextType)).To(ContainSubstring(contextTypeTanzu))
-					Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
-				})
-			})
-			Context("with endpoint, tanzuHubEndpoint and context name provided", func() {
-				It("should create context with given endpoint and context name", func() {
-					endpoint = fakeTanzuEndpoint
-					tanzuHubEndpoint = fakeTanzuHubEndpoint
-					ctxName = testContextName
-					ctx, err = createNewContext()
-					Expect(err).To(BeNil())
-					Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
-					Expect(string(ctx.ContextType)).To(ContainSubstring(contextTypeTanzu))
-					Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
-					Expect(ctx.AdditionalMetadata[config.TanzuHubEndpointKey].(string)).To(ContainSubstring(tanzuHubEndpoint))
+					Expect(string(ctx.ContextType)).To(Equal(contextTypeTanzu))
+					Expect(ctx.GlobalOpts.Endpoint).To(Equal(expectedTanzuUCPEndpoint))
+					Expect(ctx.AdditionalMetadata[config.TanzuHubEndpointKey].(string)).To(Equal(expectedTanzuHubEndpoint))
+					Expect(ctx.AdditionalMetadata[config.TanzuMissionControlEndpointKey].(string)).To(Equal(expectedTanzuTMCEndpoint))
 				})
 			})
 			Context("context name already exists", func() {
@@ -1863,57 +1865,6 @@ func resetContextCommandFlags() {
 	contextTypeStr = ""
 	outputFormat = ""
 	shortCtx = false
-}
-
-func TestMapTanzuEndpointToTMCEndpoint(t *testing.T) {
-	testCases := []struct {
-		input    string
-		expected string
-	}{
-		{
-			input:    "https://api.tanzu-dev.cloud.vmware.com",
-			expected: "https://tmc.tanzu-dev.cloud.vmware.com",
-		},
-		{
-			input:    "https://api.tanzu-stable.cloud.vmware.com",
-			expected: "https://tmc.tanzu-stable.cloud.vmware.com",
-		},
-		{
-			input:    "https://api.tanzu.cloud.vmware.com",
-			expected: "https://tmc.tanzu.cloud.vmware.com",
-		},
-		{
-			input:    "https://ucp.platform.tanzu.broadcom.com",
-			expected: "https://ops.platform.tanzu.broadcom.com",
-		},
-		{
-			input:    "https://ucp.platform-dev.tanzu.broadcom.com",
-			expected: "https://ops.platform-dev.tanzu.broadcom.com",
-		},
-		{
-			input:    "https://ucp.platform-verify.tanzu.broadcom.com",
-			expected: "https://ops.platform-verify.tanzu.broadcom.com",
-		},
-		{
-			input:    "https://symphony.api.tanzu.cloud.vmware.com",
-			expected: "",
-		},
-		{
-			input:    "https://random.tanzu.cloud.vmware.com",
-			expected: "",
-		},
-		{
-			input:    "https://random.foo.com",
-			expected: "",
-		},
-	}
-
-	for _, tc := range testCases {
-		result := mapTanzuEndpointToTMCEndpoint(tc.input)
-		if result != tc.expected {
-			t.Errorf("For input %s, expected %s, but got %s", tc.input, tc.expected, result)
-		}
-	}
 }
 
 func TestCreateContextWithTanzuTypeAndKubeconfigFlags(t *testing.T) {
