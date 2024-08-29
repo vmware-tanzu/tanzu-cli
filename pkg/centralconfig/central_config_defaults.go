@@ -8,6 +8,11 @@ var (
 	// It serves as a fallback default only if reading the central configuration fails.
 	DefaultTanzuPlatformEndpoint = "https://api.tanzu.cloud.vmware.com"
 
+	defaultSaaSEndpoints = []string{
+		"https://(www.)?platform(.)*.tanzu.broadcom.com",
+		"https://api.tanzu(.)*.cloud.vmware.com",
+	}
+
 	// DefaultCentralConfigReader is a pre-initialized default central configuration reader instance.
 	// This global object can be used directly to read configuration from the default central configuration.
 	DefaultCentralConfigReader = newDefaultCentralConfigReader()

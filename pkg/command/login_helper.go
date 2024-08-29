@@ -110,16 +110,8 @@ func isTanzuPlatformSaaSEndpoint(tpEndpoint string) bool {
 		return false
 	}
 
-	defaultSaaSEndpoints := []string{
-		"https://(www.)?platform(.)*.tanzu.broadcom.com",
-		"https://api.tanzu(.)*.cloud.vmware.com",
-	}
-	saasEndpointRegularExpressions, _ := centralconfig.DefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointList()
-	saasEndpointRegularExpressions = append(saasEndpointRegularExpressions, defaultSaaSEndpoints...)
+	saasEndpointRegularExpressions := centralconfig.DefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointList()
 	for _, endpointRegex := range saasEndpointRegularExpressions {
-		if endpointRegex == "" {
-			continue
-		}
 		// Create a regular expression pattern
 		re, err := regexp.Compile(endpointRegex)
 		if err != nil {

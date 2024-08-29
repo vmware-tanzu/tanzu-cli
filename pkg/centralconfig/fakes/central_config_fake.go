@@ -68,17 +68,15 @@ type CentralConfig struct {
 		result1 centralconfig.TanzuPlatformEndpointToServiceEndpointMap
 		result2 error
 	}
-	GetTanzuPlatformSaaSEndpointListStub        func() ([]string, error)
+	GetTanzuPlatformSaaSEndpointListStub        func() []string
 	getTanzuPlatformSaaSEndpointListMutex       sync.RWMutex
 	getTanzuPlatformSaaSEndpointListArgsForCall []struct {
 	}
 	getTanzuPlatformSaaSEndpointListReturns struct {
 		result1 []string
-		result2 error
 	}
 	getTanzuPlatformSaaSEndpointListReturnsOnCall map[int]struct {
 		result1 []string
-		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -370,7 +368,7 @@ func (fake *CentralConfig) GetTanzuPlatformEndpointToServiceEndpointMapReturnsOn
 	}{result1, result2}
 }
 
-func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointList() ([]string, error) {
+func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointList() []string {
 	fake.getTanzuPlatformSaaSEndpointListMutex.Lock()
 	ret, specificReturn := fake.getTanzuPlatformSaaSEndpointListReturnsOnCall[len(fake.getTanzuPlatformSaaSEndpointListArgsForCall)]
 	fake.getTanzuPlatformSaaSEndpointListArgsForCall = append(fake.getTanzuPlatformSaaSEndpointListArgsForCall, struct {
@@ -383,9 +381,9 @@ func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointList() ([]string, error) 
 		return stub()
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1
 	}
-	return fakeReturns.result1, fakeReturns.result2
+	return fakeReturns.result1
 }
 
 func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointListCallCount() int {
@@ -394,36 +392,33 @@ func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointListCallCount() int {
 	return len(fake.getTanzuPlatformSaaSEndpointListArgsForCall)
 }
 
-func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointListCalls(stub func() ([]string, error)) {
+func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointListCalls(stub func() []string) {
 	fake.getTanzuPlatformSaaSEndpointListMutex.Lock()
 	defer fake.getTanzuPlatformSaaSEndpointListMutex.Unlock()
 	fake.GetTanzuPlatformSaaSEndpointListStub = stub
 }
 
-func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointListReturns(result1 []string, result2 error) {
+func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointListReturns(result1 []string) {
 	fake.getTanzuPlatformSaaSEndpointListMutex.Lock()
 	defer fake.getTanzuPlatformSaaSEndpointListMutex.Unlock()
 	fake.GetTanzuPlatformSaaSEndpointListStub = nil
 	fake.getTanzuPlatformSaaSEndpointListReturns = struct {
 		result1 []string
-		result2 error
-	}{result1, result2}
+	}{result1}
 }
 
-func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointListReturnsOnCall(i int, result1 []string, result2 error) {
+func (fake *CentralConfig) GetTanzuPlatformSaaSEndpointListReturnsOnCall(i int, result1 []string) {
 	fake.getTanzuPlatformSaaSEndpointListMutex.Lock()
 	defer fake.getTanzuPlatformSaaSEndpointListMutex.Unlock()
 	fake.GetTanzuPlatformSaaSEndpointListStub = nil
 	if fake.getTanzuPlatformSaaSEndpointListReturnsOnCall == nil {
 		fake.getTanzuPlatformSaaSEndpointListReturnsOnCall = make(map[int]struct {
 			result1 []string
-			result2 error
 		})
 	}
 	fake.getTanzuPlatformSaaSEndpointListReturnsOnCall[i] = struct {
 		result1 []string
-		result2 error
-	}{result1, result2}
+	}{result1}
 }
 
 func (fake *CentralConfig) Invocations() map[string][][]interface{} {
