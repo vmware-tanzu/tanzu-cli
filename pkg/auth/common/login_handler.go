@@ -7,6 +7,8 @@ import (
 	"bufio"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"html"
 	"io"
@@ -27,6 +29,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -55,6 +58,8 @@ type TanzuLoginHandler struct {
 	isTTY                 func(int) bool
 	idpType               config.IdpType
 	callbackHandlerMutex  sync.Mutex
+	tlsSkipVerify         bool
+	caCertData            string
 }
 
 // LoginOption is an optional configuration for Login().
@@ -104,6 +109,15 @@ func WithRefreshToken(refreshToken string) LoginOption {
 func WithOrgID(orgID string) LoginOption {
 	return func(h *TanzuLoginHandler) error {
 		h.orgID = orgID
+		return nil
+	}
+}
+
+// WithCertInfo customizes cert verification information
+func WithCertInfo(tlsSkipVerify bool, caCertData string) LoginOption {
+	return func(h *TanzuLoginHandler) error {
+		h.tlsSkipVerify = tlsSkipVerify
+		h.caCertData = caCertData
 		return nil
 	}
 }
@@ -165,6 +179,51 @@ func (h *TanzuLoginHandler) getTokenWithRefreshToken() (*Token, error) {
 	}, nil
 }
 
+// Create or update the cert map entry for the issuer if necessary
+func (h *TanzuLoginHandler) updateCertMap() {
+	// explicitly provided cert info was successfully used to authenticate, so as a
+	// best-effort: save them in the cert map for convenience if necessary
+	if h.tlsSkipVerify || h.caCertData != "" {
+		u, err := url.Parse(h.issuer)
+		if err != nil {
+			fmt.Printf("Unable to parse issuer %s: %v\n", h.issuer, err)
+			return
+		}
+		host := u.Hostname()
+		if host == "" {
+			host = h.issuer
+		}
+
+		var cert *configtypes.Cert
+		found, _ := config.GetCert(host)
+
+		tlsSkipVerifyStr := strconv.FormatBool(h.tlsSkipVerify)
+		if found != nil {
+			if found.CACertData != h.caCertData || found.SkipCertVerify != tlsSkipVerifyStr {
+				cert = &configtypes.Cert{
+					Host:           host,
+					CACertData:     h.caCertData,
+					SkipCertVerify: tlsSkipVerifyStr,
+					Insecure:       found.Insecure,
+				}
+				err = config.SetCert(cert)
+				if err != nil {
+					log.Infof("Unable to update cert info: %v\n", err)
+				}
+			}
+		} else {
+			cert = &configtypes.Cert{
+				Host:           host,
+				CACertData:     h.caCertData,
+				SkipCertVerify: tlsSkipVerifyStr,
+			}
+			if err = config.SetCert(cert); err != nil {
+				log.Infof("Unable to create cert info: %v\n", err)
+			}
+		}
+	}
+}
+
 func (h *TanzuLoginHandler) browserLogin() (*Token, error) {
 	var err error
 	if h.pkceCodePair, err = pkce.Generate(); err != nil {
@@ -213,6 +272,9 @@ func (h *TanzuLoginHandler) browserLogin() (*Token, error) {
 	if h.token == nil || h.token.Extra("id_token").(string) == "" {
 		return nil, errors.Errorf("token issuer %s did not return expected tokens", h.issuer)
 	}
+
+	h.updateCertMap()
+
 	return &Token{
 		IDToken:      h.token.Extra("id_token").(string),
 		AccessToken:  h.token.AccessToken,
@@ -366,21 +428,78 @@ func (h *TanzuLoginHandler) promptAndLoginWithAuthCode(ctx context.Context, auth
 	return wg.Wait
 }
 
-func (h *TanzuLoginHandler) getTokenUsingAuthCode(ctx context.Context, code string) (*oauth2.Token, error) {
-	// TODO(vuil) support custom CA cert for UAA
-	if h.idpType == config.UAAIdpType {
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, //nolint:gosec // to update
+// Returns custom TLS configuration if explicitly provided to the handler,
+// of if persisted cert information associated with the issuer endpoint is found,
+// with the provided information taking precedence over persisted information.
+func (h *TanzuLoginHandler) getTLSConfig() *tls.Config {
+	var savedCertData string
+	var savedSkipVerify bool
+
+	c, _ := config.GetCert(h.issuer)
+
+	if c != nil {
+		savedCertData = c.CACertData
+		savedSkipVerify, _ = strconv.ParseBool(c.SkipCertVerify)
+	}
+
+	if savedSkipVerify || h.tlsSkipVerify {
+		//nolint:gosec // skipTLSVerify: true is only possible if the user has explicitly enabled it
+		return &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS12}
+	}
+
+	caCertData := savedCertData
+	if h.caCertData != "" {
+		caCertData = h.caCertData
+	}
+
+	if caCertData != "" {
+		var pool *x509.CertPool
+		var err error
+
+		decodedCACertData, err := base64.StdEncoding.DecodeString(caCertData)
+		if err != nil {
+			log.Infof("unable to use custom cert for '%s' endpoint. Error: %s", h.issuer, err.Error())
+			return nil
 		}
-		sslcli := &http.Client{Transport: tr}
-		ctx = context.WithValue(ctx, oauth2.HTTPClient, sslcli)
+
+		pool, err = x509.SystemCertPool()
+		if err != nil || pool == nil {
+			pool = x509.NewCertPool()
+		}
+
+		if ok := pool.AppendCertsFromPEM(decodedCACertData); !ok {
+			log.Infof("unable to use custom cert for %s endpoint", h.issuer)
+			return nil
+		}
+		return &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}
+	}
+
+	return nil
+}
+
+func (h *TanzuLoginHandler) getTokenUsingAuthCode(ctx context.Context, code string) (*oauth2.Token, error) {
+	if h.idpType == config.UAAIdpType {
+		tlsConfig := h.getTLSConfig()
+		if tlsConfig != nil {
+			tr := http.DefaultTransport.(*http.Transport).Clone()
+			tr.TLSClientConfig = tlsConfig
+
+			sslcli := &http.Client{Transport: tr}
+			ctx = context.WithValue(ctx, oauth2.HTTPClient, sslcli)
+		}
 	}
 
 	token, err := h.oauthConfig.Exchange(ctx, code, h.pkceCodePair.Verifier())
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to exchange auth code for OAuth tokens, err=%v", err)
+		errString := err.Error()
+		errMsg := fmt.Sprintf("failed to exchange auth code for OAuth tokens, err=%s", errString)
+
+		println()
 		log.Info(errMsg)
-		return nil, errors.New(errMsg)
+		if strings.Contains(errString, "failed to verify certificate") {
+			log.Info("Consider using 'tanzu config cert add' to configure certificate verification settings")
+		}
+		return nil, err
 	}
 	return token, nil
 }
