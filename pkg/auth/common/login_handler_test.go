@@ -9,9 +9,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
@@ -215,5 +219,67 @@ func TestPromptAndLoginWithAuthCode(t *testing.T) {
 
 	if h.token != nil {
 		t.Error("promptAndLoginWithAuthCode set the token with context canceled while waiting for user input")
+	}
+}
+
+func TestUpdateCertMap(t *testing.T) {
+	assert := assert.New(t)
+	testCertHost := "test-host"
+
+	testCases := []struct {
+		originalSkipVerify string
+		originalCACertData string
+		providedCACertData string
+		providedSkipVerify bool
+		expectError        bool
+	}{
+		{
+			originalSkipVerify: "false",
+			originalCACertData: "",
+			providedSkipVerify: true,
+			providedCACertData: "DUMMYDATA",
+		},
+		{
+			originalSkipVerify: "false",
+			originalCACertData: "OLDDUMMYDATA",
+			providedSkipVerify: false,
+			providedCACertData: "DUMMYDATA",
+		},
+		{
+			originalSkipVerify: "true",
+			originalCACertData: "",
+			providedSkipVerify: false,
+			providedCACertData: "DUMMYDATA",
+		},
+	}
+
+	for _, tc := range testCases {
+		// set up cert entry if needed
+		if tc.originalSkipVerify != "false" || tc.originalCACertData != "" {
+			cert := &configtypes.Cert{
+				Host:           testCertHost,
+				CACertData:     tc.originalCACertData,
+				SkipCertVerify: tc.originalSkipVerify,
+			}
+			err := config.SetCert(cert)
+			assert.NoError(err)
+		}
+
+		lh := &TanzuLoginHandler{
+			issuer:        testCertHost,
+			tlsSkipVerify: tc.providedSkipVerify,
+			caCertData:    tc.providedCACertData,
+		}
+
+		lh.updateCertMap()
+
+		cert, err := config.GetCert(testCertHost)
+		assert.NoError(err)
+		assert.NotNil(cert)
+		assert.Equal(cert.CACertData, tc.providedCACertData)
+		assert.Equal(cert.SkipCertVerify, strconv.FormatBool(tc.providedSkipVerify))
+
+		err = config.DeleteCert(testCertHost)
+		assert.NoError(err)
 	}
 }

@@ -5,6 +5,7 @@ package command
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -823,6 +824,17 @@ func doInteractiveLoginAndUpdateContext(c *configtypes.Context, issuerURL string
 	if idpType == config.CSPIdpType {
 		token, err = csp.TanzuLogin(issuerURL, loginOptions...)
 	} else if idpType == config.UAAIdpType {
+		var endpointCACertData string
+		if endpointCACertPath != "" {
+			fileBytes, err := os.ReadFile(endpointCACertPath)
+			if err != nil {
+				return nil, errors.Wrapf(err, "error reading certificate file %s", endpointCACertPath)
+			}
+			endpointCACertData = base64.StdEncoding.EncodeToString(fileBytes)
+		}
+		if skipTLSVerify || endpointCACertData != "" {
+			loginOptions = append(loginOptions, commonauth.WithCertInfo(skipTLSVerify, endpointCACertData))
+		}
 		token, err = uaa.TanzuLogin(issuerURL, loginOptions...)
 	} else {
 		return nil, errors.New(invalidIdpType)
