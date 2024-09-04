@@ -58,6 +58,14 @@ const (
 	// https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-CF9E9318-B811-48CF-8499-9419997DC1F8.html
 	CSPLoginOrgID = "TANZU_CLI_CLOUD_SERVICES_ORGANIZATION_ID"
 
+	// UaaLoginOrgID overrides OrgID associated with the UAA based endpoint
+	// This may not be necessary or could be discoverable in the future, at which point this will be ignored.
+	UAALoginOrgID = "TANZU_CLI_SM_ORGANIZATION_ID"
+
+	// UaaLoginOrgName overrides name of the Org associated with the UAA based endpoint
+	// This may not be necessary or could be discoverable in the future, at which point this will be ignored.
+	UAALoginOrgName = "TANZU_CLI_SM_ORGANIZATION_NAME"
+
 	// TanzuCLIOAuthLocalListenerPort is the port to be used by local listener for OAuth authorization flow
 	TanzuCLIOAuthLocalListenerPort = "TANZU_CLI_OAUTH_LOCAL_LISTENER_PORT"
 

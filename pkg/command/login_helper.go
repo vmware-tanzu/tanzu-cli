@@ -95,7 +95,7 @@ func configureTanzuPlatformServiceEndpointsForSM(tpEndpoint string) error {
 
 	tanzuHubEndpoint = fmt.Sprintf("%s://%s/hub", u.Scheme, u.Host)
 	tanzuTMCEndpoint = fmt.Sprintf("%s://%s", u.Scheme, u.Host)
-	tanzuUCPEndpoint = fmt.Sprintf("%s://%s/ucp", u.Scheme, u.Host)
+	tanzuUCPEndpoint = fmt.Sprintf("%s://%s", u.Scheme, u.Host)
 	tanzuAuthEndpoint = fmt.Sprintf("%s://%s/auth", u.Scheme, u.Host)
 
 	return nil

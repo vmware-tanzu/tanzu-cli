@@ -942,7 +942,7 @@ var _ = Describe("create new context", func() {
 		fakeTanzuEndpoint                 = "https://fake.tanzu.cloud.vmware.com"
 		fakeAlternateTanzuEndpoint        = "https://fake.acme.com"
 		expectedAlternateTanzuHubEndpoint = "https://fake.acme.com/hub"
-		expectedAlternateTanzuUCPEndpoint = "https://fake.acme.com/ucp"
+		expectedAlternateTanzuUCPEndpoint = "https://fake.acme.com"
 		expectedAlternateTanzuTMCEndpoint = "https://fake.acme.com"
 
 		expectedTanzuHubEndpoint = "https://api.fake.tanzu.cloud.vmware.com/hub"
@@ -1156,7 +1156,6 @@ var _ = Describe("create new context", func() {
 					Expect(string(idpType)).To(ContainSubstring("uaa"))
 				})
 			})
-
 			Context("context name already exists", func() {
 				It("should return error", func() {
 					endpoint = fakeTanzuEndpoint
