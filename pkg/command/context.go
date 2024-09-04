@@ -656,8 +656,21 @@ func globalTanzuLoginUAA(c *configtypes.Context, generateContextNameFunc func(or
 		return err
 	}
 
-	// UAA-based authentication does not provide org id or name yet
-	orgName := ""
+	// UAA-based authentication does not provide org id or name yet.
+	// Note: org id/name may be discoverable in UAA-based auth in the future.
+	var orgID string
+	orgName := "self-managed"
+	uaaOrgIDValue, ok := os.LookupEnv(constants.UAALoginOrgID)
+	if ok {
+		orgID = uaaOrgIDValue
+	}
+	claims.OrgID = orgID
+	uaaOrgNameValue, ok := os.LookupEnv(constants.UAALoginOrgName)
+	if ok {
+		orgName = uaaOrgNameValue
+	} else if orgID != "" {
+		orgName = orgID
+	}
 
 	if err := updateContextOnTanzuLogin(c, generateContextNameFunc, claims, orgName); err != nil {
 		return err
