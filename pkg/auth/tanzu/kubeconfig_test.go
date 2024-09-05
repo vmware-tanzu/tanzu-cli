@@ -100,8 +100,11 @@ var _ = Describe("Unit tests for tanzu auth", func() {
 				Expect(cluster.Server).To(Equal(clusterAPIServerURL))
 				Expect(config.Contexts[kubeContext].AuthInfo).To(Equal(kubeconfigUserName(tanzuContext.Name)))
 				Expect(gotClusterName).To(Equal(kubeconfigClusterName(tanzuContext.Name)))
-				Expect(len(cluster.CertificateAuthorityData)).ToNot(Equal(0))
 				Expect(user.Exec).To(Equal(getExecConfig(tanzuContext)))
+
+				caCertBytes, err := os.ReadFile(fakeCAcertPath)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(caCertBytes).To(Equal(cluster.CertificateAuthorityData))
 			})
 		})
 		Context("When endpointCACertPath is not provided and skipTLSVerify is set to true", func() {
