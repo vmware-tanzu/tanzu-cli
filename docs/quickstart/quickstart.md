@@ -330,6 +330,11 @@ Prefixing the existing main prompt:
 PS1="$(tanzu context current --short) $PS1"
 # zsh
 PROMPT="$(tanzu context current --short) $PROMPT"
+# fish
+functions --copy fish_prompt fish_prompt_ori
+function fish_prompt
+  echo "$(tanzu context current --short) $(fish_prompt_ori)"
+end
 
 # Example result for a main prompt that was '$ '
 my-org:my-project:my-space $ _
@@ -342,6 +347,11 @@ Prefixing the existing main prompt but not showing the org-name:
 PS1="$(tanzu context current --short | cut -d: -f2-) $PS1"
 # zsh
 PROMPT="$(tanzu context current --short | cut -d: -f2-) $PROMPT"
+# fish
+functions --copy fish_prompt fish_prompt_ori
+function fish_prompt
+  echo "$(tanzu context current --short | cut -d: -f2-) $(fish_prompt_ori)"
+end
 
 # Example result for a main prompt that was '$ '
 my-project:my-space $ _
@@ -352,6 +362,10 @@ Setting the reverse prompt (not available for `bash`):
 ```console
 # zsh
 RPROMPT="<$(tanzu context current --short)>"
+# fish
+function fish_right_prompt
+  echo "<$(tanzu context current --short)>"
+end
 
 # Example result for a main prompt that was '$ '
 $ _                            <my-org:my-project:my-space>
