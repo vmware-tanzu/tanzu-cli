@@ -258,7 +258,8 @@ endpoint to the Tanzu Mission Control service, or providing a kubeconfig to
 an existing Tanzu Cluster as shown above.
 
 Note: The `tanzu context current --short` command prints a compact form of the current context.  This can be used
-in prompts to help users keep track of which context the tanzu CLI is currently interacting with.
+in prompts to help users keep track of which context the tanzu CLI is currently interacting with.  Some examples
+are shown [in a section below](#including-context-information-in-your-prompt).
 
 #### Creating a Tanzu Context
 
@@ -316,6 +317,45 @@ reference for more detail.
 
 Other plugins, such as the Tanzu `management-cluster` plugin, can create a
 context as part of creating a Tanzu cluster.
+
+#### Including context information in your prompt
+
+Here are a few examples of how to add the context information to your prompt.
+You can easily adapt these examples to your own taste.
+
+Prefixing the existing main prompt:
+
+```console
+# bash
+PS1="$(tanzu context current --short) $PS1"
+# zsh
+PROMPT="$(tanzu context current --short) $PROMPT"
+
+# Example result for a main prompt that was '$ '
+my-org:my-project:my-space $ _
+```
+
+Prefixing the existing main prompt but not showing the org-name:
+
+```console
+# bash
+PS1="$(tanzu context current --short | cut -d: -f2-) $PS1"
+# zsh
+PROMPT="$(tanzu context current --short | cut -d: -f2-) $PROMPT"
+
+# Example result for a main prompt that was '$ '
+my-project:my-space $ _
+```
+
+Setting the reverse prompt (not available for `bash`):
+
+```console
+# zsh
+RPROMPT="<$(tanzu context current --short)>"
+
+# Example result for a main prompt that was '$ '
+$ _                            <my-org:my-project:my-space>
+```
 
 ### Plugins can also be discovered and installed when connecting to a Context
 
