@@ -5,7 +5,6 @@
 package tanzu
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -30,19 +29,20 @@ const (
 
 // GetTanzuKubeconfig constructs and returns the kubeconfig that points to Tanzu Org and
 func GetTanzuKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertPath string, skipTLSVerify bool) (string, string, string, error) {
+	var clusterCACertDataBytes []byte
+	var err error
+
 	clusterAPIServerURL := strings.TrimSpace(endpoint)
 	if !strings.HasPrefix(clusterAPIServerURL, "https://") && !strings.HasPrefix(clusterAPIServerURL, "http://") {
 		clusterAPIServerURL = "https://" + clusterAPIServerURL
 	}
 	clusterAPIServerURL = clusterAPIServerURL + "/org/" + orgID
 
-	clusterCACertData := ""
 	if endpointCACertPath != "" {
-		fileBytes, err := os.ReadFile(endpointCACertPath)
+		clusterCACertDataBytes, err = os.ReadFile(endpointCACertPath)
 		if err != nil {
 			return "", "", "", errors.Wrapf(err, "error reading CA certificate file %s", endpointCACertPath)
 		}
-		clusterCACertData = base64.StdEncoding.EncodeToString(fileBytes)
 	}
 
 	contextName := kubeconfigContextName(c.Name)
@@ -53,7 +53,7 @@ func GetTanzuKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertP
 		Kind:       "Config",
 		APIVersion: clientcmdapi.SchemeGroupVersion.Version,
 		Clusters: map[string]*clientcmdapi.Cluster{clusterName: {
-			CertificateAuthorityData: []byte(clusterCACertData),
+			CertificateAuthorityData: clusterCACertDataBytes,
 			InsecureSkipTLSVerify:    skipTLSVerify,
 			Server:                   clusterAPIServerURL,
 		}},
@@ -62,7 +62,7 @@ func GetTanzuKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertP
 		CurrentContext: contextName,
 	}
 
-	kubeconfigByes, err := json.Marshal(kcfg)
+	kubeconfigBytes, err := json.Marshal(kcfg)
 	if err != nil {
 		return "", "", "", errors.Wrap(err, "failed to marshal the tanzu kubeconfig")
 	}
@@ -71,7 +71,7 @@ func GetTanzuKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertP
 	if err != nil {
 		return "", "", "", errors.Wrap(err, "unable to get the Tanzu local kubeconfig path")
 	}
-	err = kubeutils.MergeKubeConfigWithoutSwitchContext(kubeconfigByes, kubeconfigPath)
+	err = kubeutils.MergeKubeConfigWithoutSwitchContext(kubeconfigBytes, kubeconfigPath)
 	if err != nil {
 		return "", "", "", errors.Wrap(err, "failed to merge the tanzu kubeconfig")
 	}
