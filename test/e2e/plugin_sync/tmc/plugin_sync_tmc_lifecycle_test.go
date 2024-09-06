@@ -79,7 +79,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// Test case: b. create context and validate current active context
 		It("create context for TMC target with http mock server URL as endpoint", func() {
 			contextName = f.ContextPrefixTMC + f.RandomString(4)
-			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextName, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextName, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag), f.AddAdditionalFlagAndValue(typeTMCFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
@@ -143,7 +143,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// Test case: b. create context and make sure context has created
 		It("create context for TMC target with http mock server URL as endpoint", func() {
 			contextName = f.ContextPrefixTMC + f.RandomString(4)
-			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextName, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextName, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag), f.AddAdditionalFlagAndValue(typeTMCFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
@@ -272,7 +272,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// Test case: b. create context and make sure context has created
 		It("create context for TMC target with http mock server URL as endpoint", func() {
 			contextName = f.ContextPrefixTMC + f.RandomString(4)
-			_, stdErr, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextName, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			_, stdErr, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextName, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag), f.AddAdditionalFlagAndValue(typeTMCFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			Expect(stdErr).NotTo(BeNil(), "there should be stderr")
 			Expect(stdErr).To(ContainSubstring(f.UnableToSync), "there should be sync error as all plugins not available in repo")
@@ -380,7 +380,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(len(mockResPluginsInfo.Plugins)).Should(Equal(len(pluginsToGenerateMockResponseOne)), "the number of plugins in endpoint response and initially mocked should be same")
 
 			contextNameOne = f.ContextPrefixTMC + f.RandomString(4)
-			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameOne, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameOne, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag), f.AddAdditionalFlagAndValue(typeTMCFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
@@ -411,7 +411,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(len(mockResPluginsInfo.Plugins)).Should(Equal(len(pluginsToGenerateMockResponseTwo)), "the number of plugins in endpoint response and initially mocked should be same")
 
 			contextNameTwo = f.ContextPrefixTMC + f.RandomString(4)
-			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTwo, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTwo, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag), f.AddAdditionalFlagAndValue(typeTMCFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
@@ -482,7 +482,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(len(mockResPluginsInfo.Plugins)).Should(Equal(len(pluginsToGenerateMockResponseOne)), "the number of plugins in endpoint response and initially mocked should be same")
 
 			contextNameOne = f.ContextPrefixTMC + f.RandomString(4)
-			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameOne, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameOne, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag), f.AddAdditionalFlagAndValue(typeTMCFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
@@ -626,7 +626,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// Test case: f. TMC: create context and make sure context has created
 		It("create context for TMC target with http mock server URL as endpoint", func() {
 			contextNameTMC = f.ContextPrefixTMC + f.RandomString(4)
-			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTMC, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTMC, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag), f.AddAdditionalFlagAndValue(typeTMCFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
@@ -814,7 +814,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 			Expect(err).To(BeNil(), thereShouldNotBeError+" while cleaning plugins")
 
 			contextNameTMC = f.ContextPrefixTMC + f.RandomString(4)
-			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTMC, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			_, _, err = tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTMC, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag), f.AddAdditionalFlagAndValue(typeTMCFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)
@@ -1111,7 +1111,7 @@ var _ = f.CLICoreDescribe("[Tests:E2E][Feature:Plugin-Sync-TMC-lifecycle]", func
 		// Test case: g. TMC: create context and make sure context has created
 		It("create context for TMC target with http mock server URL as endpoint", func() {
 			contextNameTMC = f.ContextPrefixTMC + f.RandomString(4)
-			_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTMC, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag))
+			_, _, err := tf.ContextCmd.CreateContextWithEndPointStaging(contextNameTMC, f.TMCMockServerEndpoint, f.AddAdditionalFlagAndValue(forceCSPFlag), f.AddAdditionalFlagAndValue(typeTMCFlag))
 			Expect(err).To(BeNil(), noErrorWhileCreatingContext)
 			active, err := tf.ContextCmd.GetActiveContext(string(types.ContextTypeTMC))
 			Expect(err).To(BeNil(), activeContextShouldExists)

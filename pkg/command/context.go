@@ -359,9 +359,11 @@ func createNewContext() (context *configtypes.Context, err error) {
 	var ctxCreationType ContextCreationType
 	contextType := getContextType()
 
-	if (contextType == configtypes.ContextTypeTanzu) || (endpoint != "" && isTanzuPlatformSaaSEndpoint(endpoint)) {
+	if contextType == configtypes.ContextTypeTMC {
+		ctxCreationType = contextMissionControl
+	} else if (contextType == configtypes.ContextTypeTanzu) || (endpoint != "" && isTanzuPlatformSaaSEndpoint(endpoint)) {
 		ctxCreationType = contextTanzu
-	} else if (contextType == configtypes.ContextTypeTMC) || (endpoint != "" && isGlobalContext(endpoint)) {
+	} else if endpoint != "" && isGlobalContext(endpoint) {
 		ctxCreationType = contextMissionControl
 	} else if endpoint != "" {
 		// user provided command line option endpoint is provided that is not globalTanzu or GlobalContext=> it is Kubernetes(Cluster Endpoint) type

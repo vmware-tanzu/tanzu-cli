@@ -44,6 +44,7 @@ const tmcPluginsMockFile = "tmcPluginsMock.json"
 const numberOfPluginsToInstall = 3
 
 const forceCSPFlag = "--force-csp=true"
+const typeTMCFlag = "--type=tmc"
 const tmcConfigFolderName = "tmc"
 const numberOfPluginsSameAsNoOfPluginsInfoMocked = "number of plugins should be same as number of plugins mocked in tmc endpoint response"
 const pluginsInstalledAndMockedShouldBeSame = "plugins being installed and plugins being mocked in tmc endpoint response should be same"
