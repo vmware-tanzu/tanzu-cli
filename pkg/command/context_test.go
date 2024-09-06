@@ -1023,6 +1023,19 @@ var _ = Describe("create new context", func() {
 		Context("with only endpoint and context name provided", func() {
 			It("should create context with given endpoint and context name", func() {
 				endpoint = fakeTMCEndpoint
+				forceCSP = true
+				contextTypeStr = contextTypeMissionControl
+				ctxName = testContextName
+				ctx, err = createNewContext()
+				Expect(err).To(BeNil())
+				Expect(ctx.Name).To(ContainSubstring("fake-context-name"))
+				Expect(string(ctx.ContextType)).To(ContainSubstring(contextTypeMissionControl))
+				Expect(ctx.GlobalOpts.Endpoint).To(ContainSubstring(endpoint))
+			})
+		})
+		Context("with only endpoint and context name provided", func() {
+			It("should create context with given endpoint and context name", func() {
+				endpoint = fakeTMCEndpoint
 				ctxName = testContextName
 				ctx, err = createNewContext()
 				Expect(err).To(BeNil())
@@ -1888,6 +1901,7 @@ func resetContextCommandFlags() {
 	contextTypeStr = ""
 	outputFormat = ""
 	shortCtx = false
+	forceCSP = false
 }
 
 func TestCreateContextWithTanzuTypeAndKubeconfigFlags(t *testing.T) {
