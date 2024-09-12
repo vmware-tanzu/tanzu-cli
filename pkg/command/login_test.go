@@ -11,61 +11,91 @@ import (
 
 func TestPrepareTanzuContextName(t *testing.T) {
 	testCases := []struct {
-		orgName   string
-		endpoint  string
-		isStaging bool
-		forceCSP  bool
-		expected  string
+		orgName       string
+		ucpEndpoint   string
+		endpoint      string
+		saasEndpoints []string
+		isStaging     bool
+		forceCSP      bool
+		expected      string
 	}{
 		// Test case for normal input with no staging environment and default endpoint.
 		{
-			orgName:   "MyOrg",
-			endpoint:  centralconfig.DefaultTanzuPlatformEndpoint,
-			isStaging: false,
-			expected:  "MyOrg",
+			orgName:       "MyOrg",
+			ucpEndpoint:   centralconfig.DefaultTanzuPlatformEndpoint,
+			endpoint:      centralconfig.DefaultTanzuPlatformEndpoint,
+			saasEndpoints: []string{centralconfig.DefaultTanzuPlatformEndpoint},
+			isStaging:     false,
+			expected:      "MyOrg",
 		},
 		// Test case for normal input with staging environment and default endpoint.
 		{
-			orgName:   "MyOrg",
-			endpoint:  centralconfig.DefaultTanzuPlatformEndpoint,
-			isStaging: true,
-			expected:  "MyOrg-staging",
+			orgName:       "MyOrg",
+			ucpEndpoint:   centralconfig.DefaultTanzuPlatformEndpoint,
+			endpoint:      centralconfig.DefaultTanzuPlatformEndpoint,
+			saasEndpoints: []string{centralconfig.DefaultTanzuPlatformEndpoint},
+			isStaging:     true,
+			expected:      "MyOrg-staging",
 		},
-		// Test case for normal input with no staging environment and custom SaaS endpoint.
+		// Test case for normal input with no staging environment and custom endpoint with force CSP.
 		{
-			orgName:   "MyOrg",
-			endpoint:  "https://custom-endpoint.com",
-			isStaging: false,
-			expected:  "MyOrg-86fd8133",
-			forceCSP:  true,
+			orgName:       "MyOrg",
+			ucpEndpoint:   "https://ucp.custom-endpoint.com",
+			endpoint:      "https://custom-endpoint.com",
+			saasEndpoints: []string{centralconfig.DefaultTanzuPlatformEndpoint},
+			isStaging:     false,
+			expected:      "MyOrg-70217fc3",
+			forceCSP:      true,
 		},
-		// Test case for normal input with staging environment and custom SaaS endpoint.
+		// Test case for normal input with staging environment and custom endpoint with force CSP.
 		{
-			orgName:   "MyOrg",
-			endpoint:  "https://custom-endpoint.com",
-			isStaging: true,
-			expected:  "MyOrg-staging-86fd8133",
-			forceCSP:  true,
+			orgName:       "MyOrg",
+			ucpEndpoint:   "https://ucp.custom-endpoint.com",
+			endpoint:      "https://custom-endpoint.com",
+			saasEndpoints: []string{centralconfig.DefaultTanzuPlatformEndpoint},
+			isStaging:     true,
+			expected:      "MyOrg-staging-70217fc3",
+			forceCSP:      true,
+		},
+		// Test case for normal input with new ucpEndpoint and platform endpoints which are actually SaaS endpoints.
+		{
+			orgName:       "MyOrg",
+			ucpEndpoint:   "https://ucp.platform-dev.endpoint.com",
+			endpoint:      "https://platform-dev.endpoint.com",
+			saasEndpoints: []string{"https://(www.)?platform(.)*.endpoint.com"},
+			expected:      "MyOrg-9dfa8f6c",
+		},
+		// Test case for normal input with new ucpEndpoint and platform endpoints which are actually SaaS endpoints.
+		{
+			orgName:       "MyOrg",
+			isStaging:     true,
+			ucpEndpoint:   "https://ucp.platform.endpoint.com",
+			endpoint:      "https://platform.endpoint.com",
+			saasEndpoints: []string{"https://(www.)?platform(.)*.endpoint.com"},
+			expected:      "MyOrg-staging-042532db",
 		},
 		// Test case for normal input custom SM endpoint.
 		{
 			// org and staging values are effectively ignored
-			orgName:   "MyOrg",
-			isStaging: true,
-			endpoint:  "https://custom-endpoint.com",
-			expected:  "tpsm-86fd8133",
+			orgName:       "MyOrg",
+			isStaging:     true,
+			ucpEndpoint:   "https://ucp.custom-endpoint.com",
+			endpoint:      "https://custom-endpoint.com",
+			saasEndpoints: []string{centralconfig.DefaultTanzuPlatformEndpoint},
+			expected:      "tpsm-70217fc3",
 		},
 	}
 
 	for _, tc := range testCases {
+		endpoint = tc.endpoint
 		forceCSP = tc.forceCSP
 		fakeDefaultCentralConfigReader := fakes.CentralConfig{}
-		fakeDefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointListReturns([]string{centralconfig.DefaultTanzuPlatformEndpoint})
+		fakeDefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointListReturns(tc.saasEndpoints)
 		centralconfig.DefaultCentralConfigReader = &fakeDefaultCentralConfigReader
 
-		actual := prepareTanzuContextName(tc.orgName, tc.endpoint, tc.isStaging)
+		actual := prepareTanzuContextName(tc.orgName, tc.ucpEndpoint, tc.isStaging)
 		if actual != tc.expected {
-			t.Errorf("orgName: %s, endpoint: %s, isStaging: %t - expected: %s, got: %s", tc.orgName, tc.endpoint, tc.isStaging, tc.expected, actual)
+			t.Errorf("orgName: %s, ucpEndpoint: %s endpoint: %s, isStaging: %t - expected: %s, got: %s", tc.orgName, tc.ucpEndpoint, tc.endpoint, tc.isStaging, tc.expected, actual)
 		}
 	}
 }
