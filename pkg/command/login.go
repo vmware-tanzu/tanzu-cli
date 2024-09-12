@@ -141,7 +141,7 @@ func getString(data interface{}) string {
 // pre-req orgName and endpoint is non-empty string
 func prepareTanzuContextName(orgName, ucpEndpoint string, isStaging bool) string {
 	var contextName string
-	idpType := getIDPType(ucpEndpoint)
+	idpType := getIDPType(endpoint)
 	if idpType == config.UAAIdpType {
 		contextName = "tpsm"
 	} else {
