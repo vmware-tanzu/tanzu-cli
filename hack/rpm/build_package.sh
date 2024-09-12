@@ -99,6 +99,7 @@ done
 
 # Prepare the existing repository info so we can sync from it
 RPM_METADATA_BASE_URI=${RPM_METADATA_BASE_URI:=https://storage.googleapis.com/tanzu-cli-os-packages}
+RPM_EXISTING_PACKAGE_GPG_KEY=${RPM_EXISTING_PACKAGE_GPG_KEY:=https://packages-prod.broadcom.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub}
 if [ "${RPM_METADATA_BASE_URI}" = "new" ]; then
    echo
    echo "Building a brand new repository"
@@ -111,7 +112,7 @@ baseurl=${RPM_METADATA_BASE_URI}/rpm/tanzu-cli
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
-gpgkey=https://packages-prod.broadcom.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub
+gpgkey=${RPM_EXISTING_PACKAGE_GPG_KEY}
 EOF
    
    # Sync the metadata so we can update it
