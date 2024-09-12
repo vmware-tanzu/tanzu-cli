@@ -214,7 +214,7 @@ from the repository. You can find more details in the
 
 ### User experience
 
-CLI verifies [cosign](https://docs.sigstore.dev/signing/quickstart/) signature of
+CLI verifies [cosign](https://docs.sigstore.dev/quickstart/quickstart-cosign/) signature of
 the plugin inventory image present in the repository. If the signature
 verification is successful, it would download the plugin inventory image on the
 user's machine and caches the verified plugin inventory image to improve the
