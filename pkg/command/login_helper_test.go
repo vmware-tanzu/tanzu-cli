@@ -151,6 +151,12 @@ func TestIsTanzuPlatformSaaSEndpoint(t *testing.T) {
 			expected:                        true,
 		},
 		{
+			name:                            "valid SaaS endpoint without scheme",
+			tpEndpoint:                      "tanzu.vmware.com",
+			saasEndpointListInCentralConfig: []string{"https://tanzu.vmware.com"},
+			expected:                        true,
+		},
+		{
 			name:                            "invalid SaaS endpoint",
 			tpEndpoint:                      "https://example.com",
 			saasEndpointListInCentralConfig: []string{"https://tanzu.vmware.com"},
