@@ -110,6 +110,11 @@ func isTanzuPlatformSaaSEndpoint(tpEndpoint string) bool {
 		return false
 	}
 
+	// If the url scheme is not provided by the user, default to using `https`
+	if !strings.HasPrefix(tpEndpoint, "http://") && !strings.HasPrefix(tpEndpoint, "https://") {
+		tpEndpoint = "https://" + tpEndpoint
+	}
+
 	saasEndpointRegularExpressions := centralconfig.DefaultCentralConfigReader.GetTanzuPlatformSaaSEndpointList()
 	for _, endpointRegex := range saasEndpointRegularExpressions {
 		// Create a regular expression pattern
