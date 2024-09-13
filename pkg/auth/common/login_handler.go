@@ -354,7 +354,7 @@ func printSuccessMessage(w http.ResponseWriter, orgName string) {
 }
 
 func (h *TanzuLoginHandler) getOrganizationName() (string, error) {
-	if h.idpType == config.UAAIdpType || h.orgNameGetter != nil {
+	if h.idpType == config.UAAIdpType || h.orgNameGetter == nil {
 		return "", nil
 	}
 
