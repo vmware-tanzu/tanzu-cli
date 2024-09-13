@@ -15,6 +15,7 @@ import (
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/airgapped"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/carvelhelpers"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cosignhelper/sigverifier"
@@ -419,7 +420,7 @@ func (od *DBBackedOCIDiscovery) checkDigestFileExistence(hashHexVal, digestPrefi
 }
 
 func getCacheTTLValue() int {
-	cacheTTL := constants.DefaultInventoryRefreshTTLSeconds
+	cacheTTL := centralconfig.DefaultInventoryRefreshTTLSeconds
 	cacheTTLOverride := os.Getenv(constants.ConfigVariablePluginDBCacheTTLSeconds)
 	if cacheTTLOverride != "" {
 		cacheTTLOverrideValue, err := strconv.Atoi(cacheTTLOverride)

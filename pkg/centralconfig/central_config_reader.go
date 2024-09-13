@@ -3,12 +3,46 @@
 
 package centralconfig
 
+import "strconv"
+
 // GetDefaultTanzuEndpoint returns default endpoint for the tanzu platform from the default
 // central configuration file
 func (c *centralConfigYamlReader) GetDefaultTanzuEndpoint() (string, error) {
 	endpoint := ""
 	err := c.GetCentralConfigEntry(KeyDefaultTanzuEndpoint, &endpoint)
 	return endpoint, err
+}
+
+// GetPluginDBCacheRefreshThresholdSeconds returns default value for central db cache refresh in seconds
+// from the default central configuration file
+func (c *centralConfigYamlReader) GetPluginDBCacheRefreshThresholdSeconds() (int, error) {
+	secondsStr := ""
+	err := c.GetCentralConfigEntry(KeyDefaultPluginDBCacheRefreshThresholdSeconds, &secondsStr)
+	if err != nil {
+		return 0, err
+	}
+
+	seconds, err := strconv.ParseInt(secondsStr, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return int(seconds), nil
+}
+
+// GetInventoryRefreshTTLSeconds returns default value for central db refresh TTL in seconds
+// from the default central configuration file
+func (c *centralConfigYamlReader) GetInventoryRefreshTTLSeconds() (int, error) {
+	secondsStr := ""
+	err := c.GetCentralConfigEntry(KeyDefaultInventoryRefreshTTLSeconds, &secondsStr)
+	if err != nil {
+		return 0, err
+	}
+
+	seconds, err := strconv.ParseInt(secondsStr, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return int(seconds), nil
 }
 
 // GetTanzuPlatformEndpointToServiceEndpointMap returns Map of tanzu platform endpoint to service endpoints

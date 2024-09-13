@@ -1,7 +1,8 @@
 // Copyright 2024 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package centralconfig
+// Package centralconfiginit is used to add inventory updater to the globalinitializer
+package centralconfiginit
 
 import (
 	"io"

@@ -27,14 +27,6 @@ const (
 	// DefaultCLIEssentialsPluginGroupName  name of the essentials plugin group which is used to install essential plugins
 	DefaultCLIEssentialsPluginGroupName = "vmware-tanzucli/essentials"
 
-	// DefaultPluginDBCacheRefreshThresholdSeconds is the default value for db cache refresh
-	// For testing, it can be overridden using the environment variable TANZU_CLI_PLUGIN_DB_CACHE_REFRESH_THRESHOLD_SECONDS.
-	DefaultPluginDBCacheRefreshThresholdSeconds = 24 * 60 * 60 // 24 hours
-
-	// DefaultInventoryRefreshTTLSeconds is the interval in seconds between two checks of the inventory digest.
-	// For testing, it can be overridden using the environment variable TANZU_CLI_PLUGIN_DB_CACHE_TTL_SECONDS.
-	DefaultInventoryRefreshTTLSeconds = 30 * 60 // 30 minutes
-
 	// TanzuContextPluginDiscoveryEndpointPath specifies the default plugin discovery endpoint path
 	// Note: This path value needs to be updated once the Tanzu context backend support the context-scoped
 	// plugin discovery and the endpoint value gets finalized

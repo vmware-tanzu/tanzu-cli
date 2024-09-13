@@ -32,6 +32,30 @@ type CentralConfig struct {
 		result1 string
 		result2 error
 	}
+	GetInventoryRefreshTTLSecondsStub        func() (int, error)
+	getInventoryRefreshTTLSecondsMutex       sync.RWMutex
+	getInventoryRefreshTTLSecondsArgsForCall []struct {
+	}
+	getInventoryRefreshTTLSecondsReturns struct {
+		result1 int
+		result2 error
+	}
+	getInventoryRefreshTTLSecondsReturnsOnCall map[int]struct {
+		result1 int
+		result2 error
+	}
+	GetPluginDBCacheRefreshThresholdSecondsStub        func() (int, error)
+	getPluginDBCacheRefreshThresholdSecondsMutex       sync.RWMutex
+	getPluginDBCacheRefreshThresholdSecondsArgsForCall []struct {
+	}
+	getPluginDBCacheRefreshThresholdSecondsReturns struct {
+		result1 int
+		result2 error
+	}
+	getPluginDBCacheRefreshThresholdSecondsReturnsOnCall map[int]struct {
+		result1 int
+		result2 error
+	}
 	GetTanzuConfigEndpointUpdateMappingStub        func() (map[string]string, error)
 	getTanzuConfigEndpointUpdateMappingMutex       sync.RWMutex
 	getTanzuConfigEndpointUpdateMappingArgsForCall []struct {
@@ -196,6 +220,118 @@ func (fake *CentralConfig) GetDefaultTanzuEndpointReturnsOnCall(i int, result1 s
 	}
 	fake.getDefaultTanzuEndpointReturnsOnCall[i] = struct {
 		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CentralConfig) GetInventoryRefreshTTLSeconds() (int, error) {
+	fake.getInventoryRefreshTTLSecondsMutex.Lock()
+	ret, specificReturn := fake.getInventoryRefreshTTLSecondsReturnsOnCall[len(fake.getInventoryRefreshTTLSecondsArgsForCall)]
+	fake.getInventoryRefreshTTLSecondsArgsForCall = append(fake.getInventoryRefreshTTLSecondsArgsForCall, struct {
+	}{})
+	stub := fake.GetInventoryRefreshTTLSecondsStub
+	fakeReturns := fake.getInventoryRefreshTTLSecondsReturns
+	fake.recordInvocation("GetInventoryRefreshTTLSeconds", []interface{}{})
+	fake.getInventoryRefreshTTLSecondsMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *CentralConfig) GetInventoryRefreshTTLSecondsCallCount() int {
+	fake.getInventoryRefreshTTLSecondsMutex.RLock()
+	defer fake.getInventoryRefreshTTLSecondsMutex.RUnlock()
+	return len(fake.getInventoryRefreshTTLSecondsArgsForCall)
+}
+
+func (fake *CentralConfig) GetInventoryRefreshTTLSecondsCalls(stub func() (int, error)) {
+	fake.getInventoryRefreshTTLSecondsMutex.Lock()
+	defer fake.getInventoryRefreshTTLSecondsMutex.Unlock()
+	fake.GetInventoryRefreshTTLSecondsStub = stub
+}
+
+func (fake *CentralConfig) GetInventoryRefreshTTLSecondsReturns(result1 int, result2 error) {
+	fake.getInventoryRefreshTTLSecondsMutex.Lock()
+	defer fake.getInventoryRefreshTTLSecondsMutex.Unlock()
+	fake.GetInventoryRefreshTTLSecondsStub = nil
+	fake.getInventoryRefreshTTLSecondsReturns = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CentralConfig) GetInventoryRefreshTTLSecondsReturnsOnCall(i int, result1 int, result2 error) {
+	fake.getInventoryRefreshTTLSecondsMutex.Lock()
+	defer fake.getInventoryRefreshTTLSecondsMutex.Unlock()
+	fake.GetInventoryRefreshTTLSecondsStub = nil
+	if fake.getInventoryRefreshTTLSecondsReturnsOnCall == nil {
+		fake.getInventoryRefreshTTLSecondsReturnsOnCall = make(map[int]struct {
+			result1 int
+			result2 error
+		})
+	}
+	fake.getInventoryRefreshTTLSecondsReturnsOnCall[i] = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CentralConfig) GetPluginDBCacheRefreshThresholdSeconds() (int, error) {
+	fake.getPluginDBCacheRefreshThresholdSecondsMutex.Lock()
+	ret, specificReturn := fake.getPluginDBCacheRefreshThresholdSecondsReturnsOnCall[len(fake.getPluginDBCacheRefreshThresholdSecondsArgsForCall)]
+	fake.getPluginDBCacheRefreshThresholdSecondsArgsForCall = append(fake.getPluginDBCacheRefreshThresholdSecondsArgsForCall, struct {
+	}{})
+	stub := fake.GetPluginDBCacheRefreshThresholdSecondsStub
+	fakeReturns := fake.getPluginDBCacheRefreshThresholdSecondsReturns
+	fake.recordInvocation("GetPluginDBCacheRefreshThresholdSeconds", []interface{}{})
+	fake.getPluginDBCacheRefreshThresholdSecondsMutex.Unlock()
+	if stub != nil {
+		return stub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *CentralConfig) GetPluginDBCacheRefreshThresholdSecondsCallCount() int {
+	fake.getPluginDBCacheRefreshThresholdSecondsMutex.RLock()
+	defer fake.getPluginDBCacheRefreshThresholdSecondsMutex.RUnlock()
+	return len(fake.getPluginDBCacheRefreshThresholdSecondsArgsForCall)
+}
+
+func (fake *CentralConfig) GetPluginDBCacheRefreshThresholdSecondsCalls(stub func() (int, error)) {
+	fake.getPluginDBCacheRefreshThresholdSecondsMutex.Lock()
+	defer fake.getPluginDBCacheRefreshThresholdSecondsMutex.Unlock()
+	fake.GetPluginDBCacheRefreshThresholdSecondsStub = stub
+}
+
+func (fake *CentralConfig) GetPluginDBCacheRefreshThresholdSecondsReturns(result1 int, result2 error) {
+	fake.getPluginDBCacheRefreshThresholdSecondsMutex.Lock()
+	defer fake.getPluginDBCacheRefreshThresholdSecondsMutex.Unlock()
+	fake.GetPluginDBCacheRefreshThresholdSecondsStub = nil
+	fake.getPluginDBCacheRefreshThresholdSecondsReturns = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *CentralConfig) GetPluginDBCacheRefreshThresholdSecondsReturnsOnCall(i int, result1 int, result2 error) {
+	fake.getPluginDBCacheRefreshThresholdSecondsMutex.Lock()
+	defer fake.getPluginDBCacheRefreshThresholdSecondsMutex.Unlock()
+	fake.GetPluginDBCacheRefreshThresholdSecondsStub = nil
+	if fake.getPluginDBCacheRefreshThresholdSecondsReturnsOnCall == nil {
+		fake.getPluginDBCacheRefreshThresholdSecondsReturnsOnCall = make(map[int]struct {
+			result1 int
+			result2 error
+		})
+	}
+	fake.getPluginDBCacheRefreshThresholdSecondsReturnsOnCall[i] = struct {
+		result1 int
 		result2 error
 	}{result1, result2}
 }
@@ -428,6 +564,10 @@ func (fake *CentralConfig) Invocations() map[string][][]interface{} {
 	defer fake.getCentralConfigEntryMutex.RUnlock()
 	fake.getDefaultTanzuEndpointMutex.RLock()
 	defer fake.getDefaultTanzuEndpointMutex.RUnlock()
+	fake.getInventoryRefreshTTLSecondsMutex.RLock()
+	defer fake.getInventoryRefreshTTLSecondsMutex.RUnlock()
+	fake.getPluginDBCacheRefreshThresholdSecondsMutex.RLock()
+	defer fake.getPluginDBCacheRefreshThresholdSecondsMutex.RUnlock()
 	fake.getTanzuConfigEndpointUpdateMappingMutex.RLock()
 	defer fake.getTanzuConfigEndpointUpdateMappingMutex.RUnlock()
 	fake.getTanzuConfigEndpointUpdateVersionMutex.RLock()
