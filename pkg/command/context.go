@@ -1015,13 +1015,14 @@ func promptContextName(defaultCtxName string) (cname string, err error) {
 
 // Interactive way to create a TMC context. User will be prompted for CSP API token.
 func promptAPIToken(endpointType string) (apiToken string, err error) {
-	hostVal := "console.cloud.vmware.com"
-	if staging {
-		hostVal = "console-stg.cloud.vmware.com"
+	issuer := csp.GetIssuer(staging)
+	u, err := url.ParseRequestURI(issuer)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse the issuer URL")
 	}
 	consoleURL := url.URL{
 		Scheme:   "https",
-		Host:     hostVal,
+		Host:     u.Hostname(),
 		Path:     "/csp/gateway/portal/",
 		Fragment: "/user/tokens",
 	}
