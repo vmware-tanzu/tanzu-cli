@@ -22,6 +22,7 @@ import (
 	commonauth "github.com/vmware-tanzu/tanzu-cli/pkg/auth/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/auth/csp"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/catalog"
+	_ "github.com/vmware-tanzu/tanzu-cli/pkg/centralconfiginit" // Force import to run init function
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	cliconfig "github.com/vmware-tanzu/tanzu-cli/pkg/config"
@@ -35,8 +36,8 @@ import (
 	"github.com/vmware-tanzu/tanzu-cli/pkg/recommendedversion"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/telemetry"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/utils"
-	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/component"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"

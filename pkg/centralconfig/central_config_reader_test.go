@@ -72,6 +72,124 @@ cli.core.tanzu_default_endpoint: ""
 	}
 }
 
+func TestGetPluginDBCacheRefreshThresholdSeconds(t *testing.T) {
+	tcs := []struct {
+		name            string
+		cfgContent      string
+		expectedSeconds int
+		expectError     bool
+	}{
+		{
+			name:            "when the key does not exist",
+			cfgContent:      "testKey: testValue",
+			expectedSeconds: 0,
+			expectError:     true,
+		},
+		{
+			name: "when the key exists",
+			cfgContent: `
+testKey: testValue
+cli.core.tanzu_cli_default_plugin_db_cache_refresh_threshold_seconds: 200
+`,
+			expectedSeconds: 200,
+		},
+		{
+			name: "when the key exists but value is set to 0",
+			cfgContent: `
+testKey: testValue
+cli.core.tanzu_cli_default_plugin_db_cache_refresh_threshold_seconds: 0
+`,
+			expectedSeconds: 0,
+		},
+	}
+
+	dir, err := os.MkdirTemp("", "test-central-config")
+	assert.Nil(t, err)
+	defer os.RemoveAll(dir)
+	common.DefaultCacheDir = dir
+	reader := newCentralConfigReader("my_discovery")
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			path := reader.(*centralConfigYamlReader).configFile
+			// Write the central config test content to the file
+			err = os.MkdirAll(filepath.Dir(path), 0755)
+			assert.Nil(t, err)
+
+			err = os.WriteFile(path, []byte(tc.cfgContent), 0644)
+			assert.Nil(t, err)
+
+			seconds, err := reader.GetPluginDBCacheRefreshThresholdSeconds()
+
+			if tc.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+			assert.Equal(t, tc.expectedSeconds, seconds)
+		})
+	}
+}
+
+func TestGetInventoryRefreshTTLSeconds(t *testing.T) {
+	tcs := []struct {
+		name            string
+		cfgContent      string
+		expectedSeconds int
+		expectError     bool
+	}{
+		{
+			name:            "when the key does not exist",
+			cfgContent:      "testKey: testValue",
+			expectedSeconds: 0,
+			expectError:     true,
+		},
+		{
+			name: "when the key exists",
+			cfgContent: `
+testKey: testValue
+cli.core.tanzu_cli_default_inventory_refresh_ttl_seconds: 200
+`,
+			expectedSeconds: 200,
+		},
+		{
+			name: "when the key exists but value is set to 0",
+			cfgContent: `
+testKey: testValue
+cli.core.tanzu_cli_default_inventory_refresh_ttl_seconds: 0
+`,
+			expectedSeconds: 0,
+		},
+	}
+
+	dir, err := os.MkdirTemp("", "test-central-config")
+	assert.Nil(t, err)
+	defer os.RemoveAll(dir)
+	common.DefaultCacheDir = dir
+	reader := newCentralConfigReader("my_discovery")
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			path := reader.(*centralConfigYamlReader).configFile
+			// Write the central config test content to the file
+			err = os.MkdirAll(filepath.Dir(path), 0755)
+			assert.Nil(t, err)
+
+			err = os.WriteFile(path, []byte(tc.cfgContent), 0644)
+			assert.Nil(t, err)
+
+			seconds, err := reader.GetInventoryRefreshTTLSeconds()
+
+			if tc.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+			assert.Equal(t, tc.expectedSeconds, seconds)
+		})
+	}
+}
+
 func TestGetTanzuPlatformEndpointToServiceEndpointMap(t *testing.T) {
 	tcs := []struct {
 		name                           string

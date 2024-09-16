@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/centralconfig"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/constants"
 
@@ -86,7 +87,7 @@ func getDiscoverySourceNameAndURL(source configtypes.PluginDiscovery) (string, s
 // RefreshDatabase function refreshes the plugin inventory database if the digest timestamp is past 24 hours
 func RefreshDatabase() error {
 	// Initialize digestExpirationThreshold with the default value
-	dbCacheRefreshThreshold := constants.DefaultPluginDBCacheRefreshThresholdSeconds
+	dbCacheRefreshThreshold := centralconfig.DefaultPluginDBCacheRefreshThresholdSeconds
 
 	// Check if the user has set a custom value for digest expiration threshold
 	if dbCacheRefreshThresholdOverride, ok := os.LookupEnv(constants.ConfigVariablePluginDBCacheRefreshThresholdSeconds); ok {

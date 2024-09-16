@@ -25,6 +25,12 @@ type CentralConfig interface {
 	// GetDefaultTanzuEndpoint returns default endpoint for the tanzu platform from the default
 	// central configuration file
 	GetDefaultTanzuEndpoint() (string, error)
+	// GetPluginDBCacheRefreshThresholdSeconds returns default value for central db cache refresh in seconds
+	// from the default central configuration file
+	GetPluginDBCacheRefreshThresholdSeconds() (int, error)
+	// GetInventoryRefreshTTLSeconds returns default value for central db refresh TTL in seconds
+	// from the default central configuration file
+	GetInventoryRefreshTTLSeconds() (int, error)
 	// GetTanzuPlatformEndpointToServiceEndpointMap returns Map of tanzu platform endpoint to service endpoints
 	// from the default central configuration file
 	GetTanzuPlatformEndpointToServiceEndpointMap() (TanzuPlatformEndpointToServiceEndpointMap, error)

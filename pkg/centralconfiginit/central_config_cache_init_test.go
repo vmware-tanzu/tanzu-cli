@@ -1,7 +1,7 @@
 // Copyright 2024 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package centralconfig
+package centralconfiginit
 
 import (
 	"fmt"
