@@ -95,14 +95,12 @@ func GetOrgNameFromOrgID(orgID, accessToken, issuer string) (string, error) {
 func GetCSPMetadata() TanzuCSPMetadata {
 	cspMetaData := getCSPMetadataFromCentralConfig()
 	// If failed to get the CSP Metadata from central config,
-	// set the default Issuer URL of VCSP
-	// TODO(prkalle): Update the default Issuers to TCSP issuer URL( If TCSP is not stable in current release, update it next release)
-	//                This just defaults in the code, defaults in central config can be updated anytime
+	// set the default Issuer URL of TCSP
 	if cspMetaData.IssuerStaging == "" {
-		cspMetaData.IssuerStaging = StgIssuer
+		cspMetaData.IssuerStaging = StgIssuerTCSP
 	}
 	if cspMetaData.IssuerProduction == "" {
-		cspMetaData.IssuerProduction = ProdIssuer
+		cspMetaData.IssuerProduction = ProdIssuerTCSP
 	}
 
 	return cspMetaData
