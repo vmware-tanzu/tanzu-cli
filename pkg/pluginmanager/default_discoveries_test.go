@@ -87,7 +87,7 @@ metadata:
   globalOpts:
     endpoint: https://localhost:8443
     auth:
-      issuer: https://console-stg.cloud.vmware.com/csp/gateway/am/api
+      issuer: https://console-stg.tanzu.broadcom.com/csp/gateway/am/api
       userName: anujc
       accessToken: eyJ
       IDToken: eyJ
