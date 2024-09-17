@@ -16,6 +16,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 # Additional configuration can be found in the .markdownlintrc file at
 # the root of the repo.
 docker run --rm -v "$(pwd)":/build \
-  gcr.io/cluster-api-provider-vsphere/extra/mdlint:0.23.2 /md/lint \
+  gcr.io/eminent-nation-87317/tanzu-cli/ci-images/mdlint:0.23.2 /md/lint \
   -i docs/cli/commands \
   -i **/CHANGELOG.md .
