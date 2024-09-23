@@ -649,6 +649,56 @@ func globalTanzuLogin(c *configtypes.Context, generateContextNameFunc func(orgNa
 	return errors.New(invalidIdpType)
 }
 
+type DeploymentMetadata struct {
+	APIEndpoint  string                         `json:"apiEndpoint"`
+	Organization DeploymentMetadataOrganization `json:"organization"`
+}
+
+type DeploymentMetadataOrganization struct {
+	DisplayName string `json:"displayName"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+}
+
+func getOrgFromSelfManaged(c *configtypes.Context) (string, string, error) {
+	hubEndpoint := c.AdditionalMetadata[config.TanzuHubEndpointKey].(string)
+	hubEndpoint = strings.TrimRight(hubEndpoint, " /")
+	metadataURL := hubEndpoint + "/assets/env-config/env-config.json"
+	req, _ := http.NewRequest("GET", metadataURL, http.NoBody) //nolint:noctx
+
+	tlsConfig := commonauth.GetTLSConfig(hubEndpoint, "", false)
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy:           http.ProxyFromEnvironment,
+			TLSClientConfig: tlsConfig,
+		},
+		Timeout: time.Second * 10,
+	}
+
+	response, err := client.Do(req)
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to get tanzu platform deployment metadata")
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		return "", "", errors.New("failed to get tanzu platform deployment metadata")
+	}
+
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to read the response body")
+	}
+
+	var dm DeploymentMetadata
+	err = json.Unmarshal(responseBody, &dm)
+	if err != nil {
+		return "", "", errors.Wrap(err, "error parsing http response body ")
+	}
+
+	return dm.Organization.ID, dm.Organization.Name, nil
+}
+
 func globalTanzuLoginUAA(c *configtypes.Context, generateContextNameFunc func(orgName, endpoint string, isStaging bool) string) error {
 	uaaEndpoint := c.AdditionalMetadata[config.TanzuAuthEndpointKey].(string)
 	log.V(7).Infof("Login to UAA endpoint: %s", uaaEndpoint)
@@ -658,20 +708,31 @@ func globalTanzuLoginUAA(c *configtypes.Context, generateContextNameFunc func(or
 		return err
 	}
 
-	// UAA-based authentication does not provide org id or name yet.
-	// Note: org id/name may be discoverable in UAA-based auth in the future.
+	// UAA-based authentication itself not provide org id or name.
+	// Instead they are retrievable via a predefined location
 	var orgID string
 	orgName := "self-managed"
+
+	retrievedOrgID, retrievedOrgName, err := getOrgFromSelfManaged(c)
+	if err == nil && retrievedOrgID != "" {
+		orgID = retrievedOrgID
+		if retrievedOrgName != "" {
+			orgName = retrievedOrgName
+		}
+	}
+
 	uaaOrgIDValue, ok := os.LookupEnv(constants.UAALoginOrgID)
 	if ok {
+		if retrievedOrgID != "" && retrievedOrgID != uaaOrgIDValue {
+			log.Infof("Organization ID %s retrieved from endpoint is being overridden by environment variable value %s\n",
+				retrievedOrgID, uaaOrgIDValue)
+		}
 		orgID = uaaOrgIDValue
 	}
 	claims.OrgID = orgID
 	uaaOrgNameValue, ok := os.LookupEnv(constants.UAALoginOrgName)
 	if ok {
 		orgName = uaaOrgNameValue
-	} else if orgID != "" {
-		orgName = orgID
 	}
 
 	if err := updateContextOnTanzuLogin(c, generateContextNameFunc, claims, orgName); err != nil {

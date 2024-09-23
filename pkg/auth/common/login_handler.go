@@ -432,24 +432,28 @@ func (h *TanzuLoginHandler) promptAndLoginWithAuthCode(ctx context.Context, auth
 // of if persisted cert information associated with the issuer endpoint is found,
 // with the provided information taking precedence over persisted information.
 func (h *TanzuLoginHandler) getTLSConfig() *tls.Config {
+	return GetTLSConfig(h.issuer, h.caCertData, h.tlsSkipVerify)
+}
+
+func GetTLSConfig(endpoint, certData string, skipVerify bool) *tls.Config {
 	var savedCertData string
 	var savedSkipVerify bool
 
-	c, _ := config.GetCert(h.issuer)
+	c, _ := config.GetCert(endpoint)
 
 	if c != nil {
 		savedCertData = c.CACertData
 		savedSkipVerify, _ = strconv.ParseBool(c.SkipCertVerify)
 	}
 
-	if savedSkipVerify || h.tlsSkipVerify {
+	if savedSkipVerify || skipVerify {
 		//nolint:gosec // skipTLSVerify: true is only possible if the user has explicitly enabled it
 		return &tls.Config{InsecureSkipVerify: true, MinVersion: tls.VersionTLS12}
 	}
 
 	caCertData := savedCertData
-	if h.caCertData != "" {
-		caCertData = h.caCertData
+	if certData != "" {
+		caCertData = certData
 	}
 
 	if caCertData != "" {
@@ -458,7 +462,7 @@ func (h *TanzuLoginHandler) getTLSConfig() *tls.Config {
 
 		decodedCACertData, err := base64.StdEncoding.DecodeString(caCertData)
 		if err != nil {
-			log.Infof("unable to use custom cert for '%s' endpoint. Error: %s", h.issuer, err.Error())
+			log.Infof("unable to use custom cert for '%s' endpoint. Error: %s", endpoint, err.Error())
 			return nil
 		}
 
@@ -468,7 +472,7 @@ func (h *TanzuLoginHandler) getTLSConfig() *tls.Config {
 		}
 
 		if ok := pool.AppendCertsFromPEM(decodedCACertData); !ok {
-			log.Infof("unable to use custom cert for %s endpoint", h.issuer)
+			log.Infof("unable to use custom cert for %s endpoint", endpoint)
 			return nil
 		}
 		return &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}
