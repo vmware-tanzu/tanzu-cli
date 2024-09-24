@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -1277,6 +1279,86 @@ var _ = Describe("testing context use", func() {
 			Expect(cctx.Name).To(ContainSubstring(testUseContextWithInvalidKubeContext))
 			os.Unsetenv(constants.SkipUpdateKubeconfigOnContextUse)
 		})
+	})
+})
+
+var _ = Describe("Test get org information", func() {
+	var (
+		err            error
+		serverGoodData *httptest.Server
+		serverBadData  *httptest.Server
+		tanzuContext   *configtypes.Context
+	)
+	const (
+		fakeContextName = "fake-context"
+		fakeAccessToken = "fake-access-token"
+		fakeEndpoint    = "fake.tanzu.cloud.vmware.com"
+		fakeIssuer      = "https://fake.issuer.come/auth"
+	)
+	BeforeEach(func() {
+		tanzuContext = &configtypes.Context{
+			Name:               fakeContextName,
+			ContextType:        configtypes.ContextTypeTanzu,
+			AdditionalMetadata: map[string]interface{}{},
+			GlobalOpts: &configtypes.GlobalServer{
+				Endpoint: fakeEndpoint,
+				Auth: configtypes.GlobalServerAuth{
+					AccessToken: fakeAccessToken,
+					Issuer:      fakeIssuer,
+					Type:        common.APITokenType,
+				},
+			},
+		}
+
+		serverGoodData = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"apiEndpoint":"/hub/graphql","apiHost":"","organization":{"displayName":"TPSM","id":"c4558dfb-18ae-480a-af06-8222600b198f","name":"Test Org"}}`))
+		}))
+		serverBadData = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"badkey":"badvalue"}`))
+		}))
+	})
+
+	It("should return org information from metadata file if found but env vars if set", func() {
+		tanzuContext.AdditionalMetadata[config.TanzuHubEndpointKey] = serverGoodData.URL
+		err = config.SetContext(tanzuContext, false)
+		Expect(err).To(BeNil())
+
+		orgID, orgName := getSelfManagedOrg(tanzuContext)
+		Expect(orgID).To(Equal("c4558dfb-18ae-480a-af06-8222600b198f"))
+		Expect(orgName).To(Equal("Test Org"))
+
+		os.Setenv(constants.UAALoginOrgID, "11111111-1111-1111-1111-111111111111")
+		os.Setenv(constants.UAALoginOrgName, "OverwrittenOrgName")
+		orgID, orgName = getSelfManagedOrg(tanzuContext)
+		Expect(orgID).To(Equal("11111111-1111-1111-1111-111111111111"))
+		Expect(orgName).To(Equal("OverwrittenOrgName"))
+		defer os.Unsetenv(constants.UAALoginOrgID)
+		defer os.Unsetenv(constants.UAALoginOrgName)
+	})
+
+	It("should return default org information or on invalid metadata or env vars if set", func() {
+		tanzuContext.AdditionalMetadata[config.TanzuHubEndpointKey] = serverBadData.URL
+		err = config.SetContext(tanzuContext, false)
+		Expect(err).To(BeNil())
+
+		orgID, orgName := getSelfManagedOrg(tanzuContext)
+		Expect(orgID).To(Equal(""))
+		Expect(orgName).To(Equal("self-managed"))
+
+		os.Setenv(constants.UAALoginOrgID, "11111111-2222-2222-2222-222222222222")
+		os.Setenv(constants.UAALoginOrgName, "OverwrittenOrgName")
+		orgID, orgName = getSelfManagedOrg(tanzuContext)
+		Expect(orgID).To(Equal("11111111-2222-2222-2222-222222222222"))
+		Expect(orgName).To(Equal("OverwrittenOrgName"))
+		defer os.Unsetenv(constants.UAALoginOrgID)
+		defer os.Unsetenv(constants.UAALoginOrgName)
+	})
+
+	AfterEach(func() {
+		serverGoodData.Close()
+		serverBadData.Close()
 	})
 })
 

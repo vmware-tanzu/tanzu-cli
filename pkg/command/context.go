@@ -660,9 +660,12 @@ type DeploymentMetadataOrganization struct {
 	Name        string `json:"name"`
 }
 
-func getOrgFromSelfManaged(c *configtypes.Context) (string, string, error) {
-	hubEndpoint := c.AdditionalMetadata[config.TanzuHubEndpointKey].(string)
-	hubEndpoint = strings.TrimRight(hubEndpoint, " /")
+func getOrgFromSelfManagedEndpoint(c *configtypes.Context) (string, string, error) {
+	val, ok := c.AdditionalMetadata[config.TanzuHubEndpointKey]
+	if !ok {
+		return "", "", errors.New("Hub endpoint not set")
+	}
+	hubEndpoint := strings.TrimRight(val.(string), " /")
 	metadataURL := hubEndpoint + "/assets/env-config/env-config.json"
 	req, _ := http.NewRequest("GET", metadataURL, http.NoBody) //nolint:noctx
 
@@ -699,21 +702,13 @@ func getOrgFromSelfManaged(c *configtypes.Context) (string, string, error) {
 	return dm.Organization.ID, dm.Organization.Name, nil
 }
 
-func globalTanzuLoginUAA(c *configtypes.Context, generateContextNameFunc func(orgName, endpoint string, isStaging bool) string) error {
-	uaaEndpoint := c.AdditionalMetadata[config.TanzuAuthEndpointKey].(string)
-	log.V(7).Infof("Login to UAA endpoint: %s", uaaEndpoint)
-
-	claims, err := doInteractiveLoginAndUpdateContext(c, uaaEndpoint)
-	if err != nil {
-		return err
-	}
-
+func getSelfManagedOrg(c *configtypes.Context) (string, string) {
 	// UAA-based authentication itself not provide org id or name.
 	// Instead they are retrievable via a predefined location
 	var orgID string
 	orgName := "self-managed"
 
-	retrievedOrgID, retrievedOrgName, err := getOrgFromSelfManaged(c)
+	retrievedOrgID, retrievedOrgName, err := getOrgFromSelfManagedEndpoint(c)
 	if err == nil && retrievedOrgID != "" {
 		orgID = retrievedOrgID
 		if retrievedOrgName != "" {
@@ -729,11 +724,25 @@ func globalTanzuLoginUAA(c *configtypes.Context, generateContextNameFunc func(or
 		}
 		orgID = uaaOrgIDValue
 	}
-	claims.OrgID = orgID
 	uaaOrgNameValue, ok := os.LookupEnv(constants.UAALoginOrgName)
 	if ok {
 		orgName = uaaOrgNameValue
 	}
+
+	return orgID, orgName
+}
+
+func globalTanzuLoginUAA(c *configtypes.Context, generateContextNameFunc func(orgName, endpoint string, isStaging bool) string) error {
+	uaaEndpoint := c.AdditionalMetadata[config.TanzuAuthEndpointKey].(string)
+	log.V(7).Infof("Login to UAA endpoint: %s", uaaEndpoint)
+
+	claims, err := doInteractiveLoginAndUpdateContext(c, uaaEndpoint)
+	if err != nil {
+		return err
+	}
+
+	orgID, orgName := getSelfManagedOrg(c)
+	claims.OrgID = orgID
 
 	if err := updateContextOnTanzuLogin(c, generateContextNameFunc, claims, orgName); err != nil {
 		return err
