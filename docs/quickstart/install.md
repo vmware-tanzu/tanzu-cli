@@ -139,8 +139,8 @@ To uninstall: `choco uninstall tanzu-cli-unstable`
 sudo apt update
 sudo apt install -y ca-certificates curl gpg
 sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://packages-prod.broadcom.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub | sudo gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
-echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
+curl -fsSL https://storage.googleapis.com/tanzu-cli-installer-packages/keys/TANZU-PACKAGING-GPG-RSA-KEY.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-installer-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
 sudo apt update
 sudo apt install -y tanzu-cli
 ```
@@ -192,11 +192,11 @@ To uninstall: `sudo apt remove tanzu-cli-unstable`
 cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
 [tanzu-cli]
 name=Tanzu CLI
-baseurl=https://storage.googleapis.com/tanzu-cli-os-packages/rpm/tanzu-cli
+baseurl=https://storage.googleapis.com/tanzu-cli-installer-packages/rpm/tanzu-cli
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
-gpgkey=https://packages-prod.broadcom.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub
+gpgkey=https://storage.googleapis.com/tanzu-cli-installer-packages/keys/TANZU-PACKAGING-GPG-RSA-KEY.gpg
 EOF
 
 sudo yum install -y tanzu-cli # dnf install can also be used
