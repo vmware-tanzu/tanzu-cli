@@ -71,7 +71,7 @@ for arch in amd64 arm64; do
 
    # All that is needed from the original repo is to have the original Packages files under:
    #  ${FINAL_DIR}/Packages
-   DEB_METADATA_BASE_URI=${DEB_METADATA_BASE_URI:=https://storage.googleapis.com/tanzu-cli-os-packages}
+   DEB_METADATA_BASE_URI=${DEB_METADATA_BASE_URI:=https://storage.googleapis.com/tanzu-cli-installer-packages}
    mkdir -p ${FINAL_DIR}
    if [ "${DEB_METADATA_BASE_URI}" = "new" ]; then
       echo

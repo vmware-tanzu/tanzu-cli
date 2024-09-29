@@ -30,7 +30,7 @@ run the `hack/apt/build_package*.sh` scripts.
 
 The remote location of the existing repository can be overridden by setting
 the variable `DEB_METADATA_BASE_URI`.  For example, the default value for
-this variable is currently `https://storage.googleapis.com/tanzu-cli-os-packages`
+this variable is currently `https://storage.googleapis.com/tanzu-cli-installer-packages`
 
 ### Pre-requisite
 
@@ -82,7 +82,7 @@ apt install -y tanzu-cli-unstable --allow-unauthenticated
 ## Publishing the package to GCloud
 
 The GCloud bucket dedicated to hosting the Tanzu CLI OS packages is
-gs://tanzu-cli-os-packages`.
+gs://tanzu-cli-installer-packages`.
 
 Building the Debian repository incrementally means that we create the
 repository metadata for the new package version *and* for any existing packages on
@@ -92,7 +92,7 @@ built `hack/apt/_output/apt` on top of the existing bucket's `apt` directory.
 This can be done using the `gcloud` CLI:
 
 ```bash
-gcloud storage cp -r hack/apt/_output/apt gs://tanzu-cli-os-packages
+gcloud storage cp -r hack/apt/_output/apt gs://tanzu-cli-installer-packages
 ```
 
 This will effectively:
@@ -115,8 +115,8 @@ $ docker run --rm -it ubuntu
 apt update
 apt install -y ca-certificates curl gpg
 mkdir -p /etc/apt/keyrings
-curl -fsSL https://packages-prod.broadcom.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub | gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
-echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | tee /etc/apt/sources.list.d/tanzu.list
+curl -fsSL https://storage.googleapis.com/tanzu-cli-installer-packages/keys/TANZU-PACKAGING-GPG-RSA-KEY.gpg | gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
+echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-installer-packages/apt tanzu-cli-jessie main" | tee /etc/apt/sources.list.d/tanzu.list
 apt update
 apt install -y tanzu-cli
 ```
