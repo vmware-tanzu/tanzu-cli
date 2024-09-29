@@ -26,7 +26,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y ca-certificates
-        sudo echo "deb https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
+        sudo echo "deb https://storage.googleapis.com/tanzu-cli-installer-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
         sudo apt-get update --allow-insecure-repositories
         sudo apt-get install -y tanzu-cli --allow-unauthenticated
         tanzu ceip-participation set false

@@ -26,7 +26,7 @@ target will first start a docker container and then run the
 
 The remote location of the existing repository can be overridden by setting
 the variable `RPM_METADATA_BASE_URI`.  For example, the default value for
-this variable is currently `https://storage.googleapis.com/tanzu-cli-os-packages`
+this variable is currently `https://storage.googleapis.com/tanzu-cli-installer-packages`
 
 ### Pre-requisite
 
@@ -78,7 +78,7 @@ yum install -y tanzu-cli-unstable
 ## Publishing the package to GCloud
 
 The GCloud bucket dedicated to hosting the Tanzu CLI OS packages is
-gs://tanzu-cli-os-packages`.
+gs://tanzu-cli-installer-packages`.
 
 Building the RPM repository incrementally means that we create the
 repository metadata for the new package version *and* for any existing packages on
@@ -88,7 +88,7 @@ built `hack/rpm/_output/rpm` on top of the existing bucket's `rpm` directory.
 This can be done using the `gcloud` CLI:
 
 ```bash
-gcloud storage cp -r hack/rpm/_output/rpm gs://tanzu-cli-os-packages
+gcloud storage cp -r hack/rpm/_output/rpm gs://tanzu-cli-installer-packages
 ```
 
 This will effectively:
@@ -111,11 +111,11 @@ $ docker run --rm -it fedora
 cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
 [tanzu-cli]
 name=Tanzu CLI
-baseurl=https://storage.googleapis.com/tanzu-cli-os-packages/rpm/tanzu-cli
+baseurl=https://storage.googleapis.com/tanzu-cli-installer-packages/rpm/tanzu-cli
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
-gpgkey=https://packages-prod.broadcom.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub
+gpgkey=https://storage.googleapis.com/tanzu-cli-installer-packages/keys/TANZU-PACKAGING-GPG-RSA-KEY.gpg
 EOF
 yum install -y tanzu-cli
 ```
