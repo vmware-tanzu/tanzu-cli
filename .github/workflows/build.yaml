@@ -31,6 +31,13 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v1
 
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GH_TOKEN_FOR_GHCR }}
+
     - name: Run markdown link check
       uses: gaurav-nelson/github-action-markdown-link-check@v1
       with:
