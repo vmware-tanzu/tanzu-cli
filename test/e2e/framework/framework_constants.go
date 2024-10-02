@@ -57,6 +57,7 @@ const (
 
 	// Central repository
 	TanzuCliE2ETestCentralRepositoryURL                                             = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL"
+	TanzuCliE2ETestCentralRepositoryPassword                                        = "TANZU_CLI_E2E_TEST_CENTRAL_REPO_PASSWORD"
 	TanzuCliE2ETestLocalCentralRepositoryURL                                        = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_URL"
 	TanzuCliE2ETestLocalCentralRepositoryPluginDiscoveryImageSignaturePublicKeyPath = "TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH"
 	TanzuCliPluginDiscoveryImageSignaturePublicKeyPath                              = "TANZU_CLI_PLUGIN_DISCOVERY_IMAGE_SIGNATURE_PUBLIC_KEY_PATH"

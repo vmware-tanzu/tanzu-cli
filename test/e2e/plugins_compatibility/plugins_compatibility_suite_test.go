@@ -31,9 +31,14 @@ var (
 var _ = BeforeSuite(func() {
 	tf = framework.NewFramework()
 
+	// Login to airgapped repository
+	dockerloginCmd := fmt.Sprintf("docker login %s --username USERNAME --password %s", os.Getenv(framework.TanzuCliE2ETestCentralRepositoryURL), os.Getenv(framework.TanzuCliE2ETestCentralRepositoryPassword))
+	_, _, err := tf.Exec.Exec(dockerloginCmd)
+	Expect(err).To(BeNil())
+
 	// setup the test central repo
 	centralURI := os.Getenv(framework.TanzuCliE2ETestCentralRepositoryURL)
-	err := framework.UpdatePluginDiscoverySource(tf, centralURI)
+	err = framework.UpdatePluginDiscoverySource(tf, centralURI)
 	Expect(err).To(BeNil(), "should not get any error for plugin source update")
 
 	// get all plugins with name prefix "test-plugin-"
