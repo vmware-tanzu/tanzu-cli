@@ -98,6 +98,7 @@ func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
 		newCompletionCmd(),
 		newConfigCmd(),
 		newContextCmd(),
+		newAPITokenCmd(),
 		k8sCmd,
 		tmcCmd,
 		opsCmd,
