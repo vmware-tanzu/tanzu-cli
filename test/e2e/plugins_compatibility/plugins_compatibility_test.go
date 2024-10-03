@@ -24,7 +24,7 @@ import (
 // Each test plugin built using specific Tanzu CLI Runtime library versions.
 // Here are sequence of test cases in below suite:
 // a. Before installing test plugins, uninstall test plugins (if any installed already) and verify status using plugin list
-// b. install all test plugins from repo gcr.io/eminent-nation-87317/tanzu-cli/test/v1/plugins/plugin-inventory:latest
+// b. install all test plugins from repo ghcr.io/vmware-tanzu/tanzu-cli/test/v1/plugins/plugin-inventory:latest
 // c. list all plugins and make sure all above installed test plugins are listed with status "installed"
 // d. run basic commands on installed test plugins, to make sure works/co-exists with other plugins build with different runtime version
 // e. run hello-world commands on installed test plugins, to make sure works/co-exists with other plugins build with different runtime version
