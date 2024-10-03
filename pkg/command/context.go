@@ -732,11 +732,53 @@ func getSelfManagedOrg(c *configtypes.Context) (string, string) {
 	return orgID, orgName
 }
 
-func globalTanzuLoginUAA(c *configtypes.Context, generateContextNameFunc func(orgName, endpoint string, isStaging bool) string) error {
+func doUAAAPITokenAuthAndUpdateContext(c *configtypes.Context, uaaEndpoint, apiTokenValue string) (claims *commonauth.Claims, err error) {
+	token, err := uaa.GetAccessTokenFromAPIToken(apiTokenValue, uaaEndpoint, endpointCACertPath, skipTLSVerify)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get token from UAA")
+	}
+	claims, err = commonauth.ParseToken(&oauth2.Token{AccessToken: token.AccessToken}, config.UAAIdpType)
+	if err != nil {
+		return nil, err
+	}
+
+	a := configtypes.GlobalServerAuth{}
+	a.Issuer = uaaEndpoint
+	a.UserName = claims.Username
+	a.Permissions = claims.Permissions
+	a.AccessToken = token.AccessToken
+	a.IDToken = token.IDToken
+	a.RefreshToken = apiTokenValue
+	a.Type = commonauth.APITokenType
+	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
+	a.Expiration = expiresAt
+	c.GlobalOpts.Auth = a
+	if c.AdditionalMetadata == nil {
+		c.AdditionalMetadata = make(map[string]interface{})
+	}
+
+	return claims, nil
+}
+
+func doUAAAuthentication(c *configtypes.Context) (*commonauth.Claims, error) {
+	if c.AdditionalMetadata[config.TanzuAuthEndpointKey] == nil {
+		return nil, errors.New("auth endpoint not set")
+	}
 	uaaEndpoint := c.AdditionalMetadata[config.TanzuAuthEndpointKey].(string)
 	log.V(7).Infof("Login to UAA endpoint: %s", uaaEndpoint)
 
-	claims, err := doInteractiveLoginAndUpdateContext(c, uaaEndpoint)
+	apiTokenValue, ok := os.LookupEnv(config.EnvAPITokenKey)
+	// Use API Token login flow if TANZU_API_TOKEN environment variable is set, else fall back to interactive login flow
+	if ok {
+		log.Info("TANZU_API_TOKEN is set")
+		return doUAAAPITokenAuthAndUpdateContext(c, uaaEndpoint, apiTokenValue)
+	}
+
+	return doInteractiveLoginAndUpdateContext(c, uaaEndpoint)
+}
+
+func globalTanzuLoginUAA(c *configtypes.Context, generateContextNameFunc func(orgName, endpoint string, isStaging bool) string) error {
+	claims, err := doUAAAuthentication(c)
 	if err != nil {
 		return err
 	}
@@ -885,7 +927,7 @@ func doCSPAuthentication(c *configtypes.Context) (*commonauth.Claims, error) {
 	apiTokenValue, apiTokenExists := os.LookupEnv(config.EnvAPITokenKey)
 	// Use API Token login flow if TANZU_API_TOKEN environment variable is set, else fall back to default interactive login flow
 	if apiTokenExists {
-		log.Info("API token env var is set")
+		log.Info("TANZU_API_TOKEN is set")
 		return doCSPAPITokenAuthAndUpdateContext(c, apiTokenValue)
 	}
 
