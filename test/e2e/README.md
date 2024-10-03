@@ -243,7 +243,7 @@ the current CLI supports all older plugins and all plugins
 
 We have created a github repository `https://github.com/chandrareddyp/tanzu-cli-test-plugins` to host
 test plugins with different CLI Runtime versions which supported by current CLI Core, and
-these test plugins are published manually to gcr.io/eminent-nation-87317/tanzu-cli/test/v1/plugins/plugin-inventory:latest
+these test plugins are published manually to ghcr.io/vmware-tanzu/tanzu-cli/test/v1/plugins/plugin-inventory:latest
 using publish tooling, these test plugins used during e2e plugin compatibility test execution.
 
 ## How and when E2E tests are executed

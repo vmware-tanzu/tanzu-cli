@@ -17,7 +17,7 @@ TANZU_CLI_TMC_UNSTABLE_URL = ""
 endif
 
 ifndef TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL
-TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL = gcr.io/eminent-nation-87317/tanzu-cli/test/v1/plugins/plugin-inventory:latest
+TANZU_CLI_E2E_TEST_CENTRAL_REPO_URL = ghcr.io/vmware-tanzu/tanzu-cli/test/v1/plugins/plugin-inventory:latest
 endif
 
 ifndef TANZU_CLI_E2E_TEST_LOCAL_CENTRAL_REPO_HOST
