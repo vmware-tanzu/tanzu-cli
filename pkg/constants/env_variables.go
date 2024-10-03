@@ -66,6 +66,9 @@ const (
 	// This may not be necessary or could be discoverable in the future, at which point this will be ignored.
 	UAALoginOrgName = "TANZU_CLI_SM_ORGANIZATION_NAME"
 
+	// UAAUseAlternateClient allows use of an alternate UAA client for non-interactive logins
+	UAAUseAlternateClient = "TANZU_CLI_USE_ALTERNATE_UAA_CLIENT"
+
 	// TanzuCLIOAuthLocalListenerPort is the port to be used by local listener for OAuth authorization flow
 	TanzuCLIOAuthLocalListenerPort = "TANZU_CLI_OAUTH_LOCAL_LISTENER_PORT"
 
