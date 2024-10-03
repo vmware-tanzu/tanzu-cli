@@ -122,6 +122,17 @@ func WithCertInfo(tlsSkipVerify bool, caCertData string) LoginOption {
 	}
 }
 
+// WithClientID specifies a OAuth Client ID to use
+func WithClientID(clientID string) LoginOption {
+	return func(h *TanzuLoginHandler) error {
+		h.clientID = clientID
+		if h.oauthConfig != nil {
+			h.oauthConfig.ClientID = clientID
+		}
+		return nil
+	}
+}
+
 // WithListenerPort specifies a TCP listener port on localhost, which will be used for the redirect_uri and to handle the
 // authorization code callback. By default, a random high port will be chosen which requires the authorization server
 // to support wildcard port numbers as described by https://tools.ietf.org/html/rfc8252#section-7.3:
