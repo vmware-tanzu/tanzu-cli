@@ -4,7 +4,7 @@ List installed plugins
 
 ### Synopsis
 
-List installed standalone plugins or plugins recommended by the contexts being used
+List installed plugins and plugins recommended by the active contexts
 
 ```
 tanzu plugin list [flags]

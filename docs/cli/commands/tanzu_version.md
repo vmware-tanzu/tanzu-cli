@@ -14,5 +14,5 @@ tanzu version [flags]
 
 ### SEE ALSO
 
-* [tanzu](tanzu.md)	 - 
+* [tanzu](tanzu.md)	 - The Tanzu CLI
 

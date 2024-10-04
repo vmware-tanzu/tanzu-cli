@@ -2,6 +2,10 @@
 
 Update a discovery source configuration
 
+### Synopsis
+
+Update a discovery source configuration and refresh the plugin inventory local cache
+
 ```
 tanzu plugin source update SOURCE_NAME --uri <URI>
 ```
