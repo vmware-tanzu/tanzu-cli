@@ -188,12 +188,19 @@ func TestGetToken_Valid_NotExpired(t *testing.T) {
 }
 
 func TestGetToken_Expired(t *testing.T) {
+	var theOneNow = time.Now()
+	// override currentTime to always returns same value
+	currentTime = func() time.Time {
+		return theOneNow
+	}
+
 	assert := assert.New(t)
 
 	accessToken := generateJWTToken(
 		`{"sub":"1234567890","username":"joe","context_name":"1516239022"}`,
 	)
-	expireTime := time.Now().Add(-time.Minute * 30)
+
+	expireTime := currentTime().Add(-time.Minute * 30)
 
 	serverAuth := configtypes.GlobalServerAuth{
 		Issuer:       "https://oidc.example.com",
@@ -206,7 +213,8 @@ func TestGetToken_Expired(t *testing.T) {
 	}
 
 	newRefreshToken := "LetMeInAgain"
-	newExpiry := int64(time.Until(time.Now().Add(time.Minute * 30)).Seconds())
+	newExpiryTime := currentTime().Local().Add(time.Minute * 30)
+	newExpiry := int64(30 * 60)
 
 	tokenGetter := createMockTokenGetter(newRefreshToken, newExpiry)
 
@@ -215,4 +223,6 @@ func TestGetToken_Expired(t *testing.T) {
 	assert.NotNil(tok)
 	assert.Equal(tok.AccessToken, accessToken)
 	assert.Equal(tok.RefreshToken, newRefreshToken)
+	assert.Equal(tok.Expiry, newExpiryTime)
+	assert.Equal(serverAuth.Expiration, newExpiryTime)
 }
