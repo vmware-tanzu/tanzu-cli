@@ -1,6 +1,6 @@
 ## tanzu context unset
 
-Unset the active context so that it is not used by default.
+Unset the active context so that it is not used by default
 
 ```
 tanzu context unset CONTEXT_NAME [flags]

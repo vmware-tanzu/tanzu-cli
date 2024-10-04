@@ -367,7 +367,10 @@ generate-controller-code: $(CONTROLLER_GEN)  ## Generate code via controller-gen
 generate-manifests:  ## Generate API manifests e.g. CRD
 	$(MAKE) generate-controller-code GENERATOR=crd OPTIONS="output:crd:artifacts:config=$(ROOT_DIR)/apis/config/crd/bases" CONTROLLER_GEN_SRC=$(CONTROLLER_GEN_SRC)
 
-generate: generate-controller-code generate-manifests 	## Generate controller code and manifests e.g. CRD etc.
+generate-docs: build
+	HOME=${TMPDIR}/tanzu-doc-gen TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER=no TANZU_CLI_EULA_PROMPT_ANSWER=yes TANZU_CLI_ESSENTIALS_PLUGIN_GROUP_VERSION=unused ./bin/tanzu generate-all-docs; rm -rf ${TMPDIR}/tanzu-doc-gen
+
+generate: generate-controller-code generate-manifests generate-docs	## Generate controller code, manifests (e.g. CRD etc.) and CLI docs
 
 ## --------------------------------------
 ## Tooling Binaries

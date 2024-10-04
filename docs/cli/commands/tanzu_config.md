@@ -10,7 +10,7 @@ Configuration for the CLI
 
 ### SEE ALSO
 
-* [tanzu](tanzu.md)	 - 
+* [tanzu](tanzu.md)	 - The Tanzu CLI
 * [tanzu config cert](tanzu_config_cert.md)	 - Manage certificate configuration of hosts
 * [tanzu config eula](tanzu_config_eula.md)	 - Manage EULA acceptance
 * [tanzu config get](tanzu_config_get.md)	 - Get the current configuration

@@ -14,7 +14,7 @@ Provides all lifecycle operations for plugins
 
 ### SEE ALSO
 
-* [tanzu](tanzu.md)	 - 
+* [tanzu](tanzu.md)	 - The Tanzu CLI
 * [tanzu plugin clean](tanzu_plugin_clean.md)	 - Clean the plugins
 * [tanzu plugin describe](tanzu_plugin_describe.md)	 - Describe a plugin
 * [tanzu plugin download-bundle](tanzu_plugin_download-bundle.md)	 - Download plugin bundle to the local system

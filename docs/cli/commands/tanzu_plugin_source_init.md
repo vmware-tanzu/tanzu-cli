@@ -2,6 +2,10 @@
 
 Initialize the discovery source to its default value
 
+### Synopsis
+
+Initialize the discovery source to its default value and refresh the plugin inventory local cache
+
 ```
 tanzu plugin source init
 ```
