@@ -24,7 +24,7 @@ import (
 func newAPITokenCmd() *cobra.Command {
 	apiTokenCmd := &cobra.Command{
 		Use:     "api-token",
-		Short:   "Manage API Tokens for Tanzu Platform",
+		Short:   "Manage API Tokens for Tanzu Platform Self-managed",
 		Aliases: []string{"apitoken"},
 		Annotations: map[string]string{
 			"group": string(plugin.SystemCmdGroup),
@@ -42,10 +42,10 @@ func newAPITokenCmd() *cobra.Command {
 func newAPITokenCreateCmd() *cobra.Command {
 	createCmd := &cobra.Command{
 		Use:     "create",
-		Short:   "Create a new API Token for Tanzu Platform",
+		Short:   "Create a new API Token for Tanzu Platform Self-managed",
 		Aliases: []string{},
 		Example: `
-    # Create an API Token for the Tanzu Platform
+    # Create an API Token for the Tanzu Platform Self-managed
     tanzu api-token create
 
     # Note: The retrieved token can be used as the value of TANZU_API_TOKEN
@@ -60,10 +60,10 @@ func newAPITokenCreateCmd() *cobra.Command {
 func createAPIToken(cmd *cobra.Command, _ []string) (err error) {
 	c, err := config.GetActiveContext(types.ContextTypeTanzu)
 	if err != nil {
-		return errors.New("no active context of type `tanzu`. Please login to Tanzu Platform first to generate an API token")
+		return errors.New("no active context found for Tanzu Platform. Please login to Tanzu Platform first to generate an API token")
 	}
 	if c == nil || c.GlobalOpts == nil || c.GlobalOpts.Auth.Issuer == "" {
-		return errors.New("invalid active context of type `tanzu`. Please login to Tanzu Platform first to generate an API token")
+		return errors.New("invalid active context found for Tanzu Platform. Please login to Tanzu Platform first to generate an API token")
 	}
 	// Make sure it is of type tanzu with tanzuIdpType as `uaa` else return error
 	if idpType, exist := c.AdditionalMetadata[config.TanzuIdpTypeKey]; !exist || idpType != string(config.UAAIdpType) {

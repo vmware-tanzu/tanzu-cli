@@ -125,7 +125,7 @@ Please copy and save your token securely. Note that you will need to regenerate 
 			context:       nil,
 			tanzuLoginErr: nil,
 			wantErr:       true,
-			errMsg:        "no active context of type `tanzu`. Please login to Tanzu Platform first to generate an API token",
+			errMsg:        "no active context found for Tanzu Platform. Please login to Tanzu Platform first to generate an API token",
 		},
 		{
 			name: "invalid active context",
@@ -138,7 +138,7 @@ Please copy and save your token securely. Note that you will need to regenerate 
 			},
 			tanzuLoginErr: nil,
 			wantErr:       true,
-			errMsg:        "invalid active context of type `tanzu`. Please login to Tanzu Platform first to generate an API token",
+			errMsg:        "invalid active context found for Tanzu Platform. Please login to Tanzu Platform first to generate an API token",
 		},
 		{
 			name: "invalid IDP type",
