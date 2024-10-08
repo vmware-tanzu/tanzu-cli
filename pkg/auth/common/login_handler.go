@@ -167,7 +167,8 @@ func WithListenerPortFromEnv(envVarName string) LoginOption {
 
 func (h *TanzuLoginHandler) DoLogin() (*Token, error) {
 	if h.refreshToken != "" {
-		token, err := h.getTokenWithRefreshToken()
+		ctx := contextWithCustomTLSConfig(context.TODO(), h.getTLSConfig())
+		token, err := h.getTokenWithRefreshToken(ctx)
 		if err == nil {
 			return token, nil
 		}
@@ -176,8 +177,8 @@ func (h *TanzuLoginHandler) DoLogin() (*Token, error) {
 	return h.browserLogin()
 }
 
-func (h *TanzuLoginHandler) getTokenWithRefreshToken() (*Token, error) {
-	refreshedToken, err := h.oauthConfig.TokenSource(context.TODO(), &oauth2.Token{RefreshToken: h.refreshToken}).Token()
+func (h *TanzuLoginHandler) getTokenWithRefreshToken(ctx context.Context) (*Token, error) {
+	refreshedToken, err := h.oauthConfig.TokenSource(ctx, &oauth2.Token{RefreshToken: h.refreshToken}).Token()
 	if err != nil {
 		return nil, err
 	}
@@ -492,16 +493,20 @@ func GetTLSConfig(endpoint, certData string, skipVerify bool) *tls.Config {
 	return nil
 }
 
+func contextWithCustomTLSConfig(ctx context.Context, tlsConfig *tls.Config) context.Context {
+	if tlsConfig != nil {
+		tr := http.DefaultTransport.(*http.Transport).Clone()
+		tr.TLSClientConfig = tlsConfig
+
+		sslcli := &http.Client{Transport: tr}
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, sslcli)
+	}
+	return ctx
+}
+
 func (h *TanzuLoginHandler) getTokenUsingAuthCode(ctx context.Context, code string) (*oauth2.Token, error) {
 	if h.idpType == config.UAAIdpType {
-		tlsConfig := h.getTLSConfig()
-		if tlsConfig != nil {
-			tr := http.DefaultTransport.(*http.Transport).Clone()
-			tr.TLSClientConfig = tlsConfig
-
-			sslcli := &http.Client{Transport: tr}
-			ctx = context.WithValue(ctx, oauth2.HTTPClient, sslcli)
-		}
+		ctx = contextWithCustomTLSConfig(ctx, h.getTLSConfig())
 	}
 
 	token, err := h.oauthConfig.Exchange(ctx, code, h.pkceCodePair.Verifier())
