@@ -45,7 +45,7 @@ func GetAlternateClientID() string {
 	return clientID
 }
 
-func TanzuLogin(issuerURL string, opts ...common.LoginOption) (*common.Token, error) {
+var TanzuLogin = func(issuerURL string, opts ...common.LoginOption) (*common.Token, error) {
 	issuerEndpoints := getIssuerEndpoints(issuerURL)
 
 	h := common.NewTanzuLoginHandler(issuerURL, issuerEndpoints.AuthURL, issuerEndpoints.TokenURL, tanzuCLIClientID, tanzuCLIClientSecret, defaultListenAddress, defaultCallbackPath, config.UAAIdpType, nil, nil, term.IsTerminal)

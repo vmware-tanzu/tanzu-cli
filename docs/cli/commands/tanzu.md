@@ -10,6 +10,7 @@ The Tanzu CLI
 
 ### SEE ALSO
 
+* [tanzu api-token](tanzu_api-token.md)	 - Manage API Tokens for Tanzu Platform Self-managed
 * [tanzu completion](tanzu_completion.md)	 - Output shell completion code
 * [tanzu config](tanzu_config.md)	 - Configuration for the CLI
 * [tanzu context](tanzu_context.md)	 - Configure and manage contexts for the Tanzu CLI
