@@ -44,7 +44,7 @@ func TestHandleTokenRefresh(t *testing.T) {
 		refreshToken: "fake-refresh-token",
 	}
 
-	token, err := lh.getTokenWithRefreshToken()
+	token, err := lh.getTokenWithRefreshToken(context.TODO())
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
