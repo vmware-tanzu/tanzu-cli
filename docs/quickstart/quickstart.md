@@ -232,10 +232,19 @@ Notes:
 
 ##### API Token
 
+To authenticate with the Tanzu Platform Endpoint for non-interactive login, you must first generate an API token.
+
+###### Generating an API Token
+
+- For public endpoints, generate the API token via the [CSP UI](https://console.tanzu.broadcom.com).
+- For Self-Managed use cases that rely on UAA, create the API token using the `tanzu api-token create` command.
+
+###### Logging in with an API Token
+
 Example command to log in using an API token:
 
 ```console
-TANZU_API_TOKEN=<APIToken> tanzu login
+TANZU_API_TOKEN=<APIToken> tanzu login [--endpoint <tanzu-platform-endpoint>]
 ```
 
 Users can persist the environment variable in the CLI configuration file, which will be used for each CLI command
@@ -243,7 +252,7 @@ invocation:
 
 ```console
 tanzu config set env.TANZU_API_TOKEN <api_token>
-tanzu login
+tanzu login [--endpoint <tanzu-platform-endpoint>]
 ```
 
 ### Creating and connecting to a new context
@@ -297,6 +306,15 @@ Notes:
   console.
 
 ##### API Token
+
+To authenticate with the Tanzu Platform Endpoint for non-interactive login, you must first generate an API token.
+
+###### Generating an API Token
+
+- For public endpoints, generate the API token via the [CSP UI](https://console.tanzu.broadcom.com).
+- For Self-Managed use cases that rely on UAA, create the API token using the `tanzu api-token create` command.
+
+###### Logging in with an API Token
 
 Example command for creating a tanzu context using an API token:
 

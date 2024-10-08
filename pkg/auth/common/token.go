@@ -14,13 +14,13 @@ import (
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
+
+	timeutils "github.com/vmware-tanzu/tanzu-cli/pkg/utils/time"
 )
 
 const (
 	extraIDToken = "id_token"
 )
-
-var currentTime = time.Now
 
 const (
 	APITokenType   = "api-token"
@@ -99,7 +99,7 @@ func GetToken(g *types.GlobalServerAuth, tokenGetter func(refreshOrAPIToken, acc
 	g.RefreshToken = token.RefreshToken
 	g.AccessToken = token.AccessToken
 	g.IDToken = token.IDToken
-	expiration := currentTime().Local().Add(time.Duration(token.ExpiresIn) * time.Second)
+	expiration := timeutils.Now().Local().Add(time.Duration(token.ExpiresIn) * time.Second)
 	g.Expiration = expiration
 	g.Permissions = claims.Permissions
 
@@ -173,7 +173,7 @@ func ParseToken(tkn *oauth2.Token, idpType config.IdpType) (*Claims, error) {
 func IsExpired(tokenExpiry time.Time) bool {
 	// refresh at half token life
 	two := 2
-	now := currentTime().Unix()
+	now := timeutils.Now().Unix()
 	halfDur := -time.Duration((tokenExpiry.Unix()-now)/int64(two)) * time.Second
 	return tokenExpiry.Add(halfDur).Unix() < now
 }

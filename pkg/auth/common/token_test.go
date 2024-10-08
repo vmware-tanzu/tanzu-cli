@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
 
+	timeutils "github.com/vmware-tanzu/tanzu-cli/pkg/utils/time"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
@@ -190,7 +191,7 @@ func TestGetToken_Valid_NotExpired(t *testing.T) {
 func TestGetToken_Expired(t *testing.T) {
 	var theOneNow = time.Now()
 	// override currentTime to always returns same value
-	currentTime = func() time.Time {
+	timeutils.Now = func() time.Time {
 		return theOneNow
 	}
 
@@ -200,7 +201,7 @@ func TestGetToken_Expired(t *testing.T) {
 		`{"sub":"1234567890","username":"joe","context_name":"1516239022"}`,
 	)
 
-	expireTime := currentTime().Add(-time.Minute * 30)
+	expireTime := timeutils.Now().Add(-time.Minute * 30)
 
 	serverAuth := configtypes.GlobalServerAuth{
 		Issuer:       "https://oidc.example.com",
@@ -213,7 +214,7 @@ func TestGetToken_Expired(t *testing.T) {
 	}
 
 	newRefreshToken := "LetMeInAgain"
-	newExpiryTime := currentTime().Local().Add(time.Minute * 30)
+	newExpiryTime := timeutils.Now().Local().Add(time.Minute * 30)
 	newExpiry := int64(30 * 60)
 
 	tokenGetter := createMockTokenGetter(newRefreshToken, newExpiry)
