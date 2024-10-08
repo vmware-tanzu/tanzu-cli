@@ -733,7 +733,26 @@ func getSelfManagedOrg(c *configtypes.Context) (string, string) {
 }
 
 func doUAAAPITokenAuthAndUpdateContext(c *configtypes.Context, uaaEndpoint, apiTokenValue string) (claims *commonauth.Claims, err error) {
-	token, err := uaa.GetAccessTokenFromAPIToken(apiTokenValue, uaaEndpoint, endpointCACertPath, skipTLSVerify)
+	loginOptions := []commonauth.LoginOption{
+		commonauth.WithSuppressInteractive(true), // fail instead of falling back to interactive login
+		commonauth.WithRefreshToken(apiTokenValue),
+		commonauth.WithClientID(uaa.GetAlternateClientID()),
+	}
+
+	var endpointCACertData string
+	if endpointCACertPath != "" {
+		fileBytes, err := os.ReadFile(endpointCACertPath)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error reading certificate file %s", endpointCACertPath)
+		}
+		endpointCACertData = base64.StdEncoding.EncodeToString(fileBytes)
+	}
+	if skipTLSVerify || endpointCACertData != "" {
+		loginOptions = append(loginOptions, commonauth.WithCertInfo(skipTLSVerify, endpointCACertData))
+	}
+
+	// Invoke TanzuLogin to obtain access token via API token
+	token, err := uaa.TanzuLogin(uaaEndpoint, loginOptions...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get token from UAA")
 	}
@@ -748,7 +767,7 @@ func doUAAAPITokenAuthAndUpdateContext(c *configtypes.Context, uaaEndpoint, apiT
 	a.Permissions = claims.Permissions
 	a.AccessToken = token.AccessToken
 	a.IDToken = token.IDToken
-	a.RefreshToken = apiTokenValue
+	a.RefreshToken = token.RefreshToken
 	a.Type = commonauth.APITokenType
 	expiresAt := time.Now().Local().Add(time.Second * time.Duration(token.ExpiresIn))
 	a.Expiration = expiresAt

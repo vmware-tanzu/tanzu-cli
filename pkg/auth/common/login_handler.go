@@ -60,6 +60,7 @@ type TanzuLoginHandler struct {
 	callbackHandlerMutex  sync.Mutex
 	tlsSkipVerify         bool
 	caCertData            string
+	suppressInteractive   bool
 }
 
 // LoginOption is an optional configuration for Login().
@@ -133,6 +134,15 @@ func WithClientID(clientID string) LoginOption {
 	}
 }
 
+// WithSuppressInteractive specifies whether to fall back to interactive login if
+// an access token cannot be obtained.
+func WithSuppressInteractive(suppress bool) LoginOption {
+	return func(h *TanzuLoginHandler) error {
+		h.suppressInteractive = suppress
+		return nil
+	}
+}
+
 // WithListenerPort specifies a TCP listener port on localhost, which will be used for the redirect_uri and to handle the
 // authorization code callback. By default, a random high port will be chosen which requires the authorization server
 // to support wildcard port numbers as described by https://tools.ietf.org/html/rfc8252#section-7.3:
@@ -166,18 +176,22 @@ func WithListenerPortFromEnv(envVarName string) LoginOption {
 }
 
 func (h *TanzuLoginHandler) DoLogin() (*Token, error) {
+	var err error
+	var token *Token
+
 	if h.refreshToken != "" {
-		ctx := contextWithCustomTLSConfig(context.TODO(), h.getTLSConfig())
-		token, err := h.getTokenWithRefreshToken(ctx)
-		if err == nil {
-			return token, nil
+		token, err = h.getTokenWithRefreshToken()
+		if err == nil || h.suppressInteractive {
+			return token, err
 		}
 	}
+
 	// If refresh token fails, proceed with login flow through the browser
 	return h.browserLogin()
 }
 
-func (h *TanzuLoginHandler) getTokenWithRefreshToken(ctx context.Context) (*Token, error) {
+func (h *TanzuLoginHandler) getTokenWithRefreshToken() (*Token, error) {
+	ctx := contextWithCustomTLSConfig(context.TODO(), h.getTLSConfig())
 	refreshedToken, err := h.oauthConfig.TokenSource(ctx, &oauth2.Token{RefreshToken: h.refreshToken}).Token()
 	if err != nil {
 		return nil, err

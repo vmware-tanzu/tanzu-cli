@@ -27,6 +27,8 @@ const (
 )
 
 func TestHandleTokenRefresh(t *testing.T) {
+	assert := assert.New(t)
+
 	// Mock HTTP server for token refresh
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -44,20 +46,65 @@ func TestHandleTokenRefresh(t *testing.T) {
 		refreshToken: "fake-refresh-token",
 	}
 
-	token, err := lh.getTokenWithRefreshToken(context.TODO())
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
+	token, err := lh.getTokenWithRefreshToken()
+	assert.Nil(err)
+	assert.NotNil(token)
+	assert.Equal(token.AccessToken, "fake-access-token")
+	assert.Equal(token.RefreshToken, "fake-refresh-token")
+	assert.Equal(token.TokenType, "id-token")
+	assert.Equal(token.IDToken, "fake-id-token")
+	assert.Equal(token.ExpiresIn, int64(3599))
+}
+
+// test that login with refresh token completes without triggering browser
+// login regardless of whether refresh succeeded or not
+func TestLoginWithAPIToken(t *testing.T) {
+	assert := assert.New(t)
+
+	// Mock HTTP server for token refresh
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+		body, _ := io.ReadAll(r.Body)
+		if strings.Contains(string(body), "refresh_token=valid-api-token") {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"access_token": "fake-access-token", "refresh_token": "fake-refresh-token", "expires_in": 3600, "id_token": "fake-id-token"}`))
+			return
+		}
+		http.Error(w, "refresh_error", http.StatusBadRequest)
+	}))
+	defer server.Close()
+
+	lh := &TanzuLoginHandler{
+		oauthConfig: &oauth2.Config{
+			Endpoint: oauth2.Endpoint{
+				TokenURL: server.URL,
+			},
+		},
+		refreshToken:        "valid-api-token",
+		suppressInteractive: true,
 	}
-	if token == nil {
-		t.Error("Expected a non-nil token, got nil")
+	token, err := lh.DoLogin()
+
+	assert.Nil(err)
+	assert.NotNil(token)
+	assert.Equal(token.AccessToken, "fake-access-token")
+	assert.Equal(token.RefreshToken, "fake-refresh-token")
+	assert.Equal(token.TokenType, "id-token")
+	assert.Equal(token.IDToken, "fake-id-token")
+	assert.Equal(token.ExpiresIn, int64(3599))
+
+	lh = &TanzuLoginHandler{
+		oauthConfig: &oauth2.Config{
+			Endpoint: oauth2.Endpoint{
+				TokenURL: server.URL,
+			},
+		},
+		refreshToken:        "bad-refresh-token",
+		suppressInteractive: true,
 	}
-	if token != nil {
-		assert.Equal(t, token.AccessToken, "fake-access-token")
-		assert.Equal(t, token.RefreshToken, "fake-refresh-token")
-		assert.Equal(t, token.TokenType, "id-token")
-		assert.Equal(t, token.IDToken, "fake-id-token")
-		assert.Equal(t, token.ExpiresIn, int64(3599))
-	}
+	token, err = lh.DoLogin()
+	assert.NotNil(err)
+	assert.Nil(token)
 }
 
 func TestGetAuthCodeURL_validResponse(t *testing.T) {
