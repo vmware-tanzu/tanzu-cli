@@ -182,6 +182,11 @@ func (h *TanzuLoginHandler) DoLogin() (*Token, error) {
 	if h.refreshToken != "" {
 		token, err = h.getTokenWithRefreshToken()
 		if err == nil || h.suppressInteractive {
+			// non interactive login mode should update the cert map as well
+			// before returning.
+			if err == nil && h.suppressInteractive {
+				h.updateCertMap()
+			}
 			return token, err
 		}
 	}
