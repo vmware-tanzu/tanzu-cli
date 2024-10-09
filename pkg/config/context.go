@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
 )
 
 // SyncContextsAndServers populate or sync contexts and servers
@@ -16,7 +17,11 @@ func SyncContextsAndServers() error {
 		return errors.Wrap(err, "failed to get client config")
 	}
 
-	config.PopulateContexts(cfg)
+	hasChanged := config.PopulateContexts(cfg)
+	needsSync := doServersNeedUpdate(cfg)
+	if !hasChanged && !needsSync {
+		return nil
+	}
 
 	// Now write the context to the configuration file.  This will also create any missing server for its corresponding context
 	for _, c := range cfg.KnownContexts {
@@ -35,4 +40,23 @@ func SyncContextsAndServers() error {
 		}
 	}
 	return nil
+}
+
+func doServersNeedUpdate(cfg *types.ClientConfig) bool {
+	if cfg == nil {
+		return false
+	}
+
+	for _, c := range cfg.KnownContexts {
+		if c.ContextType == types.ContextTypeTanzu || cfg.HasServer(c.Name) { //nolint:staticcheck // Deprecated
+			// context of type "tanzu" don't get synched
+			// or context already present in servers; skip
+			continue
+		}
+		// Found a context that is not in the servers.  We need to update
+		// the servers section
+		return true
+	}
+
+	return false
 }
