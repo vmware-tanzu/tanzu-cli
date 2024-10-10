@@ -75,7 +75,7 @@ func createAPIToken(cmd *cobra.Command, _ []string) (err error) {
 	// Also specify the client ID to use for token generation
 	loginOptions := []commonauth.LoginOption{
 		commonauth.WithListenerPortFromEnv(constants.TanzuCLIOAuthLocalListenerPort),
-		commonauth.WithClientID(uaa.GetAlternateClientID()),
+		commonauth.WithClientIDAndSecret(uaa.GetAlternateClientID(), uaa.GetClientSecret()),
 	}
 
 	token, err = uaa.TanzuLogin(c.GlobalOpts.Auth.Issuer, loginOptions...)

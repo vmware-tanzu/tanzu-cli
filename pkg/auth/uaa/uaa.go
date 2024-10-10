@@ -15,7 +15,7 @@ func GetTokens(refreshOrAPIToken, _, issuer, tokenType string) (*common.Token, e
 	if tokenType == common.APITokenType {
 		clientID = GetAlternateClientID()
 	}
-	loginOptions := []common.LoginOption{common.WithRefreshToken(refreshOrAPIToken), common.WithListenerPortFromEnv(constants.TanzuCLIOAuthLocalListenerPort), common.WithClientID(clientID)}
+	loginOptions := []common.LoginOption{common.WithRefreshToken(refreshOrAPIToken), common.WithListenerPortFromEnv(constants.TanzuCLIOAuthLocalListenerPort), common.WithClientIDAndSecret(clientID, GetClientSecret())}
 	if tokenType == common.APITokenType {
 		loginOptions = append(loginOptions, common.WithSuppressInteractive(true))
 	}

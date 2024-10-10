@@ -35,6 +35,17 @@ func getIssuerEndpoints(issuerURL string) common.IssuerEndPoints {
 	}
 }
 
+func GetClientSecret() string {
+	// Not really used as a secret, but specified in OAuth client to UAA in order
+	// to obtain the expected token refresh behavior.
+	secret := "tanzu_intentionally_not_a_secret"
+
+	if noClientSecret, _ := strconv.ParseBool(os.Getenv(constants.UAANoClientSecret)); noClientSecret {
+		secret = ""
+	}
+	return secret
+}
+
 func GetAlternateClientID() string {
 	// Default to use the same client id, even for non-interactive login use cases.
 	clientID := tanzuCLIClientID

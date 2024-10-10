@@ -123,12 +123,14 @@ func WithCertInfo(tlsSkipVerify bool, caCertData string) LoginOption {
 	}
 }
 
-// WithClientID specifies a OAuth Client ID to use
-func WithClientID(clientID string) LoginOption {
+// WithClientIDAndSecret specifies a OAuth Client ID and secret to use
+func WithClientIDAndSecret(clientID, clientSecret string) LoginOption {
 	return func(h *TanzuLoginHandler) error {
 		h.clientID = clientID
+		h.clientSecret = clientSecret
 		if h.oauthConfig != nil {
 			h.oauthConfig.ClientID = clientID
+			h.oauthConfig.ClientSecret = clientSecret
 		}
 		return nil
 	}
