@@ -736,7 +736,7 @@ func doUAAAPITokenAuthAndUpdateContext(c *configtypes.Context, uaaEndpoint, apiT
 	loginOptions := []commonauth.LoginOption{
 		commonauth.WithSuppressInteractive(true), // fail instead of falling back to interactive login
 		commonauth.WithRefreshToken(apiTokenValue),
-		commonauth.WithClientID(uaa.GetAlternateClientID()),
+		commonauth.WithClientIDAndSecret(uaa.GetAlternateClientID(), uaa.GetClientSecret()),
 	}
 
 	var endpointCACertData string

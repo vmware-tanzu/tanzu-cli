@@ -69,6 +69,9 @@ const (
 	// UAAUseAlternateClient allows use of an alternate UAA client for non-interactive logins
 	UAAUseAlternateClient = "TANZU_CLI_USE_ALTERNATE_UAA_CLIENT"
 
+	// UAANoClientSecret skips setting of OAuth Client Secret
+	UAANoClientSecret = "TANZU_CLI_NO_UAA_CLIENT_SECRET" //nolint:gosec
+
 	// TanzuCLIOAuthLocalListenerPort is the port to be used by local listener for OAuth authorization flow
 	TanzuCLIOAuthLocalListenerPort = "TANZU_CLI_OAUTH_LOCAL_LISTENER_PORT"
 
