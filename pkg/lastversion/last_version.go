@@ -47,10 +47,17 @@ func GetLastExecutedCLIVersion() string {
 
 // SetLastExecutedCLIVersion sets the last executed CLI version in the datastore.
 func SetLastExecutedCLIVersion() {
-	_ = datastore.SetDataStoreValue(lastExecutedCLIVersionKey, lastExecutedCLIVersion{Version: buildinfo.Version})
+	var prevLastVersion lastExecutedCLIVersion
+	_ = datastore.GetDataStoreValue(lastExecutedCLIVersionKey, &prevLastVersion)
+	if prevLastVersion.Version != buildinfo.Version {
+		// Only update the last executed version if it is different from the one already stored.
+		_ = datastore.SetDataStoreValue(lastExecutedCLIVersionKey, lastExecutedCLIVersion{Version: buildinfo.Version})
+	}
 
 	// Just in case the 'features.global.context-target-v2' feature flag is still set
 	// because the last version executed was < 1.3.0, we must remove it.
 	parts := strings.Split(constants.FeatureContextCommand, ".")
-	_ = config.DeleteFeature(parts[1], parts[2])
+	if enabled, err := config.IsFeatureEnabled(parts[1], parts[2]); err == nil && enabled {
+		_ = config.DeleteFeature(parts[1], parts[2])
+	}
 }
