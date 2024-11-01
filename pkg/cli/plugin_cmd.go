@@ -211,10 +211,14 @@ func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMa
 		runner := NewRunner(p.Name, p.InstallationPath, completion)
 		ctx := context.Background()
 		setupPluginEnv(srcHierarchy, dstHierarchy)
-		output, _, err := runner.RunOutput(ctx)
+		output, errOutput, err := runner.RunOutput(ctx)
 		if err != nil {
 			return nil, cobra.ShellCompDirectiveError
 		}
+
+		// Print the stderr output from the plugin back to stderr.
+		// This allows for debugging printouts to be seen.
+		fmt.Fprint(cmd.ErrOrStderr(), errOutput)
 
 		lines := strings.Split(strings.Trim(output, "\n"), "\n")
 
