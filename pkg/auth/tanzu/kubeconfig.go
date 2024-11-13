@@ -5,9 +5,11 @@
 package tanzu
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -17,6 +19,7 @@ import (
 	kubeutils "github.com/vmware-tanzu/tanzu-cli/pkg/auth/utils/kubeconfig"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/config"
 	configtypes "github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
 const (
@@ -27,9 +30,12 @@ const (
 	tanzuKubeconfigFile = "config"
 )
 
-// GetTanzuKubeconfig constructs and returns the kubeconfig that points to Tanzu Org and
+// GetTanzuKubeconfig constructs and returns the kubeconfig that points to
+// Tanzu Org. The constructed kubeconfig will incorporate any explicitly certdata or
+// skip verify flag or rely on the same information captured in the certmap
+// otherwise.
 func GetTanzuKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertPath string, skipTLSVerify bool) (string, string, string, error) {
-	var clusterCACertDataBytes []byte
+	var endpointCACertBytes []byte
 	var err error
 
 	clusterAPIServerURL := strings.TrimSpace(endpoint)
@@ -39,9 +45,29 @@ func GetTanzuKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertP
 	clusterAPIServerURL = clusterAPIServerURL + "/org/" + orgID
 
 	if endpointCACertPath != "" {
-		clusterCACertDataBytes, err = os.ReadFile(endpointCACertPath)
+		endpointCACertBytes, err = os.ReadFile(endpointCACertPath)
 		if err != nil {
 			return "", "", "", errors.Wrapf(err, "error reading CA certificate file %s", endpointCACertPath)
+		}
+	} else if !skipTLSVerify {
+		// When there is no explicit provision to use custom cert or skip TLS
+		// verification, fall back to information captured in the cert map, if
+		// any
+
+		if val, ok := c.AdditionalMetadata[config.TanzuAuthEndpointKey]; ok {
+			endpoint := val.(string)
+			certInfo, _ := config.GetCert(endpoint)
+			if certInfo != nil {
+				val, err := strconv.ParseBool(certInfo.SkipCertVerify)
+				if err == nil {
+					skipTLSVerify = val
+				}
+				decodedCACertData, err := base64.StdEncoding.DecodeString(certInfo.CACertData)
+				if err == nil {
+					endpointCACertBytes = decodedCACertData
+					log.V(7).Infof("Using cert data for endpoint: %s", endpoint)
+				}
+			}
 		}
 	}
 
@@ -53,7 +79,7 @@ func GetTanzuKubeconfig(c *configtypes.Context, endpoint, orgID, endpointCACertP
 		Kind:       "Config",
 		APIVersion: clientcmdapi.SchemeGroupVersion.Version,
 		Clusters: map[string]*clientcmdapi.Cluster{clusterName: {
-			CertificateAuthorityData: clusterCACertDataBytes,
+			CertificateAuthorityData: endpointCACertBytes,
 			InsecureSkipTLSVerify:    skipTLSVerify,
 			Server:                   clusterAPIServerURL,
 		}},
