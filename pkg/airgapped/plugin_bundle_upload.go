@@ -101,6 +101,32 @@ func (o *UploadPluginBundleOptions) UploadPluginBundle() error {
 	return nil
 }
 
+/*
+func (o *UploadPluginBundleOptions) uploadImage(imageTar, repoImagePath string, totalImages, imagesUploaded int, spinner component.OutputWriterSpinner) error {
+	uploadingMsg := fmt.Sprintf("[%d/%d] uploading image %q", totalImages, imagesUploaded, repoImagePath)
+	errorMsg := fmt.Sprintf("[%d/%d] error while uploading image %q", totalImages, imagesUploaded, repoImagePath)
+	uploadedMsg := "[%d/%d] uploaded image %q"
+
+	if component.IsTTYEnabled() {
+		spinner.SetText(uploadingMsg)
+		spinner.SetFinalText(errorMsg, log.LogTypeERROR)
+		spinner.StartSpinner()
+	} else {
+		log.Infof(uploadingMsg, totalImages, imagesUploaded, repoImagePath)
+	}
+	if err := o.ImageProcessor.CopyImageFromTar(imageTar, repoImagePath); err != nil {
+		return errors.Wrapf(err, errorMsg, repoImagePath)
+	}
+	uploadedMsg = fmt.Sprintf(uploadedMsg, totalImages, imagesUploaded+1, repoImagePath)
+	if spinner == nil {
+		spinner.SetFinalText("", "")
+	} else {
+		log.Infof(uploadedMsg, totalImages, imagesUploaded, repoImagePath)
+	}
+
+	return nil
+}
+*/
 // mergePluginInventoryMetadata merges the downloaded plugin inventory metadata with
 // existing plugin inventory metadata available on the remote repository
 func (o *UploadPluginBundleOptions) mergePluginInventoryMetadata(pluginInventoryMetadataImageWithTag, bundledPluginInventoryMetadataDBFilePath, tempDir string) error {
