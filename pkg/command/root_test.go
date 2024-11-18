@@ -1075,6 +1075,7 @@ type fakePluginRemapAttributes struct {
 	supportedContextType []configtypes.ContextType
 	invokedAs            []string
 	aliases              []string
+	hidden               bool
 	commandMap           []plugin.CommandMapEntry
 }
 
@@ -1094,7 +1095,7 @@ func setupFakePluginInfo(p fakePluginRemapAttributes, pluginDir string) *cli.Plu
 		Group:                cmdGroup,
 		Version:              "v0.1.0",
 		Aliases:              []string{},
-		Hidden:               false,
+		Hidden:               p.hidden,
 		InstallationPath:     filepath.Join(pluginDir, fmt.Sprintf("%s_%s", p.name, string(p.target))),
 		Target:               p.target,
 		InvokedAs:            []string{},
@@ -1890,6 +1891,23 @@ func TestCommandRemapping(t *testing.T) {
 			args:     []string{"kubernetes", "dummy", "deeper", "say", "hello"},
 			expected: []string{"Remap of plugin into command tree (dummy) associated with another plugin is not supported"},
 		},
+		{
+			test: "plugin root command hidden even when remapped",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetGlobal,
+					hidden: true,
+					commandMap: []plugin.CommandMapEntry{
+						{
+							DestinationCommandPath: "dummy",
+						},
+					},
+				},
+			},
+			args:       []string{"-h"},
+			unexpected: []string{"dummy"},
+		},
 		// --- Command level mapping tests
 		{
 			test: "command-level: plugin command is mapped to top level appears at top level",
@@ -2068,6 +2086,28 @@ func TestCommandRemapping(t *testing.T) {
 			},
 			args:     []string{"sic", "arg1", "arg2"},
 			expected: []string{"args = (show-invoke-context arg1 arg2), context is ():(dummy):(show-invoke-context)"},
+		},
+		{
+			test: "command-level: subcommand not hidden even if plugin hidden",
+			pluginVariants: []fakePluginRemapAttributes{
+				{
+					name:   "dummy2",
+					target: configtypes.TargetGlobal,
+					hidden: true,
+					commandMap: []plugin.CommandMapEntry{
+						{
+							DestinationCommandPath: "show-context",
+							SourceCommandPath:      "show-invoke-context",
+							Description:            "show context command",
+						},
+					},
+				},
+			},
+			args: []string{"-h"},
+			// The mapped command should not be hidden
+			expected: []string{"show-context"},
+			// The plugin command should be hidden
+			unexpected: []string{"dummy2"},
 		},
 		{
 			test:     "when nothing under platform-engineering command group",
