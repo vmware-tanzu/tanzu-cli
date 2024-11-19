@@ -155,6 +155,7 @@ func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMa
 	var srcHierarchy, dstHierarchy []string
 	aliases := p.Aliases
 	description := p.Description
+	hidden := p.Hidden
 
 	if mapEntry != nil {
 		srcHierarchy = hierarchyFromPath(mapEntry.SourceCommandPath)
@@ -163,6 +164,12 @@ func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMa
 		// is not a toplevel command
 		if len(srcHierarchy) > 0 {
 			aliases = mapEntry.Aliases
+			// There currently is no "mapEntry.Hidden" field, so there is
+			// no way to hide a remapped subcommand.
+			// But we want to make sure a remapped subcommand is not
+			// hidden even if the plugin root command is hidden, so we force
+			// the hidden field to false for subcommands.
+			hidden = false
 		}
 		if mapEntry.Description != "" {
 			description = mapEntry.Description
@@ -192,7 +199,7 @@ func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMa
 			"type":                   common.CommandTypePlugin,
 			"pluginInstallationPath": p.InstallationPath,
 		},
-		Hidden:  p.Hidden,
+		Hidden:  hidden,
 		Aliases: aliases,
 	}
 
