@@ -20,10 +20,12 @@ import (
 )
 
 // This global initializer checks if the last executed CLI version is < 1.3.0.
-// If so it refreshes the plugin catalog to make sure any remapping data is in the catalog.
+// If so it refreshes the plugin catalog to:
+// 1- migrate context-scoped plugins as standalone plugins
+// 2- make sure any remapping data is in the catalog
 
 func init() {
-	RegisterInitializer("Plugin Info Catalog Initializer", triggerForPreCommandRemapping, refreshPluginCatalog)
+	RegisterInitializer("Plugin Info Catalog Initializer", triggerForPreCommandRemapping, updatePluginCatalog)
 }
 
 func triggerForPreCommandRemapping() bool {
@@ -31,10 +33,22 @@ func triggerForPreCommandRemapping() bool {
 	return lastversion.GetLastExecutedCLIVersion() == lastversion.OlderThan1_3_0
 }
 
-// refreshPluginCatalog reads the info from each installed plugin
+// updatePluginCatalog does the following catalog udpates:
+// 1- Migrate context-scoped plugins as standalone plugins
+// 2- Reads the info from each installed plugin and updates the plugin catalog
+//
+//	with the latest info.  We need to do this to make sure the command re-mapping
+//	data is in the cache.
+func updatePluginCatalog(outStream io.Writer) error {
+	catalog.MigrateContextPluginsAsStandaloneIfNeeded()
+
+	return refreshPluginsForRemapping(outStream)
+}
+
+// refreshPluginsForRemapping reads the info from each installed plugin
 // and updates the plugin catalog with the latest info.
 // We need to do this to make sure the command re-mapping data is in the cache.
-func refreshPluginCatalog(outStream io.Writer) error {
+func refreshPluginsForRemapping(outStream io.Writer) error {
 	plugins, err := pluginsupplier.GetInstalledPlugins()
 	if err != nil {
 		return err
