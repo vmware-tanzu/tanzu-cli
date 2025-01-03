@@ -72,7 +72,7 @@ func TestHttpArtifact_errorResponse(t *testing.T) {
 	fakeHTTPClient.DoReturns(&http.Response{
 		StatusCode: 500,
 		Body:       responseBody,
-	}, fmt.Errorf(errorMsg))
+	}, fmt.Errorf("%s", errorMsg))
 	_, err := httpArtifact.Fetch()
 	assert.Contains(err.Error(), errorMsg)
 }

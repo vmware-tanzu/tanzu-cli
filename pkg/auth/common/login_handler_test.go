@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	testTanzuCLIClientID = "test-tanzu-cli-client-id" //nolint:gosec
+	testTanzuCLIClientID = "test-tanzu-cli-client-id"
 	fakeIssuerURL        = "https://fake.issuer.com"
 )
 
