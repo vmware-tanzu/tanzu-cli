@@ -911,6 +911,7 @@ func TestGlobalInit(t *testing.T) {
 				assert.NotContains(string(got), initString)
 				assert.NotContains(string(got), "The initialization encountered an error")
 			}
+			globalinit.ResetInitializers()
 		})
 	}
 }
