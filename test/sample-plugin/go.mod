@@ -2,6 +2,8 @@ module sample-plugin
 
 go 1.21
 
+replace github.com/vmware-tanzu/tanzu-cli/test/e2e/framework => ../e2e/framework
+
 require (
 	github.com/onsi/ginkgo/v2 v2.12.0
 	github.com/onsi/gomega v1.27.10
