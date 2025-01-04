@@ -112,7 +112,7 @@ func setGlobals(compileArgs *PluginCompileArgs) {
 
 	// Disable function inlining to reduce binary size
 	disableInlining := "-gcflags=all=-l"
-	if len(goflags) > 0 {
+	if goflags != "" {
 		// Append the user-defined goflags so they can override the default if needed
 		goflags = fmt.Sprintf("%s %s", disableInlining, goflags)
 	} else {

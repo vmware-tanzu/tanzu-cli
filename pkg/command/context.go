@@ -1162,7 +1162,7 @@ func promptAPIToken(endpointType string) (apiToken string, err error) {
 		endpointType, consoleURL.String())
 	// format
 	fmt.Println()
-	log.Infof(msg)
+	log.Info(msg)
 
 	promptOpts := getPromptOpts()
 

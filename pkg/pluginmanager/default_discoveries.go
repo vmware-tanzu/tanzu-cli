@@ -102,7 +102,7 @@ func appendURLScheme(endpoint string) string {
 		return fmt.Sprintf("%s://%s", HTTPS, urlSec[0])
 	} else if urlSec[0] == HTTPS || urlSec[0] == HTTP { // url starts with http/https scheme, do nothing
 		return endpoint
-	} else { // endpoint does not start http/https
-		return fmt.Sprintf("%s://%s", HTTPS, endpoint)
 	}
+	// endpoint does not start http/https
+	return fmt.Sprintf("%s://%s", HTTPS, endpoint)
 }

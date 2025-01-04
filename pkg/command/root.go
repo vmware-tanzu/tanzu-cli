@@ -81,7 +81,7 @@ func convertInvokedAs(plugins []cli.PluginInfo) {
 }
 
 // NewRootCmd creates a root command.
-func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo,funlen
+func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo
 	go interruptHandle()
 	var rootCmd = newRootCmd()
 	uFunc := cli.NewMainUsage().UsageFunc()

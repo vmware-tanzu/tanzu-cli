@@ -108,6 +108,8 @@ issues:
     - 'declaration of "(err|ctx)" shadows declaration at'
     - "unnamedResult: consider giving a name to these results"
     - "(Expect directory permissions to be 0750 or less|Expect (WriteFile|file) permissions to be 0600 or less)"
+    - 'dot-imports: should not use dot imports'
+    - 'unused-parameter:'
 
   exclude-rules:
     - path: _test\.go
@@ -149,4 +151,4 @@ run:
 # golangci.com configuration
 # https://github.com/golangci/golangci/wiki/Configuration
 service:
-  golangci-lint-version: 1.46.0 # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.63.3 # use the fixed version to not introduce new linters unexpectedly

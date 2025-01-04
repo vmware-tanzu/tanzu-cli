@@ -151,7 +151,7 @@ func GetUnmappedCmdForPlugin(p *PluginInfo) *cobra.Command {
 }
 
 // getCmdForPluginEx returns a cobra command for the plugin.
-func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMapEntry) *cobra.Command { //nolint:funlen
+func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMapEntry) *cobra.Command {
 	var srcHierarchy, dstHierarchy []string
 	aliases := p.Aliases
 	description := p.Description

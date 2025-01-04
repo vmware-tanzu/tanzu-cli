@@ -1,5 +1,5 @@
 # Base image and platform
-FROM --platform=linux/amd64 golang:1.21
+FROM --platform=linux/amd64 golang:1.23
 
 # Tanzu CLI version and other build arguments
 ARG TANZU_CLI_BUILD_VERSION
