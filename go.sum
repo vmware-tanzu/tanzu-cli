@@ -665,8 +665,8 @@ github.com/vmware-tanzu/carvel-vendir v0.26.0 h1:Q98tPnH9WUAWE2vJSAP0lsHGsfwGjfW
 github.com/vmware-tanzu/carvel-vendir v0.26.0/go.mod h1:JcuNNVONFbZTbm/GjtGiWUfFrt17YBQzeGT9+gY1+yY=
 github.com/vmware-tanzu/carvel-ytt v0.40.0 h1:WUWTtwvfqV9CN9v207oDt2xfhmuWHGwc4MMaXJAqIEE=
 github.com/vmware-tanzu/carvel-ytt v0.40.0/go.mod h1:crDcKbS1GM4Q34puoVxdrajWOXrxjOxvUCwtsNV5Etc=
-github.com/vmware-tanzu/tanzu-plugin-runtime v1.4.4 h1:n/7lQIR2CpEeKBtr2mIAMaGDidfDkmzIvg5SZxeZP0A=
-github.com/vmware-tanzu/tanzu-plugin-runtime v1.4.4/go.mod h1:0fTB0rR9BX9kS+xGcwH9O0p97bn8rSdILwWCHgvXzkw=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.4.7 h1:6SECFJT6bVdm+YNT5nCP2ZOJr+WVfBQiJbREOwrLreQ=
+github.com/vmware-tanzu/tanzu-plugin-runtime v1.4.7/go.mod h1:c0DEZsu1Zy1H1VUEXucM+3fkBEwWMt8SAa6sVqpBk+M=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 github.com/xanzy/go-gitlab v0.109.0 h1:RcRme5w8VpLXTSTTMZdVoQWY37qTJWg+gwdQl4aAttE=
