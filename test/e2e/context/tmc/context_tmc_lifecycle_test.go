@@ -252,8 +252,6 @@ func tmcAndK8sContextTests() bool {
 }
 
 // tmcLifeCycleTests has test cases for context life cycle tests for tmc target
-//
-//nolint:gosec  // G602: Potentially accessing slice out of bounds (gosec) i.e. contextNames
 func tmcLifeCycleTests() bool {
 	// This suite has context (for tmc target) life cycle tests
 	// Test suite tests the context life cycle use cases for the TMC target
