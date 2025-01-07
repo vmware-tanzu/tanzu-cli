@@ -23,7 +23,7 @@ import (
 	crtclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 
-	capdiscovery "github.com/vmware-tanzu/tanzu-framework/capabilities/client/pkg/discovery"
+	capdiscovery "github.com/vmware-tanzu/tanzu-cli/pkg/capabilities/discovery"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	cliv1alpha1 "github.com/vmware-tanzu/tanzu-cli/apis/cli/v1alpha1"
@@ -241,7 +241,12 @@ func (c *client) getK8sClients(crtClient CrtClient, discoveryClientFactory Disco
 		restConfig.Timeout = timeout
 	}
 
-	mapper, err := apiutil.NewDynamicRESTMapper(restConfig, apiutil.WithLazyDiscovery)
+	httpClient, err := rest.HTTPClientFor(restConfig)
+	if err != nil {
+		return errors.Errorf("Error getting http client due to : %v", err)
+	}
+
+	mapper, err := apiutil.NewDynamicRESTMapper(restConfig, httpClient)
 	if err != nil {
 		return errors.Errorf("Unable to set up rest mapper due to : %v", err)
 	}
