@@ -66,3 +66,7 @@ func PerformInitializations(outStream io.Writer) error {
 
 	return kerrors.NewAggregate(errorList)
 }
+
+func ResetInitializers() {
+	initializers = []initializer{}
+}
