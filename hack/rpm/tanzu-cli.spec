@@ -1,13 +1,4 @@
-%if "%{unstable}" == "false"
-Name:       tanzu-cli
-Provides:   tanzu-cli
-Obsoletes:  tanzu-cli  < %{rpm_package_version}
-%else
-Name:       tanzu-cli-unstable
-Provides:   tanzu-cli-unstable
-Obsoletes:  tanzu-cli-unstable  < %{rpm_package_version}
-%endif
-
+Name:       %{rpm_package_name}
 Version:    %{rpm_package_version}
 Release:    %{rpm_release_version}
 License:    Apache 2.0
