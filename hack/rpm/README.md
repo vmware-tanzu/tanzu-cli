@@ -4,7 +4,7 @@ YUM and DNF (the replacement for YUM) use RPM packages for installation. This
 document describes how to build such packages for the Tanzu CLI, how to push
 them to a public repository and how to install the CLI from that repository.
 
-There are two package names that can be built:
+There are two package names that can be built by default:
 
 1. "tanzu-cli" for official releases
 2. "tanzu-cli-unstable" for pre-releases
@@ -14,15 +14,22 @@ used; a version with a `-` in it is considered a pre-release and will use the
 `tanzu-cli-unstable` package name, while other versions will use the
 official `tanzu-cli` package name.
 
+It is possible to specify the name of the package by setting the `RPM_PACKAGE_NAME`
+environment variable to replace the default name of `tanzu-cli`.  This should not
+normally be used as the package name is what the end-users will install and the
+default `tanzu-cli` name is the one users are familiar with.
+
 ## Building the RPM package
 
 Executing the `hack/rpm/build_package.sh` script will build the RPM packages
 under `hack/rpm/_output`. The `hack/rpm/build_package.sh` script is meant to
 be run on a Linux machine that has `dnf` or `yum` installed.
-This can be done in docker using the `fedora` image. To facilitate this
-operation, the new `rpm-package` Makefile target has been added; this Makefile
-target will first start a docker container and then run the
-`hack/rpm/build_package.sh` script.
+This can be done in docker using the `fedora` image.
+Once the packages are built, the `hack/rpm/build_package_repo.sh` script should
+be invoked to build the repository that will contain the packages.
+To facilitate this double operation, the `rpm-package` Makefile target can be used;
+this Makefile target will first start a docker container and then run the
+appropriate scripts.
 
 The remote location of the existing repository can be overridden by setting
 the variable `RPM_METADATA_BASE_URI`.  For example, the default value for

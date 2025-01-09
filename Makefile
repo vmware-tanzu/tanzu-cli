@@ -189,17 +189,32 @@ apt-package-in-docker: ## Build a debian package from within a container already
 .PHONY: apt-package
 apt-package: apt-package-only apt-package-repo  ## Build a debian package to use with APT
 
-.PHONY: rpm-package
-rpm-package: ## Build an RPM package
+.PHONY: rpm-package-only
+rpm-package-only: ## Build an RPM package
 	@if [ "$$(command -v docker)" == "" ]; then \
 		echo "Docker required to build rpm package" ;\
 		exit 1 ;\
 	fi
-	docker run --rm -e VERSION=$(BUILD_VERSION) -e RPM_SIGNER=$(RPM_SIGNER) -e RPM_METADATA_BASE_URI=$(RPM_METADATA_BASE_URI) -v $(ROOT_DIR):$(ROOT_DIR) $(RPM_IMAGE) $(ROOT_DIR)/hack/rpm/build_package.sh
+	docker run --rm -e VERSION=$(BUILD_VERSION) -e RPM_PACKAGE_NAME=$(RPM_PACKAGE_NAME) -e RPM_SIGNER=$(RPM_SIGNER) -v $(ROOT_DIR):$(ROOT_DIR) $(RPM_IMAGE) $(ROOT_DIR)/hack/rpm/build_package.sh
+
+.PHONY: rpm-package-repo
+rpm-package-repo: ## Build an RPM package repository
+	@if [ "$$(command -v docker)" == "" ]; then \
+		echo "Docker required to build rpm package" ;\
+		exit 1 ;\
+	fi
+	docker run --rm -e VERSION=$(BUILD_VERSION) -e RPM_SIGNER=$(RPM_SIGNER) -e RPM_METADATA_BASE_URI=$(RPM_METADATA_BASE_URI) -v $(ROOT_DIR):$(ROOT_DIR) $(RPM_IMAGE) $(ROOT_DIR)/hack/rpm/build_package_repo.sh
 
 .PHONY: rpm-package-in-docker
 rpm-package-in-docker: ## Build an RPM package from within a container already
 	VERSION=$(BUILD_VERSION) $(ROOT_DIR)/hack/rpm/build_package.sh
+
+.PHONY: rpm-package-repo-in-docker
+rpm-package-repo-in-docker: ## Build an RPM package repository from within a container already
+	VERSION=$(BUILD_VERSION) $(ROOT_DIR)/hack/rpm/build_package_repo.sh
+
+.PHONY: rpm-package
+rpm-package: rpm-package-only rpm-package-repo  ## Build an RPM package and repository to use with YUM/DNF
 
 .PHONY: choco-package
 choco-package: ## Build a Chocolatey package
