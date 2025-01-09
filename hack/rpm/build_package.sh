@@ -3,6 +3,11 @@
 # Copyright 2022 VMware, Inc. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+# This script builds an RPM package for the Tanzu CLI for each supported architecture.
+# It can be called more than once to build multiple packages with different names.
+# This is useful if we want to use a different signing key for different packages.
+# Once all the packages are built, the final repository can be built using the
+# build_package_repo.sh script.
 set -e
 set -x
 
@@ -26,6 +31,8 @@ fi
 
 # Strip 'v' prefix as an rpm package version must start with an integer
 VERSION=${VERSION#v}
+# Set the default package name if not provided
+RPM_PACKAGE_NAME=${RPM_PACKAGE_NAME:-"tanzu-cli"}
 
 BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output/rpm/tanzu-cli
@@ -35,7 +42,7 @@ ROOT_DIR=${BASE_DIR}/../..
 
 # Install build dependencies
 if ! command -v rpmlint &> /dev/null; then
-   $DNF install -y rpmlint createrepo rpm-build yum-utils
+   $DNF install -y rpmlint rpm-build
 fi
 
 rpmlint ${BASE_DIR}/tanzu-cli.spec
@@ -43,16 +50,23 @@ rpmlint ${BASE_DIR}/tanzu-cli.spec
 # We must create the sources directory ourselves in the below location
 mkdir -p ${HOME}/rpmbuild/SOURCES
 
-# Create the .rpm packages
-rm -rf ${OUTPUT_DIR}
+# We support building multiple packages by calling the script multiple times
+# and specifying a different RPM_PACKAGE_NAME. This is useful if we want
+# to use a different signing key for different packages.
+# So, we only want to clean the output directory if we have built
+# the final repository, which indicates that this is an old build.
+if [ -d ${OUTPUT_DIR}/repodata ]; then
+   rm -rf ${OUTPUT_DIR}
+fi 
 mkdir -p ${OUTPUT_DIR}
 mkdir -p ${PKG_DIR}
 cd ${ROOT_DIR}
 
-UNSTABLE="false"
 # Transform the CLI version into RPM-compatible package version and release numbers.
 if [[ ${VERSION} == *-* ]]; then 
-   UNSTABLE="true"
+   # If the version contains a - character, we are dealing with an unstable version
+   # so we should append -unstable to the package name
+   RPM_PACKAGE_NAME=${RPM_PACKAGE_NAME}-unstable
 
    # When there is a - in the version, we are dealing with a pre-release
    # e.g., 1.0.0-dev, 1.0.0-alpha.0, 1.0.0.rc.1, etc
@@ -78,10 +92,10 @@ fi
 
 # Build the package for each architecture
 for arch in x86_64 aarch64; do
-   rpmbuild --define "rpm_package_version ${RPM_PACKAGE_VERSION}" \
+   rpmbuild --define "rpm_package_name ${RPM_PACKAGE_NAME}" \
+            --define "rpm_package_version ${RPM_PACKAGE_VERSION}" \
             --define "rpm_release_version ${RPM_RELEASE_VERSION}" \
             --define "cli_version v${VERSION}" \
-            --define "unstable ${UNSTABLE}" \
             -bb ${BASE_DIR}/tanzu-cli.spec \
             --target ${arch}
    mv ${HOME}/rpmbuild/RPMS/${arch}/* ${PKG_DIR}/
@@ -92,52 +106,3 @@ for arch in x86_64 aarch64; do
      echo skip rpmsigning packages for ${arch}
    fi
 done
-
-######################
-# Build the repository
-######################
-
-# Prepare the existing repository info so we can sync from it
-RPM_METADATA_BASE_URI=${RPM_METADATA_BASE_URI:=https://storage.googleapis.com/tanzu-cli-installer-packages}
-RPM_REPO_GPG_PUBLIC_KEY_URI=${RPM_REPO_GPG_PUBLIC_KEY_URI:=https://storage.googleapis.com/tanzu-cli-installer-packages/keys/TANZU-PACKAGING-GPG-RSA-KEY.gpg}
-if [ "${RPM_METADATA_BASE_URI}" = "new" ]; then
-   echo
-   echo "Building a brand new repository"
-   echo
-else
-   cat << EOF | tee /tmp/tanzu-cli.repo
-[tanzu-cli]
-name=Tanzu CLI
-baseurl=${RPM_METADATA_BASE_URI}/rpm/tanzu-cli
-enabled=1
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=${RPM_REPO_GPG_PUBLIC_KEY_URI}
-EOF
-   
-   # Sync the metadata so we can update it
-   # Use the --source flag to avoid downloading the actual RPMs
-   reposync --repoid=tanzu-cli --download-metadata -p ${OUTPUT_DIR} -c /tmp/tanzu-cli.repo --norepopath --source -y
-   # Remove the old signature, which won't be valid anymore
-   rm -f ${OUTPUT_DIR}/repodata/repomd.xml.asc
-   
-   # Now list the existing RPMs so we can pretend to have them locally
-   for p in $(reposync --repoid=tanzu-cli -c /tmp/tanzu-cli.repo -u -y | grep ${RPM_METADATA_BASE_URI}); do
-      echo "Found package: $p"
-      touch ${PKG_DIR}/$(basename $p)
-   done
-fi
-
-# Create the repository metadata
-createrepo --update --skip-stat ${OUTPUT_DIR}
-
-# Now that the repo is created, remove the fake empty packages so they don't
-# risk being copied over the real ones in the final repository.
-find ${PKG_DIR} -type f -empty -delete
-
-if [[ ! -z "${RPM_SIGNER}" ]]; then
-  # instead of ... gpg --detach-sign --armor repodata/repomd.xml
-  ${RPM_SIGNER} ${OUTPUT_DIR}/repodata/repomd.xml
-else
-  echo skip rpmsigning repo
-fi
