@@ -926,3 +926,10 @@ func printShortDescOfCmdInActiveHelp(cmd *cobra.Command, args []string) {
 		}
 	}
 }
+
+// NewRootCmdForTest creates a new instance of the root command for unit test purpose
+// Note: This must not be used as part of the production code and only used for unit tests
+func NewRootCmdForTest() (*cobra.Command, error) {
+	globalRootCmd = nil
+	return NewRootCmd()
+}

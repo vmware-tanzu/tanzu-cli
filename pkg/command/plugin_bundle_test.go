@@ -231,7 +231,7 @@ func TestCompletionPluginBundle(t *testing.T) {
 
 			downloadImageCalled = false
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 
 			var out bytes.Buffer
