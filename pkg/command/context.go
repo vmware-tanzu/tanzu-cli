@@ -515,7 +515,7 @@ func createContextWithTMCEndpoint() (context *configtypes.Context, err error) {
 
 // createContextWithClusterEndpoint creates context for cluster endpoint with pinniped auth
 func createContextWithClusterEndpoint() (context *configtypes.Context, err error) {
-	// Create a non-global context name, ctxName is global and when NewRootContext is called, it gets lost
+	// Create a non-global context name, ctxName is global and when NewRootCMD is called, it gets lost
 	var contextName string
 
 	if endpoint == "" {
@@ -575,7 +575,7 @@ func getIDPType(endpoint string) config.IdpType {
 }
 
 func createContextWithTanzuEndpoint() (context *configtypes.Context, err error) {
-	// Create a non-global context name, ctxName is global and when NewRootContext is called, it gets lost
+	// Create a non-global context name, ctxName is global and when NewRootCMD is called, it gets lost
 	var contextName string
 
 	if endpoint == "" {
