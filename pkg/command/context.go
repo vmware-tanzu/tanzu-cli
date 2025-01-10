@@ -139,7 +139,7 @@ func newCreateCtxCmd() *cobra.Command {
     # Create a TKG management cluster context using default kubeconfig path and a kubeconfig context
     tanzu context create mgmt-cluster --kubecontext kubecontext
 
-    # Create a TMC(mission-control) context using endpoint and type 
+    # Create a TMC(mission-control) context using endpoint and type
     tanzu context create mytmc --endpoint tmc.example.com:443 --type tmc
 
     # Create a Tanzu context with the default endpoint (--type is not necessary for the default endpoint)
@@ -154,7 +154,7 @@ func newCreateCtxCmd() *cobra.Command {
     # Create a Tanzu context but skip TLS verification (this is insecure):
     tanzu context create mytanzu --endpoint https://api.tanzu.cloud.vmware.com --insecure-skip-tls-verify
 
-    Notes: 
+    Notes:
     1. TMC context: To create Mission Control (TMC) context an API Key is required. It can be provided using the
        TANZU_API_TOKEN environment variable or entered during context creation.
     2. Tanzu context: To create Tanzu context an API Key is optional. If provided using the TANZU_API_TOKEN environment
@@ -474,6 +474,9 @@ func createContextWithKubeconfig() (context *configtypes.Context, err error) {
 }
 
 func createContextWithTMCEndpoint() (context *configtypes.Context, err error) {
+	// Create a non-global context name, ctxName is global and when NewRootCmd is called, it gets lost
+	var contextName string
+
 	if endpoint == "" {
 		endpoint, err = promptEndpoint("")
 		if err != nil {
@@ -486,6 +489,8 @@ func createContextWithTMCEndpoint() (context *configtypes.Context, err error) {
 			return context, err
 		}
 	}
+
+	contextName = ctxName
 	exists, err := config.ContextExists(ctxName)
 	if err != nil {
 		return context, err
@@ -500,7 +505,7 @@ func createContextWithTMCEndpoint() (context *configtypes.Context, err error) {
 	}
 
 	context = &configtypes.Context{
-		Name:        ctxName,
+		Name:        contextName,
 		ContextType: configtypes.ContextTypeTMC,
 		GlobalOpts:  &configtypes.GlobalServer{Endpoint: sanitizeEndpoint(endpoint)},
 	}
@@ -510,6 +515,9 @@ func createContextWithTMCEndpoint() (context *configtypes.Context, err error) {
 
 // createContextWithClusterEndpoint creates context for cluster endpoint with pinniped auth
 func createContextWithClusterEndpoint() (context *configtypes.Context, err error) {
+	// Create a non-global context name, ctxName is global and when NewRootContext is called, it gets lost
+	var contextName string
+
 	if endpoint == "" {
 		endpoint, err = promptEndpoint("")
 		if err != nil {
@@ -522,6 +530,8 @@ func createContextWithClusterEndpoint() (context *configtypes.Context, err error
 			return context, err
 		}
 	}
+
+	contextName = ctxName
 	exists, err := config.ContextExists(ctxName)
 	if err != nil {
 		return context, err
@@ -539,7 +549,7 @@ func createContextWithClusterEndpoint() (context *configtypes.Context, err error
 	}
 
 	context = &configtypes.Context{
-		Name:        ctxName,
+		Name:        contextName,
 		ContextType: configtypes.ContextTypeK8s,
 		ClusterOpts: &configtypes.ClusterServer{
 			Path:                kubeConfig,
@@ -565,6 +575,9 @@ func getIDPType(endpoint string) config.IdpType {
 }
 
 func createContextWithTanzuEndpoint() (context *configtypes.Context, err error) {
+	// Create a non-global context name, ctxName is global and when NewRootContext is called, it gets lost
+	var contextName string
+
 	if endpoint == "" {
 		endpoint, err = promptEndpoint(centralconfig.DefaultTanzuPlatformEndpoint)
 		if err != nil {
@@ -578,6 +591,7 @@ func createContextWithTanzuEndpoint() (context *configtypes.Context, err error) 
 		}
 	}
 
+	contextName = ctxName
 	exists, err := config.ContextExists(ctxName)
 	if err != nil {
 		return context, err
@@ -596,7 +610,7 @@ func createContextWithTanzuEndpoint() (context *configtypes.Context, err error) 
 
 	// Tanzu context would have both CSP(GlobalOpts) auth details and kubeconfig(ClusterOpts),
 	context = &configtypes.Context{
-		Name:        ctxName,
+		Name:        contextName,
 		ContextType: configtypes.ContextTypeTanzu,
 		GlobalOpts:  &configtypes.GlobalServer{Endpoint: tanzuUCPEndpoint},
 		ClusterOpts: &configtypes.ClusterServer{},
