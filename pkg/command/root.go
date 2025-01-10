@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -80,8 +81,8 @@ func convertInvokedAs(plugins []cli.PluginInfo) {
 	}
 }
 
-// NewRootCmd creates a root command.
-func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo
+// createRootCmd creates a root command.
+func createRootCmd() (*cobra.Command, error) { //nolint: gocyclo
 	go interruptHandle()
 	var rootCmd = newRootCmd()
 	uFunc := cli.NewMainUsage().UsageFunc()
@@ -816,13 +817,29 @@ func shouldSkipGlobalInit(cmd *cobra.Command) bool {
 	return isSkipCommand(skipGlobalInitCommands, cmd.CommandPath())
 }
 
+var globalRootCmd *cobra.Command
+var globalRootCmdLock = &sync.Mutex{}
+
+// NewRootCmd create a new root command instance if it was not created before
+func NewRootCmd() (*cobra.Command, error) {
+	globalRootCmdLock.Lock()
+	defer globalRootCmdLock.Unlock()
+
+	if globalRootCmd == nil {
+		var err error
+		globalRootCmd, err = createRootCmd()
+		return globalRootCmd, err
+	}
+	return globalRootCmd, nil
+}
+
 // Execute executes the CLI.
 func Execute() error {
-	root, err := NewRootCmd()
+	rootCmd, err := NewRootCmd()
 	if err != nil {
 		return err
 	}
-	executionErr := root.Execute()
+	executionErr := rootCmd.Execute()
 	exitCode := 0
 	if executionErr != nil {
 		exitCode = 1
