@@ -82,6 +82,7 @@ func convertInvokedAs(plugins []cli.PluginInfo) {
 }
 
 // createRootCmd creates a root command.
+// NOTE: Do not use this function directly as it will bypass the locking. Use `NewRootCmd` instead
 func createRootCmd() (*cobra.Command, error) { //nolint: gocyclo
 	go interruptHandle()
 	var rootCmd = newRootCmd()
@@ -825,12 +826,11 @@ func NewRootCmd() (*cobra.Command, error) {
 	globalRootCmdLock.Lock()
 	defer globalRootCmdLock.Unlock()
 
+	var err error
 	if globalRootCmd == nil {
-		var err error
 		globalRootCmd, err = createRootCmd()
-		return globalRootCmd, err
 	}
-	return globalRootCmd, nil
+	return globalRootCmd, err
 }
 
 // Execute executes the CLI.
@@ -930,6 +930,5 @@ func printShortDescOfCmdInActiveHelp(cmd *cobra.Command, args []string) {
 // NewRootCmdForTest creates a new instance of the root command for unit test purpose
 // Note: This must not be used as part of the production code and only used for unit tests
 func NewRootCmdForTest() (*cobra.Command, error) {
-	globalRootCmd = nil
-	return NewRootCmd()
+	return createRootCmd()
 }
