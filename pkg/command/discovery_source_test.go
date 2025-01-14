@@ -124,7 +124,7 @@ func Test_createAndListDiscoverySources(t *testing.T) {
 	testSource1 := "harbor-repo.vmware.com/tanzu_cli_stage/plugins/plugin-inventory:latest"
 	os.Setenv(constants.ConfigVariableAdditionalDiscoveryForTesting, testSource1)
 
-	rootCmd, err := NewRootCmd()
+	rootCmd, err := NewRootCmdForTest()
 	assert.Nil(err)
 	rootCmd.SetArgs([]string{"plugin", "source", "list"})
 	b := bytes.NewBufferString("")
@@ -221,7 +221,7 @@ func Test_initDiscoverySources(t *testing.T) {
 				}})
 			assert.Nil(err)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 			b := bytes.NewBufferString("")
@@ -336,7 +336,7 @@ func Test_updateDiscoverySources(t *testing.T) {
 				}})
 			assert.Nil(err)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 			b := bytes.NewBufferString("")
@@ -449,7 +449,7 @@ func Test_deleteDiscoverySource(t *testing.T) {
 				}})
 			assert.Nil(err)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 			b := bytes.NewBufferString("")
@@ -576,7 +576,7 @@ func TestCompletionPluginSource(t *testing.T) {
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 
 			var out bytes.Buffer

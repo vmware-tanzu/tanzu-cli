@@ -67,7 +67,7 @@ func TestGenDocs(t *testing.T) {
 	assert.Nil(err)
 	defer os.RemoveAll(docsDir)
 
-	rootCmd, err := NewRootCmd()
+	rootCmd, err := NewRootCmdForTest()
 	assert.Nil(err)
 	rootCmd.SetArgs([]string{"generate-all-docs", "--docs-dir", docsDir})
 	err = rootCmd.Execute()
@@ -124,7 +124,7 @@ func TestCompletionGenerateDocs(t *testing.T) {
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 
 			var out bytes.Buffer
