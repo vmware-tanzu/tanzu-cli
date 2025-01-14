@@ -188,6 +188,12 @@ To uninstall: `sudo apt remove tanzu-cli-unstable`
 
 ### From yum/dnf (RHEL)
 
+> **_NOTE:_** When installing on versions 8 and 9 of RHEL and CentOS, a special `tanzu-cli-centos9`
+> package should be used along with a second GPG key.  Please refer to section:
+> [Using yum/dnf on RHEL/CentOS versions 8 and 9](#using-yumdnf-on-rhelcentos-versions-8-and-9)
+
+For normal installation (not RHEL/CentOS 8/9):
+
 ```console
 cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
 [tanzu-cli]
@@ -242,6 +248,47 @@ sudo yum install tanzu-cli-unstable
 ```
 
 To uninstall: `sudo yum remove tanzu-cli-unstable`
+
+#### Using yum/dnf on RHEL/CentOS versions 8 and 9
+
+On RHEL/CentOS 8 and 9, yum/dnf is unable to verify the signature of the standard
+`tanzu-cli`/`tanzu-cli-unstable` packages and the above instructions will fail with a
+"GPG check FAILED" error. Although it is possible to deactivate the gpg-check when
+installing, such an approach should be avoided for security reasons.
+
+A different VMware/Broadcom GPG key and special packages `tanzu-cli-centos9` and
+`tanzu-cli-centos9-unstable` should be used instead; those packages have been signed
+with this different GPG key which can be used on RHEL/CentOS 8 and 9. Other than the
+key used to sign those packages, they are identical to the standard Tanzu CLI packages.
+
+> **_NOTE:_** The `tanzu-cli-centos9` and `tanzu-cli-centos9-unstable` packages are
+> available starting with Tanzu CLI `v1.5.2`.  To install older versions on RHEL/CentOS 8/9
+> you will need to deactivate the gpg check using the `--nogpgcheck` flag.
+> For example, to install `v1.3.0`, use: `sudo yum install -y --nogpgcheck tanzu-cli-1.3.0`.
+
+To install those packages (RHEL/CentOS 8 and 9 only and CLI >= v1.5.2):
+
+```console
+# Same configuration as for any other situation
+cat << EOF | sudo tee /etc/yum.repos.d/tanzu-cli.repo
+[tanzu-cli]
+name=Tanzu CLI
+baseurl=https://storage.googleapis.com/tanzu-cli-installer-packages/rpm/tanzu-cli
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://storage.googleapis.com/tanzu-cli-installer-packages/keys/TANZU-PACKAGING-GPG-RSA-KEY.gpg
+EOF
+
+# Import the special key needed for the special packages
+sudo rpm --import https://storage.googleapis.com/tanzu-cli-installer-packages/keys/TANZU-PACKAGING-GPG-RSA-KEY-CENTOS9.gpg
+
+# Install the latest official release which was specifically signed for Centos
+sudo yum install -y tanzu-cli-centos9 # dnf install can also be used
+
+# or install the latest pre-release which was specifically signed for Centos
+sudo yum install -y tanzu-cli-centos9-unstable # dnf install can also be used
+```
 
 ### asdf (MacOS and Linux)
 
