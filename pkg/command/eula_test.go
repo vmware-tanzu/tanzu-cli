@@ -102,7 +102,7 @@ var _ = Describe("EULA command tests", func() {
 		Context("When invoking an arbitrary command", func() {
 			It("should invoke the eula prompt if EULA has not been accepted", func() {
 				os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "No")
-				cmd, err := NewRootCmd()
+				cmd, err := NewRootCmdForTest()
 				Expect(err).To(BeNil())
 				cmd.SetArgs([]string{"context", "list"})
 				err = cmd.Execute()
@@ -113,7 +113,7 @@ var _ = Describe("EULA command tests", func() {
 
 			It("should not invoke the eula prompt if EULA has been accepted", func() {
 				os.Setenv("TANZU_CLI_EULA_PROMPT_ANSWER", "yes")
-				cmd, err := NewRootCmd()
+				cmd, err := NewRootCmdForTest()
 				Expect(err).To(BeNil())
 				cmd.SetArgs([]string{"context", "list"})
 				err = cmd.Execute()
@@ -158,7 +158,7 @@ var _ = Describe("EULA version checking tests", func() {
 		err = config.SetEULAStatus(config.EULAStatusAccepted)
 		Expect(err).To(BeNil())
 
-		cmd, err := NewRootCmd()
+		cmd, err := NewRootCmdForTest()
 		Expect(err).To(BeNil())
 		cmd.SetArgs([]string{"context", "list"})
 		checkForPromptOnExecute(cmd, expectToPrompt)
@@ -214,7 +214,7 @@ func TestCompletionEULA(t *testing.T) {
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 
 			var out bytes.Buffer

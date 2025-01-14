@@ -1667,7 +1667,7 @@ func TestCompletionContext(t *testing.T) {
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 
 			var out bytes.Buffer
@@ -1942,7 +1942,7 @@ func TestContextCurrentCmd(t *testing.T) {
 				_ = config.SetContext(spec.activeContexts[i], true)
 			}
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 
 			var out bytes.Buffer
