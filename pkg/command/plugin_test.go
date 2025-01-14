@@ -133,7 +133,7 @@ func TestPluginList(t *testing.T) {
 			}
 			cc.Unlock()
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 			b := bytes.NewBufferString("")
@@ -280,7 +280,7 @@ func TestDeletePlugin(t *testing.T) {
 			}
 			cupdater.Unlock()
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 
@@ -393,7 +393,7 @@ func TestInstallPlugin(t *testing.T) {
 
 	for _, spec := range tests {
 		t.Run(spec.test, func(t *testing.T) {
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 
@@ -444,7 +444,7 @@ func TestUpgradePlugin(t *testing.T) {
 
 	for _, spec := range tests {
 		t.Run(spec.test, func(t *testing.T) {
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 
@@ -947,7 +947,7 @@ func TestCompletionPlugin(t *testing.T) {
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 
 			var out bytes.Buffer

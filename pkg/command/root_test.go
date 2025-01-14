@@ -180,7 +180,7 @@ func tearDownTestCLIEnvironment(env testCLIEnvironment) {
 
 func TestRootCmdWithNoAdditionalPlugins(t *testing.T) {
 	assert := assert.New(t)
-	rootCmd, err := NewRootCmd()
+	rootCmd, err := NewRootCmdForTest()
 	assert.Nil(err)
 	err = rootCmd.Execute()
 	assert.Nil(err)
@@ -188,7 +188,7 @@ func TestRootCmdWithNoAdditionalPlugins(t *testing.T) {
 
 func TestSubcommandNonexistent(t *testing.T) {
 	assert := assert.New(t)
-	rootCmd, err := NewRootCmd()
+	rootCmd, err := NewRootCmdForTest()
 	assert.Nil(err)
 	rootCmd.SetArgs([]string{"nonexistent", "say", "hello"})
 	err = rootCmd.Execute()
@@ -415,7 +415,7 @@ func TestSubcommands(t *testing.T) {
 			cc.Unlock()
 			assert.Nil(err)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 
@@ -799,7 +799,7 @@ func TestTargetCommands(t *testing.T) {
 				assert.Nil(err)
 			}
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 
@@ -895,7 +895,7 @@ func TestGlobalInit(t *testing.T) {
 				},
 			)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			rootCmd.SetArgs(spec.args)
 
@@ -943,7 +943,7 @@ func TestSetLastVersion(t *testing.T) {
 
 			buildinfo.Version = spec.version
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			// Execute any command to trigger the version update
 			rootCmd.SetArgs([]string{"plugin", "list"})
@@ -967,7 +967,7 @@ func TestEnvVarsSet(t *testing.T) {
 	err := config.ConfigureFeatureFlags(constants.DefaultCliFeatureFlags)
 	assert.Nil(err)
 
-	rootCmd, err := NewRootCmd()
+	rootCmd, err := NewRootCmdForTest()
 	assert.Nil(err)
 
 	envVarName := "SOME_TEST_ENV_VAR"
@@ -983,7 +983,7 @@ func TestEnvVarsSet(t *testing.T) {
 
 	// Re-initialize the CLI with the config files containing the variable.
 	// It is in this call that the CLI creates the OS variables.
-	_, err = NewRootCmd()
+	_, err = NewRootCmdForTest()
 	assert.Nil(err)
 	// Make sure the variable is now set during the call to the CLI
 	assert.Equal(envVarValue, os.Getenv(envVarName))
@@ -1051,7 +1051,7 @@ func TestCompletionShortHelpInActiveHelp(t *testing.T) {
 		t.Run(spec.test, func(t *testing.T) {
 			assert := assert.New(t)
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 
 			var out bytes.Buffer
@@ -2213,7 +2213,7 @@ func TestCommandRemapping(t *testing.T) {
 				assert.Nil(err)
 			}
 
-			rootCmd, err := NewRootCmd()
+			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
 			// To be able to test the "tanzu help" command, we need to set the os.Args
 			// instead of using the cobra command's SetArgs method.

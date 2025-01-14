@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -80,8 +81,9 @@ func convertInvokedAs(plugins []cli.PluginInfo) {
 	}
 }
 
-// NewRootCmd creates a root command.
-func NewRootCmd() (*cobra.Command, error) { //nolint: gocyclo
+// createRootCmd creates a root command.
+// NOTE: Do not use this function directly as it will bypass the locking. Use `NewRootCmd` instead
+func createRootCmd() (*cobra.Command, error) { //nolint: gocyclo
 	go interruptHandle()
 	var rootCmd = newRootCmd()
 	uFunc := cli.NewMainUsage().UsageFunc()
@@ -816,13 +818,28 @@ func shouldSkipGlobalInit(cmd *cobra.Command) bool {
 	return isSkipCommand(skipGlobalInitCommands, cmd.CommandPath())
 }
 
+var globalRootCmd *cobra.Command
+var globalRootCmdLock = &sync.Mutex{}
+
+// NewRootCmd create a new root command instance if it was not created before
+func NewRootCmd() (*cobra.Command, error) {
+	globalRootCmdLock.Lock()
+	defer globalRootCmdLock.Unlock()
+
+	var err error
+	if globalRootCmd == nil {
+		globalRootCmd, err = createRootCmd()
+	}
+	return globalRootCmd, err
+}
+
 // Execute executes the CLI.
 func Execute() error {
-	root, err := NewRootCmd()
+	rootCmd, err := NewRootCmd()
 	if err != nil {
 		return err
 	}
-	executionErr := root.Execute()
+	executionErr := rootCmd.Execute()
 	exitCode := 0
 	if executionErr != nil {
 		exitCode = 1
@@ -908,4 +925,10 @@ func printShortDescOfCmdInActiveHelp(cmd *cobra.Command, args []string) {
 			return comps, directive
 		}
 	}
+}
+
+// NewRootCmdForTest creates a new instance of the root command for unit test purpose
+// Note: This must not be used as part of the production code and only used for unit tests
+func NewRootCmdForTest() (*cobra.Command, error) {
+	return createRootCmd()
 }
