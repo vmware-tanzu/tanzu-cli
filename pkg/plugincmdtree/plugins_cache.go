@@ -12,8 +12,12 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v3"
+
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/config/types"
+	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 
 	"github.com/vmware-tanzu/tanzu-cli/pkg/cli"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
@@ -46,6 +50,8 @@ type cacheImpl struct {
 	pluginDocsGenerator func(plugin *cli.PluginInfo) error
 }
 
+var _ Cache = &cacheImpl{}
+
 // NewCache create a cache for plugin command tree
 func NewCache() (Cache, error) {
 	pct, err := getPluginCommandTree()
@@ -65,33 +71,32 @@ func NewCache() (Cache, error) {
 	}, nil
 }
 
-func (c *cacheImpl) GetTree(plugin *cli.PluginInfo) (*CommandNode, error) {
-	// This is just a safety net to generate the command tree if we missed/failed to generate the plugin command tree during plugin install
-	// If the plugin command tree exists, then ConstructAndAddTree is a no-op
-	if err := c.ConstructAndAddTree(plugin); err != nil {
+func (c *cacheImpl) GetTree(rootCmd *cobra.Command, plugin *cli.PluginInfo) (*CommandNode, error) {
+	// If the tree does not already exist, we construct it, if it does exist constructAndAddTree is a no-op
+	if err := c.constructAndAddTree(rootCmd, plugin); err != nil {
 		return nil, err
 	}
 
 	pluginCmdTree, exists := c.pluginCommands.CommandTree[plugin.InstallationPath]
 	if !exists {
-		return nil, fmt.Errorf("failed to get the command tree for plugin '%v:%v' with target %v installled at %v", plugin.Name, plugin.Version, plugin.Target, plugin.InstallationPath)
+		return nil, fmt.Errorf("failed to get the command tree for plugin '%v:%v' with target %v installed at %v", plugin.Name, plugin.Version, plugin.Target, plugin.InstallationPath)
 	}
 
 	return pluginCmdTree, nil
 }
 
-// ConstructAndAddTree uses the 'generate_docs' (default command that plugins support) to get the complete command chains supported.
+// constructAndAddTree uses the 'generate_docs' (default command that plugins support) to get the complete command chains supported.
 // However, the plugin docs generated doesn't provide the information regarding the aliases of the command/sub-commands.
-// So, it would use the help command for each sub-command to extract the aliases supported and finally construct
-// the plugin command tree and adds it to cache so that CLI can extract the command chain by parsing the user input
+// So, this function uses the help command for each sub-command to extract the aliases supported and finally constructs
+// the plugin command tree and adds it to cache so that the CLI can extract the command chain by parsing the user input
 // against the plugin command tree.
-func (c *cacheImpl) ConstructAndAddTree(plugin *cli.PluginInfo) error {
+func (c *cacheImpl) constructAndAddTree(rootCmd *cobra.Command, plugin *cli.PluginInfo) error {
 	_, exists := c.pluginCommands.CommandTree[plugin.InstallationPath]
 	if exists {
 		return nil
 	}
 
-	pluginCmdTree, err := c.constructPluginCommandTree(plugin)
+	pluginCmdTree, err := c.constructPluginCommandTree(rootCmd, plugin)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate command tree for plugin %q", plugin.Name)
 	}
@@ -99,7 +104,8 @@ func (c *cacheImpl) ConstructAndAddTree(plugin *cli.PluginInfo) error {
 
 	return c.savePluginCommandTree()
 }
-func (c *cacheImpl) DeleteTree(plugin *cli.PluginInfo) error {
+
+func (c *cacheImpl) DeletePluginTree(plugin *cli.PluginInfo) error {
 	_, exists := c.pluginCommands.CommandTree[plugin.InstallationPath]
 	if !exists {
 		return nil
@@ -108,6 +114,11 @@ func (c *cacheImpl) DeleteTree(plugin *cli.PluginInfo) error {
 	delete(c.pluginCommands.CommandTree, plugin.InstallationPath)
 
 	return c.savePluginCommandTree()
+}
+
+func (c *cacheImpl) DeleteTree() error {
+	c.pluginCommands.CommandTree = make(map[string]*CommandNode)
+	return os.RemoveAll(GetPluginsCommandTreeCachePath())
 }
 
 func (c *cacheImpl) savePluginCommandTree() error {
@@ -122,7 +133,7 @@ func (c *cacheImpl) savePluginCommandTree() error {
 	return nil
 }
 
-func (c *cacheImpl) constructPluginCommandTree(plugin *cli.PluginInfo) (*CommandNode, error) {
+func (c *cacheImpl) constructPluginCommandTree(rootCmd *cobra.Command, plugin *cli.PluginInfo) (*CommandNode, error) {
 	if err := c.pluginDocsGenerator(plugin); err != nil {
 		return nil, errors.Wrapf(err, "failed to generate docs for the plugin %q", plugin.Name)
 	}
@@ -134,7 +145,14 @@ func (c *cacheImpl) constructPluginCommandTree(plugin *cli.PluginInfo) (*Command
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while reading local plugin command tree directory")
 	}
+
 	var aliasErrGroup errgroup.Group
+	numTargets := 1
+	if plugin.Target == types.TargetK8s {
+		// For k8s plugin, we need to generate the command tree for both the k8s level and the root level
+		numTargets = 2
+	}
+
 	for _, file := range files {
 		if file.IsDir() {
 			continue
@@ -145,33 +163,62 @@ func (c *cacheImpl) constructPluginCommandTree(plugin *cli.PluginInfo) (*Command
 			continue
 		}
 
-		filename := strings.TrimSuffix(file.Name(), ".md")
-		cmdNames := strings.Split(filename, "_")
-
-		var aliasArgs []string
-		current := cmdTreeRoot
-		for _, cmdName := range cmdNames {
-			if current.Subcommands[cmdName] == nil {
-				current.Subcommands[cmdName] = NewCommandNode()
+		// Loop a second time for k8s targets since they are both at the root
+		// level and under the k8s target
+		for i := 0; i < numTargets; i++ {
+			filename := strings.TrimSuffix(file.Name(), ".md")
+			cmdNames := strings.Split(filename, "_")
+			if i == 0 {
+				// Only add the target when on the first loop.
+				// If there is a second loop, it is for the root level of the k8s target
+				cmdNames = adjustCmdNamesForPluginTarget(cmdNames, plugin)
 			}
 
-			current = current.Subcommands[cmdName]
-			if cmdName != "tanzu" && cmdName != plugin.Name {
-				aliasArgs = append(aliasArgs, cmdName)
-				aliasArgsCopy := make([]string, len(aliasArgs))
-				copy(aliasArgsCopy, aliasArgs)
-				currentCopy := current
-				if !currentCopy.AliasProcessed {
-					// kickoff the goroutine to add the alias to the command
-					aliasErrGroup.Go(func() error {
-						cmdAlias, aliasErr := getPluginCommandAlias(plugin, aliasArgsCopy)
-						if aliasErr != nil {
-							return aliasErr
+			var aliasArgs []string
+			current := cmdTreeRoot
+			for _, cmdName := range cmdNames {
+				if current.Subcommands[cmdName] == nil {
+					current.Subcommands[cmdName] = NewCommandNode()
+				}
+
+				current = current.Subcommands[cmdName]
+				if cmdName != "tanzu" {
+					// The aliasArgs are used to construct the command we will use to get the help text
+					// so we can extract the aliases of command.
+					aliasArgs = append(aliasArgs, cmdName)
+
+					if cmdName == string(plugin.Target) {
+						if !current.AliasProcessed {
+							current.Aliases = getTargetAliases(plugin.Target)
+							current.AliasProcessed = true
 						}
-						currentCopy.Aliases = cmdAlias
-						return nil
-					})
-					currentCopy.AliasProcessed = true
+						continue
+					}
+
+					if !current.AliasProcessed {
+						// kickoff the goroutine to add the alias to the command
+
+						// Find the command that the CLI has created
+						// so that we can read its annotations.
+						cmd, _, err := rootCmd.Find(aliasArgs)
+						if err != nil {
+							return nil, err
+						}
+
+						aliasArgsCopy := make([]string, len(aliasArgs))
+						copy(aliasArgsCopy, aliasArgs)
+						currentCopy := current
+
+						aliasErrGroup.Go(func() error {
+							cmdAlias, aliasErr := getPluginCommandAlias(plugin, cmd, aliasArgsCopy)
+							if aliasErr != nil {
+								return aliasErr
+							}
+							currentCopy.Aliases = cmdAlias
+							return nil
+						})
+						currentCopy.AliasProcessed = true
+					}
 				}
 			}
 		}
@@ -180,11 +227,76 @@ func (c *cacheImpl) constructPluginCommandTree(plugin *cli.PluginInfo) (*Command
 	if err := aliasErrGroup.Wait(); err != nil {
 		return nil, errors.Wrap(err, "failed to generate command alias")
 	}
-	if cmdTreeRoot.Subcommands["tanzu"] != nil && cmdTreeRoot.Subcommands["tanzu"].Subcommands[plugin.Name] != nil {
-		return cmdTreeRoot.Subcommands["tanzu"].Subcommands[plugin.Name], nil
+	if cmdTreeRoot.Subcommands["tanzu"] != nil {
+		return cmdTreeRoot.Subcommands["tanzu"], nil
 	}
 
 	return nil, nil
+}
+
+func getTargetAliases(target types.Target) map[string]struct{} {
+	switch target {
+	case types.TargetK8s:
+		return map[string]struct{}{
+			"k8s":        {},
+			"kubernetes": {},
+		}
+	case types.TargetTMC:
+		return map[string]struct{}{
+			"tmc":             {},
+			"mission-control": {},
+		}
+	case types.TargetOperations:
+		return map[string]struct{}{
+			"ops":        {},
+			"operations": {},
+		}
+	default:
+		log.V(5).Warning("Unexpected target", target)
+		return nil
+	}
+}
+
+// adjustCmdNamesForPluginTarget adjusts the command names to insert the plugin target
+// when appropriate.  The cmdNames parameter is the list of command names that were
+// extracted from one of the generated docs file; it does not contain the target yet.
+func adjustCmdNamesForPluginTarget(cmdNames []string, plugin *cli.PluginInfo) []string {
+	// Just the "tanzu" command
+	if len(cmdNames) < 2 {
+		return cmdNames
+	}
+
+	// No changes required since the global target means the plugin
+	// is directly at the root level
+	if plugin.Target == types.TargetGlobal {
+		return cmdNames
+	}
+
+	// For remapped commands, we don't add the target
+	for _, cmdMap := range plugin.CommandMap {
+		// If the cmdNames (excluding the "tanzu" command) starts with the destination command path
+		// it means we are dealing with a remapped command and we should not add the target
+		index := 1 // Start at 1 to skip the "tanzu" command
+		isRemapped := true
+		for _, destCmd := range strings.Split(cmdMap.DestinationCommandPath, " ") {
+			if strings.TrimSpace(destCmd) == "" {
+				continue
+			}
+
+			if len(cmdNames) < index+1 || cmdNames[index] != destCmd {
+				// Not a remapped command
+				isRemapped = false
+				break
+			}
+			index++
+		}
+		if isRemapped {
+			return cmdNames
+		}
+	}
+
+	// Insert the target as the second element (after "tanzu") in the command names
+	return append([]string{cmdNames[0], string(plugin.Target)}, cmdNames[1:]...)
 }
 
 func getPluginCommandTree() (*pluginCommandTree, error) {
@@ -219,11 +331,31 @@ func generatePluginDocs(plugin *cli.PluginInfo) error {
 	return nil
 }
 
-func getPluginCommandAlias(plugin *cli.PluginInfo, aliasArgs []string) (map[string]struct{}, error) {
+func getPluginCommandAlias(plugin *cli.PluginInfo, cmd *cobra.Command, aliasArgs []string) (map[string]struct{}, error) {
+	// Drop the the target if there is one since it is not needed when calling the plugin directly
+	if len(aliasArgs) > 0 && types.IsValidTarget(aliasArgs[0], false, false) {
+		aliasArgs = aliasArgs[1:]
+	}
+
+	// Drop the next element of aliasArgs since it is either:
+	// - the plugin name, which is not needed when calling the plugin directly
+	// - the remapped command name, which will be added back through the command source path annotation
+	if len(aliasArgs) > 0 {
+		aliasArgs = aliasArgs[1:]
+	}
+
+	// Handle any remapped commands by adding the command source path before
+	// calling the plugin directly.
+	cmdSrcPath := cmd.Annotations[common.AnnotationForCmdSrcPath]
+	if cmdSrcPath != "" {
+		aliasArgs = append(strings.Split(cmdSrcPath, " "), aliasArgs...)
+	}
 	aliasArgs = append(aliasArgs, "-h")
+
 	runner := cli.NewRunner(plugin.Name, plugin.InstallationPath, aliasArgs)
 	ctx := context.Background()
 	stdout, _, err := runner.RunOutput(ctx)
+
 	if err != nil {
 		return nil, err
 	}

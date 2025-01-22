@@ -235,8 +235,9 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 						return nil
 					},
 					Annotations: map[string]string{
-						"type":                   common.CommandTypePlugin,
-						"pluginInstallationPath": "/path/to/plugin1",
+						"type":                         common.CommandTypePlugin,
+						"pluginInstallationPath":       "/path/to/plugin1",
+						common.AnnotationForCmdSrcPath: "",
 					},
 				}
 				rootCmd.AddCommand(globalPluginCmd)
@@ -280,8 +281,9 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 						return nil
 					},
 					Annotations: map[string]string{
-						"type":                   common.CommandTypePlugin,
-						"pluginInstallationPath": "/path/to/k8s-plugin1",
+						"type":                         common.CommandTypePlugin,
+						"pluginInstallationPath":       "/path/to/k8s-plugin1",
+						common.AnnotationForCmdSrcPath: "",
 					},
 				}
 				k8sTargetCmd.AddCommand(k8sPlugincmd)
@@ -346,8 +348,9 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 						return nil
 					},
 					Annotations: map[string]string{
-						"type":                   common.CommandTypePlugin,
-						"pluginInstallationPath": "/path/to/k8s-plugin1",
+						"type":                         common.CommandTypePlugin,
+						"pluginInstallationPath":       "/path/to/k8s-plugin1",
+						common.AnnotationForCmdSrcPath: "",
 					},
 				}
 				k8sTargetCmd.AddCommand(k8sPlugincmd)
@@ -362,12 +365,38 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 				// cmd tree for "k8s-plugin1" plugin that would be used by parser for parsing the command args and return command path
 				pluginCMDTree = &plugincmdtree.CommandNode{
 					Subcommands: map[string]*plugincmdtree.CommandNode{
-						"plugin-subcmd1": &plugincmdtree.CommandNode{
+						"k8s-plugin1": {
 							Subcommands: map[string]*plugincmdtree.CommandNode{
-								"plugin-subcmd2": plugincmdtree.NewCommandNode(),
+								"plugin-subcmd1": {
+									Subcommands: map[string]*plugincmdtree.CommandNode{
+										"plugin-subcmd2": plugincmdtree.NewCommandNode(),
+									},
+									Aliases: map[string]struct{}{
+										"pscmd1-alias": {},
+									},
+								},
+							},
+							Aliases: map[string]struct{}{},
+						},
+						"kubernetes": {
+							Subcommands: map[string]*plugincmdtree.CommandNode{
+								"k8s-plugin1": {
+									Subcommands: map[string]*plugincmdtree.CommandNode{
+										"plugin-subcmd1": {
+											Subcommands: map[string]*plugincmdtree.CommandNode{
+												"plugin-subcmd2": plugincmdtree.NewCommandNode(),
+											},
+											Aliases: map[string]struct{}{
+												"pscmd1-alias": {},
+											},
+										},
+									},
+									Aliases: map[string]struct{}{},
+								},
 							},
 							Aliases: map[string]struct{}{
-								"pscmd1-alias": {},
+								"k8s":        {},
+								"kubernetes": {},
 							},
 						},
 					},

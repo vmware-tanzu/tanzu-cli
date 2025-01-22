@@ -22,7 +22,7 @@ func init() {
 
 func triggerForPluginDiscoverySourceUpdater() bool {
 	// If the last executed CLI version is < 1.3.0, we need to update the discovery image source
-	return lastversion.GetLastExecutedCLIVersion() == lastversion.OlderThan1_3_0
+	return lastversion.IsLessThan(lastversion.Version1_3_0)
 }
 
 // updatePluginDiscoverySource updates the plugin discovery source to point CLI to
