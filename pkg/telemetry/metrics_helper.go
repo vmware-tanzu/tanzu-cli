@@ -47,6 +47,18 @@ func computeEndpointSHAWithCtxTypePrefix(curCtx map[configtypes.ContextType]*con
 			return string(configtypes.ContextTypeTMC) + ":" + computeEndpointSHAForTMCContext(ctx)
 		}
 		return ""
+	case configtypes.TargetGlobal:
+		// If Target is "global" and tanzu context type is active, use it as most plugins in Tanzu Platform are global target plugins
+		ctx, exists := curCtx[configtypes.ContextTypeTanzu]
+		if exists {
+			return string(configtypes.ContextTypeTanzu) + ":" + computeEndpointSHAForTanzuContext(ctx)
+		}
+		// There could be "global" plugins which could use `k8s` contexts. So get endpoint from k8s context as a fallback
+		ctx, exists = curCtx[configtypes.ContextTypeK8s]
+		if exists {
+			return string(configtypes.ContextTypeK8s) + ":" + computeEndpointSHAForK8sContext(ctx)
+		}
+		return ""
 	}
 	return ""
 }

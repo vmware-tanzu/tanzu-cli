@@ -132,6 +132,89 @@ var _ = Describe("metrics helper tests", func() {
 			Expect(epHashStr).To(BeEmpty())
 		})
 	})
+	Context("when the plugin target is global and the current active context is of type 'tanzu'", func() {
+		It("should return the hash of tanzu active context prefixed with 'tanzu'", func() {
+			pluginInfo := &cli.PluginInfo{
+				Name:    "global-plugin",
+				Version: "1.0.0",
+				Target:  configtypes.TargetGlobal,
+			}
+			// when tanzu context has active org
+			ctx, err := configlib.GetContext("test-tanzu-context")
+			Expect(err).ToNot(HaveOccurred())
+			ctx.AdditionalMetadata[configlib.ProjectNameKey] = ""
+			ctx.AdditionalMetadata[configlib.SpaceNameKey] = ""
+			// Also when the ClusterGroupNameKey is not configured under AdditionalMetadata
+			err = configlib.SetContext(ctx, true)
+			Expect(err).ToNot(HaveOccurred())
+
+			epHashStr := getEndpointSHAWithCtxTypePrefix(pluginInfo)
+			Expect(epHashStr).ToNot(BeEmpty())
+			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeTanzu) + ":" + computeEndpointSHAForTanzuContext(ctx)))
+
+			// when tanzu context has active project
+			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
+			ctx.AdditionalMetadata[configlib.ProjectIDKey] = testProjectID
+			ctx.AdditionalMetadata[configlib.SpaceNameKey] = ""
+			ctx.AdditionalMetadata[configlib.ClusterGroupNameKey] = ""
+			err = configlib.SetContext(ctx, true)
+			Expect(err).ToNot(HaveOccurred())
+
+			epHashStr = getEndpointSHAWithCtxTypePrefix(pluginInfo)
+			Expect(epHashStr).ToNot(BeEmpty())
+			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeTanzu) + ":" + computeEndpointSHAForTanzuContext(ctx)))
+
+			// when tanzu context has active space
+			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
+			ctx.AdditionalMetadata[configlib.ProjectIDKey] = testProjectID
+			ctx.AdditionalMetadata[configlib.SpaceNameKey] = testSpaceName
+			ctx.AdditionalMetadata[configlib.ClusterGroupNameKey] = ""
+			err = configlib.SetContext(ctx, true)
+			Expect(err).ToNot(HaveOccurred())
+
+			// when tanzu context has active clustergroup
+			ctx.AdditionalMetadata[configlib.ProjectNameKey] = testProjectName
+			ctx.AdditionalMetadata[configlib.ProjectIDKey] = testProjectID
+			ctx.AdditionalMetadata[configlib.SpaceNameKey] = ""
+			ctx.AdditionalMetadata[configlib.ClusterGroupNameKey] = testClusterGroupName
+			err = configlib.SetContext(ctx, true)
+			Expect(err).ToNot(HaveOccurred())
+
+			epHashStr = getEndpointSHAWithCtxTypePrefix(pluginInfo)
+			Expect(epHashStr).ToNot(BeEmpty())
+			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeTanzu) + ":" + computeEndpointSHAForTanzuContext(ctx)))
+		})
+	})
+	Context("when the plugin target is global and the current active context is of type 'kubernetes'", func() {
+		It("should return the hash of kubernetes active context prefixed with 'kubernetes'", func() {
+			pluginInfo := &cli.PluginInfo{
+				Name:    "global-plugin",
+				Version: "1.0.0",
+				Target:  configtypes.TargetGlobal,
+			}
+			epHashStr := getEndpointSHAWithCtxTypePrefix(pluginInfo)
+			Expect(epHashStr).ToNot(BeEmpty())
+
+			ctx, err := configlib.GetActiveContext(configtypes.ContextTypeK8s)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(epHashStr).To(Equal(string(configtypes.ContextTypeK8s) + ":" + computeEndpointSHAForK8sContext(ctx)))
+		})
+	})
+	Context("when the plugin target is global and there is no active context of type tanzu or k8s", func() {
+		It("should return the empty string", func() {
+			pluginInfo := &cli.PluginInfo{
+				Name:    "global-plugin",
+				Version: "1.0.0",
+				Target:  configtypes.TargetK8s,
+			}
+			// remove the active contexts of type k8s
+			err := configlib.RemoveActiveContext(configtypes.ContextTypeK8s)
+			Expect(err).ToNot(HaveOccurred())
+
+			epHashStr := getEndpointSHAWithCtxTypePrefix(pluginInfo)
+			Expect(epHashStr).To(BeEmpty())
+		})
+	})
 	Context("when the plugin target is mission-control and the current active context is of context type 'mission-control'", func() {
 		It("should return the hash of mission-control active context prefixed with 'mission-control'", func() {
 			pluginInfo := &cli.PluginInfo{
