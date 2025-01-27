@@ -49,7 +49,7 @@ jobs:
           build-args: |
             TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_DIR=/app/legacy-tanzu-cli
             TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION=v0.28.1
-            TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_URL=https://ent.box.com/shared/static/984uoy8mayq6rpdrfwh1omxurc0ixo57.gz
+            TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_URL=https://storage.googleapis.com/tanzu-cli-installer-packages/bin/v0.28.1/tanzu-cli-linux-amd64.tar.gz
             TANZU_CLI_COEXISTENCE_NEW_TANZU_CLI_DIR=/app/tanzu-cli
 
       - name: Run Docker image
