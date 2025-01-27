@@ -423,7 +423,7 @@ TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_VERSION = v0.28.1
 endif
 
 ifndef TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_URL
-TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_URL = https://ent.box.com/shared/static/984uoy8mayq6rpdrfwh1omxurc0ixo57.gz # tanzu-cli-linux-amd64 v0.28.1 bundle url
+TANZU_CLI_COEXISTENCE_LEGACY_TANZU_CLI_URL = https://storage.googleapis.com/tanzu-cli-installer-packages/bin/v0.28.1/tanzu-cli-linux-amd64.tar.gz # tanzu-cli-linux-amd64 v0.28.1 bundle url
 endif
 
 ifndef TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER
