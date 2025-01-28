@@ -15,10 +15,10 @@ import (
 //
 //go:generate counterfeiter -o ../fakes/plugin_cmd_tree_cache_fake.go --fake-name CommandTreeCache . Cache
 type Cache interface {
-	// GetTree returns the plugin command tree
+	// GetPluginTree returns the plugin command tree
 	// If the plugin command tree doesn't exist, it constructs and adds the command tree to the cache
 	// and then returns the plugin command tree, otherwise it returns an error
-	GetTree(rootCmd *cobra.Command, plugin *cli.PluginInfo) (*CommandNode, error)
+	GetPluginTree(rootCmd *cobra.Command, plugin *cli.PluginInfo) (*CommandNode, error)
 	// DeletePluginTree deletes the plugin command tree from the cache
 	DeletePluginTree(plugin *cli.PluginInfo) error
 	// DeleteTree deletes the entire command tree from the cache

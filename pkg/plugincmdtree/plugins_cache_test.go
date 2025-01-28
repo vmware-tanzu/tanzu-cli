@@ -344,7 +344,7 @@ func TestCache_GetTree(t *testing.T) {
 
 	expectedCMDTree := cache.pluginCommands.CommandTree[plugin.InstallationPath]
 	// Test getting the command tree
-	commandTree, err := cache.GetTree(rootCmd, plugin)
+	commandTree, err := cache.GetPluginTree(rootCmd, plugin)
 	assert.NoError(t, err)
 	assert.NotNil(t, commandTree)
 	assert.Equal(t, expectedCMDTree, commandTree)
@@ -358,7 +358,7 @@ func TestCache_GetTree(t *testing.T) {
 		Target:           configtypes.TargetK8s,
 		Version:          "1.0.0",
 	}
-	nonExistingCommandTree, err := cache.GetTree(rootCmd, nonExistingPlugin)
+	nonExistingCommandTree, err := cache.GetPluginTree(rootCmd, nonExistingPlugin)
 	assert.Error(t, err)
 	assert.Nil(t, nonExistingCommandTree)
 }

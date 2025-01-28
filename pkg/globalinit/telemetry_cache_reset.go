@@ -1,13 +1,13 @@
 // Copyright 2025 VMware, Inc. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 
-package plugincmdtree
+package globalinit
 
 import (
 	"io"
 
-	"github.com/vmware-tanzu/tanzu-cli/pkg/globalinit"
 	"github.com/vmware-tanzu/tanzu-cli/pkg/lastversion"
+	"github.com/vmware-tanzu/tanzu-cli/pkg/plugincmdtree"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/log"
 )
 
@@ -17,7 +17,7 @@ import (
 // Note that this initializer does not build the cache, it only removes the existing cache file.
 
 func init() {
-	globalinit.RegisterInitializer("Plugin Command-Tree Reset", triggerForPluginCmdTreeReset, resetPluginCmdTree)
+	RegisterInitializer("Plugin Command-Tree Reset", triggerForPluginCmdTreeReset, resetPluginCmdTree)
 }
 
 func triggerForPluginCmdTreeReset() bool {
@@ -27,7 +27,7 @@ func triggerForPluginCmdTreeReset() bool {
 
 // resetPluginCmdTree deletes the plugin command-tree cache.
 func resetPluginCmdTree(_ io.Writer) error {
-	pct, err := NewCache()
+	pct, err := plugincmdtree.NewCache()
 	if err != nil {
 		return err
 	}

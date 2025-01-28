@@ -32,17 +32,17 @@ type CommandTreeCache struct {
 	deleteTreeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	GetTreeStub        func(*cobra.Command, *cli.PluginInfo) (*plugincmdtree.CommandNode, error)
-	getTreeMutex       sync.RWMutex
-	getTreeArgsForCall []struct {
+	GetPluginTreeStub        func(*cobra.Command, *cli.PluginInfo) (*plugincmdtree.CommandNode, error)
+	getPluginTreeMutex       sync.RWMutex
+	getPluginTreeArgsForCall []struct {
 		arg1 *cobra.Command
 		arg2 *cli.PluginInfo
 	}
-	getTreeReturns struct {
+	getPluginTreeReturns struct {
 		result1 *plugincmdtree.CommandNode
 		result2 error
 	}
-	getTreeReturnsOnCall map[int]struct {
+	getPluginTreeReturnsOnCall map[int]struct {
 		result1 *plugincmdtree.CommandNode
 		result2 error
 	}
@@ -164,17 +164,17 @@ func (fake *CommandTreeCache) DeleteTreeReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *CommandTreeCache) GetTree(arg1 *cobra.Command, arg2 *cli.PluginInfo) (*plugincmdtree.CommandNode, error) {
-	fake.getTreeMutex.Lock()
-	ret, specificReturn := fake.getTreeReturnsOnCall[len(fake.getTreeArgsForCall)]
-	fake.getTreeArgsForCall = append(fake.getTreeArgsForCall, struct {
+func (fake *CommandTreeCache) GetPluginTree(arg1 *cobra.Command, arg2 *cli.PluginInfo) (*plugincmdtree.CommandNode, error) {
+	fake.getPluginTreeMutex.Lock()
+	ret, specificReturn := fake.getPluginTreeReturnsOnCall[len(fake.getPluginTreeArgsForCall)]
+	fake.getPluginTreeArgsForCall = append(fake.getPluginTreeArgsForCall, struct {
 		arg1 *cobra.Command
 		arg2 *cli.PluginInfo
 	}{arg1, arg2})
-	stub := fake.GetTreeStub
-	fakeReturns := fake.getTreeReturns
-	fake.recordInvocation("GetTree", []interface{}{arg1, arg2})
-	fake.getTreeMutex.Unlock()
+	stub := fake.GetPluginTreeStub
+	fakeReturns := fake.getPluginTreeReturns
+	fake.recordInvocation("GetPluginTree", []interface{}{arg1, arg2})
+	fake.getPluginTreeMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
 	}
@@ -184,46 +184,46 @@ func (fake *CommandTreeCache) GetTree(arg1 *cobra.Command, arg2 *cli.PluginInfo)
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *CommandTreeCache) GetTreeCallCount() int {
-	fake.getTreeMutex.RLock()
-	defer fake.getTreeMutex.RUnlock()
-	return len(fake.getTreeArgsForCall)
+func (fake *CommandTreeCache) GetPluginTreeCallCount() int {
+	fake.getPluginTreeMutex.RLock()
+	defer fake.getPluginTreeMutex.RUnlock()
+	return len(fake.getPluginTreeArgsForCall)
 }
 
-func (fake *CommandTreeCache) GetTreeCalls(stub func(*cobra.Command, *cli.PluginInfo) (*plugincmdtree.CommandNode, error)) {
-	fake.getTreeMutex.Lock()
-	defer fake.getTreeMutex.Unlock()
-	fake.GetTreeStub = stub
+func (fake *CommandTreeCache) GetPluginTreeCalls(stub func(*cobra.Command, *cli.PluginInfo) (*plugincmdtree.CommandNode, error)) {
+	fake.getPluginTreeMutex.Lock()
+	defer fake.getPluginTreeMutex.Unlock()
+	fake.GetPluginTreeStub = stub
 }
 
-func (fake *CommandTreeCache) GetTreeArgsForCall(i int) (*cobra.Command, *cli.PluginInfo) {
-	fake.getTreeMutex.RLock()
-	defer fake.getTreeMutex.RUnlock()
-	argsForCall := fake.getTreeArgsForCall[i]
+func (fake *CommandTreeCache) GetPluginTreeArgsForCall(i int) (*cobra.Command, *cli.PluginInfo) {
+	fake.getPluginTreeMutex.RLock()
+	defer fake.getPluginTreeMutex.RUnlock()
+	argsForCall := fake.getPluginTreeArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *CommandTreeCache) GetTreeReturns(result1 *plugincmdtree.CommandNode, result2 error) {
-	fake.getTreeMutex.Lock()
-	defer fake.getTreeMutex.Unlock()
-	fake.GetTreeStub = nil
-	fake.getTreeReturns = struct {
+func (fake *CommandTreeCache) GetPluginTreeReturns(result1 *plugincmdtree.CommandNode, result2 error) {
+	fake.getPluginTreeMutex.Lock()
+	defer fake.getPluginTreeMutex.Unlock()
+	fake.GetPluginTreeStub = nil
+	fake.getPluginTreeReturns = struct {
 		result1 *plugincmdtree.CommandNode
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *CommandTreeCache) GetTreeReturnsOnCall(i int, result1 *plugincmdtree.CommandNode, result2 error) {
-	fake.getTreeMutex.Lock()
-	defer fake.getTreeMutex.Unlock()
-	fake.GetTreeStub = nil
-	if fake.getTreeReturnsOnCall == nil {
-		fake.getTreeReturnsOnCall = make(map[int]struct {
+func (fake *CommandTreeCache) GetPluginTreeReturnsOnCall(i int, result1 *plugincmdtree.CommandNode, result2 error) {
+	fake.getPluginTreeMutex.Lock()
+	defer fake.getPluginTreeMutex.Unlock()
+	fake.GetPluginTreeStub = nil
+	if fake.getPluginTreeReturnsOnCall == nil {
+		fake.getPluginTreeReturnsOnCall = make(map[int]struct {
 			result1 *plugincmdtree.CommandNode
 			result2 error
 		})
 	}
-	fake.getTreeReturnsOnCall[i] = struct {
+	fake.getPluginTreeReturnsOnCall[i] = struct {
 		result1 *plugincmdtree.CommandNode
 		result2 error
 	}{result1, result2}
@@ -236,8 +236,8 @@ func (fake *CommandTreeCache) Invocations() map[string][][]interface{} {
 	defer fake.deletePluginTreeMutex.RUnlock()
 	fake.deleteTreeMutex.RLock()
 	defer fake.deleteTreeMutex.RUnlock()
-	fake.getTreeMutex.RLock()
-	defer fake.getTreeMutex.RUnlock()
+	fake.getPluginTreeMutex.RLock()
+	defer fake.getPluginTreeMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

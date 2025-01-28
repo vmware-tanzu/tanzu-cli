@@ -71,7 +71,7 @@ func NewCache() (Cache, error) {
 	}, nil
 }
 
-func (c *cacheImpl) GetTree(rootCmd *cobra.Command, plugin *cli.PluginInfo) (*CommandNode, error) {
+func (c *cacheImpl) GetPluginTree(rootCmd *cobra.Command, plugin *cli.PluginInfo) (*CommandNode, error) {
 	// If the tree does not already exist, we construct it, if it does exist constructAndAddTree is a no-op
 	if err := c.constructAndAddTree(rootCmd, plugin); err != nil {
 		return nil, err

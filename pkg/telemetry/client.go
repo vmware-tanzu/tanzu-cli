@@ -279,7 +279,7 @@ func (tc *telemetryClient) parsePluginCommandPath(rootCmd *cobra.Command, plugin
 	if err != nil {
 		return "", err
 	}
-	pct, err := pctCache.GetTree(rootCmd, plugin)
+	pct, err := pctCache.GetPluginTree(rootCmd, plugin)
 	if err != nil {
 		return "", err
 	}
