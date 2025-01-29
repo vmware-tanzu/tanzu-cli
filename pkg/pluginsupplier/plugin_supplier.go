@@ -15,11 +15,6 @@ import (
 
 // GetInstalledPlugins return the installed plugins
 func GetInstalledPlugins() ([]cli.PluginInfo, error) {
-	// Migrate context-scoped plugins as standalone plugin if required
-	// TODO(anujc): Think on how to invoke this function just once after the newer version
-	// of the CLI gets installed as we just need to do this migration once
-	catalog.MigrateContextPluginsAsStandaloneIfNeeded()
-
 	// Get all the standalone plugins found in the catalog
 	standAloneCatalog, err := catalog.NewContextCatalog("")
 	if err != nil {
