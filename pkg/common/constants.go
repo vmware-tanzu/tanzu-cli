@@ -37,3 +37,8 @@ const CoreName = "core"
 
 // CommandTypePlugin represents the command type is plugin
 const CommandTypePlugin = "plugin"
+
+// Command Annotations
+const (
+	AnnotationForCmdSrcPath = "cmdSrcPath"
+)
