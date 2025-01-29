@@ -98,11 +98,15 @@ for arch in x86_64 aarch64; do
             --define "cli_version v${VERSION}" \
             -bb ${BASE_DIR}/tanzu-cli.spec \
             --target ${arch}
-   mv ${HOME}/rpmbuild/RPMS/${arch}/* ${PKG_DIR}/
 
+   # Sign the package before moving it to the common output directory
    if [[ ! -z "${RPM_SIGNER}" ]]; then
-     ${RPM_SIGNER} ${PKG_DIR}/tanzu-cli*${arch}.rpm
+     ${RPM_SIGNER} ${HOME}/rpmbuild/RPMS/${arch}/tanzu-cli*${arch}.rpm
    else
      echo skip rpmsigning packages for ${arch}
    fi
+
+   # Move the signed package to the output directory where the other packages
+   # also reside, so that we can build the repository at the very end 
+   mv ${HOME}/rpmbuild/RPMS/${arch}/* ${PKG_DIR}/
 done
