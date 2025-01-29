@@ -238,21 +238,21 @@ func (tc *telemetryClient) updateMetricsForPlugin(cmd *cobra.Command, args []str
 		tc.currentOperationMetrics.PluginVersion = plugin.Version
 		tc.currentOperationMetrics.Target = string(plugin.Target)
 		tc.currentOperationMetrics.Endpoint = getEndpointSHAWithCtxTypePrefix(plugin)
-		// for plugins, cobra can only parse the command upto the plugin name,
+		// for plugins, cobra can only parse the command up to the plugin name,
 		// and the rest of the subcommands and args would be captured as args
 		// ex: tanzu cluster kubeconfig get testCluster --export-file /path/to/file
 		//   the above command after parsing cobra will provide the below
 		//    ==>   cmd.CommandPath() would return "tanzu cluster"
 		//          args = ["kubeconfig","get","testCluster","--export-file","/path/to/file"]
 		// So, use the plugin command parser to figure out(best-effort) the command path using command tree as reference
-		cobraParsedCMDPath := strings.Join(strings.Split(cmd.CommandPath(), " ")[1:], " ")
-		cmdPath, err := tc.parsePluginCommandPath(plugin, args)
+		cobraParsedCMDPath := strings.Split(cmd.CommandPath(), " ")[1:]
+		cmdPath, err := tc.parsePluginCommandPath(cmd.Root(), plugin, append(cobraParsedCMDPath, args...))
 		if err != nil {
 			LogError(err, "")
 			// assign the default plugin path
-			tc.currentOperationMetrics.CommandName = cobraParsedCMDPath
+			tc.currentOperationMetrics.CommandName = strings.Join(cobraParsedCMDPath, " ")
 		} else {
-			tc.currentOperationMetrics.CommandName = cobraParsedCMDPath + cmdPath
+			tc.currentOperationMetrics.CommandName = cmdPath
 		}
 	}
 
@@ -274,15 +274,16 @@ func (tc *telemetryClient) pluginInfoFromCommand(cmd *cobra.Command) *cli.Plugin
 
 // parsePluginCommandPath parses the args provided by the cobra and uses the best-effort strategy to
 // map to the plugin command tree and would return the command path
-func (tc *telemetryClient) parsePluginCommandPath(plugin *cli.PluginInfo, args []string) (string, error) {
+func (tc *telemetryClient) parsePluginCommandPath(rootCmd *cobra.Command, plugin *cli.PluginInfo, args []string) (string, error) {
 	pctCache, err := tc.cmdTreeCacheGetter()
 	if err != nil {
 		return "", err
 	}
-	pct, err := pctCache.GetTree(plugin)
+	pct, err := pctCache.GetPluginTree(rootCmd, plugin)
 	if err != nil {
 		return "", err
 	}
+
 	cmdPath := ""
 	current := pct
 	for _, arg := range args {
@@ -298,7 +299,10 @@ func (tc *telemetryClient) parsePluginCommandPath(plugin *cli.PluginInfo, args [
 			continue
 		default:
 			if subCMD := subCommandMatchingArg(current, arg); subCMD != nil {
-				cmdPath = cmdPath + " " + arg
+				if cmdPath != "" {
+					cmdPath += " "
+				}
+				cmdPath += arg
 				current = subCMD
 			}
 		}

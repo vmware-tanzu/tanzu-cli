@@ -908,24 +908,8 @@ func updatePluginInfoAndInitializePlugin(p *discovery.Discovered, plugin *cli.Pl
 	if err := configlib.ConfigureFeatureFlags(plugin.DefaultFeatureFlags, configlib.SkipIfExists()); err != nil {
 		log.Infof("could not configure default featureflags for the plugin: %v", err.Error())
 	}
-	// add plugin to the plugin command tree cache for telemetry to consume later for plugin command chain parsing
-	addPluginToCommandTreeCache(plugin)
-	return nil
-}
 
-// addPluginToCommandTreeCache would construct and add the plugin command tree to the command tree cache
-// which would be consumed by telemetry for plugin command chain parsing
-func addPluginToCommandTreeCache(plugin *cli.PluginInfo) {
-	// update the plugin command tree cache
-	ctr, err := plugincmdtree.NewCache()
-	if err != nil {
-		telemetry.LogError(err, "")
-		return
-	}
-	err = ctr.ConstructAndAddTree(plugin)
-	if err != nil {
-		telemetry.LogError(err, "")
-	}
+	return nil
 }
 
 // deletePluginFromCommandTreeCache deletes the plugin command tree from the command tree cache
@@ -937,7 +921,7 @@ func deletePluginFromCommandTreeCache(plugin *cli.PluginInfo) {
 		telemetry.LogError(err, "")
 		return
 	}
-	err = ctr.DeleteTree(plugin)
+	err = ctr.DeletePluginTree(plugin)
 	if err != nil {
 		telemetry.LogError(err, "")
 	}

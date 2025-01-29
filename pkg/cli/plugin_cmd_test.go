@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/vmware-tanzu/tanzu-cli/pkg/common"
 	"github.com/vmware-tanzu/tanzu-plugin-runtime/plugin"
 )
 
@@ -43,10 +44,72 @@ func TestGetCmdForPlugin(t *testing.T) {
 	cmd := GetCmdForPlugin(pi)
 
 	err = cmd.Execute()
-	assert.Equal(cmd.Name(), pi.Name)
-	assert.Equal(cmd.Short, pi.Description)
-	assert.Equal(cmd.Aliases, pi.Aliases)
 	assert.Nil(err)
+
+	assert.Equal(pi.Name, cmd.Name())
+	assert.Equal(pi.Description, cmd.Short)
+	assert.Equal(pi.Aliases, cmd.Aliases)
+
+	annotations := cmd.Annotations
+	assert.Equal(5, len(annotations))
+	assert.Equal(string(pi.Group), annotations["group"])
+	assert.Equal(pi.Scope, annotations["scope"])
+	assert.Equal(common.CommandTypePlugin, annotations["type"])
+	assert.Equal(pi.InstallationPath, annotations["pluginInstallationPath"])
+	// No remapping in this test
+	assert.Equal("", annotations[common.AnnotationForCmdSrcPath])
+}
+
+func TestGetCmdForRemappedPlugin(t *testing.T) {
+	assert := assert.New(t)
+
+	dir, err := os.MkdirTemp("", "tanzu-cli-getcmd")
+	assert.Nil(err)
+	defer os.RemoveAll(dir)
+
+	path, err := setupFakePlugin(dir, "fakefoo", "")
+	assert.Nil(err)
+
+	const (
+		originalCmdName = "fakefoo"
+		renamedCmdName  = "fakefoo2"
+	)
+
+	pi := &PluginInfo{
+		Name:             originalCmdName,
+		Description:      "Fake foo",
+		Group:            plugin.SystemCmdGroup,
+		Aliases:          []string{"ff"},
+		InstallationPath: path,
+		Hidden:           true,
+	}
+
+	remapping := &plugin.CommandMapEntry{
+		SourceCommandPath:      originalCmdName,
+		DestinationCommandPath: renamedCmdName,
+		Description:            "Other desc",
+		Aliases:                []string{"ff2"},
+	}
+
+	cmd := getCmdForPluginEx(pi, renamedCmdName, remapping)
+
+	err = cmd.Execute()
+	assert.Nil(err)
+
+	assert.Equal(renamedCmdName, cmd.Name())
+	assert.Equal(remapping.Description, cmd.Short)
+	assert.Equal(remapping.Aliases, cmd.Aliases)
+	// A remapped command should not be hidden even if the original command is hidden
+	assert.False(cmd.Hidden)
+
+	annotations := cmd.Annotations
+	assert.Equal(5, len(annotations))
+	assert.Equal(string(pi.Group), annotations["group"])
+	assert.Equal(pi.Scope, annotations["scope"])
+	assert.Equal(common.CommandTypePlugin, annotations["type"])
+	assert.Equal(pi.InstallationPath, annotations["pluginInstallationPath"])
+	// We should see the remapped command name in the annotations
+	assert.Equal(remapping.SourceCommandPath, annotations[common.AnnotationForCmdSrcPath])
 }
 
 func TestEnvForPlugin(t *testing.T) {

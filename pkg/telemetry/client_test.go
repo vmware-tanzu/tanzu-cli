@@ -235,8 +235,9 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 						return nil
 					},
 					Annotations: map[string]string{
-						"type":                   common.CommandTypePlugin,
-						"pluginInstallationPath": "/path/to/plugin1",
+						"type":                         common.CommandTypePlugin,
+						"pluginInstallationPath":       "/path/to/plugin1",
+						common.AnnotationForCmdSrcPath: "",
 					},
 				}
 				rootCmd.AddCommand(globalPluginCmd)
@@ -247,7 +248,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 					InstallationPath: "/path/to/plugin1",
 				}})
 
-				cmdTreeCache.GetTreeReturns(nil, errors.New("fake-get-command-tree-error"))
+				cmdTreeCache.GetPluginTreeReturns(nil, errors.New("fake-get-command-tree-error"))
 
 				// command: tanzu plugin1 arg1
 				err = tc.UpdateCmdPreRunMetrics(globalPluginCmd, []string{"arg1"})
@@ -280,8 +281,9 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 						return nil
 					},
 					Annotations: map[string]string{
-						"type":                   common.CommandTypePlugin,
-						"pluginInstallationPath": "/path/to/k8s-plugin1",
+						"type":                         common.CommandTypePlugin,
+						"pluginInstallationPath":       "/path/to/k8s-plugin1",
+						common.AnnotationForCmdSrcPath: "",
 					},
 				}
 				k8sTargetCmd.AddCommand(k8sPlugincmd)
@@ -294,7 +296,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 					InstallationPath: "/path/to/k8s-plugin1",
 				}})
 
-				cmdTreeCache.GetTreeReturns(nil, errors.New("fake-get-command-tree-error"))
+				cmdTreeCache.GetPluginTreeReturns(nil, errors.New("fake-get-command-tree-error"))
 
 				// command : tanzu kubernetes k8s-plugin1 plugin-subcmd1 -v 6 plugin-subcmd2 -ab --flag1=value1 --flag2 value2 -- --arg1 --arg2
 				err = tc.UpdateCmdPreRunMetrics(k8sPlugincmd, []string{"plugin-subcmd1", "-v", "6", "plugin-subcmd2", "-ab", "--flag1=value1", "--flag2", "value2", "--", "--arg1", "--arg2"})
@@ -346,8 +348,9 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 						return nil
 					},
 					Annotations: map[string]string{
-						"type":                   common.CommandTypePlugin,
-						"pluginInstallationPath": "/path/to/k8s-plugin1",
+						"type":                         common.CommandTypePlugin,
+						"pluginInstallationPath":       "/path/to/k8s-plugin1",
+						common.AnnotationForCmdSrcPath: "",
 					},
 				}
 				k8sTargetCmd.AddCommand(k8sPlugincmd)
@@ -362,12 +365,38 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 				// cmd tree for "k8s-plugin1" plugin that would be used by parser for parsing the command args and return command path
 				pluginCMDTree = &plugincmdtree.CommandNode{
 					Subcommands: map[string]*plugincmdtree.CommandNode{
-						"plugin-subcmd1": &plugincmdtree.CommandNode{
+						"k8s-plugin1": {
 							Subcommands: map[string]*plugincmdtree.CommandNode{
-								"plugin-subcmd2": plugincmdtree.NewCommandNode(),
+								"plugin-subcmd1": {
+									Subcommands: map[string]*plugincmdtree.CommandNode{
+										"plugin-subcmd2": plugincmdtree.NewCommandNode(),
+									},
+									Aliases: map[string]struct{}{
+										"pscmd1-alias": {},
+									},
+								},
+							},
+							Aliases: map[string]struct{}{},
+						},
+						"kubernetes": {
+							Subcommands: map[string]*plugincmdtree.CommandNode{
+								"k8s-plugin1": {
+									Subcommands: map[string]*plugincmdtree.CommandNode{
+										"plugin-subcmd1": {
+											Subcommands: map[string]*plugincmdtree.CommandNode{
+												"plugin-subcmd2": plugincmdtree.NewCommandNode(),
+											},
+											Aliases: map[string]struct{}{
+												"pscmd1-alias": {},
+											},
+										},
+									},
+									Aliases: map[string]struct{}{},
+								},
 							},
 							Aliases: map[string]struct{}{
-								"pscmd1-alias": {},
+								"k8s":        {},
+								"kubernetes": {},
 							},
 						},
 					},
@@ -376,7 +405,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 			Context("When the user command string matches accurately with plugin command tree ", func() {
 				It("should return success and the metrics should have the command path updated", func() {
 
-					cmdTreeCache.GetTreeReturns(pluginCMDTree, nil)
+					cmdTreeCache.GetPluginTreeReturns(pluginCMDTree, nil)
 
 					// command : tanzu kubernetes k8s-plugin1 plugin-subcmd1 -v 6 plugin-subcmd2 -ab --flag1=value1 --flag2 value2 -- --arg1 --arg2
 					err = tc.UpdateCmdPreRunMetrics(k8sPlugincmd, []string{"plugin-subcmd1", "-v", "6", "plugin-subcmd2", "-ab", "--flag1=value1", "--flag2", "value2", "--", "--arg1", "--arg2"})
@@ -411,7 +440,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 			Context("When the user command string having command alias matches with plugin command tree ", func() {
 				It("should return success and the metrics should have the command path updated correctly", func() {
 
-					cmdTreeCache.GetTreeReturns(pluginCMDTree, nil)
+					cmdTreeCache.GetPluginTreeReturns(pluginCMDTree, nil)
 
 					// command : tanzu kubernetes k8s-plugin1 plugin-subcmd1 -v 6 plugin-subcmd2 -ab --flag1=value1 --flag2 value2 -- --arg1 --arg2
 					err = tc.UpdateCmdPreRunMetrics(k8sPlugincmd, []string{"pscmd1-alias", "-v", "6", "plugin-subcmd2", "-ab", "--flag1=value1", "--flag2", "value2", "--", "--arg1", "--arg2"})
@@ -445,7 +474,7 @@ var _ = Describe("Unit tests for UpdateCmdPreRunMetrics()", func() {
 			})
 			Context("When the user command string partially matches with plugin command tree ", func() {
 				It("should return success and the metrics should have command path updated upto the point of command match(best-effort)", func() {
-					cmdTreeCache.GetTreeReturns(pluginCMDTree, nil)
+					cmdTreeCache.GetPluginTreeReturns(pluginCMDTree, nil)
 
 					// command : tanzu kubernetes k8s-plugin1 plugin-subcmd1 -v 6 plugin-subcmd2 -ab --flag1=value1 --flag2 value2 -- --arg1 --arg2
 					err = tc.UpdateCmdPreRunMetrics(k8sPlugincmd, []string{"plugin-subcmd1", "-v", "6", "plugin-subcmd-notmatched", "-ab", "--flag1=value1", "--flag2", "value2", "--", "--arg1", "--arg2"})
