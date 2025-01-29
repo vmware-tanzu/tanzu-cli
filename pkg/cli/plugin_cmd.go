@@ -198,6 +198,10 @@ func getCmdForPluginEx(p *PluginInfo, cmdName string, mapEntry *plugin.CommandMa
 			"scope":                  p.Scope,
 			"type":                   common.CommandTypePlugin,
 			"pluginInstallationPath": p.InstallationPath,
+			// Telemetry uses the below annotation to identify the source
+			// of the command within the plugin so that it can determine how
+			// to invoke this command directly from the plugin binary.
+			common.AnnotationForCmdSrcPath: strings.Join(srcHierarchy, " "),
 		},
 		Hidden:  hidden,
 		Aliases: aliases,
