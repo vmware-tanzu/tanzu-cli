@@ -494,7 +494,7 @@ func setupDummyPlugin(t *testing.T, dirName, pluginName, pluginAlias string) {
 	assert.NoError(t, err)
 	defer pluginExeFile.Close()
 
-	fmt.Fprint(pluginExeFile, fmt.Sprintf(samplePluginToGenerateAliasWithHelpCommand, pluginName, pluginAlias))
+	fmt.Fprintf(pluginExeFile, samplePluginToGenerateAliasWithHelpCommand, pluginName, pluginAlias)
 }
 
 func validatePluginCommandTree(t *testing.T, gotPluginCommandTree *pluginCommandTree, pluginInstallationPath, expectedPluginCommandTreeYaml string) {

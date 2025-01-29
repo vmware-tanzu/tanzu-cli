@@ -38,7 +38,7 @@ func getPluginsCommandTreeCacheDir() string {
 	return filepath.Join(common.DefaultCacheDir, pluginsCommandTreeDir)
 }
 func GetPluginsCommandTreeCachePath() string {
-	return filepath.Join(getPluginsCommandTreeCacheDir(), "command_tree.yaml")
+	return filepath.Join(getPluginsCommandTreeCacheDir(), "command_tree_v2.yaml")
 }
 
 func getPluginsDocsCachePath() string {
@@ -133,6 +133,7 @@ func (c *cacheImpl) savePluginCommandTree() error {
 	return nil
 }
 
+//nolint:gocyclo // This function is complex
 func (c *cacheImpl) constructPluginCommandTree(rootCmd *cobra.Command, plugin *cli.PluginInfo) (*CommandNode, error) {
 	if err := c.pluginDocsGenerator(plugin); err != nil {
 		return nil, errors.Wrapf(err, "failed to generate docs for the plugin %q", plugin.Name)
