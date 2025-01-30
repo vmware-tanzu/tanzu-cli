@@ -22,6 +22,15 @@ if [ -z "$DNF" ]; then
    exit 1
 fi
 
+# VERSION should be set when calling this script
+if [ -z "${VERSION}" ]; then
+   echo "\$VERSION must be set before calling this script"
+   exit 1
+fi
+
+# Strip 'v' prefix as an rpm package version must start with an integer
+VERSION=${VERSION#v}
+
 BASE_DIR=$(cd $(dirname "${BASH_SOURCE[0]}"); pwd)
 OUTPUT_DIR=${BASE_DIR}/_output/rpm/tanzu-cli
 # Directory where the packages are stored
@@ -68,6 +77,33 @@ EOF
       echo "Found package: $p"
       touch ${PKG_DIR}/$(basename $p)
    done
+
+   # Allow replacing an existing package version with a new one; this
+   # has proven useful when a package was not signed properly.
+   #
+   # These RPM versions are set when building the packages
+   RPM_RELEASE_VERSION=1
+   # For unstable versions, the rpm version is different
+   if [[ ${VERSION} == *-* ]]; then
+       RPM_RELEASE_VERSION="0.1_${VERSION#*-}"
+       RPM_RELEASE_VERSION=${RPM_RELEASE_VERSION//-/_}
+   fi
+
+   # Remove the current version's packages, in case they are already
+   # part of the existing repo, and create the metadata without the
+   # current packages.  This allows to cleanup the metadata.
+   # We need to do this because we use the --skip-stat flag when building
+   # the repo, which implies that if the package is already in the repo,
+   # it won't be replaced with a newer version.
+   # Therefore, we first remove the current packages, then we add them back
+   # after the metadata has been cleaned up.
+   # If the current packages are not part of the existing repo, then
+   # this step is a no-op.
+   mv ${PKG_DIR}/*${VERSION}-${RPM_RELEASE_VERSION}*.rpm ${OUTPUT_DIR}/..
+   createrepo --update --skip-stat ${OUTPUT_DIR}
+
+   # Add back the current packages so we can build the final repo metadata
+   mv ${OUTPUT_DIR}/../*${VERSION}-${RPM_RELEASE_VERSION}*.rpm ${PKG_DIR}
 fi
 
 # Create the repository metadata
