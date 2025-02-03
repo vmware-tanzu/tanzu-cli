@@ -1860,6 +1860,7 @@ func TestContextCurrentCmd(t *testing.T) {
   Type:            tanzu
   Organization:    org-name (org-id)
   Project:         none set
+  Scope Path:      /
   Kube Config:     /home/user/.kube/config
   Kube Context:    kube-context-name
 `,
@@ -1877,6 +1878,7 @@ func TestContextCurrentCmd(t *testing.T) {
   Type:            tanzu
   Organization:    org-name (org-id)
   Project:         project-name (project-id)
+  Scope Path:      /projects/project-name
   Kube Config:     /home/user/.kube/config
   Kube Context:    kube-context-name
 `,
@@ -1895,6 +1897,7 @@ func TestContextCurrentCmd(t *testing.T) {
   Organization:    org-name (org-id)
   Project:         project-name (project-id)
   Space:           space-name
+  Scope Path:      /projects/project-name/spaces/space-name
   Kube Config:     /home/user/.kube/config
   Kube Context:    kube-context-name
 `,
@@ -1913,6 +1916,7 @@ func TestContextCurrentCmd(t *testing.T) {
   Organization:     org-name (org-id)
   Project:          project-name (project-id)
   Cluster Group:    clustergroup-name
+  Scope Path:       /projects/project-name/clustergroups/clustergroup-name
   Kube Config:      /home/user/.kube/config
   Kube Context:     kube-context-name
 `,
