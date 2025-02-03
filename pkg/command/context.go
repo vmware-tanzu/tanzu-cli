@@ -1497,6 +1497,9 @@ func printContext(writer io.Writer, ctx *configtypes.Context) {
 				columns = append(columns, "Cluster Group")
 				row = append(row, resources.ClusterGroupName)
 			}
+			scopePath := getTanzuResourceScopePath(resources)
+			columns = append(columns, "Scope Path")
+			row = append(row, scopePath)
 		}
 	}
 
@@ -1515,6 +1518,27 @@ func printContext(writer io.Writer, ctx *configtypes.Context) {
 	outputWriter := component.NewOutputWriterWithOptions(writer, string(component.ListTableOutputType), []component.OutputWriterOption{}, columns...)
 	outputWriter.AddRow(row...)
 	outputWriter.Render()
+}
+
+// getTanzuResourceScopePath returns the scope path based on the ResourceInfo
+// TODO: Update this function when CLI context provides support for cluster/CF resources(CF Foundation/CF Org/CF Space)
+func getTanzuResourceScopePath(resources *config.ResourceInfo) string {
+	scopePath := ""
+	if resources.OrgID == "" {
+		return scopePath
+	}
+	// set org scope path as global scope "/" and update the path based on resource hierarchy
+	scopePath += "/"
+	if resources.ProjectName != "" {
+		scopePath += "projects/" + resources.ProjectName
+		if resources.SpaceName != "" {
+			scopePath += "/spaces/" + resources.SpaceName
+		} else if resources.ClusterGroupName != "" {
+			scopePath += "/clustergroups/" + resources.ClusterGroupName
+		}
+	}
+
+	return scopePath
 }
 
 func newDeleteCtxCmd() *cobra.Command {
