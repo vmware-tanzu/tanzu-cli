@@ -1,0 +1,16 @@
+{
+    "pluginGroups": [
+        {
+            "name": "vmware-tkg/default",
+            "recommendedVersion": "v9.9.9"
+        }
+    ],
+    "pluginSources":  [
+        {
+            "oci": {
+                "name": "discovered-from-tpsm",
+                "image": "localhost:9876/tanzu-cli/plugins/central:small"
+            }
+        }
+    ]
+}

@@ -289,8 +289,8 @@ start-test-central-repo: stop-test-central-repo setup-custom-cert-for-test-centr
 		-e REGISTRY_HTTP_TLS_KEY=/certs/localhost.key  \
 		-v $(ROOT_DIR)/hack/central-repo/registry-content:/var/lib/registry \
 		$(REGISTRY_IMAGE) > /dev/null && \
-		echo "Started docker test central repo with images:" && \
-		$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
+	echo "Started docker test central repo with images:" && \
+	$(ROOT_DIR)/hack/central-repo/upload-plugins.sh info
 
 .PHONY: stop-test-central-repo
 stop-test-central-repo: ## Stops and removes the local test central repository
@@ -309,7 +309,7 @@ start-airgapped-local-registry: stop-airgapped-local-registry
 		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
 		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
 		$(REGISTRY_IMAGE) > /dev/null && \
-		echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
+	echo "Started docker test airgapped repo with authentication at 'localhost:6002'."
 
 	@docker logout localhost:6002 || true
 
@@ -317,6 +317,20 @@ start-airgapped-local-registry: stop-airgapped-local-registry
 stop-airgapped-local-registry:
 	@docker stop temp-airgapped-local-registry temp-airgapped-local-registry-with-auth > /dev/null 2>&1 && \
 	  echo "Stopping docker test airgapped repo if running..." || true
+
+.PHONY: start-test-cli-service
+start-test-cli-service: stop-test-cli-service ## Starts a test CLI service locally with docker
+	@docker run -d --rm --name cli-service -p 8080:80 \
+		-v $(ROOT_DIR)/hack/service/install.sh:/var/www/html/cli/v1/install/install.txt \
+		-v $(ROOT_DIR)/hack/service/discovery:/var/www/html/cli/v1/plugin/discovery \
+		-v $(ROOT_DIR)/hack/service/binaries:/var/www/html/cli/v1/binary \
+		-v $(ROOT_DIR)/hack/service/cli-service.conf:/etc/nginx/conf.d/cli-service.conf \
+		nginx:alpine && \
+	echo "Started docker test cli service at 'localhost:8080'"
+
+.PHONY: stop-test-cli-service
+stop-test-cli-service: ## Stops and removes the local test CLI service
+	@docker stop cli-service > /dev/null 2>&1 && echo "Stopped docker test cli service" || true
 
 .PHONY: fmt
 fmt: $(GOIMPORTS) ## Run goimports

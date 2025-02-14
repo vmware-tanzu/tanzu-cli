@@ -1,0 +1,16 @@
+{
+    "pluginGroups": [
+        {
+            "name": "vmware-tanzu/platform-engineer",
+            "recommendedVersion": "v1.0"
+        }
+    ],
+    "pluginSources":  [
+        {
+            "oci": {
+                "name": "discovered-from-tpsm",
+                "image": "projects.packages.broadcom.com/tanzu_cli/plugins/plugin-inventory:latest"
+            }
+        }
+    ]
+}
