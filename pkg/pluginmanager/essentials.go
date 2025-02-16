@@ -69,6 +69,7 @@ func installPluginsFromEssentialPluginGroup(name, version string) (string, error
 	if err != nil {
 		return "", fmt.Errorf("failed to install plugins from group: %w", err)
 	}
+	log.Successf("successfully installed all plugins from group '%s'", groupWithVersion)
 
 	// If the installation is successful, return the group with version.
 	return groupWithVersion, nil
