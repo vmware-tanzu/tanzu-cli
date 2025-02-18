@@ -37,15 +37,15 @@ const (
 info() {
    cat << EOF
 {
-  "name": "%s",
-  "description": "%s functionality",
+  "name": "%[1]s",
+  "description": "%[1]s functionality",
   "version": "v0.1.0",
   "buildSHA": "01234567",
-  "group": "%s",
-  "hidden": %s,
-  "aliases": %s,
-  "completionType": %d,
-  "target": "%s"
+  "group": "%[2]s",
+  "hidden": %[3]s,
+  "aliases": %[4]s,
+  "completionType": %[5]d,
+  "target": "%[6]s"
 }
 EOF
   exit 0
@@ -53,7 +53,7 @@ EOF
 
 say() { shift && echo $@; }
 shout() { shift && echo $@ "!!"; }
-post-install() { exit %d; }
+post-install() { exit %[7]d; }
 bad() { echo "bad command failed"; exit 1; }
 show-invoke-context() { echo "args = ($@), context is (${TANZU_CLI_INVOKED_GROUP}):(${TANZU_CLI_INVOKED_COMMAND}):(${TANZU_CLI_COMMAND_MAPPED_FROM})"; exit 0; }
 
@@ -64,11 +64,12 @@ case "$1" in
     bad)   $1 "$@";;
     show-invoke-context) $1 "$@";;
     post-install)  $1 "$@";;
+    check-help) echo "Usage %[1]s when received: $@";;
     *) cat << EOF
-%s functionality
+%[1]s functionality
 
 Usage:
-  tanzu %s [command]
+  tanzu %[1]s [command]
 
 Available Commands:
   say     Say a phrase
@@ -1008,7 +1009,7 @@ func setupFakePlugin(dir, pluginName, _ string, commandGroup plugin.CmdGroup, co
 		aliasesString = "[]"
 	}
 
-	fmt.Fprintf(f, fakePluginScriptFmtString, pluginName, pluginName, commandGroup, strconv.FormatBool(hidden), aliasesString, completionType, target, postInstallResult, pluginName, pluginName)
+	fmt.Fprintf(f, fakePluginScriptFmtString, pluginName, commandGroup, strconv.FormatBool(hidden), aliasesString, completionType, target, postInstallResult)
 
 	return nil
 }
@@ -2141,9 +2142,9 @@ func TestCommandRemapping(t *testing.T) {
 					target: configtypes.TargetGlobal,
 				},
 			},
-			args: []string{"help", "dummy"},
+			args: []string{"help", "dummy", "check-help"},
 			// Help output for the dummy plugin
-			expected: []string{"dummy functionality\n\nUsage:\n  tanzu dummy [command]"},
+			expected: []string{"Usage dummy when received: check-help -h"},
 		},
 		{
 			test: "help command for one mapped plugin",
@@ -2215,10 +2216,9 @@ func TestCommandRemapping(t *testing.T) {
 
 			rootCmd, err := NewRootCmdForTest()
 			assert.Nil(err)
-			// To be able to test the "tanzu help" command, we need to set the os.Args
-			// instead of using the cobra command's SetArgs method.
-			// rootCmd.SetArgs(spec.args)
-			// See getHelpArguments() in pkg/cli/plugin_cmd.go
+			rootCmd.SetArgs(spec.args)
+			// To be able to test the "tanzu help" command, we also need to set the os.Args
+			// which are read directly in getHelpArguments() in pkg/cli/plugin_cmd.go
 			os.Args = append([]string{"tanzu"}, spec.args...)
 
 			os.Unsetenv("TANZU_CLI_INVOKED_GROUP")
