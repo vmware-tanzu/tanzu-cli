@@ -1,0 +1,8 @@
+apiVersion: cli.tanzu.vmware.com/v1alpha1
+kind: CLIPlugin
+metadata:
+  name: feature
+spec:
+  description: Operate on features and featuregates
+  recommendedVersion: v0.31.1
+# don't specify a target to test older plugins

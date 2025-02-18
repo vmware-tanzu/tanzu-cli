@@ -200,13 +200,19 @@ func discoverServerPluginsForGivenContexts(contexts []*configtypes.Context) ([]d
 			discoveredPlugins[i].Status = common.PluginStatusNotInstalled
 			discoveredPlugins[i].ContextName = context.Name
 
-			// Associate Target of the plugin based on the Context Type of the Context
-			switch context.ContextType {
-			case configtypes.ContextTypeTMC:
-				discoveredPlugins[i].Target = configtypes.TargetTMC
-			default:
-				// All other context types are associated with the kubernetes target
-				discoveredPlugins[i].Target = configtypes.TargetK8s
+			if discoveredPlugins[i].Target == configtypes.TargetUnknown {
+				// Discovered plugin will have their target field set.
+				// Older plugins may have this information missing so we set it below.
+				// This happens for older plugins which could only be of target k8s or tmc.
+
+				// Associate Target of the plugin based on the Context Type of the Context
+				switch context.ContextType {
+				case configtypes.ContextTypeTMC:
+					discoveredPlugins[i].Target = configtypes.TargetTMC
+				default:
+					// All other context types are associated with the kubernetes target
+					discoveredPlugins[i].Target = configtypes.TargetK8s
+				}
 			}
 
 			// It is possible that server recommends shortened plugin version of format vMAJOR or vMAJOR.MINOR

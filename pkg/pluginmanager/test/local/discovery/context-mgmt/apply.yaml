@@ -1,0 +1,8 @@
+apiVersion: cli.tanzu.vmware.com/v1alpha1
+kind: CLIPlugin
+metadata:
+  name: apply
+spec:
+  description: Apply plugin
+  recommendedVersion: v0.1.0
+  target: operations

@@ -49,6 +49,28 @@ var expectedDiscoveredContextPlugins = []discovery.Discovered{
 		ContextName:        "tmc-fake",
 		Target:             configtypes.TargetTMC,
 	},
+	{
+		Name:               "apply",
+		RecommendedVersion: "v0.1.0",
+		Scope:              common.PluginScopeContext,
+		ContextName:        "mgmt",
+		Target:             configtypes.TargetOperations,
+	},
+	{
+		Name:               "resource",
+		RecommendedVersion: "v0.2.0",
+		Scope:              common.PluginScopeContext,
+		ContextName:        "mgmt",
+		Target:             configtypes.TargetGlobal,
+	},
+	{
+		Name:               "feature",
+		RecommendedVersion: "v0.31.1",
+		Scope:              common.PluginScopeContext,
+		ContextName:        "mgmt",
+		// Older plugins will get their target from the context
+		Target: configtypes.TargetK8s,
+	},
 }
 var expectedDiscoveredStandalonePlugins = []discovery.Discovered{
 	{

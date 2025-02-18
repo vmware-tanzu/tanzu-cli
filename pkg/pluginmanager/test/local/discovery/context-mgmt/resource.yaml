@@ -1,0 +1,8 @@
+apiVersion: cli.tanzu.vmware.com/v1alpha1
+kind: CLIPlugin
+metadata:
+  name: resource
+spec:
+  description: Resource plugin
+  recommendedVersion: v0.2.0
+  target: global
