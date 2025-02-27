@@ -5,9 +5,8 @@
 
 ## Overview
 
-The Tanzu CLI provides integrated and unified command-line access to a broad
-array of [products and solutions](https://tanzu.vmware.com/get-started) in the
-[VMware Tanzu](https://tanzu.vmware.com/) portfolio.
+The Tanzu CLI provides command-line access to the
+[Tanzu Platform](https://www.vmware.com/products/app-platform/tanzu) product.
 The CLI is based on a plugin architecture where CLI command functionality can
 be delivered through independently developed plugin binaries. To support this
 architecture, this project provides releases of the core CLI binary that
