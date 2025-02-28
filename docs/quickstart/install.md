@@ -474,13 +474,13 @@ To manually install the essentials plugin group.
 To install latest version
 
 ```shell
-tanzu plugin install all -–group vmware-tanzucli/essentials
+tanzu plugin install all --group vmware-tanzucli/essentials
 ```
 
 To install specific version
 
 ```shell
-tanzu plugin install all -–group vmware-tanzucli/essentials:v1.0.0
+tanzu plugin install all --group vmware-tanzucli/essentials:v1.0.0
 ```
 
 ## Installing and using the Tanzu CLI in internet-restricted environments

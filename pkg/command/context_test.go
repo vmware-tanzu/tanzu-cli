@@ -1995,5 +1995,5 @@ func TestCreateContextWithTanzuTypeAndKubeconfigFlags(t *testing.T) {
 	kubeConfig = "fake-kubeconfig"
 	err := createCtx(&cobra.Command{}, []string{})
 	assert.NotNil(t, err)
-	assert.EqualError(t, err, `the '–-kubeconfig' flag is not applicable when creating a context of type 'tanzu'`)
+	assert.EqualError(t, err, `the '--kubeconfig' flag is not applicable when creating a context of type 'tanzu'`)
 }
