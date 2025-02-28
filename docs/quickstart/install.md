@@ -297,13 +297,17 @@ It also makes it easy to install and switch between different versions of the Ta
 (if you need to do that).  Note that the latest released version of the Tanzu CLI is
 always the recommended version, no matter what your backend version is.
 
+Note: the below instructions are for `asdf` version `0.16` or newer, which has introduced
+some new commands and removed others. The important change is that the old `asdf global`
+is replaced with `asdf set --home`.
+
 ```console
 asdf plugin add tanzu
 asdf install tanzu latest
-asdf global tanzu latest
+asdf set --home tanzu latest
 ```
 
-To upgrade to a new release: `asdf install tanzu latest && asdf global tanzu latest`
+To upgrade to a new release: `asdf install tanzu latest && asdf set --home tanzu latest`
 Note that this installs the new latest version but does not remove any previously installed ones.
 
 To uninstall particular version: `asdf uninstall tanzu <version>`
@@ -316,20 +320,17 @@ To uninstall particular version: `asdf uninstall tanzu <version>`
 asdf plugin add tanzu  # if not done already
 
 asdf install tanzu <version>
-asdf global tanzu <version>
+asdf set --home tanzu <version>
 ```
 
 It then becomes possible to switch between installed versions:
 
 ```console
 # For the entire machine
-asdf global tanzu <any installed version>
+asdf set --home tanzu <any installed version>
 
 # For the current directory
-asdf local tanzu <any installed version>
-
-# For the current shell
-asdf shell tanzu <any installed version>
+asdf set tanzu <any installed version>
 ```
 
 #### Installing a Pre-Release
