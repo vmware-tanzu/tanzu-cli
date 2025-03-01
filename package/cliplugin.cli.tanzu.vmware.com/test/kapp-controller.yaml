@@ -947,9 +947,9 @@ spec:
         description: 'An App is a set of Kubernetes resources. These resources could
           span any number of namespaces or could be cluster-wide (e.g. CRDs). An App
           is represented in kapp-controller using a App CR. The App CR comprises of
-          three main sections: spec.fetch – declare source for fetching configuration
-          and OCI images spec.template – declare templating tool and values spec.deploy
-          – declare deployment tool and any deploy specific configuration'
+          three main sections: spec.fetch - declare source for fetching configuration
+          and OCI images spec.template - declare templating tool and values spec.deploy
+          - declare deployment tool and any deploy specific configuration'
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

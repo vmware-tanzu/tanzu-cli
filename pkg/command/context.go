@@ -261,10 +261,10 @@ func createCtx(cmd *cobra.Command, args []string) (err error) {
 
 func validateContextCreateFlagValues() error {
 	if contextTypeStr == string(configtypes.ContextTypeTanzu) && kubeConfig != "" {
-		return fmt.Errorf("the '–-kubeconfig' flag is not applicable when creating a context of type 'tanzu'")
+		return fmt.Errorf("the '--kubeconfig' flag is not applicable when creating a context of type 'tanzu'")
 	}
 	if contextTypeStr == string(configtypes.ContextTypeTanzu) && kubeContext != "" {
-		return fmt.Errorf("the '–-kubecontext' flag is not applicable when creating a context of type 'tanzu'")
+		return fmt.Errorf("the '--kubecontext' flag is not applicable when creating a context of type 'tanzu'")
 	}
 	return nil
 }
