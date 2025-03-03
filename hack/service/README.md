@@ -4,11 +4,11 @@ This mock allows to run an nginx docker image which serves the same endpoints as
 the ones the real CLI-Svc serves.  It allows to test the CLI without using the
 real CLI-Svc.
 
-The endpoints being mocked are:
+The endpoints being mocked use SSL and are:
 
-- localhost:8080/cli/v1/install
-- localhost:8080/cli/v1/plugin/discovery
-- localhost:8080/cli/v1/binary
+- localhost:9443/cli/v1/install
+- localhost:9443/cli/v1/plugin/discovery
+- localhost:9443/cli/v1/binary
 
 ## Using the test CLI-Svc
 
@@ -19,19 +19,21 @@ To access the endpoints manually, e.g.,:
 
 ```console
 # NOTE: the trailing / is essential
-curl localhost:8080/cli/v1/plugin/discovery/
+curl https://localhost:9443/cli/v1/plugin/discovery/ --cacert hack/central-repo/certs/localhost.crt
+# or
+curl https://localhost:9443/cli/v1/plugin/discovery/ -k
 ```
 
 ## Testing plugin discovery
 
-If testing plugin discovery (localhost:8080/cli/v1/plugin/discovery/), the
+If testing plugin discovery (localhost:9443/cli/v1/plugin/discovery/), the
 test CLI-Svc will randomly serve different discovery data which is configured in
 `hack/service/cli-service.conf`.
 
 To tell the CLI to use the test CLI-Svc we must execute:
 
 ```console
-export TANZU_CLI_PLUGIN_DISCOVERY_HOST_FOR_TANZU_CONTEXT=http://localhost:8080
+export TANZU_CLI_PLUGIN_DISCOVERY_HOST_FOR_TANZU_CONTEXT=http://localhost:9443
 ```
 
 To allow testing using different central repositories the endpoint serves some
