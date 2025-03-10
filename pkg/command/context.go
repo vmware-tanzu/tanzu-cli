@@ -306,18 +306,21 @@ func syncContextPlugins(cmd *cobra.Command, contextType configtypes.ContextType,
 
 	errList := make([]error, 0)
 	log.Infof("Installing the following plugins recommended by context '%s':", ctxName)
+	pluginmanager.SetTotalPluginsToInstall(len(pluginsNeedToBeInstalled))
+	defer pluginmanager.ResetPluginInstallationCounts()
 	displayToBeInstalledPluginsAsTable(plugins, cmd.ErrOrStderr())
 	for i := range pluginsNeedToBeInstalled {
 		err = pluginmanager.InstallStandalonePlugin(pluginsNeedToBeInstalled[i].Name, pluginsNeedToBeInstalled[i].RecommendedVersion, pluginsNeedToBeInstalled[i].Target)
 		if err != nil {
 			errList = append(errList, err)
+		} else {
+			pluginmanager.IncrementPluginsInstalledCount(1)
 		}
 	}
 	err = kerrors.NewAggregate(errList)
 	if err == nil {
 		log.Success("Successfully installed all recommended plugins.")
 	}
-
 	return err
 }
 
