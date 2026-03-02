@@ -40,7 +40,7 @@ development of plugins using other programming languages, at the moment
 the only supported means of plugin development is that which integrates with
 the released version of the runtime library.
 
-The minimum supported Go version is 1.18.
+The minimum supported Go version is 1.26.
 
 You will need Docker to be installed on your development system.
 
