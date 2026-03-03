@@ -270,8 +270,12 @@ e2e-cli-core: tools crd-package-for-test start-test-central-repo start-airgapped
 .PHONY: setup-custom-cert-for-test-central-repo
 setup-custom-cert-for-test-central-repo: ## Setup up the custom ca cert for test-central-repo in the config file
 	@if [ ! -d $(ROOT_DIR)/hack/central-repo/certs ]; then \
-    	wget https://storage.googleapis.com/tanzu-cli/data/testcerts/local-central-repo-testcontent.bz2 -O $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2;\
-  		tar xjf $(ROOT_DIR)/hack/central-repo/local-central-repo-testcontent.bz2 -C $(ROOT_DIR)/hack/central-repo/;\
+		mkdir -p $(ROOT_DIR)/hack/central-repo/certs; \
+		openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes \
+			-keyout $(ROOT_DIR)/hack/central-repo/certs/localhost.key \
+			-out $(ROOT_DIR)/hack/central-repo/certs/localhost.crt \
+			-subj "/CN=localhost" \
+			-addext "subjectAltName=DNS:localhost,IP:127.0.0.1"; \
 	fi
 	echo "Adding docker test central repo cert to the config file"
 	TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER="No" TANZU_CLI_EULA_PROMPT_ANSWER="Yes" $(ROOT_DIR)/bin/tanzu config cert delete localhost:9876 || true
