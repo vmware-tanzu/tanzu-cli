@@ -1,6 +1,6 @@
 module sample-plugin
 
-go 1.21
+go 1.26
 
 replace github.com/vmware-tanzu/tanzu-cli/test/e2e/framework => ../e2e/framework
 

@@ -543,5 +543,5 @@ To propose changes please create an issue labelled `documentation`, and outline 
 
 ### Accessibility Guidelines
 
-* Web Content Accessibility Guidelines [WCAG](https://www.w3.org/TR/2008/REC-WCAG20-20081211/)
+* Web Content Accessibility Guidelines [WCAG](https://www.w3.org/TR/WCAG20/)
 * US section 508 [link](https://www.section508.gov/)
